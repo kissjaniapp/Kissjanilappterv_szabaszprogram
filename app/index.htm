@@ -1005,7 +1005,7 @@
         </div>
       </div>`:'';
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">X:\\JANI\\szabas_programmal\\&lt;bútornév&gt;\\ – minden .xMix és táblánkénti .xPrg egy közös mappában.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A mentéshez a mappaválasztóban az X:\\JANI\\szabas_programmal mappát jelöld ki. A bútormappát a program készíti el. Az XPrg-k továbbra is nem hitelesített offline minták.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ XPrg + XMix mentés X: meghajtóra</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP kerül a Letöltések közé: a bútormappában együtt van a .xMix és minden táblánkénti .xPrg.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">Nincs X: meghajtós közvetlen mentés. A megadott útvonal csak a .xMix fájl hivatkozásaiban szerepel. Az XPrg-k továbbra is nem hitelesített offline minták.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1351,69 +1351,10 @@
       '\r\n';
     const mixName=root+'_OFFLINE.xMix';
     files.unshift([cabinet+'/'+mixName,mix]);
-    files.push(['FONTOS_OLVASD_EL.txt',
-      'LAPTERV - NEM HITELESITETT XPRG/XMIX ELLENORZO CSOMAG\r\n'+
-      'Projekt: '+project+'\r\n'+
-      'A .xMix az osszes .xPrg fajlt az X:\\JANI\\szabas_programmal\\'+cabinet+'\\ helyre hivatkozza.\r\n'+
-      'A ZIP-ben a .xMix es a .xPrg fajlok ugyanabban a '+cabinet+' mappaban vannak.\r\n'+
-      'A ZIP NEM telepiti a fajlokat automatikusan. Kizarolag offline ellenorzesre szolgálnak.\r\n'+
-      'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
-      'Az osszetett szelessegi alabontasnal X-U-F mintat hasznalunk; a valos gepi sorrend nincs hitelesitve.\r\n'+
-      'Minden XPrg SchemaDoc/Pattern szerkezetu, de a valos gepi kompatibilitas nincs igazolva. Fizikai gepre NE toltsd fel!\r\n'+
-      'Ket retegu vagas: nincs kodolva. Rip=1, Pacco=1.\r\n'+
-      'A fajlok vizsgalatra es offline elemzesre keszultek, valos vagasi munka nem vegezheto veluk.\r\n']);
-    files.push(['ELLENORZO_OSSZESITO.json',JSON.stringify({
-      format:'lapterv-xmix-xprg-offline-project-v1',machineExecutable:false,
-      project,boardCount:bins.length,mixFile:mixName,materialCode,
-      winCutDirectory,cabinetFolder:cabinet,boards:summary
-    },null,2)]);
+    // A letöltési csomag CSAK a közös bútormappába rendezett .xMix és .xPrg fájlokat tartalmazza.
+    // A gépi X: útvonal kizárólag a .xMix tartalmába kerül; nem célmentési útvonal.
     return {files,mixName,names,cabinetFolder:cabinet,winCutDirectory,
       complexBoards:summary.filter(x=>x.complex).length};
-  }
-  // A Chromium a felhasználó engedélye nélkül nem írhat tetszőleges X: meghajtóra.
-  // A kiválasztott X:\JANI\szabas_programmal gyökérben létrehozzuk a bútormappát,
-  // és abba a tényleges gépi mintaállományokat (xMix, xPrg) tesszük.
-  // Más célmappát nem fogadunk el és nem tételezünk fel hozzáférést.
-  async function saveXprgInFurnitureDirectory(bundle){
-    if(typeof window.showDirectoryPicker!=='function')return {status:'unsupported'};
-    let base;
-    try{
-      base=await window.showDirectoryPicker({
-        id:'lapterv-szabas-programmal',mode:'readwrite'
-      });
-    }catch(err){
-      if(err?.name==='AbortError')return {status:'cancelled'};
-      throw err;
-    }
-    if(String(base?.name||'').toLocaleLowerCase('hu-HU')!=='szabas_programmal')
-      throw Error('A mentéshez az X:\u005cJANI\u005cszabas_programmal mappát válaszd ki (ne a bútormappát).');
-    const cabinet=await base.getDirectoryHandle(bundle.cabinetFolder,{create:true});
-    const files=bundle.files.filter(([path])=>
-      path.startsWith(bundle.cabinetFolder+'/')&&/\.(?:xMix|xPrg)$/i.test(path));
-    if(files.length!==bundle.names.length+1)
-      throw Error('Az XPrg/XMix csomag fájlszáma nem egyezik a táblák számával.');
-    const targets=files.map(([path,contents])=>({
-      name:path.slice(bundle.cabinetFolder.length+1),contents
-    }));
-    if(targets.some(file=>!file.name||file.name.includes('/')||file.name.includes('\\')))
-      throw Error('Érvénytelen fájlnév a szabásprogramok között.');
-    const existing=[];
-    for(const target of targets){
-      try{await cabinet.getFileHandle(target.name);existing.push(target.name);}
-      catch(err){if(err?.name!=='NotFoundError')throw err;}
-    }
-    if(existing.length&&!confirm(existing.length+
-      ' azonos nevű szabásprogram már létezik. Felülírod őket a '+
-      bundle.cabinetFolder+' bútormappában?'))return {status:'cancelled'};
-    let saved=0;
-    for(const target of targets){
-      const handle=await cabinet.getFileHandle(target.name,{create:true});
-      const writer=await handle.createWritable();
-      try{await writer.write(target.contents);await writer.close();}
-      catch(err){try{await writer.abort();}catch{}throw err;}
-      saved++;
-    }
-    return {status:'saved',count:saved};
   }
   async function downloadXprgProject(){
     try{
@@ -1433,20 +1374,16 @@
         throw Error('A gépi anyagkód 2–40 betű, szám, pont, aláhúzás vagy kötőjel lehet.');
       const bundle=buildOfflineXprgProject(result.bins,project,code,
         Number(state.kerf),date);
-      if(!confirm('A szabásprogramok kizárólag NEM HITELESÍTETT, offline ellenőrzési minták. Fizikai gépre NE töltsd őket!\n\nMentési hely: '+bundle.winCutDirectory+'\nA mappaválasztón az X:\\JANI\\szabas_programmal mappát válaszd ki.'))return;
-      const status=await saveXprgInFurnitureDirectory(bundle);
-      if(status.status==='cancelled')return;
-      if(status.status==='saved'){
-        showNotice(status.count+' fájl mentve az '+bundle.winCutDirectory+' mappába. Csak offline ellenőrzésre.');
-        return;
-      }
-      // A böngésző nem tud közvetlen mappába írni: kézi ZIP mentés a tartalék.
+      if(!confirm('A .xMix és a táblánkénti .xPrg fájlok egyetlen ZIP-csomagba kerülnek.\n'+
+        'A böngésző letöltésként menti a csomagot (alapbeállítás szerint a Letöltések mappába).\n'+
+        'Az X: meghajtó útvonala kizárólag a .xMix fájlban szerepel.\n\n'+
+        'FIGYELEM: az .xPrg gépi parancsai NEM HITELESÍTETTEK. Fizikai gépre ellenőrzés nélkül NE töltsd fel!\n\nLetöltöd?'))return;
+      // Nem nyitunk X: meghajtós mappaválasztót, és nem használunk
+      // Mentés másként ablakot. A böngésző szabványos letöltési módja
+      // a felhasználó saját Letöltések-beállítását követi.
       const zip=xlsxZip(bundle.files,'application/zip');
       const name=(fileName(project)||'Lapterv')+'_XPRG_XMIX_OFFLINE.zip';
-      const ok=await saveFileToDisk(zip,name,'.zip','application/zip');
-      if(ok)showNotice('A böngésző nem engedélyezett közvetlen X: meghajtós mentést. A ZIP-en belüli '+
-        bundle.cabinetFolder+' mappát másold ide: '+bundle.winCutDirectory+
-        ' (a teljes .xMix és .xPrg készlettel).');
+      downloadBlob(zip,name);
     }catch(err){showNotice('Gépi ellenőrző csomag: '+(err?.message||'a mentés nem sikerült'));}
   }
   function downloadCutList(format){
