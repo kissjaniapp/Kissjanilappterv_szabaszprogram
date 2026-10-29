@@ -61,14 +61,18 @@ Descrizione=
 
 [Righe]
 NumeroRighe=2
-1=C:\WinCut\Prg\2026_10_29_Konyha_Feya_tabla_01.xPrg
-2=C:\WinCut\Prg\2026_10_29_Konyha_Feya_tabla_02.xPrg
+1=C:\WinCut\Prg\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_01.xPrg
+2=C:\WinCut\Prg\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_02.xPrg
 ```
 
 A dátum mindig a készítés napja; a név a szekrény- és táblanévből képződik,
 egyedi táblasorszámmal. A `NumeroRighe` érték a tényleges táblaszám.
-A ZIP-ben az `.xPrg` ellenőrző fájlok a `WinCut/Prg/` útvonalon találhatók,
-amely a `C:\WinCut\Prg\` Windows-elérési útvonalnak felel meg.
+A ZIP-en belül a **`Konyha_szekreny/` mappában együtt található** a `.xMix`
+és az összes táblánkénti `.xPrg` fájl. A Mix mindig a
+`C:\WinCut\Prg\<bútor_neve>\` mappára hivatkozik. A bútor nevét a
+program Windowsban érvényes mappanévre alakítja (például
+`Konyha szekrény` → `Konyha_szekreny`). A ZIP e mappa teljes tartalmát
+kapcsolja egyetlen projektcsomaggá; több táblánál a `NumeroRighe` is nő.
 A ZIP **nem telepít és nem másol fájlt automatikusan a gépre**.
 
 A megadott `.xMix` szövegszerkezetet és WinCut fájlelérési utat
