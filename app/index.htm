@@ -58,10 +58,10 @@
 <body>
 <div class="app">
   <main class="main">
-    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">lapterv<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • NESTING</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Helyben mentve</span><button class="btn sm" data-action="import-json">↑ Meglévő projekt betöltése</button></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">lapterv<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button></div></header>
     <nav id="top-steps" aria-label="Munkafolyamat lépései"></nav>
     <div id="content"></div>
-    <div class="footer">Lapterv · Első, helyben futó prototípus · Az optimalizálás heurisztikus, a szabástervet gyártás előtt ellenőrizd.</div>
+    <div class="footer">Lapterv · Windowsos szabásztervező · Az optimalizálás heurisztikus; a vágási tervet gyártás előtt ellenőrizd.</div>
   </main>
 </div>
 <input class="file-input" type="file" id="import-input" accept="application/json,.json">
@@ -96,6 +96,21 @@
   let loaded=null;
   try { loaded=parse(localStorage.getItem('lapterv-project-v2')); } catch { /* Egyes file:// böngészők letilthatják a tárhelyet. */ }
   const state = loaded && Array.isArray(loaded.furnitures) && Array.isArray(loaded.boards) ? loaded : defaultState();
+  // A régi adatokat csak migráljuk a választólistába. Induláskor soha nem nyitjuk meg őket.
+  let projectScreen='library',currentProjectId=null;
+  const libraryKey='lapterv-library-v1',migratedKey='lapterv-library-migrated-v1';
+  let library=[];
+  try{const data=parse(localStorage.getItem(libraryKey));if(Array.isArray(data))library=data.filter(p=>p&&p.id&&p.data&&Array.isArray(p.data.furnitures));}catch{}
+  try{
+    if(localStorage.getItem(migratedKey)!=='yes'){
+      if(loaded&&Array.isArray(loaded.furnitures)&&loaded.furnitures.length){
+        library.unshift({id:uuid(),createdAt:Date.now(),updatedAt:Date.now(),data:JSON.parse(JSON.stringify(loaded)),legacy:true});
+      }
+      localStorage.setItem(libraryKey,JSON.stringify(library));
+      localStorage.setItem(migratedKey,'yes');
+    }
+  }catch{}
+
   // A korábbi prototípus 3,2 mm-es alapértékét egyszer migráljuk 5 mm-re.
   if(loaded && state.kerf===3.2 && !state.kerfDefaultMigrated){state.kerf=5;state.kerfDefaultMigrated=true;}
   function normalizeEdgeSettings(furnitures){
@@ -150,7 +165,63 @@
   if (!state.selectedFurniture || !state.furnitures.some(f=>f.id===state.selectedFurniture)) state.selectedFurniture=state.furnitures[0]?.id || null;
   let result=null;
   let notice='';
-  function save(){try{localStorage.setItem('lapterv-project-v2',JSON.stringify(state));}catch{}}
+  // A bútoradatok a böngészőprofilban, különálló, helyi projektként maradnak meg.
+  // A telepítő / eltávolító ezt nem törli. A választólistából kell megnyitni.
+  function save(){
+    if(projectScreen!=='editor'||!currentProjectId)return;
+    try{
+      const entry=library.find(x=>x.id===currentProjectId);
+      if(!entry)return;
+      entry.data=JSON.parse(JSON.stringify(state));entry.updatedAt=Date.now();
+      localStorage.setItem(libraryKey,JSON.stringify(library));
+      localStorage.setItem('lapterv-project-v2',JSON.stringify(state));
+    }catch(error){console.warn('A helyi mentés sikertelen:',error);}
+  }
+  function freshProject(){
+    Object.assign(state,defaultState());
+    const f={id:uuid(),name:'',destination:'',materialColor:'Feya',w:1000,ht:910,d:600,t:18,s:0,
+      qty:1,partsOpen:false,parts:[]};
+    state.furnitures.push(f);state.selectedFurniture=f.id;
+    currentProjectId=uuid();
+    library.push({id:currentProjectId,createdAt:Date.now(),updatedAt:Date.now(),data:JSON.parse(JSON.stringify(state))});
+    projectScreen='editor';result=null;notice='';render();
+  }
+  function openSavedProject(id,furnitureId){
+    const entry=library.find(x=>x.id===id);
+    if(!entry)return;
+    Object.assign(state,defaultState(),JSON.parse(JSON.stringify(entry.data)));
+    normalizeEdgeSettings(state.furnitures);
+    normalizeFurnitureMeta(state.furnitures,state);
+    normalizeFurnitureSizes(state.furnitures);
+    normalizeLabelSettings(state);
+    if(!['machine','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
+    state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
+    state.active='furniture';currentProjectId=entry.id;projectScreen='editor';
+    result=null;notice='';render();
+  }
+  function projectLibraryView(){
+    const items=library.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    return '<section class="intro"><div><div class="eyebrow">LAPTERV / BÚTORVÁLASZTÓ</div>'+
+      '<h1>Melyik bútort szeretnéd megnyitni?</h1>'+
+      '<p>Indításkor nem nyitjuk meg automatikusan az előző munkát. Válassz az elmentett bútorok közül, vagy hozz létre újat. Az adatok a számítógépen maradnak.</p></div>'+
+      '<div class="actions"><button class="btn primary" data-action="create-project">＋ Új bútor létrehozása</button></div></section>'+
+      '<div class="panel"><div class="panel-head"><div><div class="panel-title">Mentett bútorok</div>'+
+      '<div class="panel-sub">'+items.reduce((sum,e)=>sum+(e.data.furnitures?.length||0),0)+' bútor · '+items.length+' helyi munkaprojekt</div></div></div>'+
+      '<div class="panel-body">'+(items.length?items.map(entry=>{
+        const fs=entry.data.furnitures||[];
+        const cards=fs.length?fs.map(f=>'<div class="stock-card" style="margin:10px 0">'+
+          '<div style="flex:1;min-width:210px"><strong>'+h(f.name||'Névtelen bútor')+'</strong>'+
+          '<div class="small muted">'+h(f.destination||'Nincs megadott célhely')+' · '+h(f.materialColor||'Feya')+
+          ' · '+h(f.w)+' × '+h(f.ht)+' × '+h(f.d)+' mm · '+(f.parts?.length||0)+' alkatrészsor</div></div>'+
+          '<button class="btn primary" data-action="open-saved-project" data-project="'+h(entry.id)+'" data-furniture="'+h(f.id)+'">Megnyitás</button>'+
+          '</div>').join(''):'<div class="muted small">Üres projekt</div>';
+        return '<div style="padding:9px 0;border-bottom:1px solid var(--line)">'+cards+
+          '<div class="toolbar"><span class="muted tiny">Utoljára módosítva: '+
+          h(new Date(entry.updatedAt||entry.createdAt||Date.now()).toLocaleString('hu-HU'))+'</span>'+
+          '<button class="btn sm ghost danger" data-action="delete-saved-project" data-project="'+h(entry.id)+'">Projekt törlése</button></div></div>';
+      }).join(''):'<div class="empty"><h3>Még nincs mentett bútor</h3><p>Kezdd az „Új bútor létrehozása” gombbal.</p></div>')+
+      '</div></div><div class="mini-info top-gap">A régi munkák megmaradtak. Eltávolítás és újratelepítés után is ebből a listából választhatsz.</div>';
+  }
   function showNotice(s){notice=s;render();}
   function getFurniture(){return state.furnitures.find(f=>f.id===state.selectedFurniture) || state.furnitures[0];}
   function numField(scope,id,key,val,min=0,max=99999){return `<div class="unit"><label>${h(key)}</label><div class="input-unit"><input type="number" data-scope="${scope}" data-id="${id}" data-key="${val[0]}" value="${h(val[1])}" min="${min}" max="${max}" step="1"><span>mm</span></div></div>`;}
@@ -896,7 +967,7 @@
     }
     return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A gépi vágássorrendet később, a szabászgép programformátumához igazítva adjuk ki.</div>`;
   }
-  function render(){renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
+  function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
   function download(data,filename,mime){const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
   // Offline, valódi .xlsx export: egyszerű, tárolt ZIP/OOXML. Nem kell hozzá internet.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
@@ -1434,7 +1505,18 @@
   document.addEventListener('click',e=>{
     const el=e.target.closest('[data-action]');if(!el)return;
     const action=el.dataset.action;
-    if(action==='page'){state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
+    if(action==='library-home'){save();projectScreen='library';result=null;notice='';render();window.scrollTo(0,0);}
+    else if(action==='create-project')freshProject();
+    else if(action==='open-saved-project')openSavedProject(el.dataset.project,el.dataset.furniture);
+    else if(action==='delete-saved-project'){
+      const entry=library.find(x=>x.id===el.dataset.project);
+      if(entry&&confirm('Biztosan törlöd ezt a mentett projektet és a benne lévő bútorokat?')){
+        library=library.filter(x=>x.id!==entry.id);
+        try{localStorage.setItem(libraryKey,JSON.stringify(library));}catch{}
+        render();
+      }
+    }
+    else if(action==='page'){state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
     else if(action==='new-furniture'){const f={id:uuid(),name:'',destination:'',materialColor:'Feya',w:1000,ht:910,d:600,t:18,s:0,qty:1,partsOpen:false,parts:[]};state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
