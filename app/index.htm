@@ -322,7 +322,7 @@
       const computed=r.skipped?`<span class="pill gray">Hiányos · kimarad</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.a)} × ${nfmt(r.b)}</span><div class="tiny muted">${nfmt(r.qty)} db · vágási méret${r.edge!=='0-0'?' · élzárva':''}${r.mill&&r.edge!=='0-0'?' · marva 1 mm':''}</div>`;
       return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td><input class="expr" aria-label="Első méret szálirányban" data-scope="part" data-id="${part.id}" data-key="a" value="${h(part.a)}"></td><td><input class="expr" aria-label="Második méret keresztirányban" data-scope="part" data-id="${part.id}" data-key="b" value="${h(part.b)}"></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
     }).join(''):'';
-    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
+    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><div class="actions"><button class="btn sm" data-action="download-parts-png">↓ Lista PNG</button><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
     return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
   }
   function stockView(){
@@ -971,7 +971,7 @@
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
       const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP, egy bútornév szerinti mappa: a .xMix és az összes táblához tartozó .xPrg együtt, C:\\WinCut\\Prg\\&lt;bútornév&gt;\\ hivatkozással.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
-      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button></div></div>`;
+      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
     return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A gépi vágássorrendet később, a szabászgép programformátumához igazítva adjuk ki.</div>`;
   }
@@ -1025,94 +1025,85 @@
     end.view.setUint32(16,offset,true);
     return new Blob([...chunks,...directory,end.bytes],{type:mime});
   }
-  function partsWorkbook(){
-    const list=getParts();
-    if(list.errors.length)throw Error('Javítsd az alkatrészlista hibás méreteit.');
-    const items=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0);
-    if(!items.length)throw Error('Nincs kitöltött alkatrész az Excel exporthoz.');
-    const uniq=xs=>[...new Set(xs.map(x=>String(x||'').trim()).filter(Boolean))].join(' / ');
-    const material=uniq(items.map(r=>r.furniture.materialColor))||'Nincs megadva';
-    const destination=uniq(items.map(r=>r.furniture.destination))||'Nincs megadva';
-    const rows=items.map(r=>[
-      r.part.name,r.originalA,r.originalB,r.qty,
-      r.edge==='0-0'?'Nincs élzárás':
-        r.edge+' · '+String(r.edgeThickness).replace('.',',')+' mm'+
-        (r.mill?' · 1 mm előmarás':'')
-    ]);
-    const titles=['Alkatrész megnevezése','Kész X (mm)','Kész Y (mm)','Darab','Élzárás'];
-    const cell=(v,ref,style=0)=>typeof v==='number'&&Number.isFinite(v)?
-      '<c r="'+ref+'" s="'+style+'"><v>'+v+'</v></c>':
-      '<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+h(v)+'</t></is></c>';
-    const letters=['A','B','C','D','E'];
-    const line=(values,n,kind)=>{
-      const alt=n%2===0;
-      const ht=kind==='meta'?31:kind==='header'?35:kind==='title'?31:26;
-      return '<row r="'+n+'" ht="'+ht+'" customHeight="1">'+
-        values.map((v,i)=>cell(v,letters[i]+n,
-          kind==='header'?1:kind==='meta'||kind==='title'?2:
-            typeof v==='number'?(alt?6:5):i===0||i===4?(alt?4:3):(alt?8:7)
-        )).join('')+'</row>';
+  // Önálló, nagy felbontású PNG alkatrészlista: anyag, célhely, készméret, db, élzárás.
+  // Több alkatrészsor esetén lapozott PNG-ket készítünk; nem XLSX-et.
+  function buildPartsPngPages(list,doc=document){
+    if(list.errors?.length)throw Error('Először javítsd az alkatrészlista hibás méreteit: '+list.errors[0]);
+    const rows=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0);
+    if(!rows.length)throw Error('Nincs exportálható alkatrész. Előbb add meg a méreteket és a darabszámot.');
+    const unique=a=>[...new Set(a.map(v=>String(v||'').trim()).filter(Boolean))].join(' / ')||'Nincs megadva';
+    const material=unique(rows.map(r=>r.furniture.materialColor));
+    const destination=unique(rows.map(r=>r.furniture.destination));
+    const total=rows.reduce((sum,r)=>sum+r.qty,0);
+    const format=n=>Number(n).toLocaleString('hu-HU',{maximumFractionDigits:1});
+    const pages=[],perPage=100;
+    const paintWrapped=(ctx,str,x,y,maxWidth,maxLines=2,lineHeight=26)=>{
+      const words=String(str||'').split(/\s+/).filter(Boolean),lines=[];
+      let line='';
+      for(const word of words){
+        const t=line?line+' '+word:word;
+        if(ctx.measureText(t).width<=maxWidth||!line){line=t;}
+        else{lines.push(line);line=word;}
+      }
+      if(line)lines.push(line);
+      lines.slice(0,maxLines).forEach((text,i)=>{
+        while(ctx.measureText(text).width>maxWidth&&text.length>1)
+          text=text.slice(0,-2)+'…';
+        ctx.fillText(text,x,y+i*lineHeight);
+      });
     };
-    const pieceCount=items.reduce((sum,r)=>sum+r.qty,0);
-    const dataRows=line(['ANYAG: '+material],1,'meta')+
-      line(['HOVÁ KÉSZÜL: '+destination],2,'meta')+
-      line(['Lapterv · Alkatrészlista · '+pieceCount+' db'],3,'title')+
-      line(titles,4,'header')+rows.map((r,i)=>line(r,i+5,'data')).join('');
-    const widths=[31,15,15,10,31];
-    const cols=widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('');
-    const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
-      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
-      '<sheetFormatPr defaultRowHeight="25"/><cols>'+cols+'</cols><sheetData>'+dataRows+'</sheetData>'+
-      '<mergeCells count="3"><mergeCell ref="A1:E1"/><mergeCell ref="A2:E2"/><mergeCell ref="A3:E3"/></mergeCells>'+
-      '<autoFilter ref="A4:E'+(rows.length+4)+'"/>'+
-      '<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.1" footer="0.1"/>'+
-      '<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>';
-    const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
-      '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.###"/></numFmts>'+
-      '<fonts count="3"><font><sz val="10"/><color rgb="FF263B30"/><name val="Calibri"/></font>'+
-      '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
-      '<font><b/><sz val="15"/><color rgb="FF214834"/><name val="Calibri"/></font></fonts>'+
-      '<fills count="4"><fill><patternFill patternType="none"/></fill>'+      '<fill><patternFill patternType="gray125"/></fill>'+
-      '<fill><patternFill patternType="solid"><fgColor rgb="FF214834"/></patternFill></fill>'+
-      '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F6F2"/></patternFill></fill></fills>'+
-      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'+
-      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
-      '<cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'+
-      '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
-      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
-      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
-      '<xf numFmtId="164" fontId="0" fillId="3" borderId="0" applyNumberFormat="1" applyFill="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="center" vertical="center"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>';
-    return xlsxZip([
-      ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
-        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
-        '<Default Extension="xml" ContentType="application/xml"/>'+
-        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
-        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
-        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
-        '</Types>'],
-      ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
-      ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
-        '<sheets><sheet name="Alkatrészek" sheetId="1" r:id="rId1"/></sheets></workbook>'],
-      ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
-        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
-        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+
-        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
-      ['xl/worksheets/sheet1.xml',sheet],['xl/styles.xml',styles]
-    ]);
+    for(let start=0;start<rows.length;start+=perPage){
+      const section=rows.slice(start,start+perPage);
+      const pageNumber=pages.length+1,pageCount=Math.ceil(rows.length/perPage);
+      const width=1600,pad=60,head=350,rowHeight=70,foot=100;
+      const canvas=doc.createElement('canvas');
+      canvas.width=width;canvas.height=head+section.length*rowHeight+foot;
+      const ctx=canvas.getContext('2d');
+      if(!ctx)throw Error('A PNG rajzolás nem támogatott ebben a környezetben.');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,canvas.height);
+      ctx.fillStyle='#17392f';ctx.fillRect(0,0,width,172);
+      ctx.fillStyle='#dcece4';ctx.font='700 22px "Segoe UI",Arial,sans-serif';
+      ctx.fillText('LAPTERV  /  SZABÁSZTERVEZŐ',pad,50);
+      ctx.fillStyle='#ffffff';ctx.font='700 49px "Segoe UI",Arial,sans-serif';
+      ctx.fillText('ALKATRÉSZLISTA',pad,120);
+      ctx.fillStyle='#587269';ctx.font='700 21px "Segoe UI",Arial,sans-serif';
+      ctx.fillText('ANYAG',pad,205);ctx.fillText('HOVÁ KÉSZÜL',pad,280);
+      ctx.fillStyle='#203e32';ctx.font='600 29px "Segoe UI",Arial,sans-serif';
+      paintWrapped(ctx,material,230,204,1250,2,32);
+      paintWrapped(ctx,destination,280,279,1200,2,32);
+      ctx.fillStyle='#e8efeb';ctx.fillRect(pad,head-52,width-pad*2,50);
+      const columns=[pad+14,pad+675,pad+1050,pad+1185];
+      ctx.fillStyle='#244d3e';ctx.font='700 23px "Segoe UI",Arial,sans-serif';
+      ['Alkatrész neve','Készméret (mm)','Darab','Élzárás'].forEach((label,i)=>
+        ctx.fillText(label,columns[i],head-17));
+      section.forEach((r,i)=>{
+        const y=head+i*rowHeight;
+        if(i%2===0){ctx.fillStyle='#f3f7f3';ctx.fillRect(pad,y,width-pad*2,rowHeight);}
+        ctx.fillStyle='#e4eae6';ctx.fillRect(pad,y+rowHeight-1,width-pad*2,1);
+        ctx.font='600 25px "Segoe UI",Arial,sans-serif';ctx.fillStyle='#213e32';
+        paintWrapped(ctx,r.part.name,columns[0],y+13,630,2,27);
+        ctx.font='600 25px "Segoe UI",Arial,sans-serif';
+        ctx.fillText(format(r.originalA)+' × '+format(r.originalB),columns[1],y+23);
+        ctx.fillText(String(r.qty),columns[2],y+23);
+        ctx.font='21px "Segoe UI",Arial,sans-serif';
+        const labels=['x1','x2','y1','y2'].filter(k=>r.part.edgeSides?.[k])
+          .map(k=>k.toUpperCase()).join(', ');
+        const edge=r.edge==='0-0'?'Nincs élzárás':
+          r.edge+' · '+format(r.edgeThickness)+' mm'+(r.mill?' · előmarás':'');
+        ctx.fillText(edge,columns[3],y+9);
+        if(labels){ctx.font='19px "Segoe UI",Arial,sans-serif';
+          ctx.fillStyle='#597267';ctx.fillText(labels,columns[3],y+38);}
+      });
+      const fy=head+section.length*rowHeight+50;
+      ctx.fillStyle='#17392f';ctx.font='700 24px "Segoe UI",Arial,sans-serif';
+      ctx.fillText('Összesen: '+total+' db',pad,fy);
+      ctx.fillStyle='#567266';ctx.font='21px "Segoe UI",Arial,sans-serif';
+      ctx.fillText('Készméretek · X szálirány / Y keresztirány',pad+325,fy);
+      ctx.fillText(pageNumber+' / '+pageCount+'. oldal',width-230,fy);
+      pages.push(canvas);
+    }
+    return pages;
   }
-  // Az Edge/Chrome Windows-alkalmazásablakában közvetlen Mentés másként ablakot nyitunk.
-  // A régi, sokszor észrevétlen böngészős letöltés csak tartalék módszer.
   async function saveFileToDisk(blob,filename,extension,mime){
     if(typeof window.showSaveFilePicker==='function'){
       try{
@@ -1131,15 +1122,20 @@
     downloadBlob(blob,filename);
     return true;
   }
-  async function downloadPartsXlsx(){
+  async function downloadPartsPng(){
     try{
-      const blob=partsWorkbook(),name=getFurniture()?.name||state.projectName||'Lapterv';
-      const file=(fileName(name)||'Lapterv')+'_alkatreszek.xlsx';
-      const ok=await saveFileToDisk(blob,file,'.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      if(ok)console.info('Excel alkatrészlista mentés kezdeményezve:',file);
+      const pages=buildPartsPngPages(getParts());
+      const cabinet=fileName(getFurniture()?.name||state.projectName||'Lapterv')||'Lapterv';
+      for(let i=0;i<pages.length;i++){
+        const blob=await new Promise((resolve,reject)=>
+          pages[i].toBlob(b=>b?resolve(b):reject(Error('Nem sikerült PNG-fájlt készíteni.')),'image/png'));
+        const suffix=pages.length>1?'_oldal_'+String(i+1).padStart(2,'0'):'';
+        const file=cabinet+'_alkatreszlista'+suffix+'.png';
+        const saved=await saveFileToDisk(blob,file,'.png','image/png');
+        if(!saved)return;
+      }
     }catch(err){
-      showNotice('Az Excel-fájl nem készült el: '+(err?.message||'ismeretlen mentési hiba'));
+      showNotice('Az alkatrészlista PNG mentése sikertelen: '+(err?.message||'ismeretlen hiba'));
     }
   }
   function selectedBin(){return result && !result.error?result.bins[state.selectedBoard]:null;}
@@ -1621,7 +1617,7 @@
         `${fileName(title)||'lapterv'}_projekt.json`,'application/json');
     }
     else if(action==='import-json'){$('#import-input').click();}
-    else if(action==='download-parts-xlsx')downloadPartsXlsx();
+    else if(action==='download-parts-png')downloadPartsPng();
     else if(action==='print-labels')printLabels();
     else if(action==='download-labels-png')downloadLabelPng();
     else if(action==='download-svg')downloadBoardSvg();
