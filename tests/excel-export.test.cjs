@@ -7,7 +7,7 @@ const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
 const a=html.indexOf('function xlsxZip(');
 const b=html.indexOf('function partsWorkbook()',a);
-const c=html.indexOf('function downloadPartsXlsx()',b);
+const c=html.indexOf('async function downloadPartsXlsx()',b);
 assert.ok(a>0&&b>a&&c>b,'Hiányzik az Excel generáló');
 const source=html.slice(a,c);
 function readZipEntry(buffer,name){
