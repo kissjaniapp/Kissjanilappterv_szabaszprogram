@@ -305,16 +305,16 @@
           <div><label>Anyag színe / dekorja</label><input aria-label="Anyag színe" data-scope="furniture" data-id="${f.id}" data-key="materialColor" value="${h(f.materialColor||'')}"><div class="field-hint">A matricán az anyag megnevezéseként jelenik meg.</div></div>
         </div>
         ${cabinet(f)}
-        <div class="mini-info">↗ A képletek a külméretekkel változnak; a célhely és az anyagszín a matricára kerül.</div>
+        <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
         ${f.partsOpen===false?`<div class="furniture-next"><span class="muted small">Add meg a bútor nevét és ellenőrizd a méreteket, majd lépj tovább.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>`:''}
       </div>
     </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
     const rows=f?f.parts.map(part=>{
       const r=summary.rows.find(r=>r.part===part);
       const computed=r.skipped?`<span class="pill gray">Hiányos · kimarad</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.a)} × ${nfmt(r.b)}</span><div class="tiny muted">${nfmt(r.qty)} db · vágási méret${r.edge!=='0-0'?' · élzárva':''}${r.mill&&r.edge!=='0-0'?' · marva 1 mm':''}</div>`;
-      return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td><input class="expr" aria-label="Első méret szálirányban" data-scope="part" data-id="${part.id}" data-key="a" value="${h(part.a)}"></td><td><input class="expr" aria-label="Második méret keresztirányban" data-scope="part" data-id="${part.id}" data-key="b" value="${h(part.b)}"></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td>${computed}</td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
+      return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td><input class="expr" aria-label="Első méret szálirányban" data-scope="part" data-id="${part.id}" data-key="a" value="${h(part.a)}"></td><td><input class="expr" aria-label="Második méret keresztirányban" data-scope="part" data-id="${part.id}" data-key="b" value="${h(part.b)}"></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
     }).join(''):'';
-    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th>Vágási méret</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="10" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képletek:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
+    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
     return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"><button class="btn sm" data-action="export-json">↓ Projekt mentése</button></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
   }
   function stockView(){
@@ -1019,53 +1019,47 @@
   }
   function partsWorkbook(){
     const list=getParts();
-    if(list.errors.length)throw Error('Előbb javítsd a hibás alkatrész-képleteket.');
-    const rows=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0).map(r=>[
-      r.furniture.name,r.part.name,r.qty,r.originalA,r.originalB,r.a,r.b,
-      r.edge,r.edgeThickness,r.mill?'Igen':'Nem',r.grainRequired?'Igen':'Nem',
-      r.thickness,Math.round(r.a*r.b*r.qty)/1000000,
-      r.furniture.destination||'',r.furniture.materialColor||''
+    if(list.errors.length)throw Error('Javítsd az alkatrészlista hibás méreteit.');
+    const items=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0);
+    if(!items.length)throw Error('Nincs kitöltött alkatrész az Excel exporthoz.');
+    const uniq=xs=>[...new Set(xs.map(x=>String(x||'').trim()).filter(Boolean))].join(' / ');
+    const material=uniq(items.map(r=>r.furniture.materialColor))||'Nincs megadva';
+    const destination=uniq(items.map(r=>r.furniture.destination))||'Nincs megadva';
+    const rows=items.map(r=>[
+      r.part.name,r.originalA,r.originalB,r.qty,
+      r.edge==='0-0'?'Nincs élzárás':
+        r.edge+' · '+String(r.edgeThickness).replace('.',',')+' mm'+
+        (r.mill?' · 1 mm előmarás':'')
     ]);
-    if(!rows.length)throw Error('Nincs kitöltött alkatrész az Excel exporthoz.');
-    const titles=['Bútor / széria','Alkatrész','Db','Kész X\n(mm)','Kész Y\n(mm)',
-      'Szabás X\n(mm)','Szabás Y\n(mm)','Élzárás','Él\n(mm)',
-      'Marás\n1 mm','Szálirány\nkötelező','Lap\n(mm)','Terület\n(m²)',
-      'Hová készül','Anyag / dekor'];
-    const colLetter=i=>String.fromCharCode(65+i);
-    const cell=(value,ref,style=0)=>{
-      if(typeof value==='number'&&Number.isFinite(value))
-        return '<c r="'+ref+'" s="'+style+'"><v>'+value+'</v></c>';
-      return '<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+
-        h(value)+'</t></is></c>';
+    const titles=['Alkatrész megnevezése','Kész X (mm)','Kész Y (mm)','Darab','Élzárás'];
+    const cell=(v,ref,style=0)=>typeof v==='number'&&Number.isFinite(v)?
+      '<c r="'+ref+'" s="'+style+'"><v>'+v+'</v></c>':
+      '<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+h(v)+'</t></is></c>';
+    const letters=['A','B','C','D','E'];
+    const line=(values,n,kind)=>{
+      const alt=n%2===0;
+      const ht=kind==='meta'?31:kind==='header'?35:kind==='title'?31:26;
+      return '<row r="'+n+'" ht="'+ht+'" customHeight="1">'+
+        values.map((v,i)=>cell(v,letters[i]+n,
+          kind==='header'?1:kind==='meta'||kind==='title'?2:
+            typeof v==='number'?(alt?6:5):i===0||i===4?(alt?4:3):(alt?8:7)
+        )).join('')+'</row>';
     };
-    const rowXml=(values,rowNo,type)=>{
-      const alternating=rowNo%2===0;
-      const height=type==='header'?34:type==='title'?30:
-        Math.max(22,Math.min(48,Math.ceil(Math.max(...[0,1,13,14].map(i=>
-          String(values[i]??'').length/[23,24,23,23][[0,1,13,14].indexOf(i)]))/1)*13));
-      return '<row r="'+rowNo+'" ht="'+height+'" customHeight="1">'+
-        values.map((value,i)=>{
-          const style=type==='header'?1:type==='title'?2:
-            typeof value==='number'?(alternating?6:5):
-            [0,1,13,14].includes(i)?(alternating?4:3):(alternating?8:7);
-          return cell(value,colLetter(i)+rowNo,style);
-        }).join('')+'</row>';
-    };
-    const title=getFurniture()?.name||state.projectName||'Lapterv';
-    const pieceCount=rows.reduce((sum,r)=>sum+r[2],0);
-    const dataRows=rowXml([title+' – alkatrészlista · '+nfmt(pieceCount)+' db'],1,'title')+
-      rowXml(titles,2,'header')+rows.map((row,i)=>rowXml(row,i+3,'data')).join('');
-    const widths=[23,24,8,12,12,13,13,10,11,10,13,10,13,23,23];
-    const cols=widths.map((width,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+
-      '" width="'+width+'" customWidth="1"/>').join('');
+    const pieceCount=items.reduce((sum,r)=>sum+r.qty,0);
+    const dataRows=line(['ANYAG: '+material],1,'meta')+
+      line(['HOVÁ KÉSZÜL: '+destination],2,'meta')+
+      line(['Lapterv · Alkatrészlista · '+pieceCount+' db'],3,'title')+
+      line(titles,4,'header')+rows.map((r,i)=>line(r,i+5,'data')).join('');
+    const widths=[31,15,15,10,31];
+    const cols=widths.map((w,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>').join('');
     const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
       '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
-      '<sheetViews><sheetView workbookViewId="0"><pane xSplit="2" ySplit="2" topLeftCell="C3" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>'+
-      '<sheetFormatPr defaultRowHeight="22"/><cols>'+cols+'</cols><sheetData>'+dataRows+'</sheetData>'+
-      '<mergeCells count="1"><mergeCell ref="A1:O1"/></mergeCells>'+
-      '<autoFilter ref="A2:O'+(rows.length+2)+'"/>'+
-      '<pageMargins left="0.2" right="0.2" top="0.35" bottom="0.35" header="0.1" footer="0.1"/>'+
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="4" topLeftCell="A5" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'+
+      '<sheetFormatPr defaultRowHeight="25"/><cols>'+cols+'</cols><sheetData>'+dataRows+'</sheetData>'+
+      '<mergeCells count="3"><mergeCell ref="A1:E1"/><mergeCell ref="A2:E2"/><mergeCell ref="A3:E3"/></mergeCells>'+
+      '<autoFilter ref="A4:E'+(rows.length+4)+'"/>'+
+      '<pageMargins left="0.25" right="0.25" top="0.35" bottom="0.35" header="0.1" footer="0.1"/>'+
       '<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>';
     const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
       '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
