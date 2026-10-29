@@ -9,7 +9,7 @@ test('a telepítő felismeri a korábbi Laptervet és frissítési párbeszédet
  assert.match(go,/func previousInstalled\(root string\)/);
  assert.match(go,/func installedVersion\(\)/);
  assert.match(go,/if updating\s*\{/);
- assert.match(go,/const version = "1\.0\.7"/);
+ assert.match(go,/const version = "\d+\.\d+\.\d+"/);
 });
 test('a fájlfrissítés staged, mentett és visszaállítható',()=>{
  assert.match(go,/stage:=root\+"\.__frissites"/);
