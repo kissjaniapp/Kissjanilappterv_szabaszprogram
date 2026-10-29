@@ -71,9 +71,10 @@ test('a kezdőképernyő választólistával indul, nem automatikusan nyit munk�
   assert.match(html,/lapterv-project-v2/);
   assert.match(html,/lapterv-library-v1/);
 });
-test('Excel csak készméretet, anyagot, célhelyet és élzárást tartalmaz',()=>{
-  assert.match(html,/const titles=\['Alkatrész megnevezése','Kész X \(mm\)','Kész Y \(mm\)','Darab','Élzárás'\]/);
-  assert.match(html,/ANYAG: /);
-  assert.match(html,/HOVÁ KÉSZÜL: /);
-  assert.match(html,/mergeCell ref="A1:E1"/);
+test('az alkatrészlista PNG-re váltott; Excel export nincs',()=>{
+  assert.match(html,/function buildPartsPngPages\(/);
+  assert.match(html,/function downloadPartsPng\(/);
+  assert.match(html,/data-action="download-parts-png"/);
+  assert.doesNotMatch(html,/function partsWorkbook\(/);
+  assert.doesNotMatch(html,/data-action="download-parts-xlsx"/);
 });
