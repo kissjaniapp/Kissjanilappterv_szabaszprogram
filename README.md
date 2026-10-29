@@ -1,4 +1,4 @@
-# Lapterv 1.0.4 – Windowsos szabásztervező
+# Lapterv 1.0.5 – Windowsos szabásztervező
 
 Ez a **működő Lapterv program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
@@ -6,7 +6,7 @@ https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Lapterv.exe` indítóval és
-`Lapterv_Telepito_1.0.4_x64.exe` telepítővel. Offline fut. A teljes
+`Lapterv_Telepito_1.0.5_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -14,7 +14,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Lapterv - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Lapterv-Windows-Telepito-1.0.4` nevű **Artifacts** csomagban.
+a `Lapterv-Windows-Telepito-1.0.5` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Lapterv.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
 A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Lapterv ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
