@@ -89,8 +89,17 @@ már ellenőrizni tudjuk; ettől a `.xPrg` programok működése még nem bizony
 Az `.xPrg` **nem hitelesített, csak fájlmegtekintésre és offline
 szimulátorhoz készült**. A `P/RY/Y/RX/X/F` parancsok értelmezése,
 a tényleges gépi sorrend és a többréteges vágás nem bizonyított.
-Összetett `U/V` alábontásnál a program szándékosan nem ad ki
-hiányos vagy kitalált utasításokat. Fizikai gépre ne töltsd.
+A táblák `.xPrg` fájljai most közvetlenül a `<SchemaDoc>` gyökérrel
+kezdődnek (XML-deklaráció és komment nélkül), majd `<Header>`, `<Material>`
+és `<Pattern>` elemek következnek. A vágások `T`, `Dim`, `Rip`, `ID`
+attribútumokat kapnak, a sorszám 0-ról indul. A példában szereplő
+`BLAP003` anyagkód a mentéskor megadható; nem szabad más anyaghoz
+változtatás nélkül használni. Kisebb keresztmetszetű alkatrészhez az
+`X`, `U`, `F` mintát is kiírja a program, de az `U` valós fizikai
+vágási értelmezését és gépi sorrendjét még külön kell ellenőrizni.
+99-nél több parancsot egy xPrg-be nem ír a program, mert a gépi
+folytatás `_REP` formátuma még nincs hitelesítve. Fizikai gépre
+ellenőrzés nélkül ne töltsd.
 
 ## GitHub build
 
