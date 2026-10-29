@@ -969,7 +969,7 @@
         </div>
       </div>`:'';
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP: táblánként külön .xPrg; a .xMix minden sort a C:\\WinCut\\Prg\\ útvonalon hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP, egy bútornév szerinti mappa: a .xMix és az összes táblához tartozó .xPrg együtt, C:\\WinCut\\Prg\\&lt;bútornév&gt;\\ hivatkozással.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button></div></div>`;
     }
@@ -1288,25 +1288,28 @@
           '  <Material Tipologia="" Codice="'+esc(materialCode)+'" />\n'+
           '  <Pattern>\n'+cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
       }
-      files.push(['WinCut/Prg/'+file,xml]);
+      // A Mix és minden XPrg ugyanabban a bútornév szerinti mappában lesz.
+      files.push([cabinet+'/'+file,xml]);
       summary.push({tabla:i+1,file,anyag:bin.name,meret:[bin.a,bin.b,bin.thickness],
         stripCount:m.strips.length,complex,executable:false});
     });
-    // A WinCut által elvárt, felhasználó által megadott INI alapú xMix.
-    // A sorok C:\WinCut\Prg\ abszolút Windows útvonalat használnak.
+    // A Mix C:\WinCut\Prg\<butor_neve>\ útvonalra hivatkozik.
+    // Az xMix és az összes xPrg a kicsomagolt ZIP egyetlen közös mappájában van.
+    const winCutDirectory='C:\\WinCut\\Prg\\'+cabinet+'\\';
     const mix='[Intestazione]\r\n'+
       'Descrizione=\r\n\r\n'+
       '[Righe]\r\n'+
       'NumeroRighe='+names.length+'\r\n'+
-      names.map((file,index)=>(index+1)+'=C:\\WinCut\\Prg\\'+file).join('\r\n')+
+      names.map((file,index)=>(index+1)+'='+winCutDirectory+file).join('\r\n')+
       '\r\n';
     const mixName=root+'_OFFLINE.xMix';
-    files.unshift([mixName,mix]);
+    files.unshift([cabinet+'/'+mixName,mix]);
     files.push(['FONTOS_OLVASD_EL.txt',
       'LAPTERV - NEM HITELESITETT XPRG/XMIX ELLENORZO CSOMAG\r\n'+
       'Projekt: '+project+'\r\n'+
-      'A .xMix [Intestazione] / [Righe] szekcioja minden .xPrg fajlt a C:\\WinCut\\Prg\\ helyre hivatkozik.\r\n'+
-      'A ZIP WinCut/Prg mappajanak tartalmat csak ellenorzes utan szabad a megfelelo celhelyre masolni.\r\n'+
+      'A .xMix az osszes .xPrg fajlt a C:\\WinCut\\Prg\\'+cabinet+'\\ helyre hivatkozza.\r\n'+
+      'A ZIP-ben a .xMix es a .xPrg fajlok ugyanabban a '+cabinet+' mappaban vannak.\r\n'+
+      'A ZIP NEM telepiti a fajlokat automatikusan. Kizarolag offline ellenorzesre szolgálnak.\r\n'+
       'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
       'Az osszetett, U/V alabontasos tablakat LaptervOfflineReview jeloli: ezek nem gepprogramok.\r\n'+
       'A tobbi tabla SchemaDoc szerkezete is CSAK MINTA. Fizikai gepre NE toltsd fel!\r\n'+
@@ -1315,9 +1318,10 @@
     files.push(['ELLENORZO_OSSZESITO.json',JSON.stringify({
       format:'lapterv-xmix-xprg-offline-project-v1',machineExecutable:false,
       project,boardCount:bins.length,mixFile:mixName,materialCode,
-      winCutDirectory:'C:\\WinCut\\Prg\\',boards:summary
+      winCutDirectory,cabinetFolder:cabinet,boards:summary
     },null,2)]);
-    return {files,mixName,names,complexBoards:summary.filter(x=>x.complex).length};
+    return {files,mixName,names,cabinetFolder:cabinet,winCutDirectory,
+      complexBoards:summary.filter(x=>x.complex).length};
   }
   async function downloadXprgProject(){
     try{
