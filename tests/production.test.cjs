@@ -21,15 +21,27 @@ function board(material='Feya',length=700){
     placements:[{finishCutIndex:2,completionStep:3}]
   };
 }
-test('a teljes sávozás minden csíkvisszaadás előtt történik',()=>{
+test('a számozás minden új táblán 1-től indul és az egyes táblák menetei nem keverednek',()=>{
   const bins=[board(),board()];
-  const out=schedule(bins),firstRefeed=out.events.findIndex(e=>e.type==='refeed');
-  assert.ok(firstRefeed>0);
-  assert.ok(out.events.slice(0,firstRefeed).every(e=>e.phase==='savozas'));
-  assert.ok(out.events.slice(firstRefeed).every(e=>e.phase==='hosszvagas'));
-  assert.equal(out.pairedGroups,1);
-  assert.equal(out.events[firstRefeed].stackCount,2);
-  assert.equal(bins[0].placements[0].completionStep,bins[1].placements[0].completionStep);
+  const out=schedule(bins);
+  assert.equal(out.boards.length,2);
+  assert.deepEqual(out.boards.map(x=>x.cutCount),[3,3]);
+  assert.equal(out.totalCuts,6);
+  assert.equal(out.pairedGroups,0);
+  for(const boardIndex of [0,1]){
+    const boardNumber=boardIndex+1;
+    assert.deepEqual(bins[boardIndex].cuts.map(c=>c.boardOrder),[1,2,3]);
+    const events=out.events.filter(e=>e.board===boardNumber);
+    assert.equal(events[0].phase,'savozas');
+    assert.equal(events[1].phase,'savozas');
+    assert.equal(events[2].type,'refeed');
+    assert.equal(events[3].phase,'hosszvagas');
+    assert.equal(events[3].order,3);
+    assert.equal(bins[boardIndex].placements[0].completionStep,3);
+  }
+  assert.ok(out.events.findIndex(e=>e.board===2)>
+    out.events.map(e=>e.board).lastIndexOf(1));
+  assert.equal(out.machineExecutable,false);
 });
 test('eltérő méretű csíkok nem kerülnek egymásra',()=>{
   const out=schedule([board('Feya',700),board('Feya',690)]);
