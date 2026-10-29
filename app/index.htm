@@ -1277,47 +1277,62 @@
       const boardName=safePart(bin.name,'Tabla',30);
       const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
       names.push(file);
+      // A kapott SCM xPrg minta pontos gyökere és fejlécszerkezete:
+      // SchemaDoc > Header, Material, Pattern > Cut.
+      // Az U a darabon belüli másodlagos szélességi levágás mintája.
+      // Az U/F gépi sorrendje még nincs valós gépi vágással hitelesítve!
       const complex=m.strips.some(strip=>(strip.items||[]).some(p=>
-        !Number.isFinite(p.along)||!Number.isFinite(p.breadth)||
-        Math.abs(p.breadth-strip.width)>.01));
-      const cuts=[],add=(type,val)=>cuts.push('    <Cut T="'+type+'" Dim="'+num(val)+
-        '" Rip="1" ID="'+cuts.length+'" />');
-      add('P',length);add('RY',bin.trim);
+        strip.width-Number(p.breadth) >= Math.max(kerf-.001,.001)));
+      const cuts=[];
+      const add=(type,val)=>{
+        const value=Number(val);
+        if(!Number.isFinite(value)||value<0)
+          throw Error((i+1)+'. tábla: hibás '+type+' méret a gépi exportban.');
+        cuts.push('\t\t<Cut T="'+type+'" Dim="'+num(value)+
+          '" Rip="1" ID="'+cuts.length+'" />');
+      };
+      add('P',length);
+      add('RY',bin.trim);
       for(const strip of m.strips){
-        add('Y',strip.width);add('RX',bin.trim);
-        for(const part of strip.items||[]){add('X',part.along);add('F',0);}
+        if(!Number.isFinite(strip.width)||strip.width<=0)
+          throw Error((i+1)+'. tábla: hibás csíkszélesség.');
+        add('Y',strip.width);
+        add('RX',bin.trim);
+        for(const part of strip.items||[]){
+          if(!Number.isFinite(part.along)||part.along<=0||
+             !Number.isFinite(part.breadth)||part.breadth<=0||
+             part.breadth>strip.width+.001)
+            throw Error((i+1)+'. tábla: a darab nem fér el a gépi csíkban.');
+          add('X',part.along);
+          // A referenciamintában X után U, majd F következik,
+          // amikor a levágott rész kisebb szélességre is bontandó.
+          const remainder=strip.width-part.breadth;
+          if(remainder>0.001&&remainder+0.001>=kerf)
+            add('U',part.breadth);
+          else if(remainder>0.001&&remainder+0.001<kerf)
+            throw Error((i+1)+'. tábla: az U alábontás maradéka kisebb a fűrészrésnél.');
+          add('F',0);
+        }
       }
-      const boardParts=m.strips.map(strip=>
-        '    <Strip Index="'+strip.index+'" Width="'+num(strip.width)+'">'+
-        (strip.items||[]).map(piece=>
-          '<Part Name="'+esc(piece.item?.name||'')+'" Length="'+num(piece.along)+
-          '" Width="'+num(piece.breadth)+'" />').join('')+'</Strip>').join('\n');
-      let xml;
-      if(complex){
-        // Az U/V alábontást nem találjuk ki: a fájl szándékosan NEM SchemaDoc,
-        // így a gép nem fogadhatja el kész vágóprogramként.
-        xml='<?xml version="1.0" encoding="utf-8"?>\n'+
-          '<LaptervOfflineReview MachineExecutable="false" Board="'+(i+1)+'">\n'+
-          '  <Warning>Ez a tabla U/V alabontast igenyel. Nem hitelesitett XPrg, csak ellenorzo geometria.</Warning>\n'+
-          '  <Board Length="'+num(length)+'" Width="'+num(width)+'" Thickness="'+num(bin.thickness)+
-          '" Kerf="'+num(kerf)+'" Trim="'+num(bin.trim)+'" />\n'+
-          '  <Strips>\n'+boardParts+'\n  </Strips>\n'+
-          '  <KnownCommandsForComparison>\n'+cuts.join('\n')+
-          '\n  </KnownCommandsForComparison>\n</LaptervOfflineReview>\n';
-      }else{
-        xml='<?xml version="1.0" encoding="utf-8"?>\n'+
-          '<!-- LAPTERV OFFLINE MINTA: NEM HITELESITETT GEPI PROGRAM; TILOS GEPEN FUTTATNI -->\n'+
-          '<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+esc(materialCode)+
-          '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
-          '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
-          '" SpessoreLama="'+num(kerf)+'" />\n'+
-          '  <Material Tipologia="" Codice="'+esc(materialCode)+'" />\n'+
-          '  <Pattern>\n'+cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
-      }
+      // A SCM Maestro Cut egyes változatai legfeljebb 99 vágási
+      // parancsot fogadnak; az ismert _REP folytatás pontos viselkedése
+      // nincs igazolva, ezért túl hosszú programot nem exportálunk.
+      if(cuts.length>99)
+        throw Error((i+1)+'. tábla: '+cuts.length+
+          ' gépi parancs szükséges (99 a biztonságosan alkalmazott korlát). '+
+          'A programot kisebb mintákra kell bontani, _REP parancsokat nem találunk ki.');
+      const xml='<SchemaDoc>\r\n'+
+        '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(materialCode)+
+        '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
+        '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
+        '" SpessoreLama="'+num(kerf)+'" />\r\n'+
+        '\t<Material Tipologia="" Codice="'+esc(materialCode)+'" />\r\n'+
+        '\t<Pattern>\r\n'+cuts.join('\r\n')+
+        '\r\n\t</Pattern>\r\n</SchemaDoc>\r\n';
       // A Mix és minden XPrg ugyanabban a bútornév szerinti mappában lesz.
       files.push([cabinet+'/'+file,xml]);
       summary.push({tabla:i+1,file,anyag:bin.name,meret:[bin.a,bin.b,bin.thickness],
-        stripCount:m.strips.length,complex,executable:false});
+        stripCount:m.strips.length,complex,commandCount:cuts.length,executable:false});
     });
     // A Mix az X:\JANI\szabas_programmal\<butor_neve>\ útvonalra hivatkozik.
     // Az xMix és az összes xPrg a kicsomagolt ZIP egyetlen közös mappájában van.
@@ -1337,8 +1352,8 @@
       'A ZIP-ben a .xMix es a .xPrg fajlok ugyanabban a '+cabinet+' mappaban vannak.\r\n'+
       'A ZIP NEM telepiti a fajlokat automatikusan. Kizarolag offline ellenorzesre szolgálnak.\r\n'+
       'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
-      'Az osszetett, U/V alabontasos tablakat LaptervOfflineReview jeloli: ezek nem gepprogramok.\r\n'+
-      'A tobbi tabla SchemaDoc szerkezete is CSAK MINTA. Fizikai gepre NE toltsd fel!\r\n'+
+      'Az osszetett szelessegi alabontasnal X-U-F mintat hasznalunk; a valos gepi sorrend nincs hitelesitve.\r\n'+
+      'Minden XPrg SchemaDoc/Pattern szerkezetu, de a valos gepi kompatibilitas nincs igazolva. Fizikai gepre NE toltsd fel!\r\n'+
       'Ket retegu vagas: nincs kodolva. Rip=1, Pacco=1.\r\n'+
       'A fajlok vizsgalatra es offline elemzesre keszultek, valos vagasi munka nem vegezheto veluk.\r\n']);
     files.push(['ELLENORZO_OSSZESITO.json',JSON.stringify({
@@ -1403,8 +1418,14 @@
       const now=new Date();
       const date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
       const project=String(getFurniture()?.name||state.projectName||'Lapterv').trim()||'Lapterv';
-      // Valódi gépi anyagkód nélkül szándékosan csak ellenőrző azonosítóval mentünk.
-      const bundle=buildOfflineXprgProject(result.bins,project,'LAPTERV_OFFLINE',
+      // A gép tényleges anyagtörzséből származó azonosító kell.
+      // A felhasználói minta BLAP003, ez csak előre kitöltött javaslat.
+      const enteredCode=prompt('Gépi anyagkód (a fűrész anyagtörzse szerint, a mintában BLAP003):','BLAP003');
+      if(enteredCode===null)return;
+      const code=enteredCode.trim();
+      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code))
+        throw Error('A gépi anyagkód 2–40 betű, szám, pont, aláhúzás vagy kötőjel lehet.');
+      const bundle=buildOfflineXprgProject(result.bins,project,code,
         Number(state.kerf),date);
       if(!confirm('A szabásprogramok kizárólag NEM HITELESÍTETT, offline ellenőrzési minták. Fizikai gépre NE töltsd őket!\n\nMentési hely: '+bundle.winCutDirectory+'\nA mappaválasztón az X:\\JANI\\szabas_programmal mappát válaszd ki.'))return;
       const status=await saveXprgInFurnitureDirectory(bundle);
