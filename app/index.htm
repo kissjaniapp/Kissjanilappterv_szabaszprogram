@@ -315,7 +315,7 @@
       return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td><input class="expr" aria-label="Első méret szálirányban" data-scope="part" data-id="${part.id}" data-key="a" value="${h(part.a)}"></td><td><input class="expr" aria-label="Második méret keresztirányban" data-scope="part" data-id="${part.id}" data-key="b" value="${h(part.b)}"></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
     }).join(''):'';
     const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
-    return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"><button class="btn sm" data-action="export-json">↓ Projekt mentése</button></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
+    return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
   }
   function stockView(){
     const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
@@ -763,7 +763,7 @@
     if(state.layoutMode==='machine'&&Number(state.trim)>0&&Number(state.trim)<Number(state.kerf))
       return {error:'A gépi szélezési ráhagyás nem lehet kisebb a vágásrésnél.'};
     if(parts.errors.length)return {error:'Előbb javítsd a képlethibákat. '+parts.errors[0]};
-    if(parts.total>700)return {error:'A prototípus egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
+    if(parts.total>700)return {error:'A program egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
     let best=null;
     const axes=state.cutDirection==='x'||state.cutDirection==='y'?[state.cutDirection]:['x','y'];
@@ -946,7 +946,7 @@
       const unfitted=result.failed.length?`<div class="notice error" style="margin-bottom:17px"><strong>${result.failed.length} alkatrész nem fért el:</strong> ${h(result.failed.slice(0,6).map(p=>p.name+' ('+p.a+' × '+p.b+')').join(', '))}${result.failed.length>6?'…':''}. Vegyél fel nagyobb vagy több táblát.</div>`:'';
       const smaller=b?suggestedBoardSize(b):null;
       const boardPanel=b?`<div class="panel">
-        <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-svg">↓ SVG</button><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
+        <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
         <div class="panel-body"><div class="board-tabs">${result.bins.map((bin,i)=>`<button class="board-tab ${i===state.selectedBoard?'active':''}" data-action="select-board" data-index="${i}">Tábla ${i+1} <span style="opacity:.7">· ${nfmt(bin.a)}×${nfmt(bin.b)}×${nfmt(bin.thickness)}</span></button>`).join('')}</div>
           <div class="display-board" style="margin-top:17px"><div><div class="drawing-area">${svgBoard(b)}</div>
             <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${result.cutAxis==='y'?'Elfordított nézet: X ↕ szálirány · Y ↔ keresztirány · első vágás felülről':'X ↔ szálirány · Y ↕ keresztirány'} · szaggatott: szélezési határ</span></div></div>
@@ -960,10 +960,10 @@
           </div>
         </div>
       </div>`:'';
-      // Gépi ellenőrző csomag: NEM futtatható xPrg vagy xMix fájl.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Gépi program előkészítése</div><div class="panel-sub">Ellenőrizhető vágások és csíkvisszaadások. A próbafájlok a mintákból ismert XML-szerkezeten alapulnak, kizárólag offline szimulációhoz.</div></div></div><div class="panel-body"><div class="toolbar"><div class="muted small">Minden tábla vágási sorrendje JSON-ban. Ez <strong>nem betölthető gépi program</strong>, kizárólag az export fejlesztéséhez készült.</div><button class="btn primary" data-action="download-machine-review" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Csak teljes gépi csíkos tervből exportálható"':''}>↓ Gépi előkészítés ZIP</button><button class="btn" data-action="download-machine-simulator" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Csak teljes gépi csíkos tervből"':''}>↓ .xMix + .xPrg PRÓBA ZIP</button></div><div class="muted small" style="margin-top:12px">.xMix/.xPrg: <strong>NEM hitelesített, gépre nem tölthető próbafájlok!</strong> A két rétegű vágás csak az ellenőrző listában szerepel, a gépi fájlokban nincs engedélyezve.</div></div></div>`;
+      // Egyetlen xPrg mentés, csak a kijelölt táblához.
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg fájl megtekintése</div><div class="panel-sub">A kijelölt tábla XPrg mintája közvetlenül letölthető, ZIP nélkül.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A formátum kísérleti. A két rétegben történő vágás még nincs a gépi fájlban.</span><button class="btn primary" data-action="download-xprg-review" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Kijelölt tábla .xPrg</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
-      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button><button class="btn" data-action="download-overview">↓ Összes tábla SVG</button><button class="btn" onclick="window.print()">⎙ Nyomtatás</button></div></div>`;
+      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button></div></div>`;
     }
     return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A gépi vágássorrendet később, a szabászgép programformátumához igazítva adjuk ki.</div>`;
   }
@@ -1186,78 +1186,44 @@
   }
   // Kísérleti XML-állományok az eredeti XPrg/XMix minták megfigyelt alakjában.
   // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
-  function downloadMachineSimulation(){
+  // Kizárólag megtekintésre/offline szimulációra; nem hitelesített gépi XPrg.
+  function downloadXprgForReview(){
     try{
-      if(!result||result.error||result.failed.length||state.layoutMode!=='machine'||
-        !result.bins.length||!result.production)
-        throw Error('Előbb készíts hibátlan, teljes gépi csíkos nestinget.');
-      const code=prompt('Add meg a gépben létező anyagkódot (pl. a saját anyagtörzsed szerint). Ne az anyag színét írd be automatikusan!','');
-      if(code===null)return;
-      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code.trim()))
-        throw Error('A gépi anyagkód 2–40 betű/szám vagy pont, kötőjel, aláhúzás lehet.');
-      if(!confirm('FIGYELEM: A létrejövő .xMix és .xPrg csak OFFLINE SZIMULÁCIÓRA szolgál! Nincs igazolt gépi végrehajtási sorrend vagy kétréteges parancs. Gépbe NEM tölthető. Folytatod?'))return;
-      const xmlEscape=value=>String(value).replace(/[&<>"']/g,
-        c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-      const num=v=>Number(v).toFixed(2);
-      const now=new Date(),date=[String(now.getDate()).padStart(2,'0'),
-        String(now.getMonth()+1).padStart(2,'0'),now.getFullYear()].join('/');
-      const material=xmlEscape(code.trim());
-      const base='Lapterv_CSAK_OFFLINE_'+Date.now();
-      const files=[],names=[];
-      const checkXml=xml=>{
-        const doc=new DOMParser().parseFromString(xml,'application/xml');
-        if(doc.querySelector('parsererror'))throw Error('Hibás XML. Az export megszakadt.');
-        return doc;
-      };
-      for(let board=0;board<result.bins.length;board++){
-        const bin=result.bins[board],machine=bin.machine;
-        if(!machine?.strips?.length)throw Error('Hiányzó csíkterv a '+(board+1)+'. táblához.');
-        if(machine.strips.some(strip=>strip.items.some(p=>Math.abs(p.breadth-strip.width)>.01)))
-          throw Error('Összetett csíkon belüli további felosztás található a '+(board+1)+'. táblán. Az U/V parancs nincs hitelesítve, erre a tervre nem készülhet még xPrg.');
-        const length=machine.feed==='x'?bin.b:bin.a;
-        const width=machine.feed==='x'?bin.a:bin.b;
-        const lines=[],add=(type,dimension)=>{
-          lines.push('    <Cut T="'+type+'" Dim="'+num(dimension)+
-            '" Rip="1" ID="'+lines.length+'" />');
-        };
-        add('P',length);
-        add('RY',bin.trim);
-        for(const strip of machine.strips){
-          add('Y',strip.width);
-          add('RX',bin.trim);
-          for(const piece of strip.items){add('X',piece.along);add('F',0);}
-        }
-        const xprg='<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+material+
-          '" Spessore="'+num(bin.thickness)+'" Date="'+date+
-          '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
-          '" SpessoreLama="'+num(state.kerf)+'" />\n'+
-          '  <Material Tipologia="" Codice="'+material+'" />\n  <Pattern>\n'+
-          lines.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
-        const doc=checkXml(xprg);
-        if(doc.querySelectorAll('Cut').length!==lines.length)throw Error('Hiányzó Cut.');
-        const file=base+'_'+(board+1)+'.xPrg';names.push(file);
-        files.push(['xPrg/'+file,xprg]);
+      if(!result||result.error||result.failed.length||state.layoutMode!=='machine')
+        throw Error('Előbb készíts teljes gépi csíkos szabástervet.');
+      const bin=selectedBin(),machine=bin?.machine;
+      if(!machine?.strips?.length)throw Error('A kijelölt táblához nincs csíkterv.');
+      if(machine.strips.some(strip=>(strip.items||[]).some(p=>Math.abs(p.breadth-strip.width)>.01)))
+        throw Error('A csíkok között alábontás van. Az U/V XPrg parancsok még nem igazoltak, így itt nem készül fájl.');
+      const proposed=prompt('A gép anyagtörzsében szereplő anyagkód:','');
+      if(proposed===null)return;
+      const code=proposed.trim();
+      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code))
+        throw Error('Írj be egy 2–40 karakteres anyagkódot (betű, szám, pont, kötőjel vagy aláhúzás).');
+      if(!confirm('FIGYELEM: a letöltött .xPrg NEM HITELESÍTETT, csak fájlmegtekintésre vagy offline szimulátorhoz készült. Fizikai szabászgépre NE töltsd! Folytatod?'))return;
+      const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+      const num=n=>Number(n).toFixed(2);
+      const now=new Date(),date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+      const length=machine.feed==='x'?bin.b:bin.a,width=machine.feed==='x'?bin.a:bin.b;
+      const cuts=[],add=(type,value)=>cuts.push('    <Cut T="'+type+'" Dim="'+num(value)+'" Rip="1" ID="'+cuts.length+'" />');
+      add('P',length);add('RY',bin.trim);
+      for(const strip of machine.strips){
+        add('Y',strip.width);add('RX',bin.trim);
+        for(const part of strip.items){add('X',part.along);add('F',0);}
       }
-      const title=xmlEscape(getFurniture()?.name||'Lapterv');
-      const mix='<xMix>\n  <Header Descrizione="'+title+'" Import="" Date="'+date+
-        '" />\n  <Materials><Material Tipologia="" Codice="'+material+
-        '" Quantita="999" /></Materials>\n  <RigheMix>\n'+
-        names.map(name=>'    <RigaMix File=".\\xPrg\\'+name+
-          '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\n')+
-        '\n  </RigheMix>\n</xMix>\n';
-      const mixDoc=checkXml(mix);
-      if(mixDoc.querySelectorAll('RigaMix').length!==names.length)throw Error('Hiányzó RigaMix.');
-      files.unshift([base+'.xMix',mix]);
-      files.push(['GYARTASI_SORREND_ELLENORZES.json',JSON.stringify(result.production,null,2)]);
-      files.push(['FONTOS_CSAK_OFFLINE.txt',
-        'FIGYELEM - KIZAROLAG OFFLINE SZIMULATOR! \r\n'+
-        'Ezek KISERLETI, NEM HITELESITETT xPrg/xMix fajlok. \r\n'+
-        'NE TOLTSD GEPRE, NE INDITS FIZIKAI VAGAST! \r\n'+
-        'A P/RY/Y/RX/X/F jelentese es a vegrehajtasi sorrend nem teljesen igazolt. \r\n'+
-        'A ket egymasra tett csik CSUPAN a gyartasi_sorrend_ellenorzes.json fajlban javaslat. \r\n'+
-        'A gepi programok csak 1 reteget tartalmaznak (Pacco=1, Rip=1). \r\n']);
-      downloadBlob(xlsxZip(files,'application/zip'),base+'_XPRG_XMIX_CSAK_OFFLINE.zip');
-    }catch(error){showNotice(error.message||'Nem sikerült a próbaállományokat előállítani.');}
+      const xml='<?xml version="1.0" encoding="utf-8"?>\n'+
+        '<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+esc(code)+
+        '" Spessore="'+num(bin.thickness)+'" Date="'+date+'" Lunghezza="'+num(length)+
+        '" Larghezza="'+num(width)+'" SpessoreLama="'+num(state.kerf)+'" />\n'+
+        '  <Material Tipologia="" Codice="'+esc(code)+'" />\n  <Pattern>\n'+
+        cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
+      const doc=new DOMParser().parseFromString(xml,'application/xml');
+      if(doc.querySelector('parsererror')||doc.querySelectorAll('Cut').length!==cuts.length)
+        throw Error('Hiba az XPrg fájl létrehozásánál.');
+      const name=(fileName(getFurniture()?.name||state.projectName)||'Lapterv')+
+        '_Tabla_'+String(state.selectedBoard+1).padStart(2,'0')+'_NEM_HITELESITETT.xPrg';
+      download(xml,name,'application/xml;charset=utf-8');
+    }catch(e){showNotice(e.message||'Nem sikerült létrehozni az .xPrg fájlt.');}
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;
@@ -1424,7 +1390,7 @@
     return '<div class="panel top-gap"><div class="panel-head"><div>'+
       '<div class="panel-title">Alkatrészmatricák · '+labels.length+' db</div>'+
       '<div class="panel-sub">Alapív: A4 · 48,5 × 25,4 mm · 44 címke (4 oszlop × 11 sor), a lap szélétől beljebb kezdődik. Balra a kész méret, jobbra az élzárás; a „Hová készül?” és az anyagszín a bútor paramétereiből kerül ide.</div>'+
-      '</div><div class="export-box"><button class="btn sm" data-action="download-labels-png">↓ A4 matricák PNG</button><button class="btn primary" data-action="print-labels">▤ A4 matricák nyomtatása</button></div></div>'+
+      '</div><div class="export-box"><button class="btn sm" data-action="download-labels-png">↓ A4 matricák PNG</button></div></div>'+
       '<div class="panel-body"><div class="toolbar" style="align-items:flex-start">'+
       '<div class="settings" style="flex:1;min-width:260px">'+
       '<div><label>Matrica szélesség (mm)</label><input type="number" min="20" max="190" step="0.1" data-scope="settings" data-key="labelWidth" value="'+h(w)+'"></div>'+
@@ -1546,7 +1512,7 @@
     else if(action==='download-cuts-csv')downloadCutList('csv');
     else if(action==='download-cuts-json')downloadCutList('json');
     else if(action==='download-machine-review')downloadMachineReview();
-    else if(action==='download-machine-simulator')downloadMachineSimulation();
+    else if(action==='download-xprg-review')downloadXprgForReview();
     else if(action==='download-png')downloadBoardImage();
     else if(action==='download-overview')downloadOverview();
   });
