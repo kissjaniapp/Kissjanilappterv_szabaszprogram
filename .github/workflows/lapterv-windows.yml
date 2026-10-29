@@ -1,0 +1,66 @@
+name: Lapterv - Windows telepito automatikus epites
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows-exe:
+    name: Windows 64 bites Lapterv forditas
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Forraskod letoltese
+        uses: actions/checkout@v4
+
+      - name: Go fordito telepitese
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23.x'
+          cache: false
+
+      - name: Node.js tesztkornyezet
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Python ikon beagyazashoz
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Lapterv ellenorzesek
+        run: node --test
+
+      - name: Windows EXE es telepito leforditasa
+        shell: cmd
+        run: call desktop-go\Build-Windows.cmd
+
+      - name: Hordozhato valtozat es ellenorzo hash
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = 'dist/Lapterv_Telepito_0.2.0_x64.exe'
+          if (-not (Test-Path $installer)) { throw 'Nem keszult el a telepito EXE!' }
+          New-Item -ItemType Directory -Force -Path 'dist/portable/app' | Out-Null
+          Copy-Item 'desktop-go/assets/bin/Lapterv.exe' 'dist/portable/Lapterv.exe'
+          Copy-Item 'app/index.htm' 'dist/portable/app/index.htm'
+          Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Lapterv_Portable_0.2.0.zip' -Force
+          $hash = (Get-FileHash -Algorithm SHA256 $installer).Hash
+          "$hash  Lapterv_Telepito_0.2.0_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
+          Write-Host "A telepito merete: $((Get-Item $installer).Length) byte"
+
+      - name: Telepito es hordozhato program letoltheto atadasa
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lapterv-Windows-Telepito-0.2.0
+          path: |
+            dist/Lapterv_Telepito_0.2.0_x64.exe
+            dist/Lapterv_Portable_0.2.0.zip
+            dist/SHA256.txt
+          if-no-files-found: error
+          retention-days: 30
