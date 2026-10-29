@@ -46,8 +46,8 @@ copy /Y assets\bin\Lapterv_Eltavolitas.exe installer\assets\Lapterv_Eltavolitas.
 copy /Y assets\app\index.htm installer\assets\index.htm >nul
 
 echo [3/3] Saját Windows telepito...
-go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\dist\Lapterv_Telepito_0.2.0_x64.exe .\installer
+go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\dist\Lapterv_Telepito_1.0.0_x64.exe .\installer
 if errorlevel 1 exit /b 1
 echo.
-echo Keszen van: dist\Lapterv_Telepito_0.2.0_x64.exe
+echo Keszen van: dist\Lapterv_Telepito_1.0.0_x64.exe
 endlocal
