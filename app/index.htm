@@ -969,7 +969,7 @@
         </div>
       </div>`:'';
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP: táblánként külön .xPrg fájl és egy .xMix, amely mindegyikre hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. Összetett tábláknál külön, nem futtatható geometriai fájlt mentünk. Kétréteges vágást nem kódolunk.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP: táblánként külön .xPrg; a .xMix minden sort a C:\\WinCut\\Prg\\ útvonalon hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button></div></div>`;
     }
@@ -1231,14 +1231,25 @@
     };
     if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
       throw Error('Hibás ellenőrző anyagkód.');
-    const root=(fileName(project)||'Lapterv').slice(0,48);
+    // WinCut fájlnevek: mai dátum + szekrény neve + tábla neve + egyedi táblasorszám.
+    // Az eredeti date argumentum NN/HH/ÉÉÉÉ; az állománynév ÉÉÉÉ_HH_NN.
+    const dateMatch=/^(\d{2})\/(\d{2})\/(\d{4})$/.exec(String(date));
+    if(!dateMatch)throw Error('Érvénytelen exportdátum (NN/HH/ÉÉÉÉ).');
+    const dateStamp=dateMatch[3]+'_'+dateMatch[2]+'_'+dateMatch[1];
+    const safePart=(value,fallback,maxLength=40)=>{
+      const cleaned=(fileName(String(value||''))||'').replace(/^_+|_+$/g,'').slice(0,maxLength);
+      return cleaned||fallback;
+    };
+    const cabinet=safePart(project,'Szekreny',42);
+    const root=dateStamp+'_'+cabinet;
     const names=[],files=[],summary=[];
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
       const length=m.feed==='x'?bin.b:bin.a;
       const width=m.feed==='x'?bin.a:bin.b;
-      const file=root+'_tabla_'+String(i+1).padStart(2,'0')+'_OFFLINE.xPrg';
+      const boardName=safePart(bin.name,'Tabla',30);
+      const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
       names.push(file);
       const complex=m.strips.some(strip=>(strip.items||[]).some(p=>
         !Number.isFinite(p.along)||!Number.isFinite(p.breadth)||
@@ -1277,27 +1288,25 @@
           '  <Material Tipologia="" Codice="'+esc(materialCode)+'" />\n'+
           '  <Pattern>\n'+cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
       }
-      files.push(['xPrg/'+file,xml]);
+      files.push(['WinCut/Prg/'+file,xml]);
       summary.push({tabla:i+1,file,anyag:bin.name,meret:[bin.a,bin.b,bin.thickness],
         stripCount:m.strips.length,complex,executable:false});
     });
-    const namesOfMaterial=[...new Set(bins.flatMap(bin=>bin.machine.strips.flatMap(strip=>
-      (strip.items||[]).map(part=>String(part.item?.materialColor||'').trim()).filter(Boolean))))];
-    const material=namesOfMaterial.join(' / ')||'Nem megadott anyag';
-    const mix='<?xml version="1.0" encoding="utf-8"?>\r\n<xMix>\r\n'+
-      '  <Header Descrizione="'+esc(project)+'" Import="" Date="'+esc(date)+'" />\r\n'+
-      '  <Materials><Material Tipologia="'+esc(material)+'" Codice="'+esc(materialCode)+
-      '" Quantita="999" /></Materials>\r\n'+
-      '  <RigheMix>\r\n'+names.map(file=>
-      '    <RigaMix File=".\\xPrg\\'+esc(file)+
-      '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\r\n')+
-      '\r\n  </RigheMix>\r\n</xMix>\r\n';
+    // A WinCut által elvárt, felhasználó által megadott INI alapú xMix.
+    // A sorok C:\WinCut\Prg\ abszolút Windows útvonalat használnak.
+    const mix='[Intestazione]\r\n'+
+      'Descrizione=\r\n\r\n'+
+      '[Righe]\r\n'+
+      'NumeroRighe='+names.length+'\r\n'+
+      names.map((file,index)=>(index+1)+'=C:\\WinCut\\Prg\\'+file).join('\r\n')+
+      '\r\n';
     const mixName=root+'_OFFLINE.xMix';
     files.unshift([mixName,mix]);
     files.push(['FONTOS_OLVASD_EL.txt',
       'LAPTERV - NEM HITELESITETT XPRG/XMIX ELLENORZO CSOMAG\r\n'+
       'Projekt: '+project+'\r\n'+
-      'A .xMix a csomag xPrg/ almappajaban levo osszes .xPrg fajlra hivatkozik.\r\n'+
+      'A .xMix [Intestazione] / [Righe] szekcioja minden .xPrg fajlt a C:\\WinCut\\Prg\\ helyre hivatkozik.\r\n'+
+      'A ZIP WinCut/Prg mappajanak tartalmat csak ellenorzes utan szabad a megfelelo celhelyre masolni.\r\n'+
       'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
       'Az osszetett, U/V alabontasos tablakat LaptervOfflineReview jeloli: ezek nem gepprogramok.\r\n'+
       'A tobbi tabla SchemaDoc szerkezete is CSAK MINTA. Fizikai gepre NE toltsd fel!\r\n'+
@@ -1305,7 +1314,8 @@
       'A fajlok vizsgalatra es offline elemzesre keszultek, valos vagasi munka nem vegezheto veluk.\r\n']);
     files.push(['ELLENORZO_OSSZESITO.json',JSON.stringify({
       format:'lapterv-xmix-xprg-offline-project-v1',machineExecutable:false,
-      project,boardCount:bins.length,mixFile:mixName,materialCode,boards:summary
+      project,boardCount:bins.length,mixFile:mixName,materialCode,
+      winCutDirectory:'C:\\WinCut\\Prg\\',boards:summary
     },null,2)]);
     return {files,mixName,names,complexBoards:summary.filter(x=>x.complex).length};
   }
