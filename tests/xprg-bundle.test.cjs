@@ -28,15 +28,15 @@ test('a mai dátum, szekrénynév, táblanév és tábla száma szerepel a fájl
   const mix=out.files.find(([n])=>n.endsWith('.xMix'))[1];
   assert.equal(mix,
     '[Intestazione]\r\nDescrizione=\r\n\r\n[Righe]\r\nNumeroRighe=2\r\n'+
-    out.names.map((name,i)=>(i+1)+'=C:\\WinCut\\Prg\\Konyha_szekreny\\'+name).join('\r\n')+'\r\n');
+    out.names.map((name,i)=>(i+1)+'=X:\\JANI\\szabas_programmal\\Konyha_szekreny\\'+name).join('\r\n')+'\r\n');
   assert.equal(out.files.filter(([n])=>n.endsWith('.xPrg')).length,2);
   for(const name of out.names){
-    assert.ok(mix.includes('C:\\WinCut\\Prg\\Konyha_szekreny\\'+name));
+    assert.ok(mix.includes('X:\\JANI\\szabas_programmal\\Konyha_szekreny\\'+name));
     assert.ok(out.files.some(([p])=>p==='Konyha_szekreny/'+name));
   }
   assert.ok(out.files.some(([p])=>p==='Konyha_szekreny/'+out.mixName));
   assert.equal(out.cabinetFolder,'Konyha_szekreny');
-  assert.equal(out.winCutDirectory,'C:\\WinCut\\Prg\\Konyha_szekreny\\');
+  assert.equal(out.winCutDirectory,'X:\\JANI\\szabas_programmal\\Konyha_szekreny\\');
   assert.equal(out.complexBoards,0);
 });
 test('a csomag tetszőleges táblaszámhoz pontos NumeroRighe értéket ír',()=>{
@@ -44,7 +44,7 @@ test('a csomag tetszőleges táblaszámhoz pontos NumeroRighe értéket ír',()=
     const out=generate(Array.from({length:n},()=>base()),'Szekreny','LAPTERV_OFFLINE',5,'29/10/2026');
     const mix=out.files.find(([p])=>p.endsWith('.xMix'))[1];
     assert.match(mix,new RegExp('NumeroRighe='+n+'\\r\\n'));
-    assert.equal((mix.match(/C:\\WinCut\\Prg\\Szekreny\\/g)||[]).length,n);
+    assert.equal((mix.match(/X:\\JANI\\szabas_programmal\\Szekreny\\/g)||[]).length,n);
     assert.equal(new Set(out.names).size,n);
   }
 });
@@ -61,7 +61,7 @@ test('a szekrénynév útvonalat nem szúrhat be az elérési útba',()=>{
   const out=generate([base()],'Konyha / nappali: A&B','LAPTERV_OFFLINE',5,'29/10/2026');
   const mix=out.files.find(([n])=>n.endsWith('.xMix'))[1];
   assert.doesNotMatch(mix,/nappali:|A&B|\\nappali/);
-  assert.match(mix,/^1=C:\\WinCut\\Prg\\Konyha_nappali_A_B\\/m);
+  assert.match(mix,/^1=X:\\JANI\\szabas_programmal\\Konyha_nappali_A_B\\/m);
   assert.equal(JSON.parse(out.files.find(([n])=>n.endsWith('.json'))[1]).boardCount,1);
 });
 
@@ -73,6 +73,6 @@ test('a Mix és a táblánkénti xPrg ugyanabban a ZIP-mappában található',()
   assert.ok(programs.every(([name])=>name.startsWith(expectedFolder+'/')));
   assert.ok(programs.every(([name])=>name.split('/').length===2));
   const mix=programs.find(([name])=>name.endsWith('.xMix'))[1];
-  for(const name of out.names)assert.ok(mix.includes('C:\\WinCut\\Prg\\'+expectedFolder+'\\'+name));
-  assert.doesNotMatch(mix,/C:\\WinCut\\Prg\\(?!Szekreny_konyhaba\\)/);
+  for(const name of out.names)assert.ok(mix.includes('X:\\JANI\\szabas_programmal\\'+expectedFolder+'\\'+name));
+  assert.doesNotMatch(mix,/X:\\JANI\\szabas_programmal\\(?!Szekreny_konyhaba\\)/);
 });
