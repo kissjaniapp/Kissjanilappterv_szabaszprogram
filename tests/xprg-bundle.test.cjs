@@ -28,12 +28,15 @@ test('a mai dátum, szekrénynév, táblanév és tábla száma szerepel a fájl
   const mix=out.files.find(([n])=>n.endsWith('.xMix'))[1];
   assert.equal(mix,
     '[Intestazione]\r\nDescrizione=\r\n\r\n[Righe]\r\nNumeroRighe=2\r\n'+
-    out.names.map((name,i)=>(i+1)+'=C:\\WinCut\\Prg\\'+name).join('\r\n')+'\r\n');
+    out.names.map((name,i)=>(i+1)+'=C:\\WinCut\\Prg\\Konyha_szekreny\\'+name).join('\r\n')+'\r\n');
   assert.equal(out.files.filter(([n])=>n.endsWith('.xPrg')).length,2);
   for(const name of out.names){
-    assert.ok(mix.includes('C:\\WinCut\\Prg\\'+name));
-    assert.ok(out.files.some(([p])=>p==='WinCut/Prg/'+name));
+    assert.ok(mix.includes('C:\\WinCut\\Prg\\Konyha_szekreny\\'+name));
+    assert.ok(out.files.some(([p])=>p==='Konyha_szekreny/'+name));
   }
+  assert.ok(out.files.some(([p])=>p==='Konyha_szekreny/'+out.mixName));
+  assert.equal(out.cabinetFolder,'Konyha_szekreny');
+  assert.equal(out.winCutDirectory,'C:\\WinCut\\Prg\\Konyha_szekreny\\');
   assert.equal(out.complexBoards,0);
 });
 test('a csomag tetszőleges táblaszámhoz pontos NumeroRighe értéket ír',()=>{
@@ -41,14 +44,14 @@ test('a csomag tetszőleges táblaszámhoz pontos NumeroRighe értéket ír',()=
     const out=generate(Array.from({length:n},()=>base()),'Szekreny','LAPTERV_OFFLINE',5,'29/10/2026');
     const mix=out.files.find(([p])=>p.endsWith('.xMix'))[1];
     assert.match(mix,new RegExp('NumeroRighe='+n+'\\r\\n'));
-    assert.equal((mix.match(/C:\\WinCut\\Prg\\/g)||[]).length,n);
+    assert.equal((mix.match(/C:\\WinCut\\Prg\\Szekreny\\/g)||[]).length,n);
     assert.equal(new Set(out.names).size,n);
   }
 });
 test('összetett táblát nem ad ki hitelesített gépi SchemaDoc-ként',()=>{
   const out=generate([base(),base(true)],'Konyha','LAPTERV_OFFLINE',5,'29/10/2026');
   assert.equal(out.complexBoards,1);
-  const xml=out.files.find(([p])=>p==='WinCut/Prg/'+out.names[1])[1];
+  const xml=out.files.find(([p])=>p==='Konyha/'+out.names[1])[1];
   assert.match(xml,/<LaptervOfflineReview MachineExecutable="false"/);
   assert.doesNotMatch(xml,/<SchemaDoc>/);
   assert.match(out.files.find(([n])=>n.endsWith('.xMix'))[1],/\[Righe\]/);
@@ -58,6 +61,18 @@ test('a szekrénynév útvonalat nem szúrhat be az elérési útba',()=>{
   const out=generate([base()],'Konyha / nappali: A&B','LAPTERV_OFFLINE',5,'29/10/2026');
   const mix=out.files.find(([n])=>n.endsWith('.xMix'))[1];
   assert.doesNotMatch(mix,/nappali:|A&B|\\nappali/);
-  assert.match(mix,/^1=C:\\WinCut\\Prg\\/m);
+  assert.match(mix,/^1=C:\\WinCut\\Prg\\Konyha_nappali_A_B\\/m);
   assert.equal(JSON.parse(out.files.find(([n])=>n.endsWith('.json'))[1]).boardCount,1);
+});
+
+test('a Mix és a táblánkénti xPrg ugyanabban a ZIP-mappában található',()=>{
+  const out=generate([base(),base(),base(true)],'Szekrény konyhába','LAPTERV_OFFLINE',5,'29/10/2026');
+  const expectedFolder='Szekreny_konyhaba';
+  const programs=out.files.filter(([name])=>name.endsWith('.xPrg')||name.endsWith('.xMix'));
+  assert.equal(programs.length,4);
+  assert.ok(programs.every(([name])=>name.startsWith(expectedFolder+'/')));
+  assert.ok(programs.every(([name])=>name.split('/').length===2));
+  const mix=programs.find(([name])=>name.endsWith('.xMix'))[1];
+  for(const name of out.names)assert.ok(mix.includes('C:\\WinCut\\Prg\\'+expectedFolder+'\\'+name));
+  assert.doesNotMatch(mix,/C:\\WinCut\\Prg\\(?!Szekreny_konyhaba\\)/);
 });
