@@ -1,4 +1,4 @@
-// Lapterv per-user offline Windows installer (first trial release).
+// Lapterv per-user offline Windows installer (desktop release).
 // It installs only under LOCALAPPDATA, does not require administrator rights,
 // and doesn't upload any data. Bundled Lapterv.exe launches the local HTML UI.
 package main
@@ -18,7 +18,7 @@ import (
 //go:embed assets/Lapterv.exe assets/Lapterv_Eltavolitas.exe assets/index.htm
 var payload embed.FS
 
-const version = "0.2.0"
+const version = "1.0.0"
 
 func message(body string, typ uintptr) uintptr {
  t, _ := syscall.UTF16PtrFromString("Lapterv " + version + " – Windows telepítő")
@@ -81,7 +81,7 @@ func install(root string)error {
  if e:=shortcuts(target);e!=nil{return fmt.Errorf("a program települt, de a parancsikonok nem készültek el: %w",e)}
  registry:=[]struct{k,v string}{
   {"DisplayName","Lapterv"},{"DisplayVersion",version},
-  {"Publisher","Lapterv – saját próbaverzió"},
+  {"Publisher","Lapterv"},
   {"InstallLocation",root},
   {"DisplayIcon",target},
   {"UninstallString",`"`+filepath.Join(root,"Lapterv_Eltavolitas.exe")+`"`},
@@ -95,10 +95,10 @@ func main(){
  if local==""{ message("A LOCALAPPDATA mappa nem érhető el. A telepítés nem indítható.",0x10);return }
  root:=filepath.Join(local,"Programs","Lapterv")
  if strings.Contains(root,"\x00") {message("Érvénytelen telepítési útvonal.",0x10);return}
- prompt:="Telepítem a Lapterv első Windowsos próbaverzióját?\n\n"+
+ prompt:="Telepítem a Lapterv Windows-alkalmazást?\n\n"+
   "Telepítési hely:\n"+root+"\n\n"+
   "A program telepített Microsoft Edge vagy Google Chrome segítségével fut, internet nélkül.\n"+
-  "Nem tartalmaz hitelesített .xPrg gépi exportot."
+  "Az .xPrg export kizárólag offline ellenőrzési minta, nem gépi végrehajtásra hitelesített."
  if message(prompt,0x24)!=6{return}
  if e:=install(root);e!=nil {
   var pe *os.PathError
