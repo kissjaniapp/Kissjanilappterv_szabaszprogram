@@ -1,4 +1,4 @@
-# Lapterv 1.0.7 – Windowsos szabásztervező
+# Lapterv 1.0.8 – Windowsos szabásztervező
 
 Ez a **működő Lapterv program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
@@ -6,7 +6,7 @@ https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Lapterv.exe` indítóval és
-`Lapterv_Telepito_1.0.7_x64.exe` telepítővel. Offline fut. A teljes
+`Lapterv_Telepito_1.0.8_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -14,7 +14,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Lapterv - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Lapterv-Windows-Telepito-1.0.7` nevű **Artifacts** csomagban.
+a `Lapterv-Windows-Telepito-1.0.8` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Lapterv.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
 A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Lapterv ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
@@ -33,7 +33,7 @@ A böngészőmotor ezen belül tartja a `localStorage` adatokat:
 
 A telepítő programfájljai a
 `%LOCALAPPDATA%\Programs\Lapterv` mappában vannak.
-Az **1.0.7-os telepítő automatikusan frissít**: felismeri a meglévő Laptervet,
+Az **1.0.8-os telepítő automatikusan frissít**: felismeri a meglévő Laptervet,
 a saját böngészőprofiljával futó programablakokat bezárja, új programfájlokat
 előre elkészíti, majd a korábbi telepítést lecseréli. Sikertelen fájlcsere esetén
 megpróbálja visszaállítani a régi programfájlokat. **Nem kell kézzel eltávolítani**
