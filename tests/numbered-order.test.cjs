@@ -60,7 +60,7 @@ test('a gyártási sorrend nem adja ki magát hitelesített xPrg programnak',()=
   const out=schedule([sampleBoard().bin]);
   assert.equal(out.machineExecutable,false);
   assert.equal(out.maxSuggestedStack,2);
-  assert.match(out.note,/nem ellenőrzött|NEM ellenőrzött/i);
+  assert.match(out.note,/nem ellenőrzött|nem hitelesített/i);
 });
 
 test('két tábla esetén mindkét rajz sorszámai 1–36 és külön ciklust alkotnak',()=>{
