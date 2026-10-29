@@ -34,6 +34,10 @@ if errorlevel 1 exit /b 1
 python ..\tools\embed_win_icon.py ..\Lapterv.ico installer\rsrc_windows_amd64.syso
 if errorlevel 1 exit /b 1
 
+echo [ikon] Lapterv ablak favicon beetese...
+python ..\tools\prepare_app_icon.py ..\Lapterv.ico assets\app\index.htm
+if errorlevel 1 exit /b 1
+
 echo [1/3] Lapterv alkalmazas...
 go build -trimpath -ldflags="-s -w -H=windowsgui" -o assets\bin\Lapterv.exe .\launcher
 if errorlevel 1 exit /b 1
