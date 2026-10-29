@@ -1075,20 +1075,20 @@
       '<fonts count="3"><font><sz val="10"/><color rgb="FF263B30"/><name val="Calibri"/></font>'+
       '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
       '<font><b/><sz val="15"/><color rgb="FF214834"/><name val="Calibri"/></font></fonts>'+
-      '<fills count="3"><fill><patternFill patternType="none"/></fill>'+
+      '<fills count="4"><fill><patternFill patternType="none"/></fill>'+      '<fill><patternFill patternType="gray125"/></fill>'+
       '<fill><patternFill patternType="solid"><fgColor rgb="FF214834"/></patternFill></fill>'+
       '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F6F2"/></patternFill></fill></fills>'+
       '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'+
       '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
       '<cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'+
-      '<xf numFmtId="0" fontId="1" fillId="1" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
       '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf>'+
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
       '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
-      '<xf numFmtId="164" fontId="0" fillId="2" borderId="0" applyNumberFormat="1" applyFill="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
+      '<xf numFmtId="164" fontId="0" fillId="3" borderId="0" applyNumberFormat="1" applyFill="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
       '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="center" vertical="center"/></xf>'+
-      '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>';
+      '<xf numFmtId="0" fontId="0" fillId="3" borderId="0" applyFill="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>';
     return xlsxZip([
       ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
         '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
@@ -1111,11 +1111,36 @@
       ['xl/worksheets/sheet1.xml',sheet],['xl/styles.xml',styles]
     ]);
   }
-  function downloadPartsXlsx(){
+  // Az Edge/Chrome Windows-alkalmazásablakában közvetlen Mentés másként ablakot nyitunk.
+  // A régi, sokszor észrevétlen böngészős letöltés csak tartalék módszer.
+  async function saveFileToDisk(blob,filename,extension,mime){
+    if(typeof window.showSaveFilePicker==='function'){
+      try{
+        const handle=await window.showSaveFilePicker({
+          suggestedName:filename,
+          types:[{description:extension.toUpperCase()+' fájl',accept:{[mime]:[extension]}}]
+        });
+        const writable=await handle.createWritable();
+        try{await writable.write(blob);}finally{await writable.close();}
+        return true;
+      }catch(err){
+        if(err?.name==='AbortError')return false;
+        console.warn('A fájlmentési ablak nem érhető el, letöltéssel próbálkozunk.',err);
+      }
+    }
+    downloadBlob(blob,filename);
+    return true;
+  }
+  async function downloadPartsXlsx(){
     try{
       const blob=partsWorkbook(),name=getFurniture()?.name||state.projectName||'Lapterv';
-      downloadBlob(blob,(fileName(name)||'Lapterv')+'_alkatreszek.xlsx');
-    }catch(err){showNotice(err.message||'Nem sikerült elkészíteni az Excel-fájlt.');}
+      const file=(fileName(name)||'Lapterv')+'_alkatreszek.xlsx';
+      const ok=await saveFileToDisk(blob,file,'.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      if(ok)console.info('Excel alkatrészlista mentés kezdeményezve:',file);
+    }catch(err){
+      showNotice('Az Excel-fájl nem készült el: '+(err?.message||'ismeretlen mentési hiba'));
+    }
   }
   function selectedBin(){return result && !result.error?result.bins[state.selectedBoard]:null;}
   function fileName(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').slice(0,70);}
