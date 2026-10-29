@@ -969,7 +969,7 @@
         </div>
       </div>`:'';
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg fájl megtekintése</div><div class="panel-sub">A kijelölt tábla XPrg mintája közvetlenül letölthető, ZIP nélkül.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A formátum kísérleti. A két rétegben történő vágás még nincs a gépi fájlban.</span><button class="btn primary" data-action="download-xprg-review" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Kijelölt tábla .xPrg</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP: táblánként külön .xPrg fájl és egy .xMix, amely mindegyikre hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. Összetett tábláknál külön, nem futtatható geometriai fájlt mentünk. Kétréteges vágást nem kódolunk.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button></div></div>`;
     }
@@ -1219,44 +1219,113 @@
   }
   // Kísérleti XML-állományok az eredeti XPrg/XMix minták megfigyelt alakjában.
   // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
-  // Kizárólag megtekintésre/offline szimulációra; nem hitelesített gépi XPrg.
-  function downloadXprgForReview(){
-    try{
-      if(!result||result.error||result.failed.length||state.layoutMode!=='machine')
-        throw Error('Előbb készíts teljes gépi csíkos szabástervet.');
-      const bin=selectedBin(),machine=bin?.machine;
-      if(!machine?.strips?.length)throw Error('A kijelölt táblához nincs csíkterv.');
-      if(machine.strips.some(strip=>(strip.items||[]).some(p=>Math.abs(p.breadth-strip.width)>.01)))
-        throw Error('A csíkok között alábontás van. Az U/V XPrg parancsok még nem igazoltak, így itt nem készül fájl.');
-      const proposed=prompt('A gép anyagtörzsében szereplő anyagkód:','');
-      if(proposed===null)return;
-      const code=proposed.trim();
-      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code))
-        throw Error('Írj be egy 2–40 karakteres anyagkódot (betű, szám, pont, kötőjel vagy aláhúzás).');
-      if(!confirm('FIGYELEM: a letöltött .xPrg NEM HITELESÍTETT, csak fájlmegtekintésre vagy offline szimulátorhoz készült. Fizikai szabászgépre NE töltsd! Folytatod?'))return;
-      const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
-      const num=n=>Number(n).toFixed(2);
-      const now=new Date(),date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
-      const length=machine.feed==='x'?bin.b:bin.a,width=machine.feed==='x'?bin.a:bin.b;
-      const cuts=[],add=(type,value)=>cuts.push('    <Cut T="'+type+'" Dim="'+num(value)+'" Rip="1" ID="'+cuts.length+'" />');
+  // Egy projekt = egy .xMix + táblánként egy .xPrg ugyanabban a ZIP-ben.
+  // A formátumot csak a kapott minták támasztják alá, a gépi futtatás NINCS igazolva.
+  function buildOfflineXprgProject(bins,project,materialCode,kerf,date){
+    if(!Array.isArray(bins)||!bins.length)throw Error('Nincsenek táblák a gépi csomaghoz.');
+    const esc=t=>String(t??'').replace(/[&<>"']/g,
+      c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+    const num=n=>{
+      if(!Number.isFinite(Number(n)))throw Error('Hibás méret az .xPrg adatban.');
+      return Number(n).toFixed(2);
+    };
+    if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
+      throw Error('Hibás ellenőrző anyagkód.');
+    const root=(fileName(project)||'Lapterv').slice(0,48);
+    const names=[],files=[],summary=[];
+    bins.forEach((bin,i)=>{
+      const m=bin.machine;
+      if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
+      const length=m.feed==='x'?bin.b:bin.a;
+      const width=m.feed==='x'?bin.a:bin.b;
+      const file=root+'_tabla_'+String(i+1).padStart(2,'0')+'_OFFLINE.xPrg';
+      names.push(file);
+      const complex=m.strips.some(strip=>(strip.items||[]).some(p=>
+        !Number.isFinite(p.along)||!Number.isFinite(p.breadth)||
+        Math.abs(p.breadth-strip.width)>.01));
+      const cuts=[],add=(type,val)=>cuts.push('    <Cut T="'+type+'" Dim="'+num(val)+
+        '" Rip="1" ID="'+cuts.length+'" />');
       add('P',length);add('RY',bin.trim);
-      for(const strip of machine.strips){
+      for(const strip of m.strips){
         add('Y',strip.width);add('RX',bin.trim);
-        for(const part of strip.items){add('X',part.along);add('F',0);}
+        for(const part of strip.items||[]){add('X',part.along);add('F',0);}
       }
-      const xml='<?xml version="1.0" encoding="utf-8"?>\n'+
-        '<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+esc(code)+
-        '" Spessore="'+num(bin.thickness)+'" Date="'+date+'" Lunghezza="'+num(length)+
-        '" Larghezza="'+num(width)+'" SpessoreLama="'+num(state.kerf)+'" />\n'+
-        '  <Material Tipologia="" Codice="'+esc(code)+'" />\n  <Pattern>\n'+
-        cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
-      const doc=new DOMParser().parseFromString(xml,'application/xml');
-      if(doc.querySelector('parsererror')||doc.querySelectorAll('Cut').length!==cuts.length)
-        throw Error('Hiba az XPrg fájl létrehozásánál.');
-      const name=(fileName(getFurniture()?.name||state.projectName)||'Lapterv')+
-        '_Tabla_'+String(state.selectedBoard+1).padStart(2,'0')+'_NEM_HITELESITETT.xPrg';
-      download(xml,name,'application/xml;charset=utf-8');
-    }catch(e){showNotice(e.message||'Nem sikerült létrehozni az .xPrg fájlt.');}
+      const boardParts=m.strips.map(strip=>
+        '    <Strip Index="'+strip.index+'" Width="'+num(strip.width)+'">'+
+        (strip.items||[]).map(piece=>
+          '<Part Name="'+esc(piece.item?.name||'')+'" Length="'+num(piece.along)+
+          '" Width="'+num(piece.breadth)+'" />').join('')+'</Strip>').join('\n');
+      let xml;
+      if(complex){
+        // Az U/V alábontást nem találjuk ki: a fájl szándékosan NEM SchemaDoc,
+        // így a gép nem fogadhatja el kész vágóprogramként.
+        xml='<?xml version="1.0" encoding="utf-8"?>\n'+
+          '<LaptervOfflineReview MachineExecutable="false" Board="'+(i+1)+'">\n'+
+          '  <Warning>Ez a tabla U/V alabontast igenyel. Nem hitelesitett XPrg, csak ellenorzo geometria.</Warning>\n'+
+          '  <Board Length="'+num(length)+'" Width="'+num(width)+'" Thickness="'+num(bin.thickness)+
+          '" Kerf="'+num(kerf)+'" Trim="'+num(bin.trim)+'" />\n'+
+          '  <Strips>\n'+boardParts+'\n  </Strips>\n'+
+          '  <KnownCommandsForComparison>\n'+cuts.join('\n')+
+          '\n  </KnownCommandsForComparison>\n</LaptervOfflineReview>\n';
+      }else{
+        xml='<?xml version="1.0" encoding="utf-8"?>\n'+
+          '<!-- LAPTERV OFFLINE MINTA: NEM HITELESITETT GEPI PROGRAM; TILOS GEPEN FUTTATNI -->\n'+
+          '<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+esc(materialCode)+
+          '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
+          '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
+          '" SpessoreLama="'+num(kerf)+'" />\n'+
+          '  <Material Tipologia="" Codice="'+esc(materialCode)+'" />\n'+
+          '  <Pattern>\n'+cuts.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
+      }
+      files.push(['xPrg/'+file,xml]);
+      summary.push({tabla:i+1,file,anyag:bin.name,meret:[bin.a,bin.b,bin.thickness],
+        stripCount:m.strips.length,complex,executable:false});
+    });
+    const namesOfMaterial=[...new Set(bins.flatMap(bin=>bin.machine.strips.flatMap(strip=>
+      (strip.items||[]).map(part=>String(part.item?.materialColor||'').trim()).filter(Boolean)))];
+    const material=namesOfMaterial.join(' / ')||'Nem megadott anyag';
+    const mix='<?xml version="1.0" encoding="utf-8"?>\r\n<xMix>\r\n'+
+      '  <Header Descrizione="'+esc(project)+'" Import="" Date="'+esc(date)+'" />\r\n'+
+      '  <Materials><Material Tipologia="'+esc(material)+'" Codice="'+esc(materialCode)+
+      '" Quantita="999" /></Materials>\r\n'+
+      '  <RigheMix>\r\n'+names.map(file=>
+      '    <RigaMix File=".\\xPrg\\'+esc(file)+
+      '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\r\n')+
+      '\r\n  </RigheMix>\r\n</xMix>\r\n';
+    const mixName=root+'_OFFLINE.xMix';
+    files.unshift([mixName,mix]);
+    files.push(['FONTOS_OLVASD_EL.txt',
+      'LAPTERV - NEM HITELESITETT XPRG/XMIX ELLENORZO CSOMAG\r\n'+
+      'Projekt: '+project+'\r\n'+
+      'A .xMix a csomag xPrg/ almappajaban levo osszes .xPrg fajlra hivatkozik.\r\n'+
+      'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
+      'Az osszetett, U/V alabontasos tablakat LaptervOfflineReview jeloli: ezek nem gepprogramok.\r\n'+
+      'A tobbi tabla SchemaDoc szerkezete is CSAK MINTA. Fizikai gepre NE toltsd fel!\r\n'+
+      'Ket retegu vagas: nincs kodolva. Rip=1, Pacco=1.\r\n'+
+      'A fajlok vizsgalatra es offline elemzesre keszultek, valos vagasi munka nem vegezheto veluk.\r\n']);
+    files.push(['ELLENORZO_OSSZESITO.json',JSON.stringify({
+      format:'lapterv-xmix-xprg-offline-project-v1',machineExecutable:false,
+      project,boardCount:bins.length,mixFile:mixName,materialCode,boards:summary
+    },null,2)]);
+    return {files,mixName,names,complexBoards:summary.filter(x=>x.complex).length};
+  }
+  async function downloadXprgProject(){
+    try{
+      if(!result||result.error||state.layoutMode!=='machine'||!result.bins?.length)
+        throw Error('Előbb készíts gépi csíkos nestinget.');
+      if(result.failed?.length)
+        throw Error('Van ki nem táblásított alkatrész. Előbb javítsd a nestinget a teljes projekt mentéséhez.');
+      const now=new Date();
+      const date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+      const project=String(getFurniture()?.name||state.projectName||'Lapterv').trim()||'Lapterv';
+      // Valódi gépi anyagkód nélkül szándékosan csak ellenőrző azonosítóval mentünk.
+      const bundle=buildOfflineXprgProject(result.bins,project,'LAPTERV_OFFLINE',
+        Number(state.kerf),date);
+      const zip=xlsxZip(bundle.files,'application/zip');
+      const name=(fileName(project)||'Lapterv')+'_XPRG_XMIX_OFFLINE.zip';
+      const ok=await saveFileToDisk(zip,name,'.zip','application/zip');
+      if(ok)console.info('XPrg/XMix projektcsomag mentés kezdeményezve:',bundle.names.length,'tábla.');
+    }catch(err){showNotice('Gépi ellenőrző csomag: '+(err?.message||'a mentés nem sikerült'));}
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;
@@ -1545,7 +1614,7 @@
     else if(action==='download-cuts-csv')downloadCutList('csv');
     else if(action==='download-cuts-json')downloadCutList('json');
     else if(action==='download-machine-review')downloadMachineReview();
-    else if(action==='download-xprg-review')downloadXprgForReview();
+    else if(action==='download-xprg-project')downloadXprgProject();
     else if(action==='download-png')downloadBoardImage();
     else if(action==='download-overview')downloadOverview();
   });
