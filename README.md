@@ -16,6 +16,7 @@ Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Lapterv - Windows telepito automatikus epites` folyamatból tölthető le,
 a `Lapterv-Windows-Telepito-1.0.4` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Lapterv.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
+A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Lapterv ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
 ## Indítás, helyi mentés és korábbi bútorok
 
@@ -45,8 +46,7 @@ adott projekt kifejezetten törölhető.
 - Anyagkészlet / maradék táblák
 - Gépi csíkos nesting és táblánként 1-től kezdődő vágásszámozás
 - **PNG** szabásrajz és A4 matrica
-- **Excel (.xlsx)** – felül anyag és hová készül, alatta alkatrész neve, készméretek,
-  darabszám és élzárás
+- **Alkatrészlista PNG** – a bútor adatlapjáról és a nesting képernyőről menthető. Felül az anyag neve és a gyártási hely, alatta az alkatrészek megnevezése, készmérete, darabszáma és pontos élzárása; nagy listáknál 100 soronként új PNG-oldalt készít.
 - **.xMix + táblánként .xPrg** – egyetlen ellenőrző ZIP, benne a teljes projekt
   és a `.xMix` minden táblára mutató WinCut elérési útjával.
 
