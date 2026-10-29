@@ -5,17 +5,25 @@ const path=require('node:path');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const html=readFileSync(path.join(__dirname,'..','app','index.htm'),'utf8');
-test('a meglévő Lapterv és gépi ellenőrző export a helyén van',()=>{
+test('a Lapterv és a grafikus táblaelrendezés megmaradt',()=>{
   assert.match(html,/function computeNesting\(/);
-  assert.match(html,/function cutExportData\(/);
-  assert.match(html,/data-action="download-machine-review"/);
-  assert.match(html,/function downloadMachineReview\(/);
-  assert.match(html,/NEM xMix és NEM xPrg/);
+  assert.match(html,/function svgBoard\(/);
+  assert.match(html,/function orderedLabels\(/);
+  assert.match(html,/function partsWorkbook\(/);
 });
-test('működő xPrg-t nem hirdet a felület',()=>{
-  assert.doesNotMatch(html,/data-action="download-xprg"/);
+test('a kezdőoldal a helyben elmentett bútorok listája',()=>{
+  assert.match(html,/let projectScreen='library'/);
+  assert.match(html,/function projectLibraryView\(/);
+  assert.match(html,/function openSavedProject\(/);
+  assert.match(html,/data-action="create-project"/);
 });
-
+test('csak PNG, Excel és ellenőrzési xPrg mentés látható',()=>{
+  assert.match(html,/data-action="download-xprg-review"/);
+  assert.match(html,/data-action="download-png"/);
+  assert.match(html,/data-action="download-parts-xlsx"/);
+  assert.doesNotMatch(html,/data-action="download-svg"/);
+  assert.doesNotMatch(html,/data-action="download-machine-simulator"/);
+});
 test('beágyazott Lapterv JavaScript hibátlanul fordítható',()=>{
   const m=html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(m,'Nem található beágyazott szkript');
