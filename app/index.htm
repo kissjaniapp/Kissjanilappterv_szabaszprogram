@@ -807,8 +807,14 @@
     for(const axis of axes)for(const mode of modes){
       const trial=machineMode?makeStripPlan(mode,parts,axis):makePlan(mode,parts,axis);
       const cuts=trial.bins.flatMap(b=>b.cuts);
+      // Azonos táblaszámnál is a kompaktabb csíkfoglalást részesítjük
+      // előnyben: az egyben maradó üres sáv más alkatrészeket is fogadhat.
+      const machineStripArea=machineMode?trial.bins.reduce((sum,bin)=>
+        sum+(bin.machine?.strips||[]).reduce((area,strip)=>
+          area+strip.width*bin.machine.crossSize,0),0):0;
       const score=trial.failed.length*1e18+trial.sheetArea*1e5+
-        trial.bins.length*1e7+cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01;
+        trial.bins.length*1e7+machineStripArea*.025+
+        cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01;
       if(!best||score<best.score){best={...trial,score,cutAxis:axis};}
     }
     if(machineMode&&best&&!best.error)best.production=buildProductionSequence(best.bins);
