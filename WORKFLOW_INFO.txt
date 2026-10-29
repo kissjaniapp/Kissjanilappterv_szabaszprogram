@@ -1,0 +1,1 @@
+A GitHub Actions .github/workflows/lapterv-native.yml fájlt közvetlenül a GitHub repository gyökerében hoztuk létre. A natív projekt mappáját csak egyben kell feltölteni.

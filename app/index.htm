@@ -1,0 +1,1503 @@
+<!doctype html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#17392f">
+  <meta name="description" content="Bútorszériák, képletes alkatrészjegyzék, anyagkészlet és szálirányos nesting egy helyen.">
+  <title>Lapterv — Bútoralkatrész és nesting tervező</title>
+  <style>
+    :root { --pine:#17392f; --pine2:#245144; --leaf:#dcece4; --orange:#c86b42; --orange-pale:#fff0e7; --ink:#23322c; --muted:#77837b; --line:#e4e9e4; --bg:#f5f7f4; --white:#fff; --shadow:0 5px 20px rgba(28,54,40,.045); --radius:17px; }
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input,select{width:100%;background:#fff;border:1px solid #dbe3dc;border-radius:9px;padding:10px 11px;min-width:0;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}input:focus,select:focus{border-color:#5d987e;box-shadow:0 0 0 3px #deeee5}input[type=number]{font-variant-numeric:tabular-nums}input[type=checkbox]{accent-color:var(--pine2);width:16px;height:16px;box-shadow:none}label{display:block;font-size:12px;font-weight:700;color:#596a60;margin-bottom:7px}h1,h2,h3,p{margin-top:0}h1{font-size:29px;letter-spacing:-.9px;line-height:1.2;margin-bottom:8px}h2{font-size:19px;letter-spacing:-.45px;margin-bottom:6px}h3{font-size:15px;margin-bottom:5px}p{line-height:1.55}.muted{color:var(--muted)}.tiny{font-size:11px}.small{font-size:12px}.num{font-variant-numeric:tabular-nums}.app{min-height:100vh;display:grid;grid-template-columns:254px minmax(0,1fr)}.sidebar{background:var(--pine);color:#eaf4ed;padding:28px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;min-height:680px}.brand{display:flex;align-items:center;gap:11px;padding:1px 13px 33px}.brand-logo{height:37px;width:37px;border-radius:10px;background:#e5efe8;color:var(--pine);display:grid;place-items:center;font-size:20px;font-weight:900}.brand-name{font-size:20px;font-weight:800;letter-spacing:-1px}.brand-sub{font-size:10px;letter-spacing:1.7px;color:#8eafa0;margin-top:2px}.side-title{color:#89a99b;font-size:10px;letter-spacing:1.5px;font-weight:800;padding:0 14px;margin-bottom:14px}.navbtn{background:transparent;border:0;width:100%;text-align:left;color:#bed2c7;padding:13px 13px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:650;margin-bottom:5px}.navbtn:hover{background:#25483c;color:white}.navbtn.active{background:#e3f0e8;color:var(--pine);box-shadow:0 2px 10px #0d2e251b}.navicon{width:23px;text-align:center;font-size:17px}.sidebar-foot{margin-top:auto;padding:17px 14px 8px;border-top:1px solid #3d5d50;color:#a8c2b4}.sidebar-foot strong{display:block;color:#e6f2eb;margin-bottom:5px}.sidebar-foot .tiny{line-height:1.5}.side-foot-actions{display:flex;gap:7px;margin-top:16px}.side-foot-actions button{flex:1;background:#295446;border:1px solid #43695b;color:#e9f5ee;border-radius:9px;padding:9px 5px;font-size:11px;font-weight:700}.side-foot-actions button:hover{background:#3b6556}.main{min-width:0;padding:0 39px 70px;max-width:1740px;width:100%;margin:auto}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:20px}.crumb{display:flex;align-items:center;gap:10px;color:#839087;font-size:12px}.crumb b{color:#3f594a}.status{display:flex;align-items:center;gap:8px;color:#638273;font-size:12px}.dot{height:7px;width:7px;border-radius:100%;background:#4a9c71}.avatar{width:34px;height:34px;border-radius:50%;background:#dfebe4;color:#385945;display:grid;place-items:center;font-weight:800;margin-left:10px}.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:32px 0 24px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.7px;color:var(--orange);margin-bottom:9px}.intro p{color:var(--muted);margin:0;max-width:730px}.actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.btn{border-radius:10px;padding:11px 15px;border:1px solid #dce5df;background:#fff;color:#355046;display:inline-flex;justify-content:center;align-items:center;gap:8px;font-weight:750;white-space:nowrap;box-shadow:0 1px 2px #1b43321a}.btn:hover{background:#f8fbf8;border-color:#afc6b8}.btn.primary{color:#fff;background:var(--pine);border-color:var(--pine)}.btn.primary:hover{background:#245244}.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}.btn.orange:hover{background:#b65b35}.btn.soft{background:#edf5ef;border-color:#e5eee8}.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}.btn.danger{color:#ad4e44}.btn.sm{font-size:12px;padding:8px 11px}.btn.icon{padding:8px;width:34px;height:34px}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}.step{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #e2e9e3;background:#fff;border-radius:13px;padding:14px 16px;min-width:0}.step.active{border-color:#9abdaa;background:#edf6ef}.step:hover{border-color:#8fb8a2}.step-number{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#e9efe9;color:#577563;font-size:13px;font-weight:850}.step.active .step-number{background:var(--pine);color:white}.step-name{font-weight:800;font-size:13px}.step-sub{font-size:11px;color:var(--muted);margin-top:3px}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}.panel-head{padding:21px 23px;border-bottom:1px solid #eef1ed;display:flex;justify-content:space-between;align-items:center;gap:13px}.panel-body{padding:22px 23px}.panel-title{font-weight:800;font-size:16px;letter-spacing:-.3px}.panel-sub{font-size:12px;color:var(--muted);margin-top:5px}.two-col{display:grid;grid-template-columns:minmax(325px, .78fr) minmax(0,1.22fr);gap:18px}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px}.field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.field-hint{font-size:11px;color:#94a198;margin-top:5px}.input-unit{position:relative}.input-unit input{padding-right:38px}.input-unit span{position:absolute;right:12px;top:10px;color:#91a096;font-size:12px;pointer-events:none}.furniture-select{display:flex;gap:8px;align-items:center;margin-bottom:18px}.furniture-select select{flex:1;font-weight:700}.mini-info{display:flex;align-items:center;gap:8px;margin-top:18px;padding:10px 12px;background:#f2f7f2;border-radius:10px;color:#587364;font-size:12px}.cabinet-visual{margin:20px 0 0;padding:12px;background:linear-gradient(145deg,#fafcf8,#f0f4f0);border:1px solid #edf0ec;border-radius:13px}.cabinet-visual svg{display:block;margin:auto;max-width:100%;height:auto}.table-wrap{overflow-x:auto;min-width:0}table{width:100%;border-collapse:collapse;text-align:left}th{color:#809086;background:#f8faf8;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.65px;white-space:nowrap}td,th{border-bottom:1px solid #edf0ed;padding:11px 10px;vertical-align:middle}td:first-child,th:first-child{padding-left:18px}td:last-child,th:last-child{padding-right:18px}tbody tr:hover{background:#fbfcfa}tbody tr:last-child td{border-bottom:0}td input{padding:8px 9px;font-size:12px}td .expr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;width:104px;min-width:92px}td .part-name{min-width:132px;width:100%}.td-val{font-weight:800;white-space:nowrap;font-size:12px}.td-val.err{color:#b4493d}.check-cell{text-align:center}.check-cell input{cursor:pointer}.pill{display:inline-flex;align-items:center;border-radius:20px;background:#e9f5ed;color:#3a7755;padding:5px 9px;font-size:11px;font-weight:800}.pill.warn{background:#fff0e7;color:#aa603a}.pill.gray{background:#edf1ed;color:#66806e}.formula-bar{background:#f8faf7;padding:14px 20px;font-size:12px;color:#69796c;border-top:1px solid #edf1ec;line-height:1.65}.formula-bar code{background:#e9f0e9;border-radius:5px;color:#33594b;padding:3px 5px;margin-right:3px}.section-bottom{margin-top:18px;display:flex;justify-content:space-between;align-items:center;gap:15px;flex-wrap:wrap}.callout{background:#fff6ef;border:1px solid #f2e0d1;border-radius:12px;padding:13px 15px;font-size:12px;color:#91603e;line-height:1.55}.statrow{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin-bottom:18px}.stat{padding:18px 20px;background:#fff;border:1px solid var(--line);border-radius:14px}.stat .label{color:#7a8980;font-size:11px;font-weight:750;margin-bottom:8px}.stat .value{font-size:24px;line-height:1.15;font-weight:850;letter-spacing:-1px}.stat .detail{margin-top:7px;font-size:11px;color:#92a198}.stock-line{display:grid;grid-template-columns:1.4fr 1fr 1fr .7fr 40px;gap:10px;align-items:end;margin-bottom:12px}.stock-line .unit{margin-bottom:0}.stock-list{display:grid;gap:12px}.stock-card{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;padding:16px;border:1px solid var(--line);border-radius:12px}.stock-preview{height:72px;width:101px;background:repeating-linear-gradient(90deg,#e5ddcf,#e5ddcf 6px,#e8e0d3 6px,#e8e0d3 12px);border:2px solid #ad9f88;display:grid;place-items:center;color:#534f42;font-size:11px;text-align:center}.stock-preview small{font-size:9px}.stock-form{display:grid;grid-template-columns:minmax(110px,2fr) repeat(3,minmax(78px,1fr));gap:10px}.stock-card .remove{align-self:center}.toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}.settings{display:flex;align-items:center;gap:16px;flex-wrap:wrap}.settings .input-unit{width:118px}.settings label{margin-bottom:5px}.empty{padding:65px 25px;text-align:center;color:var(--muted)}.empty-icon{width:60px;height:60px;border-radius:17px;background:#eef4ee;display:grid;place-items:center;font-size:29px;margin:0 auto 18px}.empty h3{color:var(--ink)}.result-top{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:15px;align-items:center}.board-tabs{display:flex;gap:8px;overflow-x:auto;padding:0 0 3px}.board-tab{border:1px solid #dfe7e1;background:#fff;border-radius:9px;padding:10px 13px;white-space:nowrap;color:#5b7062;font-size:12px;font-weight:750}.board-tab.active{background:var(--pine);border-color:var(--pine);color:#fff}.drawing-area{background:#f8faf8;border-radius:12px;border:1px solid #edf1ed;padding:18px;overflow:auto}.drawing-area svg{max-width:100%;width:100%;height:auto;display:block}.legend{display:flex;gap:17px;flex-wrap:wrap;color:#7b897e;font-size:11px;align-items:center}.legend span{display:flex;gap:6px;align-items:center}.legend i{display:inline-block;height:11px;width:11px;border-radius:2px;background:#d8e8dc;border:1px solid #88ad95}.legend i.trim{background:#eae3d9;border-color:#d2c2ad}.legend i.grain{background:#d6e8dc;border:0}.export-box{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.notice{border-radius:10px;padding:12px 14px;line-height:1.5;color:#935d38;background:#fff5e7;font-size:12px}.notice.error{background:#fff0ef;color:#ae5147}.notice.success{background:#edf7f0;color:#417856}.part-summary{font-size:12px;color:#7b8b7e}.tip{font-size:11px;color:#95a49a}.footer{margin-top:25px;color:#96a59a;font-size:11px;line-height:1.6;text-align:center}.hidden{display:none!important}.select-detail{font-size:11px;color:#9baa9f;margin:12px 2px 0}.tag{font-size:11px;font-weight:800;background:#eaf4eb;color:#3f7154;padding:5px 8px;border-radius:6px;white-space:nowrap}.top-gap{margin-top:18px}.mobile-nav{display:none}.display-board{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:17px}.board-meta{padding:16px;border:1px solid #e8ede8;border-radius:12px;background:white}.board-meta .rowmeta{display:flex;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #eff1ed;font-size:12px}.board-meta .rowmeta:last-child{border:0}.board-meta .rowmeta b{font-variant-numeric:tabular-nums}.board-contents{margin-top:15px;max-height:280px;overflow:auto}.board-contents div{font-size:11px;padding:7px 0;border-bottom:1px solid #eef1ee;color:#6d7c70}.board-contents strong{color:#344b3d}.res-card{border:1px solid #e5ebe5;border-radius:14px;padding:15px;background:#fff;margin-bottom:12px}.res-card strong{display:block;margin-bottom:5px}.header-note{font-size:12px;color:#83958a;margin-top:6px}.inline-err{background:#fff0ef;border-radius:5px;color:#b6504b;padding:3px 5px;font-size:10px;display:block;margin-top:5px}.file-input{display:none}
+    .two-col{grid-template-columns:minmax(0,1fr)}
+    .two-col>.panel:first-child .panel-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(220px,.8fr);gap:16px;align-items:start}
+    .two-col>.panel:first-child .furniture-select{grid-column:1;margin-bottom:0}
+    .two-col>.panel:first-child .furniture-name{grid-column:2;margin-bottom:0!important}
+    .two-col>.panel.single-furniture:first-child .furniture-name{grid-column:1/3}
+    .two-col>.panel:first-child .field-grid{grid-column:1/3;grid-row:2;grid-template-columns:repeat(3,minmax(0,1fr))}
+    .two-col>.panel:first-child .job-info{grid-column:1/3;grid-row:3;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .two-col>.panel:first-child .cabinet-visual{grid-column:3;grid-row:1/4;margin:0}
+    .two-col>.panel:first-child .mini-info{grid-column:1/-1;margin-top:0}
+    .stock-form{grid-template-columns:minmax(110px,2fr) repeat(4,minmax(76px,1fr))}
+    .edge-grid{display:grid;grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,auto);grid-auto-flow:column;gap:5px;min-width:114px;padding:3px 0}
+    .edge-tick{display:flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;margin:0;background:#f5f9f5;border:1px solid #e3ece3;border-radius:6px;padding:5px 3px;color:#587163;font-size:10px;white-space:nowrap}
+    .edge-tick input{margin:0;flex:0 0 auto}
+    .edge-tick:has(input:checked){background:#e4f2e8;border-color:#aacdb5;color:#285c40}
+    .edge-count{font-size:10px;text-align:center;color:#668372;font-weight:700;margin-top:3px}
+    .edge-thickness{min-width:92px;width:100px}
+    @media(max-width:1180px){.main{padding:0 23px 50px}.app{grid-template-columns:216px minmax(0,1fr)}.sidebar{padding:24px 11px}.two-col{grid-template-columns:minmax(0,1fr)}.two-col>.panel:first-child .panel-body{display:block}.two-col>.panel:first-child .furniture-select{margin-bottom:18px}.two-col>.panel:first-child .furniture-name{margin-bottom:15px!important}.two-col>.panel:first-child .field-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col>.panel:first-child .mini-info{margin-top:18px}.two-col>.panel:first-child .job-info{margin-top:15px}.cabinet-visual{display:none}.stock-form{grid-template-columns:minmax(120px,2fr) repeat(3,minmax(70px,1fr))}}
+    @media(max-width:760px){.app{display:block}.sidebar{position:fixed;z-index:50;bottom:0;top:auto;left:0;right:0;height:auto;min-height:0;padding:7px 8px calc(7px + env(safe-area-inset-bottom));display:block;border-top:1px solid #2d5345}.brand,.side-title,.sidebar-foot{display:none}.side-links{display:flex;justify-content:space-around}.navbtn{margin:0;padding:8px 5px;border-radius:9px;flex-direction:column;gap:3px;text-align:center;font-size:10px;width:33.333%}.navicon{font-size:18px}.main{padding:0 14px 95px}.topbar{height:61px}.intro{padding:26px 0 19px;display:block}.intro .actions{margin-top:17px}.intro h1{font-size:25px}.steps{gap:7px;margin-bottom:15px}.step{padding:10px 7px;gap:5px;flex-direction:column;align-items:flex-start}.step-number{width:25px;height:25px;flex-basis:25px;font-size:11px}.step-name{font-size:10px}.step-sub{display:none}.panel-head{padding:16px}.panel-body{padding:17px}.field-grid.three{grid-template-columns:repeat(2,1fr)}.statrow{grid-template-columns:repeat(2,1fr)}.stat{padding:14px}.stat .value{font-size:21px}.stock-card{gap:9px;grid-template-columns:1fr auto}.stock-preview{display:none}.stock-form{grid-template-columns:repeat(3,minmax(0,1fr))}.stock-form .unit:first-child{grid-column:1 / -1}.stock-card .remove{align-self:start}.display-board{grid-template-columns:1fr}.board-meta{order:-1}.result-top{grid-template-columns:1fr}.footer{margin-bottom:15px}table{min-width:900px}}
+    /* Egysoros felső munkafolyamat: nincs oldalsáv, a három lépés mindig elérhető. */
+    .app{display:block}
+    .main{max-width:1660px;padding:0 30px 70px}
+    .topbar{min-height:80px;height:auto;padding:12px 0}
+    .topbar .brand{display:flex;align-items:center;gap:11px;padding:0}
+    .topbar .brand-logo{background:#e2f0e8;color:var(--pine)}
+    .topbar .brand-name{color:var(--pine)}
+    .topbar .brand-sub{color:#698d79}
+    .top-actions{display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+    /* Bútoradatok felül, az alkatrésztábla csak a továbblépés után, teljes szélességben. */
+    .two-col{grid-template-columns:minmax(0,1fr)}
+    .furniture-next{grid-column:1/-1;display:flex;justify-content:flex-end;align-items:center;gap:14px;flex-wrap:wrap}
+    .furniture-next .muted{max-width:480px}
+    #top-steps{position:sticky;top:0;z-index:35;background:var(--bg);padding:10px 0 12px;border-bottom:1px solid var(--line)}
+    .label-preview{padding:12px;border:1px solid var(--line);background:#f6f7f4;border-radius:12px;max-width:350px;overflow:auto;flex-shrink:0}
+    .label-preview svg{display:block;max-width:100%;height:auto;background:white}
+    .label-sheet-preview{padding:12px;border:1px solid var(--line);background:#f6f7f4;border-radius:12px;max-width:260px;flex-shrink:0}
+    .label-sheet-preview svg{display:block;width:100%;max-width:220px;height:auto;margin:auto;background:white;box-shadow:0 2px 8px #263c3020}
+    /* A rajz mindig a megjelenítésre jutó helyhez igazodik: nem nyúlik túl és nem nő óriásira. */
+    .drawing-area{height:clamp(360px,65vh,730px);display:flex;align-items:center;justify-content:center}
+    .drawing-area svg{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
+    #top-steps .steps{margin:0}
+    .intro{padding-top:25px}
+    @media(max-width:760px){.main{padding:0 13px 45px}.topbar{min-height:64px}.topbar .brand-name{font-size:17px}.topbar .brand-logo{width:30px;height:30px}.top-actions .status{display:none}.top-actions .btn{padding:7px 8px;font-size:11px}#top-steps{padding:8px 0}.step{min-height:55px}.intro{padding-top:17px}.drawing-area{height:clamp(310px,56vh,560px);padding:10px}.two-col>.panel:first-child .job-info{grid-template-columns:minmax(0,1fr)}}
+    @media print{#top-steps{display:none!important}}
+    @media print{.sidebar,.topbar,.steps,.intro .actions,.btn,.footer,.board-tabs,.board-meta,.export-box{display:none!important}.main{padding:0;width:100%}.drawing-area{border:0;padding:0}.display-board{display:block}.panel{border:0;box-shadow:none}.panel-body,.panel-head{padding:10px}body{background:white}.intro{padding:5px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <main class="main">
+    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">lapterv<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • NESTING</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Helyben mentve</span><button class="btn sm" data-action="import-json">↑ Meglévő projekt betöltése</button></div></header>
+    <nav id="top-steps" aria-label="Munkafolyamat lépései"></nav>
+    <div id="content"></div>
+    <div class="footer">Lapterv · Első, helyben futó prototípus · Az optimalizálás heurisztikus, a szabástervet gyártás előtt ellenőrizd.</div>
+  </main>
+</div>
+<input class="file-input" type="file" id="import-input" accept="application/json,.json">
+<script>
+(() => {
+  'use strict';
+  const $ = sel => document.querySelector(sel);
+  const h = val => String(val ?? '').replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  const uuid = () => (globalThis.crypto?.randomUUID?.() || 'id'+Date.now()+Math.random().toString(36).slice(2));
+  const nfmt = value => Number(value).toLocaleString('hu-HU',{maximumFractionDigits:1});
+  const pnum = value => Number(String(value).replace(',','.'));
+  const paneNames = {furniture:'Bútorok',stock:'Anyagkészlet',nesting:'Nesting'};
+  const defaultState = () => ({
+    projectName:'Új bútorprojekt',
+    active:'furniture',
+    selectedFurniture:null,
+    furnitures:[],
+    boards:[],
+    kerf:5,trim:10,cutDirection:'auto',layoutMode:'machine',selectedBoard:0,
+    labelWidth:48.5,labelHeight:25.4,labelMarginX:8,labelMarginY:8.8,labelFormatV2:true
+  });
+  const parse = str => { try { return JSON.parse(str); } catch { return null; } };
+  // Négy fizikai él: a két X-szálirányú és a két Y-keresztirányú oldal.
+  function sidesFromCode(code){
+    const m=String(code||'0-0').match(/^([012])-([012])$/);
+    const x=m?Number(m[1]):0,y=m?Number(m[2]):0;
+    return {x1:x>=1,x2:x===2,y1:y>=1,y2:y===2};
+  }
+  function codeFromSides(s){
+    return `${Number(!!s.x1)+Number(!!s.x2)}-${Number(!!s.y1)+Number(!!s.y2)}`;
+  }
+  let loaded=null;
+  try { loaded=parse(localStorage.getItem('lapterv-project-v2')); } catch { /* Egyes file:// böngészők letilthatják a tárhelyet. */ }
+  const state = loaded && Array.isArray(loaded.furnitures) && Array.isArray(loaded.boards) ? loaded : defaultState();
+  // A korábbi prototípus 3,2 mm-es alapértékét egyszer migráljuk 5 mm-re.
+  if(loaded && state.kerf===3.2 && !state.kerfDefaultMigrated){state.kerf=5;state.kerfDefaultMigrated=true;}
+  function normalizeEdgeSettings(furnitures){
+    for(const f of furnitures){
+      if(!Array.isArray(f.parts))continue;
+      for(const part of f.parts){
+        // A régi 1 mm-es alapértéket a két választható élzáró közül 2 mm-re állítjuk.
+        if(![2,0.4].includes(Number(part.edgeThickness)))part.edgeThickness=2;
+        if(!part.edgeSides)part.edgeSides=sidesFromCode(part.edge);
+        // Korábbi „Forg.” jelölésből visszaállítjuk a szálirányhoz kötöttséget.
+        if(part.grainRequired==null)part.grainRequired=!part.rot;
+        // A régebbi, beállított marásértéket meghagyjuk, ha létezik.
+        if(part.mill==null)part.mill=Number(part.edgeThickness)===2;
+        part.mill=Number(part.edgeThickness)===2&&!!part.mill;
+      }
+    }
+  }
+  function normalizeFurnitureMeta(furnitures,project){
+    // Régebbi projektben a célhely és az anyag a közös matricabeállításban volt.
+    // Egyetlen alkalommal átvezetjük ezeket a bútorok saját adataihoz.
+    for(const f of furnitures){
+      if(f.destination==null)f.destination=String(project.labelCompany||'');
+      if(f.materialColor==null)f.materialColor=String(project.labelMaterial||'');
+    }
+  }
+  function normalizeFurnitureSizes(furnitures){
+    // A korábban üresen hagyott külső méretek is használható alapértéket kapnak.
+    for(const f of furnitures){
+      for(const [key,value] of [['w',1000],['ht',910],['d',600]]){
+        if(f[key]==null||String(f[key]).trim()==='')f[key]=value;
+      }
+    }
+  }
+  function normalizeLabelSettings(project){
+    // A régi alapértelmezett 70 × 40 mm-t egyszer átállítjuk az új 44-es A4 címkére.
+    // Ha valaki eltérő egyedi méretet adott meg, azt megőrizzük.
+    if(!project.labelFormatV2){
+      if(Number(project.labelWidth??70)===70&&Number(project.labelHeight??40)===40){
+        project.labelWidth=48.5;project.labelHeight=25.4;
+      }
+      project.labelFormatV2=true;
+    }
+    if(project.labelMarginX==null)project.labelMarginX=8;
+    if(project.labelMarginY==null)project.labelMarginY=8.8;
+  }
+  normalizeEdgeSettings(state.furnitures);
+  normalizeFurnitureMeta(state.furnitures,state);
+  normalizeFurnitureSizes(state.furnitures);
+  normalizeLabelSettings(state);
+  if(!['machine','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
+  if (!paneNames[state.active]) state.active = 'furniture';
+  if (!state.selectedFurniture || !state.furnitures.some(f=>f.id===state.selectedFurniture)) state.selectedFurniture=state.furnitures[0]?.id || null;
+  let result=null;
+  let notice='';
+  function save(){try{localStorage.setItem('lapterv-project-v2',JSON.stringify(state));}catch{}}
+  function showNotice(s){notice=s;render();}
+  function getFurniture(){return state.furnitures.find(f=>f.id===state.selectedFurniture) || state.furnitures[0];}
+  function numField(scope,id,key,val,min=0,max=99999){return `<div class="unit"><label>${h(key)}</label><div class="input-unit"><input type="number" data-scope="${scope}" data-id="${id}" data-key="${val[0]}" value="${h(val[1])}" min="${min}" max="${max}" step="1"><span>mm</span></div></div>`;}
+
+  // Expression parser: only numbers, W H D T S, + - * / and parentheses are accepted.
+  function calc(formula,vars){
+    const src=String(formula ?? '').replace(/,/g,'.').replace(/\s+/g,'').toUpperCase();
+    const tokens=src.match(/(?:\d+(?:\.\d*)?|\.\d+)|[WHDTS]|[()+\-*/]/g) || [];
+    if (!src || tokens.join('')!==src) throw Error('Érvénytelen képlet');
+    let i=0;
+    function atom(){
+      const t=tokens[i++];
+      if(t==='+' || t==='-')return (t==='-'?-1:1)*atom();
+      if(t==='('){const v=expr();if(tokens[i++]!==')')throw Error('Hiányzó zárójel');return v;}
+      if(t in vars)return vars[t];
+      if(t && /^(?:\d|\.)/.test(t))return Number(t);
+      throw Error('Hibás képlet');
+    }
+    function term(){let v=atom();while(tokens[i]==='*'||tokens[i]==='/'){const op=tokens[i++],x=atom();v=op==='*'?v*x:v/x;}return v;}
+    function expr(){let v=term();while(tokens[i]==='+'||tokens[i]==='-'){const op=tokens[i++],x=term();v=op==='+'?v+x:v-x;}return v;}
+    const value=expr();if(i!==tokens.length || !Number.isFinite(value))throw Error('Hibás képlet');return value;
+  }
+  function getParts(){
+    let rows=[],errors=[];
+    for(const f of state.furnitures){
+      const thickness=Number(f.t)||18;
+      const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:+f.s};
+      for(const part of f.parts){
+        if(!String(part.name||'').trim()||!String(part.a||'').trim()||!String(part.b||'').trim()||!String(part.q||'').trim()){
+          rows.push({furniture:f,part,skipped:true,qty:0});
+          continue;
+        }
+        try{
+          const originalA=calc(part.a,vars),originalB=calc(part.b,vars),q=calc(part.q,vars),qty=q*Number(f.qty);
+          const edge=String(part.edge||'0-0').trim().replace(/\s+/g,'');
+          const match=edge.match(/^([012])-([012])$/);
+          if(!match)throw Error('Az élzárás formátuma 0-0, 1-0, 0-1, 2-0, 0-2 vagy 2-2 lehet');
+          const edgeThickness=part.edgeThickness==null||part.edgeThickness===''?2:pnum(part.edgeThickness);
+          if(![2,0.4].includes(edgeThickness))throw Error('Csak 2 vagy 0,4 mm-es élzáró választható');
+          // A 0,4 mm-es élzárónál marást soha nem számolunk.
+          const mill=edgeThickness===2&&!!part.mill;
+          const netEdge=edgeThickness-(mill?1:0);
+          // X-szálirány menti él(ek) a keresztirányú B méretet csökkentik.
+          // Y-keresztirány menti él(ek) a szálirányú A méretet csökkentik.
+          // 1 mm-es előmarás esetén a felragasztott él vastagságából 1 mm-t kompenzálunk.
+          const a=originalA-Number(match[2])*netEdge;
+          const b=originalB-Number(match[1])*netEdge;
+          if(!(a>0&&b>0&&originalA<=10000&&originalB<=10000&&q>=0&&Number.isInteger(q)&&Number.isInteger(qty)&&qty>=0&&qty<=300)) throw Error('Érvénytelen méret/darabszám');
+          const canRotate=part.grainRequired===false||(part.grainRequired==null&&!!part.rot);
+          rows.push({furniture:f,part,a:Math.round(a*10)/10,b:Math.round(b*10)/10,originalA,originalB,edge,edgeThickness,mill,thickness,q,qty,rot:canRotate,grainRequired:!canRotate});
+        }catch(e){errors.push(`${f.name} / ${part.name}: ${e.message}`);rows.push({furniture:f,part,error:e.message,qty:0});}
+      }
+    }
+    return {rows,errors,total:rows.reduce((s,r)=>s+r.qty,0),area:rows.reduce((s,r)=>s+(r.a||0)*(r.b||0)*r.qty,0)};
+  }
+  function intro(eyebrow,title,desc,actions=''){
+    return `<section class="intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></section>`;
+  }
+  function steps(){return `<div class="steps">${[['furniture','01','Bútorok megadása','Méret és alkatrész'],['stock','02','Anyagkészlet','Egész és maradék táblák'],['nesting','03','Nesting terv','Kihozatal és letöltés']].map(([id,num,title,sub])=>`<button class="step ${state.active===id?'active':''}" data-action="page" data-page="${id}"><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;}
+  function renderNav(){ $('#top-steps').innerHTML=steps(); }
+  function cabinet(f){
+    if(!f)return '';
+    if(!f.w||!f.ht||!f.d)return '<div class="mini-info">A szemléltető rajz a külméretek megadása után jelenik meg.</div>';
+    const shelves=Math.max(0,Math.min(6,+f.s||0));
+    return `<div class="cabinet-visual"><svg viewBox="0 0 450 205" role="img" aria-label="Szemléltető szekrényábra, külméretekkel"><defs><linearGradient id="wood" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#e7ddd0"/><stop offset="1" stop-color="#d5c5ae"/></linearGradient></defs><path d="M124 28 L290 28 340 7 173 7 Z" fill="#d4c3aa" stroke="#998b76" stroke-width="1.4"/><path d="M290 28 L340 7 340 166 290 187Z" fill="#c8b89f" stroke="#998b76" stroke-width="1.4"/><rect x="124" y="28" width="166" height="159" fill="url(#wood)" stroke="#998b76" stroke-width="1.5"/><rect x="137" y="41" width="140" height="133" fill="#f9f8f1" stroke="#a18e74" stroke-width="1.6"/>${Array.from({length:shelves},(_,i)=>`<rect x="137" y="${41+133*(i+1)/(shelves+1)}" width="140" height="6" fill="#d0bea2" stroke="#9e8b71" stroke-width=".7"/>`).join('')}<path d="M120 194H292 M120 190V198 M292 190V198 M107 26V187 M103 26H111 M103 187H111 M296 191L348 169 M295 187L297 195 M345 165L351 172" fill="none" stroke="#9cac9f" stroke-width="1.4"/><text x="206" y="203" text-anchor="middle" font-size="12" font-weight="700" fill="#42634d">${h(f.w)} mm</text><text x="96" y="110" transform="rotate(-90 96 110)" text-anchor="middle" font-size="12" font-weight="700" fill="#42634d">${h(f.ht)} mm</text><text x="359" y="185" font-size="12" font-weight="700" fill="#42634d">${h(f.d)} mm</text><text x="18" y="30" font-size="10" fill="#9caaa0">SÉMÁS ÁBRA</text></svg></div>`;
+  }
+  function furnitureView(){
+    const f=getFurniture(),summary=getParts();
+    const actions=f?`<button class="btn" data-action="new-furniture">＋ Új bútor / széria</button>`:'';
+    const left=f?`<div class="panel ${state.furnitures.length===1?'single-furniture':''}">
+      <div class="panel-head"><div><div class="panel-title">Bútor paraméterei</div>
+      <div class="panel-sub">Külméretek, rendeltetési hely és anyagszín minden bútornál külön.</div></div><div class="export-box"><span class="tag">mm</span><button class="btn icon ghost danger" title="Bútor törlése" data-action="remove-furniture" data-id="${f.id}">✕</button></div></div>
+      <div class="panel-body">
+        ${state.furnitures.length>1?`<div class="furniture-select"><select aria-label="Bútor kiválasztása" data-scope="ui" data-key="selectedFurniture">${state.furnitures.map(x=>`<option value="${h(x.id)}" ${x.id===f.id?'selected':''}>${h(x.name||'Új bútor')}</option>`).join('')}</select></div>`:''}
+        <div class="furniture-name"><label>Bútor megnevezése</label><input data-scope="furniture" data-key="name" data-id="${f.id}" value="${h(f.name)}"></div>
+        <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)'],['t','Lapvastagság (T)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
+          <div><label>Hány ilyen bútor készül?</label><input type="number" min="1" max="300" step="1" data-scope="furniture" data-id="${f.id}" data-key="qty" value="${h(f.qty)}"></div>
+        </div>
+        <div class="job-info">
+          <div><label>Hová készül? / Megrendelő</label><input aria-label="Hová készül" data-scope="furniture" data-id="${f.id}" data-key="destination" value="${h(f.destination||'')}"><div class="field-hint">A matrica legfelső sorába kerül.</div></div>
+          <div><label>Anyag színe / dekorja</label><input aria-label="Anyag színe" data-scope="furniture" data-id="${f.id}" data-key="materialColor" value="${h(f.materialColor||'')}"><div class="field-hint">A matricán az anyag megnevezéseként jelenik meg.</div></div>
+        </div>
+        ${cabinet(f)}
+        <div class="mini-info">↗ A képletek a külméretekkel változnak; a célhely és az anyagszín a matricára kerül.</div>
+        ${f.partsOpen===false?`<div class="furniture-next"><span class="muted small">Add meg a bútor nevét és ellenőrizd a méreteket, majd lépj tovább.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>`:''}
+      </div>
+    </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
+    const rows=f?f.parts.map(part=>{
+      const r=summary.rows.find(r=>r.part===part);
+      const computed=r.skipped?`<span class="pill gray">Hiányos · kimarad</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.a)} × ${nfmt(r.b)}</span><div class="tiny muted">${nfmt(r.qty)} db · vágási méret${r.edge!=='0-0'?' · élzárva':''}${r.mill&&r.edge!=='0-0'?' · marva 1 mm':''}</div>`;
+      return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td><input class="expr" aria-label="Első méret szálirányban" data-scope="part" data-id="${part.id}" data-key="a" value="${h(part.a)}"></td><td><input class="expr" aria-label="Második méret keresztirányban" data-scope="part" data-id="${part.id}" data-key="b" value="${h(part.b)}"></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td>${computed}</td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
+    }).join(''):'';
+    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szál kötelező</th><th>Vágási méret</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="10" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képletek:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szál kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num">${nfmt(summary.total)} db</strong><div class="part-summary">${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
+    return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"><button class="btn sm" data-action="export-json">↓ Projekt mentése</button></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
+  }
+  function stockView(){
+    const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
+    return intro('02 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Alkatrészigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szál kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
+  }
+
+  // Guillotine cutting: every cut spans the entire CURRENT separated rectangle.
+  // Free regions never overlap. A cut is recorded when its child regions are made,
+  // so its sequence always precedes cuts within those child regions.
+  function guillotinePlace(bin,choice,kerf){
+    const {freeIndex,part,realW:a,realH:b,turned,axis,xSide,ySide}=choice;
+    const original=bin.free[freeIndex],next=[],eps=.0001;
+    // Minden új leválasztott darab saját azonosítót kap. A további vágás már
+    // csak ezen a résztáblán történhet, nem vághat bele egy másik alkatrészbe.
+    function split(region,direction,partSize,keepSide){
+      const length=direction==='y'?region.w:region.h;
+      if(length-partSize<eps)return {piece:region};
+      const before=keepSide==='start'?partSize:length-partSize-kerf;
+      const after=length-before-kerf;
+      const aRegion={...region,id:'S'+bin.nextSection++};
+      const bRegion={...region,id:'S'+bin.nextSection++};
+      if(direction==='y'){
+        aRegion.w=before;
+        bRegion.x=region.x+before+kerf;bRegion.w=after;
+      }else{
+        aRegion.h=before;
+        bRegion.y=region.y+before+kerf;bRegion.h=after;
+      }
+      const cutCenter=before+kerf/2;
+      const pos=(direction==='y'?region.x:region.y)+cutCenter;
+      const cut=direction==='y'?
+        {x1:pos,y1:region.y,x2:pos,y2:region.y+region.h,length:region.h}:
+        {x1:region.x,y1:pos,x2:region.x+region.w,y2:pos,length:region.w};
+      bin.cuts.push({...cut,order:bin.cuts.length+1,axis:direction,
+        section:region.id,sectionX:region.x,sectionY:region.y,sectionW:region.w,sectionH:region.h,
+        offset:cutCenter,fromEdge:before,kerf,partSide:keepSide,
+        pieceSize:partSize,beforeSection:aRegion.id,afterSection:bRegion.id,
+        beforeSize:before,afterSize:after});
+      return keepSide==='start'?{piece:aRegion,rest:bRegion}:{piece:bRegion,rest:aRegion};
+    }
+    const first=axis==='y'?['y',a,xSide]:['x',b,ySide];
+    const second=axis==='y'?['x',b,ySide]:['y',a,xSide];
+    const s1=split(original,...first);
+    if(s1.rest&&s1.rest.w>eps&&s1.rest.h>eps)next.push(s1.rest);
+    const s2=split(s1.piece,...second);
+    if(s2.rest&&s2.rest.w>eps&&s2.rest.h>eps)next.push(s2.rest);
+    bin.free.splice(freeIndex,1,...next);
+    const f=s2.piece;
+    bin.placements.push({x:f.x,y:f.y,w:a,h:b,part,turned,realW:a,realH:b,section:f.id});
+    bin.used+=part.a*part.b;
+  }
+  const STANDARD_BOARD={a:2800,b:2070,thickness:18};
+  const MIN_BOARD_EXTRA=5;
+  function createBin(b,index,automatic=false){
+    const trim=Math.max(0,Number(state.trim)||0);
+    const a=Number(b.a),height=Number(b.b),thickness=Number(b.thickness??18);
+    if(!Number.isFinite(a)||!Number.isFinite(height)||!Number.isFinite(thickness)||a<=2*trim||height<=2*trim||thickness<=0)return null;
+    return {id:b.id||'standard',index,name:b.name||'Maradék tábla',a,b:height,thickness,automatic,trim,
+      free:[{id:'S1',x:trim,y:trim,w:a-2*trim,h:height-2*trim}],nextSection:2,placements:[],cuts:[],used:0};
+  }
+  function prepareBins(){
+    const bins=[];
+    for(const b of state.boards){
+      for(let i=0;i<Math.max(0,Math.min(100,Number(b.qty)||0));i++){
+        const bin=createBin(b,i+1);
+        if(bin)bins.push(bin);
+      }
+    }
+    return bins;
+  }
+  function bestPlacement(item,candidates,kerf,firstAxis,variant,corner,upcoming=[]){
+    let best=null;
+    for(const bin of candidates){
+      if(Math.abs(bin.thickness-item.thickness)>.001)continue;
+      const orientations=[{a:item.a,b:item.b,turned:false}];
+      if(item.rot&&item.a!==item.b)orientations.push({a:item.b,b:item.a,turned:true});
+      for(const o of orientations){
+        // Az anyag TÉNYLEGES külmérete legalább 5 mm-rel nagyobb legyen mindkét irányban.
+        if(bin.a+1e-5<o.a+MIN_BOARD_EXTRA||bin.b+1e-5<o.b+MIN_BOARD_EXTRA)continue;
+        for(let freeIndex=0;freeIndex<bin.free.length;freeIndex++){
+          const free=bin.free[freeIndex];
+          const needsX=free.w>o.a+.0001,needsY=free.h>o.b+.0001;
+          const w=o.a+(needsX?kerf:0),height=o.b+(needsY?kerf:0);
+          if(w>free.w+.0001||height>free.h+.0001)continue;
+          // A tábla első vágásának tengelye kötött, a leválasztott részeken
+          // viszont a mozaikos keresés X/Y irányban külön is folytatható.
+          const axes=!bin.cuts.length||variant===0?[firstAxis]:['x','y'];
+          for(const axis of axes){
+            const remW=Math.max(0,free.w-w),remH=Math.max(0,free.h-height);
+            const fragments=axis==='y'?
+              [{w:remW,h:free.h},{w:o.a,h:remH}]:
+              [{w:free.w,h:remH},{w:remW,h:o.b}];
+            const open=fragments.filter(r=>r.w>.0001&&r.h>.0001);
+            const remainderArea=open.reduce((s,r)=>s+r.w*r.h,0);
+            let local=(free.w*free.h-o.a*o.b)*.0005+Math.min(remW,remH);
+            if(variant===1)local-=Math.max(0,...open.map(r=>r.w*r.h))*.0015;
+            if(variant===2){
+              let fit=0;
+              for(const next of upcoming.slice(0,8)){
+                if(Math.abs(next.thickness-bin.thickness)>.001)continue;
+                if(open.some(r=>(r.w>=next.a&&r.h>=next.b)||
+                   (next.rot&&r.w>=next.b&&r.h>=next.a)))fit+=Math.sqrt(next.a*next.b);
+              }
+              local-=fit*10;
+            }
+            if(variant===3){
+              local+=open.reduce((s,r)=>s+(Math.min(r.w,r.h)<180?r.w*r.h*.002:0),0);
+              local+=remainderArea*.0002;
+            }
+            // Meglévő kisebb maradék előnyben; azonos táblán négy lehetséges sarok.
+            const score=bin.a*bin.b*100000+(bin.placements.length?0:10000)+local;
+            if(!best||score<best.score)best={bin,score,choice:{
+              freeIndex,part:item,turned:o.turned,realW:o.a,realH:o.b,
+              axis,xSide:corner.x,ySide:corner.y}};
+          }
+        }
+      }
+    }
+    return best;
+  }
+  function makePlan(mode,parts,axis){
+    const kerf=Math.max(0,+state.kerf||0);
+    const bins=prepareBins(),standardBins=[];
+    const corners=[
+      {x:'start',y:'start'},{x:'end',y:'start'},
+      {x:'start',y:'end'},{x:'end',y:'end'}
+    ];
+    const corner=corners[Math.floor(mode/24)%4],variant=Math.floor(mode/6)%4;
+    const items=[];
+    for(const r of parts.rows){
+      if(r.error)continue;
+      for(let i=0;i<r.qty;i++)items.push({name:r.part.name,source:r.furniture.name,
+        destination:r.furniture.destination||'',materialColor:r.furniture.materialColor||'',a:r.a,b:r.b,
+        originalA:r.originalA,originalB:r.originalB,edge:r.edge,edgeThickness:r.edgeThickness,mill:r.mill,
+        thickness:r.thickness,rot:r.rot,number:i+1,uid:r.part.id});
+    }
+    const sorters=[(a,b)=>b.a*b.b-a.a*a.b || Math.max(b.a,b.b)-Math.max(a.a,a.b),
+      (a,b)=>Math.max(b.a,b.b)-Math.max(a.a,a.b)||b.a*b.b-a.a*a.b,
+      (a,b)=>b.a-a.a || b.b-a.b,(a,b)=>b.b-a.b||b.a-a.a,
+      (a,b)=>b.a+b.b-a.a-a.b||b.a*b.b-a.a*a.b,
+      (a,b)=>Math.abs(b.a-b.b)-Math.abs(a.a-a.b)||b.a*b.b-a.a*a.b];
+    items.sort(sorters[mode%sorters.length]);
+    const failed=[];
+    for(let i=0;i<items.length;i++){
+      const item=items[i],upcoming=items.slice(i+1,i+9);
+      // Készleten megadott maradékok MINDIG megelőzik a korlátlan alaptáblát.
+      let best=bestPlacement(item,bins,kerf,axis,variant,corner,upcoming);
+      if(!best)best=bestPlacement(item,standardBins,kerf,axis,variant,corner,upcoming);
+      if(!best&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
+        const next=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD},standardBins.length+1,true);
+        if(next){
+          const candidate=bestPlacement(item,[next],kerf,axis,variant,corner,upcoming);
+          if(candidate){standardBins.push(next);best=candidate;}
+        }
+      }
+      if(best)guillotinePlace(best.bin,best.choice,kerf);else failed.push(item);
+    }
+    const used=[...bins,...standardBins].filter(b=>b.placements.length);
+    return {bins:used,failed,items,usedArea:used.reduce((s,b)=>s+b.used,0),sheetArea:used.reduce((s,b)=>s+b.a*b.b,0)};
+  }
+  // A szabászgép kétütemű programja: előbb MINDEN csíkot leválaszt,
+  // majd a csíkokat visszakéri, és egyenként hosszra/keresztbe vágja őket.
+  // X gépállás: 2070-es oldal a behúzás; Y: 2800-as oldal a behúzás.
+  function makeStripPlan(mode,parts,feed){
+    const kerf=Math.max(0,Number(state.kerf)||0),eps=.0001;
+    const bins=prepareBins(),standardBins=[],failed=[],items=[];
+    for(const r of parts.rows)if(!r.error)for(let i=0;i<r.qty;i++){
+      items.push({name:r.part.name,source:r.furniture.name,
+        destination:r.furniture.destination||'',materialColor:r.furniture.materialColor||'',a:r.a,b:r.b,
+        originalA:r.originalA,originalB:r.originalB,edge:r.edge,
+        edgeThickness:r.edgeThickness,mill:r.mill,thickness:r.thickness,
+        rot:r.rot,number:i+1,uid:r.part.id});
+    }
+    const breadth=p=>feed==='x'?p.b:p.a;
+    const along=p=>feed==='x'?p.a:p.b;
+    const sorters=[
+      (a,b)=>breadth(b)-breadth(a)||along(b)-along(a),
+      (a,b)=>b.a*b.b-a.a*a.b||breadth(b)-breadth(a),
+      (a,b)=>along(b)-along(a)||breadth(b)-breadth(a),
+      (a,b)=>Math.max(b.a,b.b)-Math.max(a.a,a.b)||breadth(b)-breadth(a),
+      (a,b)=>breadth(b)-breadth(a)||along(a)-along(b),
+      (a,b)=>b.a+b.b-a.a-a.b||breadth(b)-breadth(a)
+    ];
+    items.sort(sorters[mode%sorters.length]);
+    const isValidRemainder=value=>value>=-eps&&(value<eps||value+eps>=kerf);
+    function bestOn(item,pool){
+      let best=null;
+      for(const bin of pool){
+        if(Math.abs(bin.thickness-item.thickness)>.001)continue;
+        if(!bin.machine)bin.machine={feed,feedUsed:0,strips:[],
+          // A gép a táblavég - szélezés pozíciónál kezd. A vágásrés fele
+          // a megmaradó lapon marad, majd a csíkok a beadás ellenében fogyasztanak.
+          feedSize:(feed==='x'?bin.b:bin.a)-2*bin.trim-(bin.trim?kerf/2:0),
+          crossSize:(feed==='x'?bin.a:bin.b)-2*bin.trim-(bin.trim?kerf/2:0)};
+        const m=bin.machine;
+        const orientations=[{a:item.a,b:item.b,turned:false}];
+        if(item.rot&&item.a!==item.b)orientations.push({a:item.b,b:item.a,turned:true});
+        for(const o of orientations){
+          if(bin.a+eps<o.a+MIN_BOARD_EXTRA||bin.b+eps<o.b+MIN_BOARD_EXTRA)continue;
+          const bw=breadth(o),len=along(o);
+          if(bw>m.feedSize+eps||len>m.crossSize+eps)continue;
+          for(const strip of m.strips){
+            const gap=strip.width-bw;
+            const addition=(strip.usedLength?kerf:0)+len;
+            const left=m.crossSize-strip.usedLength-addition;
+            if(gap<-eps||!isValidRemainder(gap)||!isValidRemainder(left))continue;
+            const score=bin.a*bin.b*1e5+gap*len*.05+left*.005;
+            if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len};
+          }
+          const separator=m.strips.length?kerf:0;
+          const remaining=m.feedSize-m.feedUsed-separator-bw;
+          const longRemaining=m.crossSize-len;
+          if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)){
+            // Már megkezdett tábla új csíkja előzze meg egy azonos méretű,
+            // bontatlan tábla felhasználását.
+            const score=bin.a*bin.b*1e5+(m.strips.length?3000:10000)+remaining*.01;
+            if(!best||score<best.score)best={bin,strip:null,score,orientation:o,bw,len};
+          }
+        }
+      }
+      return best;
+    }
+    for(const item of items){
+      let choice=bestOn(item,bins);
+      if(!choice)choice=bestOn(item,standardBins);
+      if(!choice&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
+        const bin=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD},
+          standardBins.length+1,true);
+        if(bin){
+          const fit=bestOn(item,[bin]);
+          if(fit){standardBins.push(bin);choice=fit;}
+        }
+      }
+      if(!choice){failed.push(item);continue;}
+      const {bin,orientation,bw,len}=choice,m=bin.machine;
+      let strip=choice.strip;
+      if(!strip){
+        if(m.strips.length)m.feedUsed+=kerf;
+        strip={index:m.strips.length+1,width:bw,usedLength:0,items:[]};
+        m.strips.push(strip);m.feedUsed+=bw;
+      }
+      if(strip.usedLength)strip.usedLength+=kerf;
+      strip.items.push({item,turned:orientation.turned,realW:orientation.a,
+        realH:orientation.b,breadth:bw,along:len});
+      strip.usedLength+=len;
+    }
+    function finalize(bin){
+      const m=bin.machine;
+      if(!m?.strips.length)return;
+      const stripAxis=feed==='x'?'x':'y',crossAxis=feed==='x'?'y':'x';
+      const dimension=(rect,axis)=>axis==='y'?rect.w:rect.h;
+      // Az első vágás a TELJES tábla beadási mérete - szélezés:
+      // pl. Y gépállásban 2800 - 10 = 2790 mm a fűrész középvonala.
+      // A gép innen visszafelé halad, a levágott csík pedig kitolható.
+      let remaining={id:bin.trim?'R0':'S1',x:0,y:0,w:bin.a,h:bin.b};
+      bin.nextSection=bin.trim?1:2;
+      function splitAt(parent,axis,before,stage,stripNo,options={}){
+        const total=dimension(parent,axis),after=total-before-kerf,pos=before+kerf/2;
+        if(before<-eps||after<-eps)throw Error('Túl kicsi vágásrés a gépi csíktervben');
+        const first={...parent,id:'S'+bin.nextSection++};
+        const second={...parent,id:'S'+bin.nextSection++};
+        if(axis==='y'){first.w=before;second.x+=before+kerf;second.w=Math.max(0,after);}
+        else{first.h=before;second.y+=before+kerf;second.h=Math.max(0,after);}
+        const at=(axis==='y'?parent.x:parent.y)+pos;
+        bin.cuts.push({
+          axis,x1:axis==='y'?at:parent.x,y1:axis==='x'?at:parent.y,
+          x2:axis==='y'?at:parent.x+parent.w,y2:axis==='x'?at:parent.y+parent.h,
+          order:bin.cuts.length+1,length:axis==='y'?parent.h:parent.w,
+          section:parent.id,sectionX:parent.x,sectionY:parent.y,
+          sectionW:parent.w,sectionH:parent.h,offset:pos,fromEdge:before,
+          kerf,partSide:options.side||'start',pieceSize:options.size??before,
+          beforeSection:first.id,afterSection:second.id,beforeSize:before,afterSize:after,
+          kind:options.trim?'trim':'part',edge:options.edge||'',stage,stripIndex:stripNo
+        });
+        return {start:first,end:second};
+      }
+      if(bin.trim){
+        const fullFeed=dimension(remaining,stripAxis);
+        const firstCut=splitAt(remaining,stripAxis,fullFeed-bin.trim-kerf/2,
+          'head-trim',0,{trim:true,size:bin.trim,side:'end',edge:'beadási vég'});
+        remaining=firstCut.start;
+        m.firstCutPosition=fullFeed-bin.trim;
+      }
+      // 1. menet: az összes csík a tábla végétől visszafelé válik le.
+      for(const strip of m.strips){
+        const before=dimension(remaining,stripAxis)-strip.width-kerf;
+        if(before<eps){
+          strip.section=remaining;
+          remaining=null;
+        }else{
+          const s=splitAt(remaining,stripAxis,before,'strip',strip.index,
+            {side:'end',size:strip.width});
+          strip.section=s.end;
+          remaining=s.start;
+        }
+      }
+      // 2. menet: a visszafordított TELJES HOSSZÚ csíkon is először
+      // csíkhossz - szélezés pozíciónál vágunk (2070 -> 2060).
+      // Onnan visszafelé készülnek a darabok: nem vágjuk le külön a
+      // közeli szél hulladékát, így a maradék egyben, nagyobban megmarad.
+      for(const strip of m.strips){
+        let segment=strip.section;
+        if(bin.trim){
+          const fullCross=dimension(segment,crossAxis);
+          const first=splitAt(segment,crossAxis,fullCross-bin.trim-kerf/2,
+            'cross-head-trim',strip.index,{trim:true,size:bin.trim,side:'end',edge:'csíkvég'});
+          segment=first.start;
+          strip.firstCutPosition=fullCross-bin.trim;
+        }
+        for(const entry of strip.items){
+          const crossRemaining=dimension(segment,crossAxis)-entry.along-kerf;
+          let piece;
+          if(crossRemaining<-eps){
+            piece=segment;segment=null;
+          }else{
+            const cut=splitAt(segment,crossAxis,Math.max(0,crossRemaining),'cross',strip.index,
+              {side:'end',size:entry.along});
+            segment=cut.start;piece=cut.end;
+          }
+          const ripRemaining=dimension(piece,stripAxis)-entry.breadth;
+          if(ripRemaining>=kerf-eps&&ripRemaining>eps){
+            piece=splitAt(piece,stripAxis,entry.breadth,'rip',strip.index).start;
+          }
+          const final=piece;
+          bin.placements.push({
+            x:final.x,y:final.y,w:entry.realW,h:entry.realH,
+            realW:entry.realW,realH:entry.realH,part:entry.item,
+            turned:entry.turned,section:final.id,stripIndex:strip.index,
+            completionStep:bin.cuts.length,finishCutIndex:bin.cuts.length-1
+          });
+          bin.used+=entry.item.a*entry.item.b;
+        }
+        strip.leftover=segment?{x:segment.x,y:segment.y,w:segment.w,h:segment.h,
+          feedWidth:dimension(segment,stripAxis),length:dimension(segment,crossAxis)}:null;
+      }
+    }
+    const used=[...bins,...standardBins].filter(b=>b.machine?.strips.length);
+    used.forEach(finalize);
+    return {bins:used,failed,items,usedArea:used.reduce((s,b)=>s+b.used,0),
+      sheetArea:used.reduce((s,b)=>s+b.a*b.b,0),machineReady:true,feed};
+  }
+  // Gyártási sorrend: minden tábla teljes sávozása után csíkok visszaadása.
+  // Ellenőrző modell, NEM hitelesített gépi parancssor.
+  function buildProductionSequence(bins){
+    const events=[],crossJobs=[],round=n=>Math.round(Number(n)*1000)/1000;
+    const stages=['cross-head-trim','cross-trim','cross','rip'];let order=0,pairedGroups=0;
+    const cutSignature=c=>JSON.stringify([c.stage,c.axis,round(c.offset),
+      round(c.pieceSize),round(c.length),round(c.kerf),c.partSide,c.kind]);
+    const stripSignature=job=>{
+      const {bin,strip,cuts}=job;
+      return JSON.stringify([round(bin.thickness),round(bin.trim),round(strip.width),
+        round(bin.machine.crossSize),bin.machine.feed,
+        [...new Set(strip.items.map(p=>String(p.item.materialColor||'').trim().toLowerCase()))].sort(),
+        strip.items.map(p=>[round(p.along),round(p.breadth),p.turned]),
+        cuts.map(cutSignature)]);
+    };
+    for(let i=0;i<bins.length;i++){
+      const bin=bins[i];
+      for(const c of bin.cuts){delete c.globalOrder;delete c.stackCount;}
+      if(!bin.machine)continue;
+      for(const cut of bin.cuts.filter(c=>c.stage==='head-trim'||c.stage==='strip')){
+        cut.globalOrder=++order;cut.stackCount=1;
+        events.push({type:'cut',phase:'savozas',order,board:i+1,
+          strip:cut.stripIndex,stage:cut.stage,stackCount:1,cut});
+      }
+      for(const strip of bin.machine.strips){
+        const cuts=bin.cuts.filter(c=>stages.includes(c.stage)&&c.stripIndex===strip.index);
+        crossJobs.push({board:i+1,bin,strip,cuts});
+      }
+    }
+    // 1–3 fő sávvágás; 4–18 fő darabolás; 19–28 alábontás;
+    // a következő sáv csak ezután következik (29–36 mintarajz).
+    const cutsInNumberOrder=job=>{
+      const rotated=job.bin.machine.feed==='y';
+      const visualX=c=>rotated?
+        job.bin.b-(c.axis==='x'?c.y1:c.sectionY+c.sectionH):
+        (c.axis==='y'?c.x1:c.sectionX);
+      const ascending=(a,b)=>visualX(a)-visualX(b)||(a.order||0)-(b.order||0);
+      return [
+        ...job.cuts.filter(c=>c.stage==='cross-head-trim'||c.stage==='cross-trim'),
+        ...job.cuts.filter(c=>c.stage==='cross').sort(ascending),
+        ...job.cuts.filter(c=>c.stage==='rip').sort(ascending)
+      ];
+    };
+    const used=new Set();
+    for(let i=0;i<crossJobs.length;i++){
+      if(used.has(i))continue;
+      const first=crossJobs[i],group=[first];used.add(i);
+      for(let j=i+1;j<crossJobs.length;j++){
+        if(!used.has(j)&&stripSignature(first)===stripSignature(crossJobs[j])){
+          group.push(crossJobs[j]);used.add(j);break;
+        }
+      }
+      if(group.length===2)pairedGroups++;
+      const strips=group.map(g=>({board:g.board,index:g.strip.index,
+        section:g.strip.section?.id,width:g.strip.width,
+        length:g.bin.machine.crossSize,thickness:g.bin.thickness}));
+      events.push({type:'refeed',phase:'hosszvagas',stackCount:group.length,
+        requiresMachineStackVerification:group.length===2,strips});
+      const groupCuts=group.map(cutsInNumberOrder),ordered=groupCuts[0];
+      for(let k=0;k<ordered.length;k++){
+        if(ordered[k].stage==='rip'&&(k===0||ordered[k-1].stage!=='rip')){
+          events.push({type:'refeed-detail',phase:'hosszvagas',group:'alabontas',
+            stackCount:group.length,strips,
+            note:'A levágott alkatrészek további alábontása; a gépi átadás hitelesítendő.'});
+        }
+        const cutOrder=++order;
+        for(const cuts of groupCuts)if(cuts[k]){
+          cuts[k].globalOrder=cutOrder;cuts[k].stackCount=group.length;
+        }
+        events.push({type:'cut',phase:'hosszvagas',order:cutOrder,
+          group:ordered[k].stage==='rip'?'alabontas':'fo_darabolas',
+          stackCount:group.length,stage:ordered[k].stage,strips,
+          cuts:groupCuts.map(cuts=>cuts[k])});
+      }
+    }
+    for(const bin of bins)for(const part of bin.placements){
+      const cut=bin.cuts[part.finishCutIndex];
+      if(cut?.globalOrder)part.completionStep=cut.globalOrder;
+    }
+    return {format:'lapterv-production-review-v4',machineExecutable:false,
+      phases:['savozas','hosszvagas'],numbering:'fősávok → sávonként fő darabolás → alábontás → következő sáv',maxSuggestedStack:2,
+      note:'A kétszintes visszakérés javaslat, NEM ellenőrzött gépi utasítás.',totalCuts:order,
+      pairedGroups,events};
+  }
+  function computeNesting(){
+    const parts=getParts();
+    if(state.layoutMode==='machine'&&Number(state.trim)>0&&Number(state.trim)<Number(state.kerf))
+      return {error:'A gépi szélezési ráhagyás nem lehet kisebb a vágásrésnél.'};
+    if(parts.errors.length)return {error:'Előbb javítsd a képlethibákat. '+parts.errors[0]};
+    if(parts.total>700)return {error:'A prototípus egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
+    if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
+    let best=null;
+    const axes=state.cutDirection==='x'||state.cutDirection==='y'?[state.cutDirection]:['x','y'];
+    const machineMode=state.layoutMode==='machine';
+    const effort=machineMode?6:parts.total<=80?96:parts.total<=200?48:24;
+    const modes=Array.from({length:effort},(_,i)=>i)
+      .filter(i=>state.layoutMode!=='rows'||Math.floor(i/6)%4===0)
+      .filter(i=>state.layoutMode!=='mosaic'||Math.floor(i/6)%4!==0);
+    for(const axis of axes)for(const mode of modes){
+      const trial=machineMode?makeStripPlan(mode,parts,axis):makePlan(mode,parts,axis);
+      const cuts=trial.bins.flatMap(b=>b.cuts);
+      const score=trial.failed.length*1e18+trial.sheetArea*1e5+
+        trial.bins.length*1e7+cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01;
+      if(!best||score<best.score){best={...trial,score,cutAxis:axis};}
+    }
+    if(machineMode&&best&&!best.error)best.production=buildProductionSequence(best.bins);
+    return best;
+  }
+  const colors=['#dcebdd','#e4ece2','#d8e8de','#e9e8d7','#d8e4ea','#eadfda','#dde6d3','#e9e1ea'];
+  function svgBoardSize(bin,compact=false){
+    const rotated=(result?.cutAxis||state.cutDirection)==='y';
+    const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
+    const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
+    return {rotated,pad,top,boardWidth,boardHeight,width:boardWidth+2*pad,height:boardHeight+top+pad+extra};
+  }
+  function svgBoard(bin,compact=false){
+    const size=svgBoardSize(bin,compact),{rotated,boardWidth,boardHeight,width:w,height:hgt}=size;
+    const tx=size.pad,ty=size.top;
+    // Csak a rajzi nézet fordul: a szabászméretek, szálirány és guillotine sorrend változatlan.
+    const point=(x,y)=>rotated?{x:tx+bin.b-y,y:ty+x}:{x:tx+x,y:ty+y};
+    const rect=(x,y,a,b)=>rotated?{x:tx+bin.b-y-b,y:ty+x,a:b,b:a}:{x:tx+x,y:ty+y,a,b};
+    const labelSize=Math.max(18,Math.min(40,boardWidth/30));
+    const lineSize=Math.max(13,Math.min(27,boardWidth/45));
+    const shapes=bin.placements.map((r,i)=>{
+      // A táblán belüli koordinátákhoz hozzáadjuk a rajz körüli margót.
+      const {x,y,a,b}=rect(r.x,r.y,r.realW,r.realH);
+      const short=Math.min(a,b),canShow=short>95;
+      const fsize=Math.min(labelSize,Math.max(15,short/5.5));
+      const grainPath=rotated?
+        `M${x+a*.79} ${y+b*.1}v${Math.min(55,b*.14)} m-7 -10l7 10 7 -10`:
+        `M${x+a*.1} ${y+b*.79}h${Math.min(55,a*.14)} m-10 -7l10 7 -10 7`;
+      const desc= `${r.part.name} · szabás: ${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm · kész: ${nfmt(r.part.originalA)} × ${nfmt(r.part.originalB)} mm · él: ${r.part.edge||'0-0'} / ${nfmt(r.part.edgeThickness)} mm${r.part.mill?' / marás 1 mm':''}${r.turned?' (forgatva)':''}`;
+      return `<g><title>${h(desc)}</title><rect x="${x}" y="${y}" width="${a}" height="${b}" fill="${colors[i%colors.length]}" stroke="#4b6e5a" stroke-width="2"/><text x="${x+a/2}" y="${y+b/2-(canShow?fsize*.35:0)}" fill="#253c31" font-size="${fsize}" text-anchor="middle" font-weight="700">${h(r.part.name.length>Math.max(10,a/22)?r.part.name.slice(0,Math.max(7,Math.floor(a/22)))+'…':r.part.name)}</text>${canShow?`<text x="${x+a/2}" y="${y+b/2+fsize*1.05}" text-anchor="middle" fill="#3b5f4e" font-size="${Math.min(lineSize,fsize*.82)}">${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm</text><path d="${grainPath}" fill="none" stroke="#779c86" stroke-width="3"/>`:''}</g>`;
+    }).join('');
+    const cutLines=bin.cuts.map((cut,i)=>{
+      const cutNum=bin.machine?(cut.globalOrder||i+1):i+1;
+      const start=point(cut.x1,cut.y1),end=point(cut.x2,cut.y2);
+      const x=start.x,y=start.y,x2=end.x,y2=end.y,dx=x2-x,dy=y2-y;
+      if(i>0||(bin.machine&&cutNum!==1)){
+        const lx=x+Math.sign(dx)*Math.min(33,Math.abs(dx)*.08);
+        const ly=y+Math.sign(dy)*Math.min(33,Math.abs(dy)*.08);
+        return `<g><title>${cutNum}. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#bd805b" stroke-width="4" stroke-dasharray="16 10" fill="none"/><circle cx="${lx}" cy="${ly}" r="16" fill="#fff8ef" stroke="#b87c59" stroke-width="2"/><text x="${lx}" y="${ly+6}" font-family="Arial" font-size="17" font-weight="700" text-anchor="middle" fill="#915c3e">${cutNum}</text></g>`;
+      }
+      if(rotated){
+        // A Y irányú szabásvonal vízszintes lesz az elfordított lapon,
+        // a fentről történő kezdést külön, lefelé mutató nyíl jelzi.
+        const markX=x+dx*.83,markY=y+dy*.83;
+        return `<g><title>1. vágás · Y tengely · ${nfmt(cut.length)} mm · kezdés felülről</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
+      }
+      const mx=x+dx*.69,my=y+dy*.69;
+      const head=cut.axis==='x'?`M${mx-18} ${my-13}L${mx} ${my}L${mx-18} ${my+13}`:`M${mx-13} ${my-18}L${mx} ${my}L${mx+13} ${my-18}`;
+      const labelX=cut.axis==='x'?x+30:x+23,labelY=cut.axis==='x'?y-30:y+60;
+      return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><path d="${head}" fill="none" stroke="#a93e22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="${labelX-10}" y="${labelY-30}" width="190" height="46" rx="11" fill="#bb512c"/><text x="${labelX+85}" y="${labelY+1}" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="25" font-weight="700">1. VÁGÁS ${cut.axis==='x'?'→':'↓'}</text></g>`;
+    }).join('');
+    const trim=bin.trim||0;
+    const t=rect(trim,trim,bin.a-2*trim,bin.b-2*trim);
+    const trimBoundary=trim>0?`<rect x="${t.x}" y="${t.y}" width="${t.a}" height="${t.b}" stroke="#b97f58" stroke-width="2" stroke-dasharray="12 8" fill="none"/>`:'';
+    const entryX=tx+Math.min(145,Math.max(45,boardWidth*.12));
+    const startingArrow=rotated?`<g><title>Kezdővágás felülről lefelé</title><text x="${tx+12}" y="${ty-110}" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#a84a27">KEZDŐVÁGÁS FELÜLRŐL ↓</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
+    const name=h(bin.name),allUsed=bin.used/(bin.a*bin.b)*100;
+    const horizontalLabel=rotated?`${nfmt(bin.b)} mm · Y: keresztirány ↔`:`${nfmt(bin.a)} mm · X: szálirány ↔`;
+    const verticalLabel=rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
+    const dimensionTop=`<path d="M${tx} ${ty-27}H${tx+boardWidth} M${tx} ${ty-37}V${ty-17} M${tx+boardWidth} ${ty-37}V${ty-17}" stroke="#728478" fill="none" stroke-width="2"/><text x="${tx+boardWidth/2}" y="${ty-34}" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${horizontalLabel}</text>`;
+    const dimensionSide=`<path d="M${tx-28} ${ty}V${ty+boardHeight} M${tx-37} ${ty}H${tx-18} M${tx-37} ${ty+boardHeight}H${tx-18}" fill="none" stroke="#728478" stroke-width="2"/><text x="${tx-36}" y="${ty+boardHeight/2}" transform="rotate(-90 ${tx-36} ${ty+boardHeight/2})" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${verticalLabel}</text>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}<text x="${w/2}" y="${hgt-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text></svg>`;
+  }
+  function trimmingSteps(bin){
+    const trim=Number(bin.trim)||0,kerf=Math.max(0,Number(state.kerf)||0);
+    if(!trim)return [];
+    if(trim+1e-6<kerf)return null; // A szélezési ráhagyásnak fedeznie kell a fűrészrést.
+    const a=bin.a,b=bin.b,strip=trim-kerf;
+    const operations=[
+      {axis:'y',section:'R0',sectionX:0,sectionY:0,sectionW:a,sectionH:b,
+        offset:trim-kerf/2,beforeSize:strip,afterSize:a-trim,partSide:'start',
+        beforeSection:'E1',afterSection:'R1',edge:'bal'},
+      {axis:'y',section:'R1',sectionX:trim,sectionY:0,sectionW:a-trim,sectionH:b,
+        offset:a-2*trim+kerf/2,beforeSize:a-2*trim,afterSize:strip,partSide:'end',
+        beforeSection:'R2',afterSection:'E2',edge:'jobb'},
+      {axis:'x',section:'R2',sectionX:trim,sectionY:0,sectionW:a-2*trim,sectionH:b,
+        offset:trim-kerf/2,beforeSize:strip,afterSize:b-trim,partSide:'start',
+        beforeSection:'E3',afterSection:'R3',edge:'felső'},
+      {axis:'x',section:'R3',sectionX:trim,sectionY:trim,sectionW:a-2*trim,sectionH:b-trim,
+        offset:b-2*trim+kerf/2,beforeSize:b-2*trim,afterSize:strip,partSide:'end',
+        beforeSection:'S1',afterSection:'E4',edge:'alsó'}
+    ];
+    return operations.map((c,i)=>{
+      const position=(c.axis==='y'?c.sectionX:c.sectionY)+c.offset;
+      return {...c,kind:'trim',order:i+1,pieceSize:trim,kerf,fromEdge:c.beforeSize,
+        x1:c.axis==='y'?position:c.sectionX,
+        y1:c.axis==='x'?position:c.sectionY,
+        x2:c.axis==='y'?position:c.sectionX+c.sectionW,
+        y2:c.axis==='x'?position:c.sectionY+c.sectionH,
+        length:c.axis==='y'?c.sectionH:c.sectionW};
+    });
+  }
+  function allCuttingSteps(bin){
+    // A gépi tervben a vágások sorrendje már fizikailag ki van dolgozva:
+    // végszélezés, csíkok visszafelé, majd csíkonkénti szabás.
+    if(bin.machine)return bin.cuts.map((c,i)=>({...c,order:i+1}));
+    const trimCuts=trimmingSteps(bin);
+    if(trimCuts===null)return null;
+    return [...trimCuts,...bin.cuts.map(c=>({...c,kind:'part',order:trimCuts.length+c.order}))];
+  }
+  function machineStripView(bin){
+    const m=bin.machine;
+    if(!m)return '<div class="callout top-gap"><strong>Szabad nesting nézet:</strong> ez az elrendezés nem követi kötelezően a csíkok először, visszaadás utána gépi sorrendet. A géphez válaszd a „Gépi csíkos” elrendezést.</div>';
+    const fullFeed=m.feed==='x'?bin.b:bin.a;
+    const fullCross=m.feed==='x'?bin.a:bin.b;
+    const cards=m.strips.map(strip=>{
+      const cuts=strip.items.map((p,i)=>`<span class="tag">${i+1}. ${nfmt(p.along)} mm · ${h(p.item.name)}</span>`).join(' ');
+      return `<div class="res-card"><div class="toolbar"><div><strong style="margin:0">Csík ${strip.index}. · ${h(strip.section.id)}</strong><div class="header-note">Leválasztott csík: ${nfmt(fullCross)} × ${nfmt(strip.width)} mm (${m.feed==='y'?'szálirányban a csíkszélesség':'keresztirányban a csíkszélesség'})</div></div><span class="pill">Visszaadás az X vágáshoz: ${nfmt(strip.width)} mm</span></div><div class="small muted" style="margin:10px 0">Visszaadás után: ${nfmt(fullCross)} − ${nfmt(bin.trim)} = <b>${nfmt(strip.firstCutPosition??fullCross)} mm</b> az első vágás, majd keresztvágások visszafelé:</div><div class="actions">${cuts}</div>${strip.leftover?`<div class="small muted" style="margin-top:9px"><b>Egyben maradó maradék:</b> ${nfmt(strip.leftover.length)} × ${nfmt(strip.leftover.feedWidth)} mm</div>`:``}</div>`;
+    }).join('');
+    return `<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Gépi csíkterv · ${m.strips.length} csík</div><div class="panel-sub">Első vágás a tábla végén; a csíkok onnan visszafelé következnek, majd a csíkokat visszaadjuk.</div></div><span class="pill">Gépállás: ${m.feed.toUpperCase()}</span></div><div class="panel-body"><div class="mini-info" style="margin:0 0 16px"><strong>Beadás ${m.feed.toUpperCase()} állásban:</strong> ${nfmt(fullFeed)} mm-es oldal · ${bin.trim?'első vágási pozíció: '+nfmt(fullFeed)+' − '+nfmt(bin.trim)+' = '+nfmt(m.firstCutPosition)+' mm; utána visszafelé':'szélezés nélkül, visszafelé indul'} · fűrészvonal teljes hossza ${nfmt(fullCross)} mm (szélezés után ${nfmt(m.crossSize)} mm). A ${nfmt(bin.trim)} mm-es szélezés után a csíkok szélességét az adott csík legszélesebb alkatrésze adja.</div>${cards}</div></div>`;
+  }
+  function cuttingStepsView(bin){
+    const cuts=allCuttingSteps(bin);
+    if(!cuts)return '<div class="notice error top-gap">A megadott szélezés kisebb a vágásrésnél. Gépi vágássorrendhez növeld a szélezést legalább a vágásrés értékére.</div>';
+    const rows=cuts.map(c=>{
+      const rotated=(result?.cutAxis||state.cutDirection)==='y';
+      const direction=c.axis==='y'?('Y · rajzon '+(rotated?'↔':'↕')):('X · rajzon '+(rotated?'↕':'↔'));
+      const reference=c.axis==='y'?'bal szélétől':'felső szélétől';
+      return `<tr><td><span class="pill ${c.kind==='trim'?'warn':''}">${c.order}.</span><div class="tiny muted">${c.stage==='head-trim'?'1. táblavég':c.stage==='cross-head-trim'?'2. menet · '+c.stripIndex+'. csík végszélezés':c.stage==='cross-trim'?'2. menet · csík '+c.stripIndex+' szélezése':c.kind==='trim'?'Szélezés':c.stage==='strip'?'1. menet · csík '+c.stripIndex:c.stage==='cross'?'2. menet · csík '+c.stripIndex:c.stage==='rip'?'Szélességre vágás':'Nesting '+(c.order-cuts.length+bin.cuts.length)+'.'}</div></td><td><strong>${h(c.section)}</strong><div class="tiny muted">${nfmt(c.sectionW)} × ${nfmt(c.sectionH)} mm</div></td><td>${direction}</td><td><strong class="num">${nfmt(c.pieceSize)} mm</strong><div class="tiny muted">${c.kind==='trim'?c.edge+' él · ráhagyás':(c.partSide==='start'?'bal / felső':'jobb / alsó')+' oldal'}</div></td><td class="num">${nfmt(c.offset)} mm<div class="tiny muted">${reference}</div></td><td class="num">${nfmt(c.length)} mm</td><td><span class="small">${h(c.beforeSection)} / ${h(c.afterSection)}</span><div class="tiny muted">${nfmt(c.beforeSize)} / ${nfmt(c.afterSize)} mm</div></td></tr>`;
+    }).join('');
+    return `<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási sorrend · ${cuts.length} művelet</div><div class="panel-sub">${bin.machine?'Első vágás a tábla beadott hosszának végén, majd visszafelé csíkozás; a leválasztott csíkok visszaadása után él- és alkatrészvágás.':'Először a szélezés, utána a belső guillotine vágások.'} A résztábla azonosítója mutatja, melyik leválasztott darabon kell folytatni.</div></div><div class="export-box"><button class="btn sm primary" data-action="download-cuts-csv">↓ Vágáslista CSV</button><button class="btn sm" data-action="download-cuts-json">↓ Vágáslista JSON</button></div></div><div class="table-wrap"><table><thead><tr><th>#</th><th>Résztábla / méret</th><th>Vágás iránya</th><th>Levágandó / szélezés</th><th>Fűrész középvonala</th><th>Vágáshossz</th><th>Új részek / tiszta méretek</th></tr></thead><tbody>${rows||'<tr><td colspan="7">Nem szükséges vágás.</td></tr>'}</tbody></table></div><div class="formula-bar"><strong>Gépi előkészítés:</strong> ${bin.machine?'az első vágás a táblavégből':'az első négy (narancs) művelet'} ${nfmt(bin.trim)} mm-es <b>szélezési ráhagyást</b> távolítja el, ha van. ${bin.machine?'A csíkvágásokat a tábla végétől visszafelé végezzük. Az újabb csík levágásakor a kész csík már kikerül a gépből. A visszaadott csíkon is a teljes hossz mínusz szélezés az első pozíció, majd a kész alkatrészeket visszafelé szabjuk; a megmaradó nagyobb darabot nem vágjuk külön le.':'A további műveletekben a „Levágandó” a kész csík mérete.'} A fűrész <b>középvonala</b> mindig az adott résztábla bal/felső szélétől számítandó, ${nfmt(state.kerf)} mm vágásréssel. Az adatok az eredeti tábla X/Y koordinátái szerintiek, elforgatott rajznál is. A szélezett alap a <b>S1</b> résztábla. A CSV/JSON ellenőrző vágáslista, <strong>még nem .xMix gépi program.</strong></div></div>`;
+  }
+  function suggestedBoardSize(bin){
+    if(!bin?.placements?.length)return null;
+    const trim=Math.max(0,Number(bin.trim)||0),kerf=Math.max(0,Number(state.kerf)||0);
+    let neededX,neededY;
+    if(bin.machine?.strips?.length){
+      // A TÉNYLEGES csíktervvel számolunk: csíkszélességek + közöttük a vágásrés,
+      // és a leghosszabb csík darabjai + keresztvágások. Így a javasolt tábla
+      // az első és a második gépi menetet is elbírja, nem csupán a rajzi határolót.
+      const feedUsed=bin.machine.feedUsed;
+      const crossUsed=Math.max(...bin.machine.strips.map(s=>s.usedLength));
+      const allowance=2*trim+(trim?kerf/2:0)+kerf;
+      neededX=bin.machine.feed==='y'?feedUsed+allowance:crossUsed+allowance;
+      neededY=bin.machine.feed==='x'?feedUsed+allowance:crossUsed+allowance;
+    }else{
+      const xs=bin.placements.map(p=>p.x),ys=bin.placements.map(p=>p.y);
+      const spanX=Math.max(...bin.placements.map(p=>p.x+p.realW))-Math.min(...xs);
+      const spanY=Math.max(...bin.placements.map(p=>p.y+p.realH))-Math.min(...ys);
+      neededX=spanX+2*trim+kerf;
+      neededY=spanY+2*trim+kerf;
+    }
+    // Praktikus 10 mm-es méretlépcső; a plusz vágásrés elkerüli a gépben
+    // visszamaradó, már le nem vágható néhány mm-es csíkot.
+    const a=Math.min(bin.a,Math.ceil((neededX-0.00001)/10)*10);
+    const b=Math.min(bin.b,Math.ceil((neededY-0.00001)/10)*10);
+    const saved=1-a*b/(bin.a*bin.b),util=bin.used/(bin.a*bin.b);
+    if(saved<.25||util>.60)return null;
+    return {a,b,saved};
+  }
+  function nestingView(){
+    const summary=getParts();
+    const run=`<button class="btn primary" data-action="run-nesting">⟳ ${result && !result.error?'Újraszámolás':'Nesting indítása'}</button>`;
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">Kezdővágás iránya</div><div class="panel-sub">X gépállás: a 2070 mm-es oldalt húzza be a gép, és a 2800 mm-es hossz mentén szab csíkokat. Y gépállás: a 2800 mm-es oldalt húzza be, és a 2070 mm-es hossz mentén szab. Más táblánál ugyanez az első/második méret szerint érvényes.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Válaszd ki az első vágások tengelyét</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Automatikus · mindkét gépállás kipróbálása</option><option value="x" ${state.cutDirection==='x'?'selected':''}>X gépállás · behúzás 2070 oldalról</option><option value="y" ${state.cutDirection==='y'?'selected':''}>Y gépállás · behúzás 2800 oldalról</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="machine" ${(!state.layoutMode||state.layoutMode==='machine')?'selected':''}>Gépi csíkos · csíkok, majd visszaadás</option><option value="auto" ${state.layoutMode==='auto'?'selected':''}>Szabad nesting · polcos + mozaikos</option><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos · vegyes vágásirányok</option><option value="rows" ${state.layoutMode==='rows'?'selected':''}>Polcos · egyféle kezdőirány</option></select></div></div></div></div>`;
+    let body='';
+    if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><button class="btn orange" data-action="run-nesting">✂ Nesting kiszámítása</button><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}
+    else if(result.error){body=`<div class="notice error">${h(result.error)}</div><div class="section-bottom"><button class="btn" data-action="page" data-page="furniture">Alkatrészek ellenőrzése</button><button class="btn" data-action="page" data-page="stock">Anyagok ellenőrzése</button></div>`;}
+    else{
+      const b=result.bins[Math.max(0,Math.min(result.bins.length-1,state.selectedBoard))];
+      const util=result.sheetArea?result.usedArea/result.sheetArea*100:0;
+      const stats=`<div class="statrow">
+        <div class="stat"><div class="label">Elhelyezett alkatrész</div><div class="value">${result.items.length-result.failed.length}<span class="small muted"> / ${result.items.length}</span></div><div class="detail">${result.failed.length?'Nem fér el minden elem':'Minden elem elhelyezve'}</div></div>
+        <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">maradék és szükség esetén automatikus alaptábla</div></div>
+        <div class="stat"><div class="label">Kihozatal</div><div class="value">${nfmt(util)}<span class="small muted">%</span></div><div class="detail">nettó alkatrész / teljes felhasznált tábla</div></div>
+        <div class="stat"><div class="label">Fel nem használt felület</div><div class="value">${nfmt((result.sheetArea-result.usedArea)/1e6)}<span class="small muted"> m²</span></div><div class="detail">vágásrés + szélezés + hulladék</div></div>
+      </div>`;
+      const unfitted=result.failed.length?`<div class="notice error" style="margin-bottom:17px"><strong>${result.failed.length} alkatrész nem fért el:</strong> ${h(result.failed.slice(0,6).map(p=>p.name+' ('+p.a+' × '+p.b+')').join(', '))}${result.failed.length>6?'…':''}. Vegyél fel nagyobb vagy több táblát.</div>`:'';
+      const smaller=b?suggestedBoardSize(b):null;
+      const boardPanel=b?`<div class="panel">
+        <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-svg">↓ SVG</button><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
+        <div class="panel-body"><div class="board-tabs">${result.bins.map((bin,i)=>`<button class="board-tab ${i===state.selectedBoard?'active':''}" data-action="select-board" data-index="${i}">Tábla ${i+1} <span style="opacity:.7">· ${nfmt(bin.a)}×${nfmt(bin.b)}×${nfmt(bin.thickness)}</span></button>`).join('')}</div>
+          <div class="display-board" style="margin-top:17px"><div><div class="drawing-area">${svgBoard(b)}</div>
+            <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${result.cutAxis==='y'?'Elfordított nézet: X ↕ szálirány · Y ↔ keresztirány · első vágás felülről':'X ↔ szálirány · Y ↕ keresztirány'} · szaggatott: szélezési határ</span></div></div>
+            <div class="board-meta"><h3>Tábla összesítő</h3><p class="muted small">${h(b.name)}</p>
+              <div class="rowmeta"><span>Anyagméret</span><b>${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)}</b></div>
+              <div class="rowmeta"><span>Elhelyezett alkatrész</span><b>${b.placements.length} db</b></div>
+              <div class="rowmeta"><span>Használt alkatrészfelület</span><b>${nfmt(b.used/1e6)} m²</b></div>
+              <div class="rowmeta"><span>Kihozatal</span><b>${nfmt(b.used/(b.a*b.b)*100)}%</b></div>
+              ${smaller?`<div class="notice success" style="margin-top:15px"><strong>Kisebb tábla is elég lehet:</strong><div style="font-size:19px;font-weight:800;margin:6px 0">${nfmt(smaller.a)} × ${nfmt(smaller.b)} × ${nfmt(b.thickness)} mm</div><div>${nfmt(smaller.saved*100)}%-kal kisebb táblafelület. A jelenlegi kiosztásból számolva, ${nfmt(b.trim)}–${nfmt(b.trim)} mm szélezéssel és ${nfmt(state.kerf)} mm vágásréssel. Új táblamérettel ellenőrizd a nestinget szabás előtt.</div></div>`:''}
+            </div>
+          </div>
+        </div>
+      </div>`:'';
+      // Gépi ellenőrző csomag: NEM futtatható xPrg vagy xMix fájl.
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Gépi program előkészítése</div><div class="panel-sub">Ellenőrizhető vágások és csíkvisszaadások. A próbafájlok a mintákból ismert XML-szerkezeten alapulnak, kizárólag offline szimulációhoz.</div></div></div><div class="panel-body"><div class="toolbar"><div class="muted small">Minden tábla vágási sorrendje JSON-ban. Ez <strong>nem betölthető gépi program</strong>, kizárólag az export fejlesztéséhez készült.</div><button class="btn primary" data-action="download-machine-review" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Csak teljes gépi csíkos tervből exportálható"':''}>↓ Gépi előkészítés ZIP</button><button class="btn" data-action="download-machine-simulator" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Csak teljes gépi csíkos tervből"':''}>↓ .xMix + .xPrg PRÓBA ZIP</button></div><div class="muted small" style="margin-top:12px">.xMix/.xPrg: <strong>NEM hitelesített, gépre nem tölthető próbafájlok!</strong> A két rétegű vágás csak az ellenőrző listában szerepel, a gépi fájlokban nincs engedélyezve.</div></div></div>`;
+      // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
+      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-xlsx">↓ Alkatrészlista Excel</button><button class="btn" data-action="download-overview">↓ Összes tábla SVG</button><button class="btn" onclick="window.print()">⎙ Nyomtatás</button></div></div>`;
+    }
+    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A gépi vágássorrendet később, a szabászgép programformátumához igazítva adjuk ki.</div>`;
+  }
+  function render(){renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
+  function download(data,filename,mime){const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+  // Offline, valódi .xlsx export: egyszerű, tárolt ZIP/OOXML. Nem kell hozzá internet.
+  function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
+    const encoder=new TextEncoder(),chunks=[],directory=[];
+    let offset=0;
+    const crc32=bytes=>{
+      let crc=0xFFFFFFFF;
+      for(const byte of bytes){
+        crc^=byte;
+        for(let n=0;n<8;n++)crc=(crc>>>1)^((crc&1)?0xEDB88320:0);
+      }
+      return (crc^0xFFFFFFFF)>>>0;
+    };
+    const head=(size,signature)=>{
+      const bytes=new Uint8Array(size),view=new DataView(bytes.buffer);
+      view.setUint32(0,signature,true);
+      return {bytes,view};
+    };
+    for(const [filename,contents] of files){
+      const name=encoder.encode(filename),data=ArrayBuffer.isView(contents)?
+        new Uint8Array(contents.buffer,contents.byteOffset,contents.byteLength):encoder.encode(contents),crc=crc32(data);
+      const local=head(30+name.length,0x04034B50);
+      local.view.setUint16(4,20,true);
+      local.view.setUint32(14,crc,true);
+      local.view.setUint32(18,data.length,true);
+      local.view.setUint32(22,data.length,true);
+      local.view.setUint16(26,name.length,true);
+      local.bytes.set(name,30);
+      chunks.push(local.bytes,data);
+      const central=head(46+name.length,0x02014B50);
+      central.view.setUint16(4,20,true);
+      central.view.setUint16(6,20,true);
+      central.view.setUint32(16,crc,true);
+      central.view.setUint32(20,data.length,true);
+      central.view.setUint32(24,data.length,true);
+      central.view.setUint16(28,name.length,true);
+      central.view.setUint32(42,offset,true);
+      central.bytes.set(name,46);
+      directory.push(central.bytes);
+      offset+=local.bytes.length+data.length;
+    }
+    const dirLength=directory.reduce((sum,entry)=>sum+entry.length,0);
+    const end=head(22,0x06054B50);
+    end.view.setUint16(8,files.length,true);
+    end.view.setUint16(10,files.length,true);
+    end.view.setUint32(12,dirLength,true);
+    end.view.setUint32(16,offset,true);
+    return new Blob([...chunks,...directory,end.bytes],{type:mime});
+  }
+  function partsWorkbook(){
+    const list=getParts();
+    if(list.errors.length)throw Error('Előbb javítsd a hibás alkatrész-képleteket.');
+    const rows=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0).map(r=>[
+      r.furniture.name,r.part.name,r.qty,r.originalA,r.originalB,r.a,r.b,
+      r.edge,r.edgeThickness,r.mill?'Igen':'Nem',r.grainRequired?'Igen':'Nem',
+      r.thickness,Math.round(r.a*r.b*r.qty)/1000000,
+      r.furniture.destination||'',r.furniture.materialColor||''
+    ]);
+    if(!rows.length)throw Error('Nincs kitöltött alkatrész az Excel exporthoz.');
+    const titles=['Bútor / széria','Alkatrész','Db','Kész X\n(mm)','Kész Y\n(mm)',
+      'Szabás X\n(mm)','Szabás Y\n(mm)','Élzárás','Él\n(mm)',
+      'Marás\n1 mm','Szálirány\nkötelező','Lap\n(mm)','Terület\n(m²)',
+      'Hová készül','Anyag / dekor'];
+    const colLetter=i=>String.fromCharCode(65+i);
+    const cell=(value,ref,style=0)=>{
+      if(typeof value==='number'&&Number.isFinite(value))
+        return '<c r="'+ref+'" s="'+style+'"><v>'+value+'</v></c>';
+      return '<c r="'+ref+'" s="'+style+'" t="inlineStr"><is><t xml:space="preserve">'+
+        h(value)+'</t></is></c>';
+    };
+    const rowXml=(values,rowNo,type)=>{
+      const alternating=rowNo%2===0;
+      const height=type==='header'?34:type==='title'?30:
+        Math.max(22,Math.min(48,Math.ceil(Math.max(...[0,1,13,14].map(i=>
+          String(values[i]??'').length/[23,24,23,23][[0,1,13,14].indexOf(i)]))/1)*13));
+      return '<row r="'+rowNo+'" ht="'+height+'" customHeight="1">'+
+        values.map((value,i)=>{
+          const style=type==='header'?1:type==='title'?2:
+            typeof value==='number'?(alternating?6:5):
+            [0,1,13,14].includes(i)?(alternating?4:3):(alternating?8:7);
+          return cell(value,colLetter(i)+rowNo,style);
+        }).join('')+'</row>';
+    };
+    const title=getFurniture()?.name||state.projectName||'Lapterv';
+    const pieceCount=rows.reduce((sum,r)=>sum+r[2],0);
+    const dataRows=rowXml([title+' – alkatrészlista · '+nfmt(pieceCount)+' db'],1,'title')+
+      rowXml(titles,2,'header')+rows.map((row,i)=>rowXml(row,i+3,'data')).join('');
+    const widths=[23,24,8,12,12,13,13,10,11,10,13,10,13,23,23];
+    const cols=widths.map((width,i)=>'<col min="'+(i+1)+'" max="'+(i+1)+
+      '" width="'+width+'" customWidth="1"/>').join('');
+    const sheet='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      '<sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>'+
+      '<sheetViews><sheetView workbookViewId="0"><pane xSplit="2" ySplit="2" topLeftCell="C3" activePane="bottomRight" state="frozen"/></sheetView></sheetViews>'+
+      '<sheetFormatPr defaultRowHeight="22"/><cols>'+cols+'</cols><sheetData>'+dataRows+'</sheetData>'+
+      '<mergeCells count="1"><mergeCell ref="A1:O1"/></mergeCells>'+
+      '<autoFilter ref="A2:O'+(rows.length+2)+'"/>'+
+      '<pageMargins left="0.2" right="0.2" top="0.35" bottom="0.35" header="0.1" footer="0.1"/>'+
+      '<pageSetup orientation="landscape" paperSize="9" fitToWidth="1" fitToHeight="0"/></worksheet>';
+    const styles='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'+
+      '<numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.###"/></numFmts>'+
+      '<fonts count="3"><font><sz val="10"/><color rgb="FF263B30"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="10"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>'+
+      '<font><b/><sz val="15"/><color rgb="FF214834"/><name val="Calibri"/></font></fonts>'+
+      '<fills count="3"><fill><patternFill patternType="none"/></fill>'+
+      '<fill><patternFill patternType="solid"><fgColor rgb="FF214834"/></patternFill></fill>'+
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFF0F6F2"/></patternFill></fill></fills>'+
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'+
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'+
+      '<cellXfs count="9"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/>'+
+      '<xf numFmtId="0" fontId="1" fillId="1" borderId="0" applyFont="1" applyFill="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" applyFont="1"><alignment vertical="center"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"><alignment horizontal="left" indent="1" vertical="center" wrapText="1"/></xf>'+
+      '<xf numFmtId="164" fontId="0" fillId="0" borderId="0" applyNumberFormat="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
+      '<xf numFmtId="164" fontId="0" fillId="2" borderId="0" applyNumberFormat="1" applyFill="1"><alignment horizontal="right" indent="1" vertical="center"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0"><alignment horizontal="center" vertical="center"/></xf>'+
+      '<xf numFmtId="0" fontId="0" fillId="2" borderId="0" applyFill="1"><alignment horizontal="center" vertical="center"/></xf></cellXfs></styleSheet>';
+    return xlsxZip([
+      ['[Content_Types].xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+        '<Default Extension="xml" ContentType="application/xml"/>'+
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'+
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'+
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'+
+        '</Types>'],
+      ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+      ['xl/workbook.xml','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'+
+        '<sheets><sheet name="Alkatrészek" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+      ['xl/_rels/workbook.xml.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+        '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'+
+        '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>'],
+      ['xl/worksheets/sheet1.xml',sheet],['xl/styles.xml',styles]
+    ]);
+  }
+  function downloadPartsXlsx(){
+    try{
+      const blob=partsWorkbook(),name=getFurniture()?.name||state.projectName||'Lapterv';
+      downloadBlob(blob,(fileName(name)||'Lapterv')+'_alkatreszek.xlsx');
+    }catch(err){showNotice(err.message||'Nem sikerült elkészíteni az Excel-fájlt.');}
+  }
+  function selectedBin(){return result && !result.error?result.bins[state.selectedBoard]:null;}
+  function fileName(s){return String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').slice(0,70);}
+  function cutExportData(bin){
+    const cuts=allCuttingSteps(bin),machine=bin.machine;
+    const strips=machine?.strips.map(s=>({
+      index:s.index,section:s.section.id,feedWidth:s.width,
+      longLength:machine.feed==='x'?bin.a:bin.b,
+      firstCrossTrimPosition:s.firstCutPosition??null,
+      reusableRemainder:s.leftover,partNames:s.items.map(p=>p.item.name),
+      crosscuts:s.items.map(p=>p.along),
+      crossSawPositions:cuts.filter(c=>c.stripIndex===s.index&&c.stage==='cross')
+        .map(c=>c.axis==='y'?c.x1:c.y1)
+    }))||[];
+    const machineEvents=machine&&cuts?[
+      ...cuts.filter(c=>c.stage==='head-trim'||c.stage==='strip').map(c=>({type:'cut',...c})),
+      ...machine.strips.flatMap(s=>[
+        {type:'refeed',stripIndex:s.index,section:s.section.id,
+          feedWidth:s.width,feedAxis:'x',length:machine.crossSize},
+        ...cuts.filter(c=>c.stage!=='strip'&&c.stage!=='head-trim'&&c.stripIndex===s.index)
+          .map(c=>({type:'cut',...c}))
+      ])
+    ]:null;
+    return {
+      kind:'Lapterv guillotine cutting instructions — pre-machine review',
+      project:getFurniture()?.name||state.projectName,
+      board:{name:bin.name,index:state.selectedBoard+1,x:bin.a,y:bin.b,thickness:bin.thickness,trim:bin.trim},
+      kerf:Number(state.kerf),
+      reference:machine?
+        'All millimetres. First saw centre: full board feed length minus edge trim. Strip cuts retreat toward the origin. After refeed each detached strip, saw its far end at strip length minus trim and crosscut parts backwards; leave the near-side remainder intact. X along grain, Y across grain. Offsets are blade centres on each section.':
+        'All millimetres; X along grain, Y across grain. Steps first trim edges (R0–R3), then cut parts from S1. Offsets measure blade centre from each section top/left edge.',
+      cuts,
+      machine:machine?{readyForReview:true,stockFeedAxis:machine.feed,
+        initialFeedDimension:machine.feed==='x'?bin.b:bin.a,
+        initialCutPosition:machine.firstCutPosition??null,
+        initialCrossDimension:machine.feed==='x'?bin.a:bin.b,
+        trimmedStripLength:machine.crossSize,strips,events:machineEvents}:null,
+      finishedParts:bin.placements.map(p=>({
+        section:p.section,name:p.part.name,furniture:p.part.source,number:p.part.number,
+        cutX:p.realW,cutY:p.realH,finishedX:p.part.originalA,finishedY:p.part.originalB,
+        edge:p.part.edge,edgeThickness:p.part.edgeThickness,milling:p.part.mill,
+        rotated:p.turned,thickness:bin.thickness
+      }))
+    };
+  }
+  function downloadMachineReview(){
+    if(!result || result.error || result.failed.length || state.layoutMode!=='machine'){
+      showNotice('A gépi előkészítéshez hibátlan, teljes gépi csíkos nesting szükséges.');return;
+    }
+    const files=[],all=[];
+    for(let i=0;i<result.bins.length;i++){
+      const bin=result.bins[i];
+      if(!bin.machine){showNotice('Az egyik táblához nem készült gépi csíkterv.');return;}
+      const plan=cutExportData(bin);
+      if(!plan.cuts || !Array.isArray(plan.machine?.events) || !plan.machine.events.length){
+        showNotice('Nem teljes az egyik tábla vágási leírása.');return;
+      }
+      // Az aktuális tábla indexe külön szerepel az összesített tervben.
+      plan.board.index=i+1;
+      const base='tabla_'+String(i+1).padStart(2,'0');
+      files.push([base+'_ellenorzo_vagasok.json',JSON.stringify(plan,null,2)]);
+      all.push({file:base+'_ellenorzo_vagasok.json',board:plan.board,cuts:plan.cuts.length,parts:plan.finishedParts.length});
+    }
+    const manifest={format:'lapterv-machine-review-v1',machineExecutable:false,
+      note:'NEM xMix és NEM xPrg. Gépbe betölteni tilos. A vágások értelmezését az eredeti xPrg fájlokkal még igazolni kell.',
+      project:String(getFurniture()?.name||state.projectName||'Lapterv'),boards:all,
+      settings:{kerfMm:Number(state.kerf),trimMm:Number(state.trim),cutDirection:state.cutDirection,layoutMode:state.layoutMode}};
+    if(result.production){
+      files.push(['gyartasi_sorrend_ellenorzes.json',JSON.stringify(result.production,null,2)]);
+      manifest.productionSchedule='gyartasi_sorrend_ellenorzes.json';
+      manifest.pairedStripGroups=result.production.pairedGroups;
+    }
+    files.unshift(['manifest.json',JSON.stringify(manifest,null,2)]);
+    files.push(['OLVASSEL.txt','LAPTERV - GÉPI ELŐKÉSZÍTŐ CSOMAG\r\n\r\nEz NEM végrehajtható gépi program.\r\nNem tartalmaz xMix vagy xPrg fájlokat.\r\nA *.json állományokat kizárólag ellenőrzésre és a későbbi hiteles gépi export fejlesztéséhez használd.\r\nÉles gépi futtatás előtt igazolni kell a gép valódi xPrg parancsformátumát.\r\n']);
+    downloadBlob(xlsxZip(files,'application/zip'),(fileName(manifest.project)||'lapterv')+'_gepi_elokeszites_NEM_gepi_program.zip');
+  }
+  // Kísérleti XML-állományok az eredeti XPrg/XMix minták megfigyelt alakjában.
+  // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
+  function downloadMachineSimulation(){
+    try{
+      if(!result||result.error||result.failed.length||state.layoutMode!=='machine'||
+        !result.bins.length||!result.production)
+        throw Error('Előbb készíts hibátlan, teljes gépi csíkos nestinget.');
+      const code=prompt('Add meg a gépben létező anyagkódot (pl. a saját anyagtörzsed szerint). Ne az anyag színét írd be automatikusan!','');
+      if(code===null)return;
+      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code.trim()))
+        throw Error('A gépi anyagkód 2–40 betű/szám vagy pont, kötőjel, aláhúzás lehet.');
+      if(!confirm('FIGYELEM: A létrejövő .xMix és .xPrg csak OFFLINE SZIMULÁCIÓRA szolgál! Nincs igazolt gépi végrehajtási sorrend vagy kétréteges parancs. Gépbe NEM tölthető. Folytatod?'))return;
+      const xmlEscape=value=>String(value).replace(/[&<>"']/g,
+        c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+      const num=v=>Number(v).toFixed(2);
+      const now=new Date(),date=[String(now.getDate()).padStart(2,'0'),
+        String(now.getMonth()+1).padStart(2,'0'),now.getFullYear()].join('/');
+      const material=xmlEscape(code.trim());
+      const base='Lapterv_CSAK_OFFLINE_'+Date.now();
+      const files=[],names=[];
+      const checkXml=xml=>{
+        const doc=new DOMParser().parseFromString(xml,'application/xml');
+        if(doc.querySelector('parsererror'))throw Error('Hibás XML. Az export megszakadt.');
+        return doc;
+      };
+      for(let board=0;board<result.bins.length;board++){
+        const bin=result.bins[board],machine=bin.machine;
+        if(!machine?.strips?.length)throw Error('Hiányzó csíkterv a '+(board+1)+'. táblához.');
+        if(machine.strips.some(strip=>strip.items.some(p=>Math.abs(p.breadth-strip.width)>.01)))
+          throw Error('Összetett csíkon belüli további felosztás található a '+(board+1)+'. táblán. Az U/V parancs nincs hitelesítve, erre a tervre nem készülhet még xPrg.');
+        const length=machine.feed==='x'?bin.b:bin.a;
+        const width=machine.feed==='x'?bin.a:bin.b;
+        const lines=[],add=(type,dimension)=>{
+          lines.push('    <Cut T="'+type+'" Dim="'+num(dimension)+
+            '" Rip="1" ID="'+lines.length+'" />');
+        };
+        add('P',length);
+        add('RY',bin.trim);
+        for(const strip of machine.strips){
+          add('Y',strip.width);
+          add('RX',bin.trim);
+          for(const piece of strip.items){add('X',piece.along);add('F',0);}
+        }
+        const xprg='<SchemaDoc>\n  <Header NumFogliPacco="1.00" Descrizione="'+material+
+          '" Spessore="'+num(bin.thickness)+'" Date="'+date+
+          '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
+          '" SpessoreLama="'+num(state.kerf)+'" />\n'+
+          '  <Material Tipologia="" Codice="'+material+'" />\n  <Pattern>\n'+
+          lines.join('\n')+'\n  </Pattern>\n</SchemaDoc>\n';
+        const doc=checkXml(xprg);
+        if(doc.querySelectorAll('Cut').length!==lines.length)throw Error('Hiányzó Cut.');
+        const file=base+'_'+(board+1)+'.xPrg';names.push(file);
+        files.push(['xPrg/'+file,xprg]);
+      }
+      const title=xmlEscape(getFurniture()?.name||'Lapterv');
+      const mix='<xMix>\n  <Header Descrizione="'+title+'" Import="" Date="'+date+
+        '" />\n  <Materials><Material Tipologia="" Codice="'+material+
+        '" Quantita="999" /></Materials>\n  <RigheMix>\n'+
+        names.map(name=>'    <RigaMix File=".\\xPrg\\'+name+
+          '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\n')+
+        '\n  </RigheMix>\n</xMix>\n';
+      const mixDoc=checkXml(mix);
+      if(mixDoc.querySelectorAll('RigaMix').length!==names.length)throw Error('Hiányzó RigaMix.');
+      files.unshift([base+'.xMix',mix]);
+      files.push(['GYARTASI_SORREND_ELLENORZES.json',JSON.stringify(result.production,null,2)]);
+      files.push(['FONTOS_CSAK_OFFLINE.txt',
+        'FIGYELEM - KIZAROLAG OFFLINE SZIMULATOR! \r\n'+
+        'Ezek KISERLETI, NEM HITELESITETT xPrg/xMix fajlok. \r\n'+
+        'NE TOLTSD GEPRE, NE INDITS FIZIKAI VAGAST! \r\n'+
+        'A P/RY/Y/RX/X/F jelentese es a vegrehajtasi sorrend nem teljesen igazolt. \r\n'+
+        'A ket egymasra tett csik CSUPAN a gyartasi_sorrend_ellenorzes.json fajlban javaslat. \r\n'+
+        'A gepi programok csak 1 reteget tartalmaznak (Pacco=1, Rip=1). \r\n']);
+      downloadBlob(xlsxZip(files,'application/zip'),base+'_XPRG_XMIX_CSAK_OFFLINE.zip');
+    }catch(error){showNotice(error.message||'Nem sikerült a próbaállományokat előállítani.');}
+  }
+  function downloadCutList(format){
+    const bin=selectedBin();if(!bin)return;
+    const data=cutExportData(bin),prefix=fileName(data.project||'Lapterv')||'lapterv';
+    if(!data.cuts){showNotice('A szélezési méret nem lehet kisebb a vágásrésnél, ha gépi vágáslistát kérsz.');return;}
+    const filename=`${prefix}_tabla_${state.selectedBoard+1}_vagaslista`;
+    if(format==='json'){
+      download(JSON.stringify(data,null,2),filename+'.json','application/json;charset=utf-8');
+      return;
+    }
+    const header=['Tábla','Lépés','Művelet','Szélezési oldal','Résztábla','Résztábla X (mm)','Résztábla Y (mm)',
+      'Résztábla bal X (mm)','Résztábla felső Y (mm)','Vágás tengelye',
+      'Levágandó tiszta méret / szélezési ráhagyás (mm)','Levágandó oldal','Fűrész középvonala a résztábla szélétől (mm)',
+      'Vágáshossz (mm)','Vágásrés (mm)','Első új résztábla','Első új méret (mm)',
+      'Második új résztábla','Második új méret (mm)'];
+    const number=n=>String(Math.round(n*1000)/1000).replace('.',',');
+    const safe=s=>`"${String(s).replace(/"/g,'""')}"`;
+    const lines=[header,...data.cuts.map(c=>[
+      data.board.name,c.order,c.kind==='trim'?'szélezés':c.stage||'szabás',c.edge||'',c.section,number(c.sectionW),number(c.sectionH),
+      number(c.sectionX),number(c.sectionY),c.axis,
+      number(c.pieceSize),c.partSide==='start'?'bal/felső':'jobb/alsó',
+      number(c.offset),number(c.length),number(c.kerf),
+      c.beforeSection,number(c.beforeSize),c.afterSection,number(c.afterSize)
+    ]),[],...(data.machine?[['CSÍKOK VISSZAADÁSA AZ X TENGELYŰ KERESZTVÁGÁSHOZ'],
+      ['Csík','Leválasztott résztábla','A gépnek megadandó csíkszélesség (mm)','Csík hossza (mm)','Keresztvágási méretek (mm)'],
+      ...data.machine.strips.map(s=>[
+        s.index,s.section,number(s.feedWidth),number(s.longLength),
+        s.crosscuts.map(number).join(' / ')
+      ]),[]]:[]),['ELKÉSZÜLT ALKATRÉSZEK'],[
+      'Résztábla','Alkatrész','Bútor','Sorszám','Szabási X (mm)','Szabási Y (mm)',
+      'Kész X (mm)','Kész Y (mm)','Élzárás','Élvastagság (mm)','Marás 1 mm','Forgatva'
+    ],...data.finishedParts.map(p=>[
+      p.section,p.name,p.furniture,p.number,number(p.cutX),number(p.cutY),
+      number(p.finishedX),number(p.finishedY),p.edge,number(p.edgeThickness),
+      p.milling?'igen':'nem',p.rotated?'igen':'nem'
+    ])];
+    download('\uFEFF'+lines.map(row=>row.map(safe).join(';')).join('\r\n'),
+      filename+'.csv','text/csv;charset=utf-8');
+  }
+  function downloadBoardSvg(){const b=selectedBin();if(b)download(svgBoard(b),`lapterv_tabla_${state.selectedBoard+1}.svg`,'image/svg+xml;charset=utf-8');}
+  function downloadBlob(blob,filename){
+    const url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+  }
+  function downloadBoardImage(){
+    const bin=selectedBin();if(!bin)return;
+    const index=state.selectedBoard+1;
+    const {width,height}=svgBoardSize(bin);
+    const scale=Math.min(2,4000/Math.max(width,height));
+    const svg=svgBoard(bin);
+    const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+    const img=new Image();
+    const ext='png',mime='image/png';
+    img.onload=()=>{
+      try{
+        const canvas=document.createElement('canvas');
+        canvas.width=Math.max(1,Math.round(width*scale));
+        canvas.height=Math.max(1,Math.round(height*scale));
+        const ctx=canvas.getContext('2d');
+        if(!ctx)throw Error('Canvas nem elérhető');
+        ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.drawImage(img,0,0,canvas.width,canvas.height);
+        canvas.toBlob(blob=>{
+          if(blob)downloadBlob(blob,`lapterv_tabla_${index}.${ext}`);
+          else showNotice(`A ${ext.toUpperCase()} kép mentése nem sikerült. Próbáld az SVG mentést.`);
+        },mime);
+      }catch{showNotice(`A ${ext.toUpperCase()} kép mentése nem sikerült. Próbáld az SVG mentést.`);}
+      finally{URL.revokeObjectURL(url);}
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);showNotice(`A ${ext.toUpperCase()} kép mentése nem sikerült. Próbáld az SVG mentést.`);};
+    img.src=url;
+  }
+  // Minden készre vágott fizikai alkatrészhez pontosan egy matrica.
+  // A gépi tervben a készre vágás valódi műveletszáma határozza meg a sorrendet.
+  function orderedLabels(){
+    if(!result?.bins?.length||result.error)return [];
+    const labels=[];
+    result.bins.forEach((bin,boardIndex)=>{
+      bin.placements.forEach((placement,index)=>{
+        labels.push({bin,boardIndex,placement,index,
+          completionStep:placement.completionStep??(index+1)});
+      });
+    });
+    labels.sort((a,b)=>(result.production?
+      a.completionStep-b.completionStep||a.boardIndex-b.boardIndex:
+      a.boardIndex-b.boardIndex||a.completionStep-b.completionStep)||a.index-b.index);
+    return labels;
+  }
+  // Egyetlen SVG matricarajzot használunk előnézethez, A4 nyomtatáshoz és PNG-hez.
+  // Emiatt a papírra kerülő sorrend és a mentett képen lévő elrendezés azonos.
+  function labelSvgContent(label,x,y,width,height){
+    const part=label.placement.part;
+    const scale=Math.max(.55,Math.min(1.65,width/70,height/40));
+    const margin=2*scale;
+    const inset=3*scale; // Csak pár mm-rel kerüljenek beljebb, a sorrendjük nem változik.
+    const line=(text,left,baseline,size,weight='400',extra='')=>
+      `<text x="${left}" y="${baseline}" font-size="${size}" font-weight="${weight}" font-family="Arial,Helvetica,sans-serif" fill="#151515" ${extra}>${h(text)}</text>`;
+    const fit=(value,size,available)=>{
+      const text=String(value||'');
+      const limit=Math.max(3,Math.floor(available/(size*.53)));
+      return text.length>limit?text.slice(0,Math.max(1,limit-1))+'…':text;
+    };
+    const destination=String(part.destination||'').trim();
+    const material=String(part.materialColor||'').trim();
+    const dimensions=nfmt(part.originalA)+' × '+nfmt(part.originalB);
+    const edge=String(part.edge||'0-0');
+    const codeSize=5.1*scale;
+    const dimensionSize=Math.min(5.7*scale,
+      Math.max(2.5*scale,(width-2*(margin+inset)-(edge.length*.58*codeSize)-2*scale)/(Math.max(1,dimensions.length)*.56)));
+    const band=(Number(part.edgeThickness)===0.4?'0,4':'2')+' mm élzáró'+(part.mill?' · 1 mm marás':'');
+    return `<g><rect x="${x}" y="${y}" width="${width}" height="${height}" fill="white" stroke="#555" stroke-width=".25"/>`+
+      line(fit(destination,2.3*scale,width-2*margin),x+margin,y+height*.115,2.3*scale,'400')+
+      `<path d="M${x+margin} ${y+height*.16}H${x+width-margin}" stroke="#aaa" stroke-width=".2"/>`+
+      line(dimensions,x+margin+inset,y+height*.37,dimensionSize,'800')+
+      line(edge,x+width-margin-inset,y+height*.37,codeSize,'800','text-anchor="end"')+
+      line(fit(part.name,3.6*scale,width-2*margin),x+margin,y+height*.535,3.6*scale,'700')+
+      line(fit(part.source,2.6*scale,width-2*margin),x+margin,y+height*.68,2.6*scale,'400')+
+      line(fit(material,2.5*scale,width-2*margin),x+margin,y+height*.81,2.5*scale,'400')+
+      line(fit(band,2.3*scale,width-2*margin),x+margin,y+height*.92,2.3*scale,'400')+
+      `</g>`;
+  }
+  const labelPaper={width:210,height:297};
+  function labelPages(){
+    const labels=orderedLabels();
+    const width=Number(state.labelWidth),height=Number(state.labelHeight);
+    const marginX=Number(state.labelMarginX),marginY=Number(state.labelMarginY);
+    const printableW=labelPaper.width-2*marginX;
+    const printableH=labelPaper.height-2*marginY;
+    const cols=Math.floor((printableW+1e-6)/width);
+    const rows=Math.floor((printableH+1e-6)/height);
+    if(!Number.isFinite(width)||!Number.isFinite(height)||!Number.isFinite(marginX)||!Number.isFinite(marginY)||
+        width<20||height<15||marginX<0||marginY<0||cols<1||rows<1)
+      throw Error('A megadott matrica nem fér el az A4 nyomtatható részén.');
+    const pages=[];
+    for(let offset=0;offset<labels.length;offset+=cols*rows){
+      const batch=labels.slice(offset,offset+cols*rows);
+      const drawing=batch.map((label,index)=>labelSvgContent(label,
+        marginX+(index%cols)*width,
+        marginY+Math.floor(index/cols)*height,width,height)).join('');
+      pages.push(`<svg xmlns="http://www.w3.org/2000/svg" width="210mm" height="297mm" viewBox="0 0 210 297"><rect width="210" height="297" fill="white"/>${drawing}</svg>`);
+    }
+    return {pages,cols,rows,width,height,marginX,marginY};
+  }
+  function labelSheetPreview(layout,filled){
+    // A csatolt minta szerinti 4 × 11-es címkerács a papír belsejében kezdődik;
+    // az üres helyek is látszanak az előnézetben, de a nyomtatásban nem.
+    const slots=Array.from({length:layout.cols*layout.rows},(_,i)=>{
+      const x=layout.marginX+(i%layout.cols)*layout.width;
+      const y=layout.marginY+Math.floor(i/layout.cols)*layout.height;
+      return `<rect x="${x}" y="${y}" width="${layout.width}" height="${layout.height}" fill="${i<filled?'#e4f2e9':'white'}" stroke="#687d6c" stroke-width=".25"/>`;
+    }).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 297" role="img" aria-label="A4-es címkeív, ${layout.cols} oszlop, ${layout.rows} sor, a szélén ${nfmt(layout.marginX)} és ${nfmt(layout.marginY)} mm margó"><rect width="210" height="297" fill="white"/><rect x=".3" y=".3" width="209.4" height="296.4" fill="none" stroke="#657568" stroke-width=".5"/>${slots}</svg>`;
+  }
+  function labelPanelView(){
+    const labels=orderedLabels();
+    if(!labels.length)return '';
+    const w=Number(state.labelWidth),ht=Number(state.labelHeight);
+    const mx=Number(state.labelMarginX),my=Number(state.labelMarginY);
+    let layout=null,layoutError='';
+    try{layout=labelPages();}catch(err){layoutError=err.message;}
+    const preview='<svg xmlns="http://www.w3.org/2000/svg" width="'+w+'mm" height="'+ht+
+      'mm" viewBox="0 0 '+w+' '+ht+'">'+labelSvgContent(labels[0],0,0,w,ht)+'</svg>';
+    return '<div class="panel top-gap"><div class="panel-head"><div>'+
+      '<div class="panel-title">Alkatrészmatricák · '+labels.length+' db</div>'+
+      '<div class="panel-sub">Alapív: A4 · 48,5 × 25,4 mm · 44 címke (4 oszlop × 11 sor), a lap szélétől beljebb kezdődik. Balra a kész méret, jobbra az élzárás; a „Hová készül?” és az anyagszín a bútor paramétereiből kerül ide.</div>'+
+      '</div><div class="export-box"><button class="btn sm" data-action="download-labels-png">↓ A4 matricák PNG</button><button class="btn primary" data-action="print-labels">▤ A4 matricák nyomtatása</button></div></div>'+
+      '<div class="panel-body"><div class="toolbar" style="align-items:flex-start">'+
+      '<div class="settings" style="flex:1;min-width:260px">'+
+      '<div><label>Matrica szélesség (mm)</label><input type="number" min="20" max="190" step="0.1" data-scope="settings" data-key="labelWidth" value="'+h(w)+'"></div>'+
+      '<div><label>Matrica magasság (mm)</label><input type="number" min="15" max="270" step="0.1" data-scope="settings" data-key="labelHeight" value="'+h(ht)+'"></div>'+
+      '<div><label>Bal / jobb margó (mm)</label><input type="number" min="0" max="70" step="0.1" data-scope="settings" data-key="labelMarginX" value="'+h(mx)+'"></div>'+
+      '<div><label>Felső / alsó margó (mm)</label><input type="number" min="0" max="70" step="0.1" data-scope="settings" data-key="labelMarginY" value="'+h(my)+'"></div></div>'+
+      '<div class="label-preview"><div class="small muted" style="margin-bottom:8px">Első elkészülő alkatrész matricája:</div>'+preview+
+      '<div class="tiny muted" style="margin-top:8px">'+(layout?'A4: '+layout.cols+' oszlop × '+layout.rows+' sor · '+layout.pages.length+' oldal. Nyomtatáskor 100% méretarányt, margó nélkül és próbalapot használj.':'Előbb javítsd a címke méreteit és a margókat.')+'</div></div>'+
+      '<div class="label-sheet-preview"><div class="small muted" style="margin-bottom:8px">A teljes A4 címkeív elhelyezése:</div>'+
+      (layout?labelSheetPreview(layout,Math.min(labels.length,layout.cols*layout.rows))+
+        '<div class="tiny muted" style="margin-top:8px">Bal/jobb: '+nfmt(mx)+' mm · fent/lent: '+nfmt(my)+' mm. A zöld mezők a kitöltött címkék.</div>':
+        '<div class="notice error">'+h(layoutError)+'</div>')+'</div></div></div></div>';
+  }
+  function printLabels(){
+    if(!orderedLabels().length){showNotice('A matrica nyomtatása előtt készíts nesting tervet.');return;}
+    let pages;
+    try{pages=labelPages().pages;}catch(err){showNotice(err.message);return;}
+    const popup=window.open('','_blank');
+    if(!popup){showNotice('A böngésző blokkolta a nyomtatóablakot. Engedélyezd a felugró ablakokat.');return;}
+    popup.document.open();
+    popup.document.write('<!doctype html><html lang="hu"><head><meta charset="utf-8">'+
+      '<title>'+h(getFurniture()?.name||state.projectName||'Lapterv')+' · alkatrészmatricák</title>'+
+      '<style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;padding:0;background:#fff}'+
+      '.sheet{width:210mm;height:297mm;break-after:page;page-break-after:always;overflow:hidden}'+
+      '.sheet svg{width:210mm;height:297mm;display:block}.sheet:last-child{break-after:auto;page-break-after:auto}'+
+      '@media screen{body{background:#eee}.sheet{background:white;margin:8mm auto;box-shadow:0 1mm 5mm #888}}'+
+      '</style></head><body>'+pages.map(svg=>'<div class="sheet">'+svg+'</div>').join('')+'</bo'+'dy></html>');
+    popup.document.close();
+    popup.focus();
+    setTimeout(()=>popup.print(),350);
+  }
+  async function downloadLabelPng(){
+    if(!orderedLabels().length){showNotice('Előbb készíts nesting tervet a matricákhoz.');return;}
+    try{
+      const pages=labelPages().pages,files=[];
+      const project=fileName(getFurniture()?.name||state.projectName||'Lapterv')||'Lapterv';
+      for(let page=0;page<pages.length;page++){
+        const svgUrl=URL.createObjectURL(new Blob([pages[page]],{type:'image/svg+xml;charset=utf-8'}));
+        try{
+          const png=await new Promise((resolve,reject)=>{
+            const picture=new Image();
+            picture.onload=()=>{
+              try{
+                const canvas=document.createElement('canvas');
+                canvas.width=Math.round(210/25.4*300);
+                canvas.height=Math.round(297/25.4*300);
+                const context=canvas.getContext('2d');
+                if(!context)throw Error('Nem sikerült képet készíteni.');
+                context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);
+                context.drawImage(picture,0,0,canvas.width,canvas.height);
+                canvas.toBlob(blob=>blob?resolve(blob):reject(Error('PNG létrehozási hiba')),'image/png');
+              }catch(error){reject(error);}
+            };
+            picture.onerror=()=>reject(Error('Nem sikerült kirajzolni az A4-es lapot.'));
+            picture.src=svgUrl;
+          });
+          if(pages.length===1){downloadBlob(png,project+'_matricak_A4.png');return;}
+          files.push([project+'_matricak_A4_'+String(page+1).padStart(2,'0')+'.png',
+            new Uint8Array(await png.arrayBuffer())]);
+        }finally{URL.revokeObjectURL(svgUrl);}
+      }
+      // Több A4-es oldal esetén egyetlen letölthető ZIP-ben található minden PNG.
+      downloadBlob(xlsxZip(files,'application/zip'),project+'_matricak_A4_PNG.zip');
+    }catch(err){showNotice(err.message||'A matricák PNG-mentése nem sikerült.');}
+  }
+  function downloadOverview(){
+    if(!result?.bins?.length)return;
+    const margin=60,width=Math.max(...result.bins.map(b=>svgBoardSize(b).width))+2*margin;let y=75;
+    const body=result.bins.map((bin,i)=>{const inner=svgBoard(bin).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'');const {width:w,height}=svgBoardSize(bin);const section=`<text x="${margin}" y="${y-20}" font-family="Arial" font-weight="700" font-size="30" fill="#234335">Tábla ${i+1}: ${h(bin.name)}</text><svg x="${margin}" y="${y}" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${inner}</svg>`;y+=height+90;return section;}).join('');
+    download(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${y}" width="${width}" height="${y}"><rect width="100%" height="100%" fill="white"/>${body}</svg>`,'lapterv_osszes_tabla.svg','image/svg+xml;charset=utf-8');
+  }
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('[data-action]');if(!el)return;
+    const action=el.dataset.action;
+    if(action==='page'){state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='new-furniture'){const f={id:uuid(),name:'',destination:'',materialColor:'Feya',w:1000,ht:910,d:600,t:18,s:0,qty:1,partsOpen:false,parts:[]};state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
+    else if(action==='open-parts'){
+      const f=state.furnitures.find(x=>x.id===el.dataset.id);
+      if(!f)return;
+      if(!['w','ht','d','t','qty'].every(k=>Number(f[k])>0)){showNotice('Ellenőrizd a bútor méreteit és darabszámát.');return;}
+      f.partsOpen=true;notice='';render();
+    }
+    else if(action==='remove-furniture'){
+      if(!confirm('Biztosan törlöd ezt a bútorszériát?'))return;
+      state.furnitures=state.furnitures.filter(f=>f.id!==el.dataset.id);state.selectedFurniture=state.furnitures[0]?.id||null;result=null;render();
+    }
+    else if(action==='add-part'){
+      const f=getFurniture();if(!f)return;f.parts.push({id:uuid(),name:'',a:'',b:'',q:'',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,rot:false,grainRequired:true});result=null;render();
+    }
+    else if(action==='remove-part'){
+      const f=getFurniture();if(f)f.parts=f.parts.filter(p=>p.id!==el.dataset.id);result=null;render();
+    }
+    else if(action==='add-board'){state.boards.push({id:uuid(),name:'Maradék tábla',a:'',b:'',thickness:18,qty:1});result=null;render();}
+    else if(action==='remove-board'){state.boards=state.boards.filter(b=>b.id!==el.dataset.id);result=null;render();}
+    else if(action==='run-nesting'){result=computeNesting();state.selectedBoard=0;state.active='nesting';notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='select-board'){state.selectedBoard=Number(el.dataset.index);render();}
+    else if(action==='clear-notice'){notice='';render();}
+    else if(action==='export-json'){
+      const title=String(getFurniture()?.name||state.projectName||'Lapterv').trim();
+      download(JSON.stringify({...state,projectName:title,active:'furniture'},null,2),
+        `${fileName(title)||'lapterv'}_projekt.json`,'application/json');
+    }
+    else if(action==='import-json'){$('#import-input').click();}
+    else if(action==='download-parts-xlsx')downloadPartsXlsx();
+    else if(action==='print-labels')printLabels();
+    else if(action==='download-labels-png')downloadLabelPng();
+    else if(action==='download-svg')downloadBoardSvg();
+    else if(action==='download-cuts-csv')downloadCutList('csv');
+    else if(action==='download-cuts-json')downloadCutList('json');
+    else if(action==='download-machine-review')downloadMachineReview();
+    else if(action==='download-machine-simulator')downloadMachineSimulation();
+    else if(action==='download-png')downloadBoardImage();
+    else if(action==='download-overview')downloadOverview();
+  });
+  document.addEventListener('change',e=>{
+    const el=e.target,scope=el.dataset.scope;if(!scope)return;
+    const key=el.dataset.key;
+    const wasNesting=!!result && state.active==='nesting';
+    if(scope==='ui'){state[key]=el.value;}
+    else {
+      let target=scope==='furniture'?state.furnitures.find(f=>f.id===el.dataset.id):scope==='part'?state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id):scope==='board'?state.boards.find(b=>b.id===el.dataset.id):scope==='settings'?state:null;
+      if(!target)return;
+      const value=el.type==='checkbox'?el.checked:el.type==='number'?pnum(el.value):el.value;
+      if(el.type==='number'&&(!Number.isFinite(value)||value<+el.min||(el.max && value>+el.max))){showNotice('Érvénytelen szám. Kérlek, ellenőrizd a megadott értéket.');return;}
+      if(scope==='part'&&key==='edgeSide'){
+        if(!['x1','x2','y1','y2'].includes(el.dataset.side))return;
+        target.edgeSides={...(target.edgeSides||sidesFromCode(target.edge)),[el.dataset.side]:value};
+        target.edge=codeFromSides(target.edgeSides);
+      }else{
+        const previous=target[key];
+        target[key]=value;
+        if(scope==='part'&&key==='edgeThickness'&&Number(value)===2&&Number(previous)!==2)target.mill=true;
+        if(scope==='part' && (key==='edgeThickness'||key==='mill') && Number(target.edgeThickness)===0.4)target.mill=false;
+        if(scope==='part'&&key==='grainRequired')target.rot=!value;
+      }
+      if(scope==='settings'&&key.startsWith('label')){
+        // Nyomtatási beállítás ne érvénytelenítse az elkészült szabástervet.
+        notice='';render();return;
+      }
+      result=null;
+      if((key==='cutDirection'||key==='layoutMode') && wasNesting)result=computeNesting();
+    }
+    notice='';render();
+  });
+  $('#import-input').addEventListener('change',async e=>{
+    const file=e.target.files?.[0];if(!file)return;
+    try{
+      const obj=JSON.parse(await file.text());
+      if(!Array.isArray(obj.furnitures)||!Array.isArray(obj.boards))throw Error('Hibás projektfájl');
+      if(!confirm('A betöltött projekt lecseréli a jelenlegi adatokat. Folytatod?'))return;
+      const fresh=defaultState();Object.assign(state,fresh,obj);normalizeEdgeSettings(state.furnitures);normalizeFurnitureMeta(state.furnitures,state);normalizeFurnitureSizes(state.furnitures);normalizeLabelSettings(state);state.active='furniture';state.selectedFurniture=state.furnitures[0]?.id||null;result=null;showNotice('Projekt betöltve.');
+    }catch(err){showNotice('Nem sikerült betölteni a projektet: '+err.message);}finally{e.target.value='';}
+  });
+  render();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+NEM KELL EGYENKENT FELTOLTENI!
+A NATIV_LAPTERV_V04 teljes mappat huzd be a GitHub Code -> Add file -> Upload files teruletere.
+Ne a ZIP-et huzd be. Ekkor a mappan beluli almappak helyesen jelennek meg.
+A build workflow-t a ChatGPT kozvetlenul hozzaadja a GitHub repositoryhoz.

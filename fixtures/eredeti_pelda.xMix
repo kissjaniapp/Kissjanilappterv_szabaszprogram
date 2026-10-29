@@ -1,0 +1,10 @@
+<xMix>
+	<Header Descrizione="" Import="" Date="21/10/2026" />
+	<Materials>
+		<Material Tipologia="Hátfallap fehér" Codice="B-FEH.HF" Quantita="999" />
+	</Materials>
+	<RigheMix>
+		<RigaMix File=".\xPrg\2026_10_21__08_35_16_1.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+		<RigaMix File=".\xPrg\2026_10_21__08_35_16_2.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+	</RigheMix>
+</xMix>
