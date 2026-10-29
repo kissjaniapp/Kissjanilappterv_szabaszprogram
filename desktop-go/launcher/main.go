@@ -12,7 +12,7 @@ import (
     "unsafe"
 )
 
-var version = "1.0.6"
+var version = "1.0.7"
 
 func message(s string) {
     title, _ := syscall.UTF16PtrFromString("Lapterv " + version)
