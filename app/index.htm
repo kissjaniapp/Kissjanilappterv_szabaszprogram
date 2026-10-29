@@ -999,7 +999,7 @@
         </div>
       </div>`:'';
       // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP, egy bútornév szerinti mappa: a .xMix és az összes táblához tartozó .xPrg együtt, C:\\WinCut\\Prg\\&lt;bútornév&gt;\\ hivatkozással.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">X:\\JANI\\szabas_programmal\\&lt;bútornév&gt;\\ – minden .xMix és táblánkénti .xPrg egy közös mappában.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">A csomag ellenőrzési minta. A gépi .xPrg végrehajtása nincs igazolva; összetett tábláknál nem futtatható geometriai fájl készül.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ Projekt XPrg + XMix ZIP</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1319,9 +1319,9 @@
       summary.push({tabla:i+1,file,anyag:bin.name,meret:[bin.a,bin.b,bin.thickness],
         stripCount:m.strips.length,complex,executable:false});
     });
-    // A Mix C:\WinCut\Prg\<butor_neve>\ útvonalra hivatkozik.
+    // A Mix az X:\JANI\szabas_programmal\<butor_neve>\ útvonalra hivatkozik.
     // Az xMix és az összes xPrg a kicsomagolt ZIP egyetlen közös mappájában van.
-    const winCutDirectory='C:\\WinCut\\Prg\\'+cabinet+'\\';
+    const winCutDirectory='X:\\JANI\\szabas_programmal\\'+cabinet+'\\';
     const mix='[Intestazione]\r\n'+
       'Descrizione=\r\n\r\n'+
       '[Righe]\r\n'+
@@ -1333,7 +1333,7 @@
     files.push(['FONTOS_OLVASD_EL.txt',
       'LAPTERV - NEM HITELESITETT XPRG/XMIX ELLENORZO CSOMAG\r\n'+
       'Projekt: '+project+'\r\n'+
-      'A .xMix az osszes .xPrg fajlt a C:\\WinCut\\Prg\\'+cabinet+'\\ helyre hivatkozza.\r\n'+
+      'A .xMix az osszes .xPrg fajlt az X:\\JANI\\szabas_programmal\\'+cabinet+'\\ helyre hivatkozza.\r\n'+
       'A ZIP-ben a .xMix es a .xPrg fajlok ugyanabban a '+cabinet+' mappaban vannak.\r\n'+
       'A ZIP NEM telepiti a fajlokat automatikusan. Kizarolag offline ellenorzesre szolgálnak.\r\n'+
       'A .xPrg fajlok nem igazoltak a szabaszgep vezerlojen.\r\n'+
