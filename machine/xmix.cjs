@@ -3,7 +3,7 @@
  * WinCut INI xMix: a Mix és az összes xPrg egyetlen bútormappában található.
  * A generált .xPrg fájlok gépi kompatibilitása nem hitelesített.
  */
-const DIRECTORY='C:\\WinCut\\Prg\\';
+const DIRECTORY='X:\\JANI\\szabas_programmal\\';
 function validateFolder(folder){
   if(typeof folder!=='string'||!/^[A-Za-z0-9_-]{1,70}$/.test(folder))
     throw new Error('Érvénytelen bútormappa. Csak betű, szám, aláhúzás vagy kötőjel megengedett.');
