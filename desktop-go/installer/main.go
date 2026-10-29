@@ -55,7 +55,7 @@ func shortcuts(target string)error {
    `foreach($d in @($desktop,$menu)) { if($d) { `+
    `$link=$s.CreateShortcut((Join-Path $d 'Lapterv.lnk')); `+
    `$link.TargetPath=$exe; $link.WorkingDirectory=(Split-Path -Parent $exe); `+
-   `$link.Description='Lapterv – szabásztervező'; $link.Save() } }`
+   `$link.Description='Lapterv – szabásztervező'; $link.IconLocation=$exe+',0'; $link.Save() } }`
  cmd:=exec.Command("powershell.exe","-NoProfile","-NonInteractive","-Command",ps)
  cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
  if out,err:=cmd.CombinedOutput();err!=nil{return fmt.Errorf("%w: %s",err,string(out))}
