@@ -7,7 +7,7 @@ const vm=require('node:vm');
 
 const html=readFileSync(path.join(__dirname,'..','app','index.htm'),'utf8');
 const a=html.indexOf('function xlsxZip(');
-const b=html.indexOf('\n  function buildPartsPngPages(',a);
+const b=html.indexOf('\n  // Önálló, nagy felbontású PNG',a);
 assert.ok(a>0&&b>a,'ZIP encoder nem található');
 const zip=vm.runInNewContext('('+html.slice(a,b).trim()+')',{
   TextEncoder,DataView,Uint8Array,ArrayBuffer,Blob
