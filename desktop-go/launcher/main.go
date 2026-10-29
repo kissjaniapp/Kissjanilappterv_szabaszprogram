@@ -52,7 +52,12 @@ func main(){
         userDataDir := filepath.Join(local,"Lapterv","BongeszoProfil")
         _ = os.MkdirAll(userDataDir, 0700)
         cmd:=exec.Command(path,"--app="+fileURL(page),"--user-data-dir="+userDataDir,"--no-first-run","--window-size=1440,900")
-        if err=cmd.Start();err==nil {return}
+        if err=cmd.Start();err==nil {
+            // Az alkalmazásablak ikonja is Lapterv legyen, ne Edge/Chrome.
+            setRunningWindowIcon(cmd.Process.Pid)
+            _=cmd.Process.Release()
+            return
+        }
     }
     // Fallback: any registered system browser, retains normal browser UI.
     cmd:=exec.Command("rundll32.exe","url.dll,FileProtocolHandler",fileURL(page))
