@@ -52,9 +52,24 @@ test('eltérő anyagú csíkok nem kerülnek egymásra',()=>{
   const out=schedule([board('Feya'),board('Tölgy')]);
   assert.equal(out.pairedGroups,0);
 });
-test('a gépi XML próba csak offline szimulátorhoz érhető el',()=>{
-  assert.match(html,/function downloadMachineSimulation\(/);
-  assert.match(html,/XPRG_XMIX_CSAK_OFFLINE/);
-  assert.match(html,/NEM hitelesített/);
-  assert.match(html,/Pacco="1"/);
+test('a közvetlen XPrg mentés csak nem hitelesített ellenőrző fájlt készít',()=>{
+  assert.match(html,/function downloadXprgForReview\(/);
+  assert.match(html,/data-action="download-xprg-review"/);
+  assert.match(html,/NEM_HITELESITETT\.xPrg/);
+  assert.match(html,/NE töltsd/);
+  assert.doesNotMatch(html,/data-action="download-machine-simulator"/);
+});
+test('a kezdőképernyő választólistával indul, nem automatikusan nyit munkát',()=>{
+  assert.match(html,/let projectScreen='library'/);
+  assert.match(html,/function projectLibraryView\(/);
+  assert.match(html,/data-action="open-saved-project"/);
+  assert.match(html,/data-action="create-project"/);
+  assert.match(html,/lapterv-project-v2/);
+  assert.match(html,/lapterv-library-v1/);
+});
+test('Excel csak készméretet, anyagot, célhelyet és élzárást tartalmaz',()=>{
+  assert.match(html,/const titles=\['Alkatrész megnevezése','Kész X \(mm\)','Kész Y \(mm\)','Darab','Élzárás'\]/);
+  assert.match(html,/ANYAG: /);
+  assert.match(html,/HOVÁ KÉSZÜL: /);
+  assert.match(html,/mergeCell ref="A1:E1"/);
 });
