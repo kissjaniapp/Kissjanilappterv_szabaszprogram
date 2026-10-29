@@ -17,12 +17,14 @@ test('a kezdőoldal a helyben elmentett bútorok listája',()=>{
   assert.match(html,/function openSavedProject\(/);
   assert.match(html,/data-action="create-project"/);
 });
-test('csak PNG, Excel és ellenőrzési xPrg mentés látható',()=>{
-  assert.match(html,/data-action="download-xprg-review"/);
+test('csak PNG, Excel és ellenőrzési XPrg/XMix projektcsomag mentés látható',()=>{
+  assert.match(html,/data-action="download-xprg-project"/);
   assert.match(html,/data-action="download-png"/);
   assert.match(html,/data-action="download-parts-xlsx"/);
   assert.doesNotMatch(html,/data-action="download-svg"/);
   assert.doesNotMatch(html,/data-action="download-machine-simulator"/);
+  assert.doesNotMatch(html,/data-action="download-xprg-review"/);
+  assert.match(html,/class="btn primary library-open"/);
 });
 test('beágyazott Lapterv JavaScript hibátlanul fordítható',()=>{
   const m=html.match(/<script>([\s\S]*?)<\/script>/);
