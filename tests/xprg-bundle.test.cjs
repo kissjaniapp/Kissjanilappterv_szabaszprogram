@@ -6,7 +6,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'..','app','index.htm'),'utf8');
 const a=html.indexOf('function buildOfflineXprgProject(');
-const b=html.indexOf('\n  // A Chromium a felhasználó',a);
+const b=html.indexOf('\n  async function downloadXprgProject()',a);
 assert.ok(a>=0&&b>a,'Hiányzik a projekt alapú XPrg/XMix generáló');
 const generate=vm.runInNewContext('('+html.slice(a,b).trim()+')',{
   fileName:x=>String(x).normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -62,15 +62,20 @@ test('az összetett táblánál is SchemaDoc a gyökér és X-U-F a részvágás
   assert.ok(xml.trimEnd().endsWith('</SchemaDoc>'));
   assert.doesNotMatch(xml,/<LaptervOfflineReview/);
   assert.match(out.files.find(([n])=>n.endsWith('.xMix'))[1],/\[Righe\]/);
-  assert.match(out.files.find(([n])=>n==='FONTOS_OLVASD_EL.txt')[1],/Fizikai gepre/i);
-  assert.equal(JSON.parse(out.files.find(([n])=>n.endsWith('.json'))[1]).machineExecutable,false);
+  assert.equal(out.files.length,3);
+  assert.ok(out.files.every(([path])=>/\.(?:xMix|xPrg)$/.test(path)));
+  assert.equal(out.files.filter(([path])=>path.endsWith('.xMix')).length,1);
+  // A fizikai célútvonal csak a Mix szövegében szerepelhet.
+  assert.ok(out.files.filter(([path])=>path.endsWith('.xPrg'))
+    .every(([,source])=>!source.includes('X:\\JANI\\szabas_programmal\\')));
 });
 test('a szekrénynév útvonalat nem szúrhat be az elérési útba',()=>{
   const out=generate([base()],'Konyha / nappali: A&B','LAPTERV_OFFLINE',5,'29/10/2026');
   const mix=out.files.find(([n])=>n.endsWith('.xMix'))[1];
   assert.doesNotMatch(mix,/nappali:|A&B|\\nappali/);
   assert.match(mix,/^1=X:\\JANI\\szabas_programmal\\Konyha_nappali_A_B\\/m);
-  assert.equal(JSON.parse(out.files.find(([n])=>n.endsWith('.json'))[1]).boardCount,1);
+  assert.equal(out.names.length,1);
+  assert.equal(out.files.length,2);
 });
 
 test('a Mix és a táblánkénti xPrg ugyanabban a ZIP-mappában található',()=>{
@@ -104,4 +109,14 @@ test('100 vagy több vágási parancs helyett a generátor világos hibát ad',(
     along:20,breadth:400,item:{name:'Elem',materialColor:'Feya'}
   }));
   assert.throws(()=>generate([lots],'Szekreny','BLAP003',5,'29/10/2026'),/99.*korlát/);
+});
+
+test('a megadott X: meghajtó csak a Mix-ben fordul elő, nem külön exportfájlban',()=>{
+  const out=generate([base(),base(true)],'Konyha','BLAP003',5,'29/10/2026');
+  assert.equal(out.files.length,3);
+  const xLocation='X:\\JANI\\szabas_programmal\\';
+  for(const [path,content] of out.files){
+    assert.equal(content.includes(xLocation),path.endsWith('.xMix'),
+      'Hibás fájlban szerepel a gépi elérési út: '+path);
+  }
 });
