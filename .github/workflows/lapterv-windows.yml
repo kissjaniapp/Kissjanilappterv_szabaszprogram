@@ -36,6 +36,16 @@ jobs:
       - name: Lapterv ellenorzesek
         run: node --test
 
+      - name: Excel valodi megnyithatosaganak tesztje
+        shell: pwsh
+        run: |
+          $env:LAPTERV_XLSX_OUTPUT = Join-Path $env:RUNNER_TEMP 'lapterv_excel_check.xlsx'
+          node --test tests/excel-export.test.cjs
+          python -m pip install --disable-pip-version-check -q openpyxl
+          if ($LASTEXITCODE -ne 0) { throw 'Az Excel olvaso telepitese nem sikerult' }
+          python tests/check-xlsx.py $env:LAPTERV_XLSX_OUTPUT
+          if ($LASTEXITCODE -ne 0) { throw 'Az Excel xlsx megnyitasa nem sikerult' }
+
       - name: Windows EXE es telepito leforditasa
         shell: cmd
         run: call desktop-go\Build-Windows.cmd
