@@ -47,7 +47,33 @@ adott projekt kifejezetten törölhető.
 - **PNG** szabásrajz és A4 matrica
 - **Excel (.xlsx)** – felül anyag és hová készül, alatta alkatrész neve, készméretek,
   darabszám és élzárás
-- **.xMix + táblánként .xPrg** – egyetlen ellenőrző ZIP, benne a teljes projekt és a `.xMix` összes táblára mutató hivatkozásával
+- **.xMix + táblánként .xPrg** – egyetlen ellenőrző ZIP, benne a teljes projekt
+  és a `.xMix` minden táblára mutató WinCut elérési útjával.
+
+### A WinCut xMix fájlformátum
+
+Az új, felhasználó által megadott `.xMix` a korábbi XML-gyűjtő helyett
+**INI formátumú**, rögzített abszolút elérési úttal:
+
+```ini
+[Intestazione]
+Descrizione=
+
+[Righe]
+NumeroRighe=2
+1=C:\WinCut\Prg\2026_10_29_Konyha_Feya_tabla_01.xPrg
+2=C:\WinCut\Prg\2026_10_29_Konyha_Feya_tabla_02.xPrg
+```
+
+A dátum mindig a készítés napja; a név a szekrény- és táblanévből képződik,
+egyedi táblasorszámmal. A `NumeroRighe` érték a tényleges táblaszám.
+A ZIP-ben az `.xPrg` ellenőrző fájlok a `WinCut/Prg/` útvonalon találhatók,
+amely a `C:\WinCut\Prg\` Windows-elérési útvonalnak felel meg.
+A ZIP **nem telepít és nem másol fájlt automatikusan a gépre**.
+
+A megadott `.xMix` szövegszerkezetet és WinCut fájlelérési utat
+már ellenőrizni tudjuk; ettől a `.xPrg` programok működése még nem bizonyított.
+
 
 Az `.xPrg` **nem hitelesített, csak fájlmegtekintésre és offline
 szimulátorhoz készült**. A `P/RY/Y/RX/X/F` parancsok értelmezése,
