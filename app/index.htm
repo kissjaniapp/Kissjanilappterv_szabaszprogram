@@ -588,9 +588,14 @@
   }
   // Gyártási sorrend: minden tábla teljes sávozása után csíkok visszaadása.
   // Ellenőrző modell, NEM hitelesített gépi parancssor.
+  // MINDEN TÁBLÁHOZ KÜLÖN VÁGÁSI SORREND: 1,2,3...
+  // Egy táblán: összes fő sávozás, majd az adott tábla csíkjai
+  // visszakérve, előbb a fő darabolás, majd az alábontás.
+  // Kizárólag ellenőrző gyártási sorrend, nem hitelesített gépi parancs.
   function buildProductionSequence(bins){
-    const events=[],crossJobs=[],round=n=>Math.round(Number(n)*1000)/1000;
-    const stages=['cross-head-trim','cross-trim','cross','rip'];let order=0,pairedGroups=0;
+    const events=[],boards=[],round=n=>Math.round(Number(n)*1000)/1000;
+    const stages=['cross-head-trim','cross-trim','cross','rip'];
+    let totalCuts=0,pairedGroups=0;
     const cutSignature=c=>JSON.stringify([c.stage,c.axis,round(c.offset),
       round(c.pieceSize),round(c.length),round(c.kerf),c.partSide,c.kind]);
     const stripSignature=job=>{
@@ -601,22 +606,6 @@
         strip.items.map(p=>[round(p.along),round(p.breadth),p.turned]),
         cuts.map(cutSignature)]);
     };
-    for(let i=0;i<bins.length;i++){
-      const bin=bins[i];
-      for(const c of bin.cuts){delete c.globalOrder;delete c.stackCount;}
-      if(!bin.machine)continue;
-      for(const cut of bin.cuts.filter(c=>c.stage==='head-trim'||c.stage==='strip')){
-        cut.globalOrder=++order;cut.stackCount=1;
-        events.push({type:'cut',phase:'savozas',order,board:i+1,
-          strip:cut.stripIndex,stage:cut.stage,stackCount:1,cut});
-      }
-      for(const strip of bin.machine.strips){
-        const cuts=bin.cuts.filter(c=>stages.includes(c.stage)&&c.stripIndex===strip.index);
-        crossJobs.push({board:i+1,bin,strip,cuts});
-      }
-    }
-    // 1–3 fő sávvágás; 4–18 fő darabolás; 19–28 alábontás;
-    // a következő sáv csak ezután következik (29–36 mintarajz).
     const cutsInNumberOrder=job=>{
       const rotated=job.bin.machine.feed==='y';
       const visualX=c=>rotated?
@@ -629,46 +618,74 @@
         ...job.cuts.filter(c=>c.stage==='rip').sort(ascending)
       ];
     };
-    const used=new Set();
-    for(let i=0;i<crossJobs.length;i++){
-      if(used.has(i))continue;
-      const first=crossJobs[i],group=[first];used.add(i);
-      for(let j=i+1;j<crossJobs.length;j++){
-        if(!used.has(j)&&stripSignature(first)===stripSignature(crossJobs[j])){
-          group.push(crossJobs[j]);used.add(j);break;
+    for(let boardIndex=0;boardIndex<bins.length;boardIndex++){
+      const bin=bins[boardIndex],board=boardIndex+1;
+      let order=0,boardPairs=0;
+      for(const cut of bin.cuts){
+        delete cut.globalOrder;delete cut.boardOrder;delete cut.stackCount;
+      }
+      if(!bin.machine){
+        boards.push({board,cutCount:0,pairedGroups:0});
+        continue;
+      }
+      // 1. Az adott tábla teljes felsávozása: minden csík elkészül.
+      for(const cut of bin.cuts.filter(c=>c.stage==='head-trim'||c.stage==='strip')){
+        cut.boardOrder=cut.globalOrder=++order;cut.stackCount=1;
+        events.push({type:'cut',phase:'savozas',group:'foves',
+          order,board,strip:cut.stripIndex,stage:cut.stage,stackCount:1,cut});
+      }
+      const jobs=bin.machine.strips.map(strip=>({
+        bin,board,strip,
+        cuts:bin.cuts.filter(c=>stages.includes(c.stage)&&c.stripIndex===strip.index)
+      }));
+      // 2. Csíkok visszakérése; azonos csíkokat csak EGY táblán belül
+      // párosítunk. A következő tábla számozása újra 1-től indul.
+      const used=new Set();
+      for(let i=0;i<jobs.length;i++){
+        if(used.has(i))continue;
+        const first=jobs[i],group=[first];used.add(i);
+        for(let j=i+1;j<jobs.length;j++){
+          if(!used.has(j)&&stripSignature(first)===stripSignature(jobs[j])){
+            group.push(jobs[j]);used.add(j);break;
+          }
+        }
+        if(group.length===2){pairedGroups++;boardPairs++;}
+        const strips=group.map(g=>({board,index:g.strip.index,
+          section:g.strip.section?.id,width:g.strip.width,
+          length:g.bin.machine.crossSize,thickness:g.bin.thickness}));
+        events.push({type:'refeed',phase:'hosszvagas',board,
+          stackCount:group.length,requiresMachineStackVerification:group.length===2,
+          strips});
+        const groupCuts=group.map(cutsInNumberOrder),ordered=groupCuts[0];
+        for(let k=0;k<ordered.length;k++){
+          if(ordered[k].stage==='rip'&&(k===0||ordered[k-1].stage!=='rip')){
+            events.push({type:'refeed-detail',phase:'hosszvagas',group:'alabontas',
+              board,stackCount:group.length,strips,
+              note:'A levágott alkatrészek további alábontása; a gépi átadás hitelesítendő.'});
+          }
+          const cutOrder=++order;
+          for(const cuts of groupCuts)if(cuts[k]){
+            cuts[k].boardOrder=cuts[k].globalOrder=cutOrder;
+            cuts[k].stackCount=group.length;
+          }
+          events.push({type:'cut',phase:'hosszvagas',board,order:cutOrder,
+            group:ordered[k].stage==='rip'?'alabontas':'fo_darabolas',
+            stackCount:group.length,stage:ordered[k].stage,strips,
+            cuts:groupCuts.map(cuts=>cuts[k])});
         }
       }
-      if(group.length===2)pairedGroups++;
-      const strips=group.map(g=>({board:g.board,index:g.strip.index,
-        section:g.strip.section?.id,width:g.strip.width,
-        length:g.bin.machine.crossSize,thickness:g.bin.thickness}));
-      events.push({type:'refeed',phase:'hosszvagas',stackCount:group.length,
-        requiresMachineStackVerification:group.length===2,strips});
-      const groupCuts=group.map(cutsInNumberOrder),ordered=groupCuts[0];
-      for(let k=0;k<ordered.length;k++){
-        if(ordered[k].stage==='rip'&&(k===0||ordered[k-1].stage!=='rip')){
-          events.push({type:'refeed-detail',phase:'hosszvagas',group:'alabontas',
-            stackCount:group.length,strips,
-            note:'A levágott alkatrészek további alábontása; a gépi átadás hitelesítendő.'});
-        }
-        const cutOrder=++order;
-        for(const cuts of groupCuts)if(cuts[k]){
-          cuts[k].globalOrder=cutOrder;cuts[k].stackCount=group.length;
-        }
-        events.push({type:'cut',phase:'hosszvagas',order:cutOrder,
-          group:ordered[k].stage==='rip'?'alabontas':'fo_darabolas',
-          stackCount:group.length,stage:ordered[k].stage,strips,
-          cuts:groupCuts.map(cuts=>cuts[k])});
+      for(const part of bin.placements){
+        const cut=bin.cuts[part.finishCutIndex];
+        if(cut?.boardOrder)part.completionStep=cut.boardOrder;
       }
+      totalCuts+=order;
+      boards.push({board,cutCount:order,pairedGroups:boardPairs});
     }
-    for(const bin of bins)for(const part of bin.placements){
-      const cut=bin.cuts[part.finishCutIndex];
-      if(cut?.globalOrder)part.completionStep=cut.globalOrder;
-    }
-    return {format:'lapterv-production-review-v4',machineExecutable:false,
-      phases:['savozas','hosszvagas'],numbering:'fősávok → sávonként fő darabolás → alábontás → következő sáv',maxSuggestedStack:2,
-      note:'A kétszintes visszakérés javaslat, NEM ellenőrzött gépi utasítás.',totalCuts:order,
-      pairedGroups,events};
+    return {format:'lapterv-production-review-v5',machineExecutable:false,
+      numbering:'táblánként 1-től: fő sávozás → fő darabolás → alábontás',
+      phases:['savozas','hosszvagas'],maxSuggestedStack:2,
+      note:'A két rétegű visszakérés csak ellenőrző javaslat. Az xPrg gépi végrehajtása nem hitelesített.',
+      totalCuts,pairedGroups,boards,events};
   }
   function computeNesting(){
     const parts=getParts();
@@ -721,7 +738,7 @@
       return `<g><title>${h(desc)}</title><rect x="${x}" y="${y}" width="${a}" height="${b}" fill="${colors[i%colors.length]}" stroke="#4b6e5a" stroke-width="2"/><text x="${x+a/2}" y="${y+b/2-(canShow?fsize*.35:0)}" fill="#253c31" font-size="${fsize}" text-anchor="middle" font-weight="700">${h(r.part.name.length>Math.max(10,a/22)?r.part.name.slice(0,Math.max(7,Math.floor(a/22)))+'…':r.part.name)}</text>${canShow?`<text x="${x+a/2}" y="${y+b/2+fsize*1.05}" text-anchor="middle" fill="#3b5f4e" font-size="${Math.min(lineSize,fsize*.82)}">${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm</text><path d="${grainPath}" fill="none" stroke="#779c86" stroke-width="3"/>`:''}</g>`;
     }).join('');
     const cutLines=bin.cuts.map((cut,i)=>{
-      const cutNum=bin.machine?(cut.globalOrder||i+1):i+1;
+      const cutNum=bin.machine?(cut.boardOrder||cut.globalOrder||i+1):i+1;
       const start=point(cut.x1,cut.y1),end=point(cut.x2,cut.y2);
       const x=start.x,y=start.y,x2=end.x,y2=end.y,dx=x2-x,dy=y2-y;
       if(i>0||(bin.machine&&cutNum!==1)){
@@ -784,7 +801,7 @@
   function allCuttingSteps(bin){
     // A gépi tervben a vágások sorrendje már fizikailag ki van dolgozva:
     // végszélezés, csíkok visszafelé, majd csíkonkénti szabás.
-    if(bin.machine)return bin.cuts.map((c,i)=>({...c,order:i+1}));
+    if(bin.machine)return bin.cuts.map((c,i)=>({...c,order:c.boardOrder||c.globalOrder||i+1})).sort((a,b)=>a.order-b.order);
     const trimCuts=trimmingSteps(bin);
     if(trimCuts===null)return null;
     return [...trimCuts,...bin.cuts.map(c=>({...c,kind:'part',order:trimCuts.length+c.order}))];
@@ -1260,9 +1277,9 @@
           completionStep:placement.completionStep??(index+1)});
       });
     });
-    labels.sort((a,b)=>(result.production?
-      a.completionStep-b.completionStep||a.boardIndex-b.boardIndex:
-      a.boardIndex-b.boardIndex||a.completionStep-b.completionStep)||a.index-b.index);
+    // A matricák is táblánként csoportosulnak; azon belül a készülési sorrend.
+    labels.sort((a,b)=>a.boardIndex-b.boardIndex||
+      a.completionStep-b.completionStep||a.index-b.index);
     return labels;
   }
   // Egyetlen SVG matricarajzot használunk előnézethez, A4 nyomtatáshoz és PNG-hez.
