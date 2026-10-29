@@ -34,6 +34,7 @@ test('Az Excel első sora az anyag, második a célhely, csak öt alkatrész-osz
   };
   const file=vm.runInNewContext(source+'\npartsWorkbook()',stub);
   const buffer=Buffer.from(await file.arrayBuffer());
+  if(process.env.LAPTERV_XLSX_OUTPUT)fs.writeFileSync(process.env.LAPTERV_XLSX_OUTPUT,buffer);
   const sheet=readZipEntry(buffer,'xl/worksheets/sheet1.xml');
   assert.match(sheet,/ANYAG: Feya/);
   assert.match(sheet,/HOVÁ KÉSZÜL: Kiskunfélegyháza/);
