@@ -25,7 +25,7 @@ test('a számozás minden új táblán 1-től indul és az egyes táblák menete
   const bins=[board(),board()];
   const out=schedule(bins);
   assert.equal(out.boards.length,2);
-  assert.deepEqual(out.boards.map(x=>x.cutCount),[3,3]);
+  assert.deepEqual(Array.from(out.boards,x=>x.cutCount),[3,3]);
   assert.equal(out.totalCuts,6);
   assert.equal(out.pairedGroups,0);
   for(const boardIndex of [0,1]){
