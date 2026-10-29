@@ -62,3 +62,26 @@ test('a gyártási sorrend nem adja ki magát hitelesített xPrg programnak',()=
   assert.equal(out.maxSuggestedStack,2);
   assert.match(out.note,/nem ellenőrzött|NEM ellenőrzött/i);
 });
+
+test('két tábla esetén mindkét rajz sorszámai 1–36 és külön ciklust alkotnak',()=>{
+  const first=sampleBoard(),second=sampleBoard();
+  const plan=schedule([first.bin,second.bin]);
+  assert.equal(plan.totalCuts,72);
+  assert.deepEqual(plan.boards.map(b=>b.cutCount),[36,36]);
+  for(const board of [first,second]){
+    assert.deepEqual(board.primary.map(c=>c.boardOrder),[1,2,3]);
+    assert.deepEqual(board.lowerMain.slice().sort((a,b)=>a.x1-b.x1)
+      .map(c=>c.boardOrder),Array.from({length:15},(_,i)=>i+4));
+    assert.deepEqual(board.lowerDetail.slice().sort((a,b)=>a.sectionX-b.sectionX)
+      .map(c=>c.boardOrder),Array.from({length:10},(_,i)=>i+19));
+    assert.deepEqual(board.upperMain.slice().sort((a,b)=>a.x1-b.x1)
+      .map(c=>c.boardOrder),Array.from({length:8},(_,i)=>i+29));
+  }
+  const firstBoardEvents=plan.events.filter(e=>e.board===1);
+  const secondBoardEvents=plan.events.filter(e=>e.board===2);
+  assert.equal(firstBoardEvents.filter(e=>e.type==='cut').length,36);
+  assert.equal(secondBoardEvents.filter(e=>e.type==='cut').length,36);
+  assert.equal(firstBoardEvents.filter(e=>e.type==='cut').at(-1).order,36);
+  assert.equal(secondBoardEvents.filter(e=>e.type==='cut')[0].order,1);
+  assert.deepEqual([...new Set(plan.events.map(e=>e.board))],[1,2]);
+});
