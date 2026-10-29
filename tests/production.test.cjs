@@ -58,7 +58,8 @@ test('a teljes xPrg + xMix csomag minden táblát külön kezel',()=>{
   assert.match(html,/data-action="download-xprg-project"/);
   assert.match(html,/\[Intestazione\]/);
   assert.match(html,/NumeroRighe=/);
-  assert.match(html,/C:\\\\WinCut\\\\Prg\\\\/);
+  assert.match(html,/szabas_programmal/);
+  assert.match(html,/winCutDirectory/);
   assert.match(html,/LaptervOfflineReview/);
   assert.match(html,/machineExecutable:false/);
   assert.doesNotMatch(html,/data-action="download-xprg-review"/);
