@@ -1282,7 +1282,7 @@
         stripCount:m.strips.length,complex,executable:false});
     });
     const namesOfMaterial=[...new Set(bins.flatMap(bin=>bin.machine.strips.flatMap(strip=>
-      (strip.items||[]).map(part=>String(part.item?.materialColor||'').trim()).filter(Boolean)))];
+      (strip.items||[]).map(part=>String(part.item?.materialColor||'').trim()).filter(Boolean))))];
     const material=namesOfMaterial.join(' / ')||'Nem megadott anyag';
     const mix='<?xml version="1.0" encoding="utf-8"?>\r\n<xMix>\r\n'+
       '  <Header Descrizione="'+esc(project)+'" Import="" Date="'+esc(date)+'" />\r\n'+
