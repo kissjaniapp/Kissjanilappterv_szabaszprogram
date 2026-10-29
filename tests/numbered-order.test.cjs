@@ -67,7 +67,7 @@ test('két tábla esetén mindkét rajz sorszámai 1–36 és külön ciklust al
   const first=sampleBoard(),second=sampleBoard();
   const plan=schedule([first.bin,second.bin]);
   assert.equal(plan.totalCuts,72);
-  assert.deepEqual(plan.boards.map(b=>b.cutCount),[36,36]);
+  assert.deepEqual(Array.from(plan.boards,b=>b.cutCount),[36,36]);
   for(const board of [first,second]){
     assert.deepEqual(board.primary.map(c=>c.boardOrder),[1,2,3]);
     assert.deepEqual(board.lowerMain.slice().sort((a,b)=>a.x1-b.x1)
