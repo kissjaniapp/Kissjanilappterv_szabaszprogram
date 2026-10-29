@@ -1,4 +1,4 @@
-// Lapterv native Windows launcher, offline HTML application.
+// Lapterv Windows desktop launcher using installed Edge/Chrome engine (offline UI).
 package main
 
 import (
@@ -12,7 +12,7 @@ import (
     "unsafe"
 )
 
-var version = "0.2.0"
+var version = "1.0.0"
 
 func message(s string) {
     title, _ := syscall.UTF16PtrFromString("Lapterv " + version)
