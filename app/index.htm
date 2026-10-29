@@ -961,9 +961,15 @@
     // visszamaradó, már le nem vágható néhány mm-es csíkot.
     const a=Math.min(bin.a,Math.ceil((neededX-0.00001)/10)*10);
     const b=Math.min(bin.b,Math.ceil((neededY-0.00001)/10)*10);
-    const saved=1-a*b/(bin.a*bin.b),util=bin.used/(bin.a*bin.b);
-    if(saved<.25||util>.60)return null;
-    return {a,b,saved};
+    // A kijelzett mennyiség az alkatrészekhez szükséges táblaanyag,
+    // NEM a régi tábla után megmaradó felület.
+    const originalArea=bin.a*bin.b;
+    const neededArea=a*b;
+    const netPartArea=bin.used;
+    const neededShare=originalArea>0?neededArea/originalArea:0;
+    const util=originalArea>0?netPartArea/originalArea:0;
+    if(neededShare>.75||util>.60)return null;
+    return {a,b,neededArea,netPartArea,neededShare};
   }
   function nestingView(){
     const summary=getParts();
@@ -979,7 +985,7 @@
         <div class="stat"><div class="label">Elhelyezett alkatrész</div><div class="value">${result.items.length-result.failed.length}<span class="small muted"> / ${result.items.length}</span></div><div class="detail">${result.failed.length?'Nem fér el minden elem':'Minden elem elhelyezve'}</div></div>
         <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">maradék és szükség esetén automatikus alaptábla</div></div>
         <div class="stat"><div class="label">Kihozatal</div><div class="value">${nfmt(util)}<span class="small muted">%</span></div><div class="detail">nettó alkatrész / teljes felhasznált tábla</div></div>
-        <div class="stat"><div class="label">Fel nem használt felület</div><div class="value">${nfmt((result.sheetArea-result.usedArea)/1e6)}<span class="small muted"> m²</span></div><div class="detail">vágásrés + szélezés + hulladék</div></div>
+        <div class="stat"><div class="label">Alkatrészek anyagigénye</div><div class="value">${nfmt(result.usedArea/1e6)}<span class="small muted"> m²</span></div><div class="detail">nettó alkatrészfelület az összes táblán, hulladék nélkül</div></div>
       </div>`;
       const unfitted=result.failed.length?`<div class="notice error" style="margin-bottom:17px"><strong>${result.failed.length} alkatrész nem fért el:</strong> ${h(result.failed.slice(0,6).map(p=>p.name+' ('+p.a+' × '+p.b+')').join(', '))}${result.failed.length>6?'…':''}. Vegyél fel nagyobb vagy több táblát.</div>`:'';
       const smaller=b?suggestedBoardSize(b):null;
@@ -993,7 +999,7 @@
               <div class="rowmeta"><span>Elhelyezett alkatrész</span><b>${b.placements.length} db</b></div>
               <div class="rowmeta"><span>Használt alkatrészfelület</span><b>${nfmt(b.used/1e6)} m²</b></div>
               <div class="rowmeta"><span>Kihozatal</span><b>${nfmt(b.used/(b.a*b.b)*100)}%</b></div>
-              ${smaller?`<div class="notice success" style="margin-top:15px"><strong>Kisebb tábla is elég lehet:</strong><div style="font-size:19px;font-weight:800;margin:6px 0">${nfmt(smaller.a)} × ${nfmt(smaller.b)} × ${nfmt(b.thickness)} mm</div><div>${nfmt(smaller.saved*100)}%-kal kisebb táblafelület. A jelenlegi kiosztásból számolva, ${nfmt(b.trim)}–${nfmt(b.trim)} mm szélezéssel és ${nfmt(state.kerf)} mm vágásréssel. Új táblamérettel ellenőrizd a nestinget szabás előtt.</div></div>`:''}
+              ${smaller?`<div class="notice success" style="margin-top:15px"><strong>Ennyi táblaanyag elegendő lehet az alkatrészekhez:</strong><div style="font-size:19px;font-weight:800;margin:6px 0">${nfmt(smaller.a)} × ${nfmt(smaller.b)} × ${nfmt(b.thickness)} mm</div><div><b>Javasolt anyagszükséglet: ${nfmt(smaller.neededArea/1e6)} m²</b> · az eredeti tábla ${nfmt(smaller.neededShare*100)}%-a. Nettó alkatrészfelület: ${nfmt(smaller.netPartArea/1e6)} m². A javasolt táblaméret a jelenlegi kiosztás, ${nfmt(b.trim)} mm szélezés és ${nfmt(state.kerf)} mm fűrészrés alapján becsült szükséglet, nem a megmaradó anyag. Új mérettel ellenőrizd a nestinget szabás előtt.</div></div>`:''}
             </div>
           </div>
         </div>
