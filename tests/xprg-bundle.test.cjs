@@ -48,14 +48,22 @@ test('a csomag tetszőleges táblaszámhoz pontos NumeroRighe értéket ír',()=
     assert.equal(new Set(out.names).size,n);
   }
 });
-test('összetett táblát nem ad ki hitelesített gépi SchemaDoc-ként',()=>{
-  const out=generate([base(),base(true)],'Konyha','LAPTERV_OFFLINE',5,'29/10/2026');
+test('az összetett táblánál is SchemaDoc a gyökér és X-U-F a részvágás',()=>{
+  const out=generate([base(),base(true)],'Konyha','BLAP003',5,'29/10/2026');
   assert.equal(out.complexBoards,1);
   const xml=out.files.find(([p])=>p==='Konyha/'+out.names[1])[1];
-  assert.match(xml,/<LaptervOfflineReview MachineExecutable="false"/);
-  assert.doesNotMatch(xml,/<SchemaDoc>/);
+  assert.ok(xml.startsWith('<SchemaDoc>\r\n'));
+  assert.match(xml,/<Header NumFogliPacco="1.00" Descrizione="BLAP003" Spessore="18.00" Date="29\/10\/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00"/);
+  assert.match(xml,/<Material Tipologia="" Codice="BLAP003" \/>/);
+  assert.match(xml,/<Pattern>\r\n/);
+  assert.match(xml,/<Cut T="X" Dim="700.00" Rip="1" ID="4" \/>/);
+  assert.match(xml,/<Cut T="U" Dim="300.00" Rip="1" ID="5" \/>/);
+  assert.match(xml,/<Cut T="F" Dim="0.00" Rip="1" ID="6" \/>/);
+  assert.ok(xml.trimEnd().endsWith('</SchemaDoc>'));
+  assert.doesNotMatch(xml,/<LaptervOfflineReview/);
   assert.match(out.files.find(([n])=>n.endsWith('.xMix'))[1],/\[Righe\]/);
-  assert.match(out.files.find(([n])=>n==='FONTOS_OLVASD_EL.txt')[1],/CSAK MINTA|Fizikai gepre/i);
+  assert.match(out.files.find(([n])=>n==='FONTOS_OLVASD_EL.txt')[1],/Fizikai gepre/i);
+  assert.equal(JSON.parse(out.files.find(([n])=>n.endsWith('.json'))[1]).machineExecutable,false);
 });
 test('a szekrénynév útvonalat nem szúrhat be az elérési útba',()=>{
   const out=generate([base()],'Konyha / nappali: A&B','LAPTERV_OFFLINE',5,'29/10/2026');
@@ -75,4 +83,25 @@ test('a Mix és a táblánkénti xPrg ugyanabban a ZIP-mappában található',()
   const mix=programs.find(([name])=>name.endsWith('.xMix'))[1];
   for(const name of out.names)assert.ok(mix.includes('X:\\JANI\\szabas_programmal\\'+expectedFolder+'\\'+name));
   assert.doesNotMatch(mix,/X:\\JANI\\szabas_programmal\\(?!Szekreny_konyhaba\\)/);
+});
+
+test('egyszerű táblánál pontos XPrg minta: SchemaDoc, P-RY-Y-RX-X-F, folyamatos ID',()=>{
+  const out=generate([base()],'Konyha','BLAP003',5,'29/10/2026');
+  const xml=out.files.find(([p])=>p.endsWith('.xPrg'))[1];
+  assert.ok(xml.startsWith('<SchemaDoc>\r\n\t<Header'));
+  const cuts=[...xml.matchAll(/<Cut T="(\w+)" Dim="(\d+\.\d{2})" Rip="1" ID="(\d+)" \/>/g)];
+  assert.deepEqual(cuts.map(m=>m[1]),['P','RY','Y','RX','X','F']);
+  assert.deepEqual(cuts.map(m=>Number(m[3])),[0,1,2,3,4,5]);
+  assert.equal(cuts[0][2],'2070.00');
+  assert.equal(cuts[1][2],'10.00');
+  assert.equal(cuts[2][2],'400.00');
+  assert.equal(cuts[4][2],'700.00');
+  assert.equal(out.complexBoards,0);
+});
+test('100 vagy több vágási parancs helyett a generátor világos hibát ad',()=>{
+  const lots=base();
+  lots.machine.strips[0].items=Array.from({length:51},()=>({
+    along:20,breadth:400,item:{name:'Elem',materialColor:'Feya'}
+  }));
+  assert.throws(()=>generate([lots],'Szekreny','BLAP003',5,'29/10/2026'),/99.*korlát/);
 });
