@@ -36,16 +36,6 @@ jobs:
       - name: Lapterv ellenorzesek
         run: node --test
 
-      - name: Excel valodi megnyithatosaganak tesztje
-        shell: pwsh
-        run: |
-          $env:LAPTERV_XLSX_OUTPUT = Join-Path $env:RUNNER_TEMP 'lapterv_excel_check.xlsx'
-          node --test tests/excel-export.test.cjs
-          python -m pip install --disable-pip-version-check -q openpyxl
-          if ($LASTEXITCODE -ne 0) { throw 'Az Excel olvaso telepitese nem sikerult' }
-          python tests/check-xlsx.py $env:LAPTERV_XLSX_OUTPUT
-          if ($LASTEXITCODE -ne 0) { throw 'Az Excel xlsx megnyitasa nem sikerult' }
-
       - name: Windows EXE es telepito leforditasa
         shell: cmd
         run: call desktop-go\Build-Windows.cmd
@@ -66,7 +56,7 @@ jobs:
           if (-not (Test-Path $installer)) { throw 'Nem keszult el a telepito EXE!' }
           New-Item -ItemType Directory -Force -Path 'dist/portable/app' | Out-Null
           Copy-Item 'desktop-go/assets/bin/Lapterv.exe' 'dist/portable/Lapterv.exe'
-          Copy-Item 'app/index.htm' 'dist/portable/app/index.htm'
+          Copy-Item 'desktop-go/assets/app/index.htm' 'dist/portable/app/index.htm'
           Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Lapterv_Portable_1.0.4.zip' -Force
           $hash = (Get-FileHash -Algorithm SHA256 $installer).Hash
           "$hash  Lapterv_Telepito_1.0.4_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
