@@ -489,6 +489,9 @@
   // X gépállás: 2070-es oldal a behúzás; Y: 2800-as oldal a behúzás.
   function makeStripPlan(mode,parts,feed){
     const kerf=Math.max(0,Number(state.kerf)||0),eps=.0001;
+    // Több gépi keresési stratégia: az eddigi rendezések mellett a már
+    // leválasztott széles csíkok szabad hosszának újrafelhasználását is próbáljuk.
+    const strategy=Math.floor(mode/6);
     const bins=prepareBins(),standardBins=[],failed=[],items=[];
     for(const r of parts.rows)if(!r.error)for(let i=0;i<r.qty;i++){
       items.push({name:r.part.name,source:r.furniture.name,
@@ -530,7 +533,14 @@
             const addition=(strip.usedLength?kerf:0)+len;
             const left=m.crossSize-strip.usedLength-addition;
             if(gap<-eps||!isValidRemainder(gap)||!isValidRemainder(left))continue;
-            const score=bin.a*bin.b*1e5+gap*len*.05+left*.005;
+            // Egy szélesebb csíkban a darabot utólagos rip vágással
+            // kiszabhatjuk; a maradékba NEM kell új teljes hosszú csíkot nyitni.
+            // A legjobb tervet minden próbálkozás végén tényleges táblaarea alapján
+            // választjuk: egy lokálisan több hulladékot hagyó döntés is spórolhat táblát.
+            const ripLoss=gap*len;
+            const gapWeight=[.05,.08,.025,.12,.035,.075,.015,.16][strategy]??.05;
+            const endWeight=[.005,.002,.008,.001,.012,.006,.002,.003][strategy]??.005;
+            const score=bin.a*bin.b*1e5+ripLoss*gapWeight+left*endWeight;
             if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len};
           }
           const separator=m.strips.length?kerf:0;
@@ -539,7 +549,18 @@
           if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)){
             // Már megkezdett tábla új csíkja előzze meg egy azonos méretű,
             // bontatlan tábla felhasználását.
-            const score=bin.a*bin.b*1e5+(m.strips.length?3000:10000)+remaining*.01;
+            // Új csík a tábla teljes keresztméretét lefoglalja. Ennek
+            // valós területi költsége legyen nagyobb a meglévő csíkok
+            // esetleges utólagos szélességre vágásánál.
+            // Változatos súlyokkal keresünk, mert a teljes lapkihasználás
+            // a hátralévő alkatrészek alakjától is függ.
+            const openStripPenalty=[3000,12000,24000,42000,65000,9500,80000,30000][strategy]??3000;
+            const firstStripPenalty=[10000,12000,16000,20000,24000,11000,20000,17000][strategy]??10000;
+            const feedAreaPenalty=(m.strips.length?
+              [0,.004,.009,.016,.025,.002,.03,.012][strategy]:0)*bw*m.crossSize;
+            const score=bin.a*bin.b*1e5+
+              (m.strips.length?openStripPenalty:firstStripPenalty)+
+              feedAreaPenalty+remaining*.01;
             if(!best||score<best.score)best={bin,strip:null,score,orientation:o,bw,len};
           }
         }
@@ -776,7 +797,10 @@
     let best=null;
     const axes=state.cutDirection==='x'||state.cutDirection==='y'?[state.cutDirection]:['x','y'];
     const machineMode=state.layoutMode==='machine';
-    const effort=machineMode?6:parts.total<=80?96:parts.total<=200?48:24;
+    // Gépi csíkos tervnél az eddigi 6 helyett 48 különböző sorrend/
+    // újracsíkozási súlyozás közül választunk. Nagy feladatnál 24 próba.
+    const effort=machineMode?(parts.total<=150?48:24):
+      parts.total<=80?96:parts.total<=200?48:24;
     const modes=Array.from({length:effort},(_,i)=>i)
       .filter(i=>state.layoutMode!=='rows'||Math.floor(i/6)%4===0)
       .filter(i=>state.layoutMode!=='mosaic'||Math.floor(i/6)%4!==0);
