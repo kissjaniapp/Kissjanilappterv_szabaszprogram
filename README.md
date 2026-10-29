@@ -1,4 +1,4 @@
-# Lapterv 1.0 – Windowsos szabásztervező
+# Lapterv 1.0.1 – Windowsos szabásztervező
 
 Ez a **működő Lapterv program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
@@ -6,7 +6,7 @@ https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Lapterv.exe` indítóval és
-`Lapterv_Telepito_1.0.0_x64.exe` telepítővel. Offline fut. A teljes
+`Lapterv_Telepito_1.0.1_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -14,7 +14,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Lapterv - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Lapterv-Windows-Telepito-1.0.0` nevű **Artifacts** csomagban.
+a `Lapterv-Windows-Telepito-1.0.1` nevű **Artifacts** csomagban.
 Az ikon beágyazásához a gyökérben `Lapterv_ikon.ico` használható.
 
 ## Indítás, helyi mentés és korábbi bútorok
@@ -47,7 +47,7 @@ adott projekt kifejezetten törölhető.
 - **PNG** szabásrajz és A4 matrica
 - **Excel (.xlsx)** – felül anyag és hová készül, alatta alkatrész neve, készméretek,
   darabszám és élzárás
-- **.xPrg kísérleti fájl** – a kijelölt tábláról közvetlen letöltés, ZIP nélkül
+- **.xMix + táblánként .xPrg** – egyetlen ellenőrző ZIP, benne a teljes projekt és a `.xMix` összes táblára mutató hivatkozásával
 
 Az `.xPrg` **nem hitelesített, csak fájlmegtekintésre és offline
 szimulátorhoz készült**. A `P/RY/Y/RX/X/F` parancsok értelmezése,
