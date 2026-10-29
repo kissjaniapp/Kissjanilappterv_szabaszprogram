@@ -18,7 +18,7 @@ import (
 //go:embed assets/Lapterv.exe assets/Lapterv_Eltavolitas.exe assets/index.htm
 var payload embed.FS
 
-const version = "1.0.3"
+const version = "1.0.4"
 
 func message(body string, typ uintptr) uintptr {
  t, _ := syscall.UTF16PtrFromString("Lapterv " + version + " – Windows telepítő")
