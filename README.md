@@ -57,7 +57,7 @@ adott projekt kifejezetten törölhető.
 - **.xMix + táblánként .xPrg** – egyetlen ellenőrző ZIP, benne a teljes projekt
   és a `.xMix` minden táblára mutató WinCut elérési útjával.
 
-### A WinCut xMix fájlformátum
+### Az X: meghajtó xMix fájlformátuma
 
 Az új, felhasználó által megadott `.xMix` a korábbi XML-gyűjtő helyett
 **INI formátumú**, rögzített abszolút elérési úttal:
@@ -68,15 +68,15 @@ Descrizione=
 
 [Righe]
 NumeroRighe=2
-1=C:\WinCut\Prg\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_01.xPrg
-2=C:\WinCut\Prg\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_02.xPrg
+1=X:\JANI\szabas_programmal\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_01.xPrg
+2=X:\JANI\szabas_programmal\Konyha_szekreny\2026_10_29_Konyha_Feya_tabla_02.xPrg
 ```
 
 A dátum mindig a készítés napja; a név a szekrény- és táblanévből képződik,
 egyedi táblasorszámmal. A `NumeroRighe` érték a tényleges táblaszám.
 A ZIP-en belül a **`Konyha_szekreny/` mappában együtt található** a `.xMix`
 és az összes táblánkénti `.xPrg` fájl. A Mix mindig a
-`C:\WinCut\Prg\<bútor_neve>\` mappára hivatkozik. A bútor nevét a
+`X:\JANI\szabas_programmal\<bútor_neve>\` mappára hivatkozik. A bútor nevét a
 program Windowsban érvényes mappanévre alakítja (például
 `Konyha szekrény` → `Konyha_szekreny`). A ZIP e mappa teljes tartalmát
 kapcsolja egyetlen projektcsomaggá; több táblánál a `NumeroRighe` is nő.
@@ -101,3 +101,7 @@ Windows telepítő és hordozható ZIP → Artifacts.
 A gépi export kísérleti része **nem változtatja meg a szabászgép
 vezérlőjét**, és nem igazolja, hogy a kimeneti XML parancsokat a gép
 elfogadja. A gép saját offline előnézete / importja szükséges.
+
+### A szabásprogramok célmappája
+
+A Mix és az összes táblánkénti XPrg a következő mappába kerül: X:\JANI\szabas_programmal\<bútor neve>\. A mentési párbeszédben az X:\JANI\szabas_programmal gyökérmappát kell kiválasztani, és az app létrehozza a bútor almappáját. A böngésző engedélye nélkül a program nem férhet hozzá tetszőleges meghajtóhoz. Ha nincs mappaválasztási támogatás, ZIP-mentést ajánl fel, amelyből a bútormappa kézzel másolható a célhelyre. A kiválasztott mappa pontos meghajtóbetűjét a böngésző nem tudja automatikusan ellenőrizni.
