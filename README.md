@@ -111,6 +111,26 @@ A gépi export kísérleti része **nem változtatja meg a szabászgép
 vezérlőjét**, és nem igazolja, hogy a kimeneti XML parancsokat a gép
 elfogadja. A gép saját offline előnézete / importja szükséges.
 
-### A szabásprogramok célmappája
+### A szabásprogramok letöltése és az .xMix gépi hivatkozása
 
-A Mix és az összes táblánkénti XPrg a következő mappába kerül: X:\JANI\szabas_programmal\<bútor neve>\. A mentési párbeszédben az X:\JANI\szabas_programmal gyökérmappát kell kiválasztani, és az app létrehozza a bútor almappáját. A böngésző engedélye nélkül a program nem férhet hozzá tetszőleges meghajtóhoz. Ha nincs mappaválasztási támogatás, ZIP-mentést ajánl fel, amelyből a bútormappa kézzel másolható a célhelyre. A kiválasztott mappa pontos meghajtóbetűjét a böngésző nem tudja automatikusan ellenőrizni.
+A Lapterv **nem ír az X: meghajtóra**. A gépi szabásfájlok egyetlen
+`<bútor neve>_XPRG_XMIX_OFFLINE.zip` csomagban, szabványos
+**böngészős letöltésként** készülnek. A böngésző alapértelmezett
+célja a **Letöltések** mappa; ha a felhasználó a böngészőben a
+„Mentési hely megkérdezése” beállítást használja, a böngésző maga kérdezhet rá.
+
+A ZIP-en belül egy közös `<bútor neve>/` mappában együtt található
+az egyetlen `.xMix` és az összes, táblánként külön `.xPrg` fájl.
+A géphez megadott útvonal:
+
+`X:\JANI\szabas_programmal\<bútor neve>\`
+
+**kizárólag az `.xMix` fájl sorainak szövegében szerepel**, és
+az adott `.xPrg` fájlnevekre mutat. A ZIP nem telepít, nem másol
+és nem töröl fájlt ezen az X: meghajtón. A felhasználó később maga
+helyezheti el a közös bútormappát a megfelelő helyre, miután a
+gépi programok biztonságát offline ellenőrizte.
+
+Az `.xPrg` minták továbbra sem hitelesített gépi vezérlőprogramok;
+fizikai vágás előtt a vezérlő saját, megfelelő szimulációja és
+szakmai ellenőrzés szükséges.
