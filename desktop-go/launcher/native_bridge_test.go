@@ -170,3 +170,43 @@ func TestNativePopupResultSignalsOpenerAndDoesNotRequireHiddenIframe(t *testing.
   t.Fatal("Native error is not visible in popup",page)
  }
 }
+
+func TestWindowsSaveAsWritesSelectedXMIXAndAbsoluteXPRGs(t *testing.T){
+ root:=t.TempDir()
+ mixPath:=filepath.Join(root,"Sajat_gyartas.xMix")
+ first,err:=saveMachineFilesAtPath(mixPath,nativeTestBundle())
+ if err!=nil{t.Fatal(err)}
+ if first!=mixPath{t.Fatal("XMIX not saved at selected file path:",first)}
+ mixBytes,err:=os.ReadFile(mixPath)
+ if err!=nil{t.Fatal(err)}
+ mix:=string(mixBytes)
+ for _,name:=range []string{"01.xPrg","02.xPrg"}{
+  program:=filepath.Join(root,"2026_10_30_Teszt","xPrg",name)
+  if _,err:=os.Stat(program);err!=nil{t.Fatalf("Missing XPRG %s: %v",program,err)}
+  if !strings.Contains(mix,`File="`+program+`"`){
+    t.Fatalf("XMIX does not point to actual program: %s\n%s",program,mix)
+  }
+ }
+}
+func TestWindowsSaveAsProtectsExistingXPRGDirectory(t *testing.T){
+ root:=t.TempDir()
+ mixPath:=filepath.Join(root,"Projekt.xMix")
+ _,err:=saveMachineFilesAtPath(mixPath,nativeTestBundle())
+ if err!=nil{t.Fatal(err)}
+ oldProgram:=filepath.Join(root,"2026_10_30_Teszt","xPrg","01.xPrg")
+ if err:=os.WriteFile(oldProgram,[]byte("OLD"),0600);err!=nil{t.Fatal(err)}
+ _,err=saveMachineFilesAtPath(mixPath,nativeTestBundle())
+ if err!=nil{t.Fatal(err)}
+ existing,err:=os.ReadFile(oldProgram)
+ if err!=nil||string(existing)!="OLD"{t.Fatal("Existing XPRG overwritten!")}
+ xml,err:=os.ReadFile(mixPath)
+ if err!=nil{t.Fatal(err)}
+ newFolder:=filepath.Join(root,"2026_10_30_Teszt_2","xPrg","01.xPrg")
+ if !strings.Contains(string(xml),newFolder){
+  t.Fatal("XMIX has wrong second save path:",string(xml))
+ }
+}
+func TestWindowsSaveAsRejectsInvalidFileExtension(t *testing.T){
+ _,err:=saveMachineFilesAtPath(filepath.Join(t.TempDir(),"wrong.txt"),nativeTestBundle())
+ if err==nil{t.Fatal("Invalid XMIX file extension accepted")}
+}
