@@ -136,6 +136,51 @@
     .save-label-details{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 15px;margin-top:10px}
     .save-label-details>summary{cursor:pointer;font-weight:750;color:var(--pine)}
     .save-label-details>.panel{margin-top:12px}
+
+    .list-pager{display:flex;gap:9px;align-items:center;justify-content:flex-end;padding:7px 12px;border-top:1px solid var(--line)}
+    .list-pager .small{margin-right:auto}
+    .formula-bar{padding:7px 14px}
+    .formula-help>summary{cursor:pointer;font-weight:750;color:var(--pine)}
+    .formula-help>div{padding-top:8px}
+    @media(min-width:1100px) and (min-height:750px){
+      .app{height:100dvh;min-height:0;overflow:hidden}
+      .main{height:100dvh;min-height:0;display:flex;flex-direction:column;padding:0 22px 8px}
+      .topbar{min-height:57px;padding:6px 0}
+      #top-steps{position:static;flex-shrink:0;padding:5px 0}
+      .steps{gap:7px}
+      .step{padding:7px 12px;gap:8px}
+      .step-number{height:27px;width:27px;flex-basis:27px}
+      .step-sub{display:none}
+      #content{flex:1;min-height:0;overflow:hidden}
+      .intro{padding:9px 0 10px}
+      .intro h1{font-size:23px;margin-bottom:2px}
+      .intro p{font-size:12px;line-height:1.3}
+      .panel-head{padding:9px 14px}
+      .panel-body{padding:10px 14px}
+      .statrow{gap:8px;margin-bottom:9px}
+      .stat{padding:8px 12px}
+      .stat .label{margin-bottom:4px}
+      .stat .value{font-size:19px}
+      .stat .detail{margin-top:4px}
+      .drawing-area{height:clamp(195px,32vh,430px)}
+      .board-meta{padding:10px}
+      .board-meta .rowmeta{padding:5px 0}
+      .board-contents{max-height:100px}
+      .board-tab{padding:6px 10px}
+      .stock-card{padding:8px 12px}
+      .stock-preview{height:52px}
+      .stock-list{gap:7px}
+      .section-bottom{margin-top:8px}
+      .top-gap{margin-top:9px}
+      .furniture-next{gap:7px}
+      .mini-info{margin-top:9px;padding:7px 10px}
+      .footer{margin-top:auto;font-size:10px;line-height:1.2;padding:4px 0}
+      .footer .tiny{display:none}
+      .table-wrap td,.table-wrap th{padding-top:5px;padding-bottom:5px}
+      .library-row{margin:5px 0;padding:8px 12px}
+    }
+    @media(max-width:1099px), (max-height:749px){.step-sub{display:none}}
+    @media(max-width:760px){.steps{grid-template-columns:repeat(5,minmax(0,1fr))}.step-name{font-size:9px}.step-number{font-size:10px}}
   </style>
 </head>
 <body>
@@ -168,6 +213,17 @@
   }:null;
   // A Windows mappaválasztó minden alkalommal a C:\\Gatterka helyről indul.
   const savedMachineRoot=defaultXmixMachineRoot;
+  // A nagyobb listák görgetés helyett lapozhatók.
+  let partListPage=0,stockListPage=0,libraryListPage=0;
+  const listSizes={parts:4,stock:2,library:3};
+  function listPager(kind,count,page){
+    const pages=Math.ceil(count/listSizes[kind]);
+    if(pages<=1)return '';
+    return '<div class="list-pager" aria-label="Lista lapozása">'+
+      '<span class="muted small">'+(page+1)+' / '+pages+' oldal</span>'+
+      '<button class="btn sm" data-action="list-page" data-kind="'+kind+'" data-index="'+(page-1)+'" '+(page===0?'disabled':'')+'>← Előző</button>'+
+      '<button class="btn sm" data-action="list-page" data-kind="'+kind+'" data-index="'+(page+1)+'" '+(page>=pages-1?'disabled':'')+'>Következő →</button></div>';
+  }
   // A téma minden bútorprojektben azonos, külön felhasználói beállításként tárolva.
   const themeKey='gatterka-theme-v1';
   const themePalettes={
@@ -401,13 +457,14 @@
   }
   function projectLibraryView(){
     const items=library.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    libraryListPage=Math.min(libraryListPage,Math.max(0,Math.ceil(items.length/listSizes.library)-1));
     return '<section class="intro"><div><div class="eyebrow">GATTERKA / BÚTORVÁLASZTÓ</div>'+
       '<h1>Melyik bútort szeretnéd megnyitni?</h1>'+
       '<p>Indításkor nem nyitjuk meg automatikusan az előző munkát. Válassz az elmentett bútorok közül, vagy hozz létre újat. Az adatok a számítógépen maradnak.</p></div>'+
       '<div class="actions"><button class="btn primary" data-action="create-project">＋ Új bútor létrehozása</button></div></section>'+
       '<div class="panel"><div class="panel-head"><div><div class="panel-title">Mentett bútorok</div>'+
       '<div class="panel-sub">'+items.reduce((sum,e)=>sum+(e.data.furnitures?.length||0),0)+' bútor · '+items.length+' helyi munkaprojekt</div></div></div>'+
-      '<div class="panel-body">'+(items.length?items.map(entry=>{
+      '<div class="panel-body">'+(items.length?items.slice(libraryListPage*listSizes.library,(libraryListPage+1)*listSizes.library).map(entry=>{
         const fs=entry.data.furnitures||[];
         const cards=fs.length?fs.map(f=>'<div class="library-row">'+
           '<div class="library-info"><strong>'+h(f.name||'Névtelen bútor')+'</strong>'+
@@ -420,7 +477,7 @@
           h(new Date(entry.updatedAt||entry.createdAt||Date.now()).toLocaleString('hu-HU'))+'</span>'+
           '<button class="btn sm ghost danger" data-action="delete-saved-project" data-project="'+h(entry.id)+'">Projekt törlése</button></div></div>';
       }).join(''):'<div class="empty"><h3>Még nincs mentett bútor</h3><p>Kezdd az „Új bútor létrehozása” gombbal.</p></div>')+
-      '</div></div><div class="mini-info top-gap">A régi munkák megmaradtak. Eltávolítás és újratelepítés után is ebből a listából választhatsz.</div>';
+      listPager('library',items.length,libraryListPage)+'</div></div><div class="mini-info top-gap">A régi munkák megmaradtak. Eltávolítás és újratelepítés után is ebből a listából választhatsz.</div>';
   }
   function showNotice(s){notice=s;render();}
   function getFurniture(){return state.furnitures.find(f=>f.id===state.selectedFurniture) || state.furnitures[0];}
@@ -576,12 +633,13 @@
         <div class="furniture-next"><span class="muted small">A bútor neve és célhelye később is megadható. A méretek és az anyagszín bármikor módosítható.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>
       </div>
     </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
-    const rows=f?f.parts.map(part=>{
+    partListPage=Math.min(partListPage,Math.max(0,Math.ceil((f?.parts.length||0)/listSizes.parts)-1));
+    const rows=f?f.parts.slice(partListPage*listSizes.parts,(partListPage+1)*listSizes.parts).map(part=>{
       const r=summary.rows.find(r=>r.part===part);
       const computed=r.skipped?`<span class="pill gray">Hiányos · kimarad</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.a)} × ${nfmt(r.b)}</span><div class="tiny muted">${nfmt(r.qty)} db · vágási méret${r.edge!=='0-0'?' · élzárva':''}${r.mill&&r.edge!=='0-0'?' · marva 1 mm':''}</div>`;
       return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td>${partDimensionInput(part,f,'a','Első méret szálirányban')}</td><td>${partDimensionInput(part,f,'b','Második méret keresztirányban')}</td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
     }).join(''):'';
-    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><div class="actions"><button class="btn sm" data-action="download-parts-png">↓ Lista PNG</button><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szálirány kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szálirány kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num" data-live-part-total>${nfmt(summary.total)} db</strong><div class="part-summary" data-live-part-area>${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
+    const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><div class="actions"><button class="btn sm" data-action="download-parts-png">↓ Lista PNG</button><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szálirány kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div>${listPager('parts',f?.parts.length||0,partListPage)}<div class="formula-bar"><details class="formula-help"><summary>Képletek és élzárás – részletes súgó</summary><div><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szálirány kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div></details></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num" data-live-part-total>${nfmt(summary.total)} db</strong><div class="part-summary" data-live-part-area>${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
     const warning=summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'';
     if(stage==='parts'){
       return intro('02 / ALKATRÉSZEK','Alkatrészek megadása',
@@ -595,8 +653,9 @@
       actions)+`<div class="two-col">${left}</div>`+warning;
   }
   function stockView(){
+    stockListPage=Math.min(stockListPage,Math.max(0,Math.ceil(state.boards.length/listSizes.stock)-1));
     const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
-    return intro('03 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
+    return intro('03 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.slice(stockListPage*listSizes.stock,(stockListPage+1)*listSizes.stock).map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div>${listPager('stock',state.boards.length,stockListPage)}<div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
   }
 
   // Guillotine cutting: every cut spans the entire CURRENT separated rectangle.
@@ -2065,6 +2124,15 @@
       }
     }
     else if(action==='page'){state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
+    else if(action==='list-page'){
+      const kind=el.dataset.kind,next=Number(el.dataset.index);
+      if(!Number.isInteger(next)||next<0)return;
+      if(kind==='parts')partListPage=Math.min(next,Math.max(0,Math.ceil((getFurniture()?.parts.length||0)/listSizes.parts)-1));
+      else if(kind==='stock')stockListPage=Math.min(next,Math.max(0,Math.ceil(state.boards.length/listSizes.stock)-1));
+      else if(kind==='library')libraryListPage=Math.min(next,Math.max(0,Math.ceil(library.length/listSizes.library)-1));
+      else return;
+      render();
+    }
     else if(action==='new-furniture'){const f={id:uuid(),name:'',destination:'',materialColor:'Freya',w:1000,ht:910,d:600,t:18,s:0,qty:1,partsOpen:false,parts:[]};state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
@@ -2076,12 +2144,12 @@
       state.furnitures=state.furnitures.filter(f=>f.id!==el.dataset.id);state.selectedFurniture=state.furnitures[0]?.id||null;result=null;render();
     }
     else if(action==='add-part'){
-      const f=getFurniture();if(!f)return;f.parts.push({id:uuid(),name:'',a:'',b:'',q:'',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,rot:false,grainRequired:true});result=null;render();
+      const f=getFurniture();if(!f)return;f.parts.push({id:uuid(),name:'',a:'',b:'',q:'',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,rot:false,grainRequired:true});partListPage=Math.floor((f.parts.length-1)/listSizes.parts);result=null;render();
     }
     else if(action==='remove-part'){
       const f=getFurniture();if(f)f.parts=f.parts.filter(p=>p.id!==el.dataset.id);result=null;render();
     }
-    else if(action==='add-board'){state.boards.push({id:uuid(),name:'Maradék tábla',a:'',b:'',thickness:18,qty:1});result=null;render();}
+    else if(action==='add-board'){state.boards.push({id:uuid(),name:'Maradék tábla',a:'',b:'',thickness:18,qty:1});stockListPage=Math.floor((state.boards.length-1)/listSizes.stock);result=null;render();}
     else if(action==='remove-board'){state.boards=state.boards.filter(b=>b.id!==el.dataset.id);result=null;render();}
     else if(action==='run-nesting'){result=computeNesting();state.selectedBoard=0;state.active='nesting';notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
     else if(action==='select-board'){state.selectedBoard=Number(el.dataset.index);render();}
