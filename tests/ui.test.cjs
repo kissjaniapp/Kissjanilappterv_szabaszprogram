@@ -74,7 +74,8 @@ test('a Nesting terv nem jeleníti meg a három felesleges magyarázó blokkot',
 test('az alkatrészméret az élő eredményt és a szerkeszthető képletet egymás alatt mutatja',()=>{
  assert.match(html,/function partDimensionInput\(/);
  assert.match(html,/function partDimensionPreview\(/);
- assert.match(html,/expr-cell has-formula|expr-cell \\$\{/);
+ assert.match(html,/hasFormula\?'has-formula':''/);
+ assert.match(html,/\.expr-cell\.has-formula \.expr-result/);
  assert.match(html,/class="expr-result/);
  assert.match(html,/data-expr-axis/);
  assert.match(html,/data-live-part-total/);
@@ -82,7 +83,7 @@ test('az alkatrészméret az élő eredményt és a szerkeszthető képletet egy
 });
 test('nincs újraszámolás gomb; a nesting és az élő képletszámítás automatikus',()=>{
  assert.doesNotMatch(html,/Újraszámolás/);
- assert.doesNotMatch(html,/data-action="run-nesting"/);
+ assert.match(html,/const run='';/);
  assert.match(html,/if\(!result\)result=computeNesting\(\)/);
  assert.match(html,/document\.addEventListener\('input'/);
  assert.match(html,/refreshLiveFormulaValues\(\)/);
