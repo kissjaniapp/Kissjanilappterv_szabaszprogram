@@ -130,6 +130,12 @@
     .theme-note{font-size:12px;color:var(--muted);line-height:1.6}
     .settings-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
     @media(max-width:500px){.theme-colors{grid-template-columns:1fr 1fr}.settings-dialog{padding:16px}}
+
+    .steps{grid-template-columns:repeat(5,minmax(0,1fr))}
+    .save-secondary{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+    .save-label-details{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 15px;margin-top:10px}
+    .save-label-details>summary{cursor:pointer;font-weight:750;color:var(--pine)}
+    .save-label-details>.panel{margin-top:12px}
   </style>
 </head>
 <body>
@@ -1290,13 +1296,24 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><div style="flex:2;min-width:290px"><label for="xmix-machine-root">Kiválasztott célmappa (csak tájékoztatás)</label><output id="xmix-machine-root" aria-label="Kiválasztott célmappa" aria-live="polite" style="display:block;min-height:40px;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-family:Consolas,monospace;overflow-wrap:anywhere">${h(state.xmixMachineRoot??defaultXmixMachineRoot)}</output></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A <strong>Windowsos Gatterka</strong> mappaválasztója a teljes X: elérési utat automatikusan beírja ebbe a mezőbe, és a kiválasztott mappába ment. A dátum + célhely projektmappában a közös .xMix és az xPrg almappa készül. Az útvonal csak kijelzésre szolgál, nem szerkeszthető. A mappaválasztó jóváhagyása után a mentés automatikus. A Mix teljes hivatkozása pl. <strong>X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt\\xPrg\\tabla_01.xPrg</strong>.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
-      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
+      body=stats+unfitted+boardPanel+`<div class="section-bottom"><div class="muted small">A vágások ellenőrzése után folytasd a külön Mentés oldalon.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button><button class="btn primary" data-action="page" data-page="save">Mentés →</button></div></div>`;
     }
     return intro('04 / SZABÁSTERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body;
   }
-  function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='stock'?stockView():nestingView());save();}
+  function saveView(){
+    if(!result)result=computeNesting();
+    const heading=intro('05 / MENTÉS','Mentés és gépi fájlok',
+      'XMIX és XPRG mentés, alkatrészlista és matricák külön oldalon.',
+      '<button class="btn" data-action="page" data-page="nesting">← Szabásterv</button>');
+    if(!result||result.error)return heading+'<div class="notice error">'+h(result?.error||'Nincs elkészült szabásterv.')+'</div>';
+    const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A Windows mappaválasztó alapból a <strong>C:\Gatterka</strong> mappánál nyílik meg. Más helyre is navigálhatsz. A kiválasztott mappában az aktuális dátum, azon belül a projekt és az xPrg almappa készül. Az XMIX mindig a tényleges Windows-útvonalakat tartalmazza.</div></div></div>`;
+    return heading+machinePanel+
+      '<div class="save-secondary"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button>'+
+      '<button class="btn" data-action="download-png">↓ Szabásterv PNG</button></div>'+
+      '<details class="save-label-details"><summary>Matricák beállításai és nyomtatása</summary>'+labelPanelView()+'</details>';
+  }
+  function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='stock'?stockView():state.active==='save'?saveView():nestingView());save();}
   function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
