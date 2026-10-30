@@ -378,7 +378,7 @@ func nativeFormResult(w http.ResponseWriter,id string,success bool,data interfac
   }
  }
  jsonMessage,_:=json.Marshal(message)
- _,_=fmt.Fprintf(w,`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka – mentési eredmény</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:24px;color:#17392f;background:#f5f7f4"><h2>Gatterka</h2><p>%s</p><p>Ablak bezárása után visszatérhetsz a Gatterkához.</p><script>if(window.parent!==window){window.parent.postMessage(%s,'*');}else if(window.opener&&!window.opener.closed){window.opener.postMessage(%s,'*');setTimeout(function(){window.close()},500);}</script></body></html>`,html.EscapeString(visible),jsonMessage)
+ _,_=fmt.Fprintf(w,`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka – mentési eredmény</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:24px;color:#17392f;background:#f5f7f4"><h2>Gatterka</h2><p>%s</p><p>Ablak bezárása után visszatérhetsz a Gatterkához.</p><script>if(window.parent!==window){window.parent.postMessage(%s,'*');}else if(window.opener&&!window.opener.closed){window.opener.postMessage(%s,'*');setTimeout(function(){window.close()},500);}</script></body></html>`,html.EscapeString(visible),jsonMessage,jsonMessage)
 }
 func (bridge *nativeBridge) pickAndSave(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodPost {
