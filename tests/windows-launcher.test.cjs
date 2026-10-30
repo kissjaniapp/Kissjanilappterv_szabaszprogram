@@ -56,7 +56,7 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(dialog,/SHBrowseForFolderW/);
  assert.match(dialog,/GetForegroundWindow/);
  assert.doesNotMatch(dialog,/powershell\.exe|FolderBrowserDialog/);
- assert.match(native,/GATTERKA_INITIAL_FOLDER/);
+ assert.match(native,/defaultMachineDirectory/);
  assert.match(native,/datedRoot/);
  assert.match(native,/func saveMachineFiles\(root string/);
  assert.match(native,/bridge\.selectedDirectory=dir/);
