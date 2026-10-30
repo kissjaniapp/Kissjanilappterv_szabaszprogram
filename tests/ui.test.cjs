@@ -48,7 +48,7 @@ test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
 test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
  assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.match(html,/xprgMaterialCode:'BLAP003'/);
- assert.match(html,/data-action="download-xprg-project"/);
+ assert.match(html,/async function downloadXprgProject\(\)/);
  const first=html.indexOf('async function downloadXprgProject()');
  const last=html.indexOf('\n  function downloadCutList(',first);
  const source=html.slice(first,last);
