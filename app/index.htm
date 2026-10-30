@@ -1332,7 +1332,7 @@
       'XMIX és XPRG mentés, alkatrészlista és matricák külön oldalon.',
       '<button class="btn" data-action="page" data-page="nesting">← Szabásterv</button>');
     if(!result||result.error)return heading+'<div class="notice error">'+h(result?.error||'Nincs elkészült szabásterv.')+'</div>';
-    const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''} aria-label="Mentés a kiválasztott Windows-mappába">💾 Mentés</button></div><div class="muted tiny" style="margin-top:9px">A Mentés megnyitja a Windows mappaválasztóját. A kiválasztott helyre kerül a dátum szerinti projektmappa, benne az XMIX és az xPrg fájlok. Az XMIX a tényleges mentési útvonalra hivatkozik.</div><div id="machine-save-status" class="notice" hidden role="status" aria-live="polite"></div></div></div>`;
+    const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''} aria-label="Mentés a kiválasztott Windows-mappába">💾 Mentés</button></div><div class="muted tiny" style="margin-top:9px">A Mentés megnyitja a Windows saját Mentés másként ablakát. Válaszd ki az XMIX fájl nevét és helyét. Az XPRG fájlok a kiválasztott mappán belüli projekt- és xPrg almappába kerülnek; az XMIX a tényleges elérési utakat tartalmazza.</div><div id="machine-save-status" class="notice" hidden role="status" aria-live="polite"></div></div></div>`;
     return heading+machinePanel+
       '<div class="save-secondary"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button>'+
       '<button class="btn" data-action="download-png">↓ Szabásterv PNG</button></div>'+
@@ -1861,17 +1861,17 @@
   // A file:// eredetű felületen megmaradnak a régi projektek. A helyi
   // mentés felső szintű Windows segédablakból működik, nem rejtett iframe-ből.
   // Az elérhetőséget külön ellenőrizzük, így az elakadás látható hibát ad.
+  // A Windows saját "Mentés másként" párbeszédablakát indítjuk.
+  // A háttérben egy láthatatlan helyi kérés működik, nincs Edge-segédablak.
+  // Előbb ellenőrizzük, hogy a Gatterka mentőszolgáltatása valóban fut-e.
   function nativePickAndSave(bundle){
-    if(!nativeBridge)throw Error('A mentéshez a telepített Gatterka.exe-t kell elindítani.');
-    const id='gatterka-machine-window-'+String(Date.now())+'-'+String(++machineRelaySequence);
-    const popup=window.open('about:blank',id,
-      'popup=yes,width=560,height=260,resizable=yes,scrollbars=yes');
-    if(!popup)throw Error('A böngésző letiltotta a Gatterka mentési segédablakát. Engedélyezd a felugró ablakot.');
-    try{
-      popup.document.title='Gatterka – gépi mentés';
-      popup.document.body.textContent='Kapcsolódás a Gatterka helyi mentőszolgáltatásához…';
-      popup.focus();
-    }catch{}
+    if(!nativeBridge)throw Error('A mentéshez a telepített Gatterka.exe-t indítsd el.');
+    const frame=document.createElement('iframe');
+    const id='gatterka-save-'+String(Date.now())+'-'+String(++machineRelaySequence);
+    frame.name=id;
+    frame.setAttribute('aria-hidden','true');
+    frame.tabIndex=-1;
+    frame.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
     const form=document.createElement('form');
     form.method='POST';
     form.enctype='application/x-www-form-urlencoded';
@@ -1893,47 +1893,39 @@
       field.value=value;
       form.appendChild(field);
     }
+    document.body.appendChild(frame);
     document.body.appendChild(form);
     return new Promise((resolve,reject)=>{
-      let done=false,stage='connect';
-      let expiry=null,closeCheck=null;
+      let done=false,started=false,timeout=null;
       function finish(error,value){
         if(done)return;
         done=true;
-        clearTimeout(expiry);
-        clearInterval(closeCheck);
+        clearTimeout(timeout);
         window.removeEventListener('message',receive);
         form.remove();
-        try{if(!popup.closed)popup.close();}catch{}
+        frame.remove();
         if(error)reject(error);
         else resolve(value);
       }
       function receive(event){
-        if(event.source!==popup || event.origin!==nativeBridge.url)return;
-        const msg=event.data;
-        if(!msg||msg.id!==id)return;
-        if(msg.type==='gatterka-ready'&&stage==='connect'){
-          stage='saving';
-          clearTimeout(expiry);
-          expiry=setTimeout(()=>finish(Error(
-            'A Windows mappaválasztó nem válaszolt. Nézd meg, nem nyílt-e meg az ablak a Gatterka mögött.'
-          )),120*1000);
+        if(event.source!==frame.contentWindow||event.origin!==nativeBridge.url)return;
+        const reply=event.data;
+        if(!reply||reply.id!==id)return;
+        if(reply.type==='gatterka-ready'&&!started){
+          started=true;
+          clearTimeout(timeout);
+          timeout=setTimeout(()=>finish(Error('A Windows Mentés másként párbeszédablak nem válaszolt.')),30*60*1000);
           try{form.submit();}
           catch(error){finish(error);}
-        }else if(msg.type==='gatterka-form-result'&&stage==='saving'){
-          finish(msg.ok?null:Error(msg.error||'A gépi projekt mentése sikertelen.'),msg.value);
+        }else if(reply.type==='gatterka-form-result'&&started){
+          finish(reply.ok?null:Error(reply.error||'Gépi mentési hiba.'),reply.value);
         }
       }
       window.addEventListener('message',receive);
-      closeCheck=setInterval(()=>{
-        if(popup.closed)finish(Error('Bezáródott a Gatterka mentési segédablaka. Nem történt gépi mentés.'));
-      },700);
-      expiry=setTimeout(()=>finish(Error(
-        'Nem érhető el a Gatterka helyi mentőszolgáltatása (127.0.0.1). A segédablakban megjelenő hibát ellenőrizd.'
-      )),9000);
-      // Csak a message listener felállítása után indítjuk a navigációt.
-      try{popup.location.replace(nativeBridge.url+'/native/ready#'+encodeURIComponent(id));}
-      catch(error){finish(error);}
+      timeout=setTimeout(()=>finish(Error(
+        'A Gatterka Windows mentőszolgáltatása nem elérhető. Zárd be a Gatterkát, majd indítsd újra a Gatterka.exe fájllal.'
+      )),8000);
+      frame.src=nativeBridge.url+'/native/ready#'+encodeURIComponent(id);
     });
   }
   async function saveXprgToSelectedFolder(){
@@ -1954,7 +1946,7 @@
       if(status){
         status.hidden=false;
         status.className='notice';
-        status.textContent='A Windows célmappa-választó megnyitása…';
+        status.textContent='A Windows Mentés másként ablak megnyitása…';
       }
       const saved=await nativePickAndSave(bundle);
       if(saved?.cancelled){

@@ -54,6 +54,9 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(native,/router\.HandleFunc\("\/native\/pick-save"/);
  const dialog=fs.readFileSync(path.join(__dirname,"../desktop-go/launcher/native_dialog_windows.go"),"utf8");
  assert.match(dialog,/SHBrowseForFolderW/);
+ assert.match(dialog,/GetSaveFileNameW/);
+ assert.match(dialog,/CommDlgExtendedError/);
+ assert.match(native,/func saveMachineFilesAtPath\(mixPath string,req nativeSave\)/);
  assert.match(dialog,/GetForegroundWindow/);
  assert.doesNotMatch(dialog,/powershell\.exe|FolderBrowserDialog/);
  assert.match(native,/defaultMachineDirectory/);

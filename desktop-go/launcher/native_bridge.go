@@ -111,8 +111,8 @@ func startNativeBridge(page string)(int,string,func(),error){
   w.Header().Set("Content-Type","text/html; charset=utf-8")
   w.Header().Set("Cache-Control","no-store")
   w.Header().Set("X-Content-Type-Options","nosniff")
-  w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'")
-  _,_=w.Write([]byte(`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka gépi mentés</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:25px;color:#17392f;background:#f5f7f4"><h2>Gatterka – gépi mentés</h2><p>A kapcsolat működik. A Windows mappaválasztó megnyitása következik.</p><script>if(window.opener){window.opener.postMessage({type:'gatterka-ready',id:decodeURIComponent(location.hash.slice(1))},'*')}</script></body></html>`))
+  w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'")
+  _,_=w.Write([]byte(`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka gépi mentés</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:25px;color:#17392f;background:#f5f7f4"><h2>Gatterka – gépi mentés</h2><p>A kapcsolat működik. A Windows mappaválasztó megnyitása következik.</p><script>var message={type:'gatterka-ready',id:decodeURIComponent(location.hash.slice(1))};if(window.parent!==window){window.parent.postMessage(message,'*')}else if(window.opener){window.opener.postMessage(message,'*')}</script></body></html>`))
  })
  router.HandleFunc("/native/relay",func(w http.ResponseWriter,r *http.Request){
   if r.Method!=http.MethodGet{http.Error(w,"Method not allowed",http.StatusMethodNotAllowed);return}
@@ -268,6 +268,75 @@ func saveMachineFiles(root string, req nativeSave)(string,error){
  success=true
  return full,nil
 }
+
+ 
+// A Windows "Mentés másként" ablakában kijelölt .xMix pontos helyére írunk.
+// Az xPrg fájlok e mappa alatti külön projektmappába kerülnek, és a Mix
+// minden RigaMix File attribútuma a tényleges abszolút útvonalat kapja.
+// Meglévő xPrg könyvtárat soha nem írunk felül; ütközéskor új almappa készül.
+func saveMachineFilesAtPath(mixPath string,req nativeSave)(string,error){
+ _,files,err:=safeNativeProgramFiles(req)
+ if err!=nil{return "",err}
+ if !filepath.IsAbs(mixPath)||!strings.EqualFold(filepath.Ext(mixPath),".xMix"){
+  return "",errors.New("Az XMIX mentési helyének teljes Windows .xMix fájlútvonalnak kell lennie.")
+ }
+ root:=filepath.Dir(mixPath)
+ st,err:=os.Stat(root)
+ if err!=nil||!st.IsDir(){return "",fmt.Errorf("A célmappa nem létezik: %s",root)}
+ var projectDir,folder string
+ for n:=1;n<=99;n++{
+  name:=req.CabinetFolder
+  if n>1{name+=fmt.Sprintf("_%d",n)}
+  candidate:=filepath.Join(root,name)
+  if err:=os.Mkdir(candidate,0700);os.IsExist(err){continue
+  } else if err!=nil{return "",err}
+  projectDir=candidate
+  folder=name
+  break
+ }
+ if projectDir==""{return "",errors.New("Túl sok azonos nevű gépi projektmappa.")}
+ success:=false
+ defer func(){if !success{_ = os.RemoveAll(projectDir)}}()
+ if err:=os.Mkdir(filepath.Join(projectDir,"xPrg"),0700);err!=nil{return "",err}
+ var xml string
+ for _,file:=range files {
+  rel:=strings.TrimPrefix(file.Path,req.CabinetFolder+"/")
+  if strings.HasPrefix(rel,"xPrg/"){
+   target:=filepath.Join(projectDir,"xPrg",filepath.Base(rel))
+   if err:=os.WriteFile(target,[]byte(file.Content),0600);err!=nil{return "",err}
+  }else{
+   xml,err=patchNativeMix(file.Content,root,folder)
+   if err!=nil{return "",err}
+  }
+ }
+ if xml==""{return "",errors.New("Nincs XMIX tartalom.")}
+ temp,err:=os.CreateTemp(root,".gatterka-mix-*.new")
+ if err!=nil{return "",err}
+ tempPath:=temp.Name()
+ defer os.Remove(tempPath)
+ if _,err=temp.Write([]byte(xml));err!=nil{_ = temp.Close();return "",err}
+ if err=temp.Close();err!=nil{return "",err}
+ // A Windows fájlablaka már megerősíti a meglévő XMIX felülírását;
+ // a korábbi fájlt biztonsági másolatba mozgatjuk, amíg a csere nem kész.
+ backup:=""
+ if existing,statErr:=os.Stat(mixPath);statErr==nil{
+  if existing.IsDir(){return "",errors.New("A kiválasztott XMIX név egy könyvtár neve.")}
+  candidate,err:=os.CreateTemp(root,".gatterka-old-mix-*.bak")
+  if err!=nil{return "",err}
+  backup=candidate.Name()
+  _=candidate.Close()
+  _=os.Remove(backup)
+  if err:=os.Rename(mixPath,backup);err!=nil{return "",err}
+ } else if !os.IsNotExist(statErr){return "",statErr}
+ if err:=os.Rename(tempPath,mixPath);err!=nil{
+  if backup!=""{_ = os.Rename(backup,mixPath)}
+  return "",err
+ }
+ if backup!=""{_ = os.Remove(backup)}
+ success=true
+ return mixPath,nil
+}
+
 func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
  if !bridge.allow(w,r){return}
  bridge.mu.Lock()
@@ -296,7 +365,7 @@ func nativeFormResult(w http.ResponseWriter,id string,success bool,data interfac
  w.Header().Set("Content-Type","text/html; charset=utf-8")
  w.Header().Set("Cache-Control","no-store")
  w.Header().Set("X-Content-Type-Options","nosniff")
- w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'")
+ w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'")
  message:=map[string]interface{}{"type":"gatterka-form-result","id":id,"ok":success,"value":data}
  visible:="A gépi fájlok mentése sikerült."
  if err!=nil{
@@ -309,7 +378,7 @@ func nativeFormResult(w http.ResponseWriter,id string,success bool,data interfac
   }
  }
  jsonMessage,_:=json.Marshal(message)
- _,_=fmt.Fprintf(w,`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka – mentési eredmény</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:24px;color:#17392f;background:#f5f7f4"><h2>Gatterka</h2><p>%s</p><p>Ablak bezárása után visszatérhetsz a Gatterkához.</p><script>if(window.opener&&!window.opener.closed){window.opener.postMessage(%s,'*');setTimeout(function(){window.close()},500);}</script></body></html>`,html.EscapeString(visible),jsonMessage)
+ _,_=fmt.Fprintf(w,`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka – mentési eredmény</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:24px;color:#17392f;background:#f5f7f4"><h2>Gatterka</h2><p>%s</p><p>Ablak bezárása után visszatérhetsz a Gatterkához.</p><script>if(window.parent!==window){window.parent.postMessage(%s,'*');}else if(window.opener&&!window.opener.closed){window.opener.postMessage(%s,'*');setTimeout(function(){window.close()},500);}</script></body></html>`,html.EscapeString(visible),jsonMessage,jsonMessage)
 }
 func (bridge *nativeBridge) pickAndSave(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodPost {
@@ -335,16 +404,20 @@ func (bridge *nativeBridge) pickAndSave(w http.ResponseWriter,r *http.Request){
  }
  bridge.mu.Lock()
  defer bridge.mu.Unlock()
- initial:=defaultMachineDirectory
+ initial:=filepath.Join(defaultMachineDirectory,time.Now().Format("2006-01-02"))
  if err:=os.MkdirAll(initial,0700);err!=nil{
-  initial=filepath.VolumeName(defaultMachineDirectory)+string(filepath.Separator)
+  initial=filepath.Join(os.Getenv("USERPROFILE"),"Documents")
+  if info,statErr:=os.Stat(initial);statErr!=nil||!info.IsDir(){
+   initial=filepath.VolumeName(defaultMachineDirectory)+string(filepath.Separator)
+  }
  }
- dir,err:=chooseWindowsFolder(initial)
+ mixName,_,_:=safeNativeProgramFiles(req)
+ mixPath,err:=chooseWindowsSaveFile(initial,mixName)
  if err!=nil{nativeFormResult(w,id,false,nil,err);return}
- if dir==""{
+ if mixPath==""{
   nativeFormResult(w,id,true,map[string]interface{}{"cancelled":true},nil);return
  }
- full,err:=saveMachineFiles(dir,req)
+ full,err:=saveMachineFilesAtPath(mixPath,req)
  if err!=nil{nativeFormResult(w,id,false,nil,err);return}
  nativeFormResult(w,id,true,map[string]interface{}{
   "cancelled":false,"path":full,"programs":len(req.Files)-1,
