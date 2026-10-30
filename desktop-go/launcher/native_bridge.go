@@ -62,7 +62,8 @@ window.addEventListener('message', async function(event) {
   }
 });
 </script></body></html>`
-\nconst maxNativeBody = 12 << 20
+
+const maxNativeBody = 12 << 20
 const defaultMachineDirectory = `C:\Gatterka`
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
