@@ -277,3 +277,32 @@ A biztonságos XML-karakterkezelés és Windows-mappaellenőrzés bekerült.
 nem változnak.** A korábban észlelt SpessoreLamaNonValido hiba okát
 külön kell tisztázni: a generált xPrg fizikai gépi végrehajtása nincs
 hitelesítve. Részletes leírás: docs/GEPI_FORMATUM.md.
+
+## 2026-10-30 – gép által elfogadott próbakód szerinti xPrg fejléc
+
+Az xPrg export alapértelmezett „**Próba szerint · anyagkód**” üzemmódjában
+a működő `GATTERKA_PROBA_01_REGI_FEJLEC.xPrg` és az eredeti SCM
+`09_01_51_1(1).xPrg` mintát követjük:
+
+- A `Header Lunghezza` és az első `Cut T="P" Dim` ugyanazt a gépi
+  beadási oldalméretet tartalmazza. Az a korábbi hiba, amikor például
+  `Lunghezza=753`, de `P=1983` volt, így nem ismétlődhet meg.
+- A `Header Larghezza` a másik gépi táblaoldal.
+- `Header Descrizione` alapból a gépi anyagkód (például `BLAP003`);
+  a korábban kért anyagszín választható a **„XPrg fejléc leírása”**
+  beállítás **„Anyagszín / dekor”** lehetőségével. A közös XML xMix
+  `Materials Tipologia` mezője továbbra is a bútor anyagszínét tartalmazza.
+- A rajz képernyőn látható tájolása **nem módosul**. A két külön
+  tájolást a gépi fejléc és a grafikus szabásrajz más célja indokolja.
+- Az xPrg `SchemaDoc/Header/Material/Pattern/Cut` szerkezete,
+  `P/RY/Y/RX/X/U/F` vágásai, fűrészrésmérete és a tényleges
+  alkatrészek **nem kerülnek leegyszerűsítésre vagy elhagyásra**.
+  A 2800 × 2070 × 18, 5 mm-es fűrészrésű, 12 mm szélezésű,
+  964 × 200-as példánál a generált fájl szó szerint megfelel a
+  felhasználó gépe által elfogadott 01-es próba xPrg-nek.
+
+A próbaminta sikeres megnyitása **nem hitelesíti** az általános,
+sokvágásos programok fizikai végrehajtását. Különösen a korábbi
+`SpessoreLamaNonValido` gépi hiba újbóli felmerülését ellenőrizni
+kell. A legfrissebb XML-es xMix és a beállítható xPrg mappa
+változatlan.

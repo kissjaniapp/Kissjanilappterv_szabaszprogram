@@ -67,3 +67,25 @@ a `SpessoreLama` méretét, a vágások számát és sorrendjét.
 Éles gépi végrehajtás előtt külön próba, a tényleges anyagtörzs-kód és
 gépi paraméterek ellenőrzése szükséges. A kísérleti xPrg export
 nem tekinthető hitelesített gyártási programnak.
+
+## Gép által elfogadott xPrg minta szerinti fejléc (2026-10-30)
+
+Mind az eredeti SCM `09_01_51_1(1).xPrg` mintában, mind a
+felhasználó által WinCutban megnyitott `GATTERKA_PROBA_01_REGI_FEJLEC.xPrg`
+próbában az első `P` értéke a `Header Lunghezza` méretével egyezett.
+A 2800 × 2070 mm-es táblán a próbánál `P=2070`,
+`Lunghezza=2070`, `Larghezza=2800`.
+
+Az előző Gatterka olyan maradéktáblát is exportált, ahol a
+`Lunghezza=753`, de a `P=1983` volt. A javított export a
+beadási irány alapján adja meg a gépi fejléc két méretét; nem
+változtatja meg emiatt a képernyőn megjelenő rajz tájolását.
+
+Az alapértelmezett fejléc-leírás most a gép által elfogadott
+próbák szerinti anyagkód, amelyet a `Material Codice` is tartalmaz.
+Az **Anyagszín / dekor** opció az előzőleg kért
+`Header Descrizione=anyag színe` formátumot biztosítja,
+a közös XML xMix `Materials` adataitól függetlenül.
+
+Az xPrg vágási parancsok és a `SpessoreLama` értéke nem
+változott; a tényleges gépi validálás továbbra is szükséges.

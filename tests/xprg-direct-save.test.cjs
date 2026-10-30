@@ -10,7 +10,7 @@ const b=html.indexOf('\n  function downloadCutList(',a);
 assert.ok(a>0&&b>a,'Hiányzik a letöltés-generáló funkció');
 const code='('+html.slice(a,b).trim()+')';
 
-function harness({failed=false,hasBins=true,materialCode='BLAP003',folder='.\\xPrg\\'}={}){
+function harness({failed=false,hasBins=true,materialCode='BLAP003',folder='.\\xPrg\\',headerMode='sample'}={}){
  const calls={downloads:[],alerts:[],zipInputs:[],usedCode:null};
  const bundle={
   cabinetFolder:'Konyha',
@@ -22,16 +22,17 @@ function harness({failed=false,hasBins=true,materialCode='BLAP003',folder='.\\xP
   ]
  };
  const sandbox={
-  state:{layoutMode:'machine',projectName:'Konyha',kerf:5,xprgMaterialCode:materialCode,xprgFolder:folder},
+  state:{layoutMode:'machine',projectName:'Konyha',kerf:5,xprgMaterialCode:materialCode,xprgFolder:folder,xprgHeaderMode:headerMode},
   result:{machineReady:true,bins:hasBins?[{machine:{strips:[{}]}}]:[],failed:failed?[{}]:[]},
   getFurniture:()=>({name:'Konyha'}),
   prompt:()=>{throw Error('A letöltés NEM kérhet anyagkódot felugró ablakban');},
   confirm:()=>{throw Error('A letöltés NEM kérhet megerősítést');},
-  buildOfflineXprgProject:(bins,project,code,kerf,date,path)=>{
+  buildOfflineXprgProject:(bins,project,code,kerf,date,path,mode)=>{
    assert.equal(project,'Konyha');
    assert.equal(kerf,5);
    assert.match(date,/^\d{2}\/\d{2}\/\d{4}$/);
    calls.folder=path;
+   calls.headerMode=mode;
    calls.usedCode=code;return bundle;
   },
   xlsxZip:(files,mime)=>{
@@ -53,6 +54,7 @@ test('a ZIP egy kattintásra azonnal letöltődik, prompt és confirm nélkül',
  assert.equal(calls.zipInputs.length,1);
  assert.equal(calls.zipInputs[0],bundle.files);
  assert.equal(calls.usedCode,'BLAP003');
+ assert.equal(calls.headerMode,'sample');
  assert.deepEqual(calls.alerts,[]);
 });
 test('a panelen megadott anyagkódot használja, a gomb melletti beállításból',async()=>{
@@ -80,5 +82,12 @@ test('a Mixben megadott XPrg elérési utat továbbadjuk a letöltéshez',async(
   const {fn,calls}=harness({folder:'D:\\Gyartas\\Prg\\'});
   await fn();
   assert.equal(calls.folder,'D:\\Gyartas\\Prg\\');
+  assert.equal(calls.downloads.length,1);
+});
+
+test('az xPrg próba- és anyagszín-fejlécmód közül a felületen választottat továbbadja',async()=>{
+  const {fn,calls}=harness({headerMode:'color'});
+  await fn();
+  assert.equal(calls.headerMode,'color');
   assert.equal(calls.downloads.length,1);
 });

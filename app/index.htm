@@ -248,7 +248,7 @@
     furnitures:[],
     boards:[],
     kerf:5,trim:12,cutDirection:'auto',layoutMode:'machine',selectedBoard:0,
-    xprgMaterialCode:'BLAP003',xprgFolder:'.\\xPrg\\',
+    xprgMaterialCode:'BLAP003',xprgFolder:'.\\xPrg\\',xprgHeaderMode:'sample',
     labelWidth:48.5,labelHeight:25.4,labelMarginX:8,labelMarginY:8.8,labelFormatV2:true
   });
   const parse = str => { try { return JSON.parse(str); } catch { return null; } };
@@ -1250,7 +1250,7 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix megnyitja az összes tábla külön .xPrg fájlját.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="width:165px;max-width:100%"><label for="xprg-material-code">Gépi anyagkód</label><input id="xprg-material-code" type="text" maxlength="40" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgMaterialCode" value="${h(state.xprgMaterialCode??'BLAP003')}" aria-label="Gépi anyagkód" style="font-family:Consolas,monospace"></div><div style="flex:1;min-width:230px"><label for="xprg-folder">XPrg fájlok helye az XMix-ben</label><input id="xprg-folder" type="text" maxlength="260" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgFolder" value="${h(state.xprgFolder??'.\\xPrg\\')}" aria-label="XPrg fájlok helye" style="font-family:Consolas,monospace;width:100%"></div><button class="btn primary" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted tiny" style="margin-top:8px">Relatív példa: .\\xPrg\\ (a ZIP mappaszerkezete is követi). Teljes útvonal: C:\\WinCut\\Prg\\ (ide az .xPrg fájlokat külön kell bemásolni).</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix megnyitja az összes tábla külön .xPrg fájlját.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="width:165px;max-width:100%"><label for="xprg-material-code">Gépi anyagkód</label><input id="xprg-material-code" type="text" maxlength="40" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgMaterialCode" value="${h(state.xprgMaterialCode??'BLAP003')}" aria-label="Gépi anyagkód" style="font-family:Consolas,monospace"></div><div style="flex:1;min-width:230px"><label for="xprg-folder">XPrg fájlok helye az XMix-ben</label><input id="xprg-folder" type="text" maxlength="260" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgFolder" value="${h(state.xprgFolder??'.\\xPrg\\')}" aria-label="XPrg fájlok helye" style="font-family:Consolas,monospace;width:100%"></div><div style="width:190px;max-width:100%"><label for="xprg-header-mode">XPrg fejléc leírása</label><select id="xprg-header-mode" data-scope="settings" data-key="xprgHeaderMode" aria-label="XPrg fejléc leírása"><option value="sample" ${(state.xprgHeaderMode??'sample')==='sample'?'selected':''}>Próba szerint · anyagkód</option><option value="color" ${state.xprgHeaderMode==='color'?'selected':''}>Anyagszín / dekor</option></select></div><button class="btn primary" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted tiny" style="margin-top:8px">Relatív példa: .\\xPrg\\ (a ZIP mappaszerkezete is követi). Teljes útvonal: C:\\WinCut\\Prg\\ (ide az .xPrg fájlokat külön kell bemásolni).</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1490,7 +1490,7 @@
   // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
   // Egy projekt = egy .xMix + táblánként egy .xPrg ugyanabban a ZIP-ben.
   // A formátumot csak a kapott minták támasztják alá, a gépi futtatás NINCS igazolva.
-  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\'){
+  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\',headerMode='sample'){
     if(!Array.isArray(bins)||!bins.length)throw Error('Nincsenek táblák a gépi csomaghoz.');
     const esc=t=>String(t??'').replace(/[&<>"']/g,
       c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
@@ -1500,6 +1500,8 @@
     };
     if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
       throw Error('Hibás ellenőrző anyagkód.');
+    if(!['sample','color'].includes(headerMode))
+      throw Error('Ismeretlen XPrg fejlécformátum.');
 
     // A működő WinCut xMix XML relatív .\xPrg\ mappára mutat.
     // Megadható abszolút meghajtóútvonal vagy UNC megosztás is. Utóbbi
@@ -1541,15 +1543,17 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      // A fejléchez a szabásrajz tájolását használjuk (svgBoardSize).
-      // Normál/X nézet: felül X (a), bal oldalt Y (b).
-      // Elfordított/Y nézet: felül Y (b), bal oldalt X (a).
-      // Lunghezza = felül vízszintesen látható méret; Larghezza = bal oldali függőleges.
-      const rotated=m.feed==='y';
-      const headerLength=rotated?bin.b:bin.a;
-      const headerWidth=rotated?bin.a:bin.b;
-      // A P parancs irányfüggő mérete továbbra is változatlan.
+      // A gépen láthatóvá vált eredeti SCM-minta és a működő próbafájl:
+      // <Header Lunghezza="2070.00" Larghezza="2800.00" ...>
+      // <Cut T="P" Dim="2070.00" ...> – azaz P = Lunghezza.
+      // A korábbi Gatterka hibás esetben Lunghezza=753, P=1983 volt.
+      // A gépi fejléc a *beadási irányhoz* igazodik, nem a megjelenített
+      // szabásrajz tájolásához: a rajzon a felül látható méret változatlan.
+      if(m.feed!=='x'&&m.feed!=='y')
+        throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
       const feedLength=m.feed==='x'?bin.b:bin.a;
+      const headerLength=feedLength;
+      const headerWidth=m.feed==='x'?bin.a:bin.b;
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
@@ -1560,6 +1564,9 @@
         throw Error((i+1)+'. tábla: több eltérő anyagszín ('+
           materialColors.join(', ')+'). Egy .xPrg fejlécéhez egyetlen anyagszín szükséges.');
       const materialDescription=materialColors[0]||'';
+      // A működő xPrg próba mintájában a Descrizione az anyagkód.
+      // A korábban kért anyagszín ettől függetlenül választható marad.
+      const headerDescription=headerMode==='color'?materialDescription:materialCode;
       if(!materials.includes(materialDescription))materials.push(materialDescription);
       const boardName=safePart(bin.name,'Tabla',30);
       const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
@@ -1609,7 +1616,7 @@
           ' gépi parancs szükséges (99 a biztonságosan alkalmazott korlát). '+
           'A programot kisebb mintákra kell bontani, _REP parancsokat nem találunk ki.');
       const xml='<SchemaDoc>\r\n'+
-        '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(materialDescription)+
+        '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(headerDescription)+
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
         '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
         '" SpessoreLama="'+num(kerf)+'" />\r\n'+
@@ -1655,7 +1662,7 @@
       if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code))
         throw Error('Érvénytelen gépi anyagkód: 2–40 betű, szám, pont, aláhúzás vagy kötőjel szükséges. Javítsd a letöltőpanelen.');
       const bundle=buildOfflineXprgProject(result.bins,project,code,
-        Number(state.kerf),date,state.xprgFolder??'.\\xPrg\\');
+        Number(state.kerf),date,state.xprgFolder??'.\\xPrg\\',state.xprgHeaderMode??'sample');
       // Nem nyitunk X: meghajtós mappaválasztót, és nem használunk
       // Mentés másként ablakot. A böngésző szabványos letöltési módja
       // a felhasználó saját Letöltések-beállítását követi.
@@ -2002,7 +2009,7 @@
         if(scope==='part' && (key==='edgeThickness'||key==='mill') && Number(target.edgeThickness)===0.4)target.mill=false;
         if(scope==='part'&&key==='grainRequired')target.rot=!value;
       }
-      if(scope==='settings'&&(key==='xprgMaterialCode'||key==='xprgFolder')){
+      if(scope==='settings'&&(key==='xprgMaterialCode'||key==='xprgFolder'||key==='xprgHeaderMode')){
         // Szövegmezőről a letöltés gombra váltáskor nem bontjuk le
         // a gomb DOM-ját: a blur utáni kattintás így nem vész el.
         save();return;

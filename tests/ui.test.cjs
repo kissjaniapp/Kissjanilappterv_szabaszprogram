@@ -98,3 +98,14 @@ test('az XML xMix-ben az xPrg mappa beállítható és a régi bútorprojektek i
   assert.match(html,/key==='xprgMaterialCode'\|\|key==='xprgFolder'/);
   assert.match(html,/state\.xprgFolder\?\?/);
 });
+
+test('xPrg a gépen működő próbakód fejlécstílusát választja alapértelmezetten',()=>{
+ assert.match(html,/xprgHeaderMode:'sample'/);
+ assert.match(html,/data-key="xprgHeaderMode"/);
+ assert.match(html,/value="sample"/);
+ assert.match(html,/value="color"/);
+ assert.match(html,/Próba szerint · anyagkód/);
+ assert.match(html,/Anyagszín \/ dekor/);
+ assert.match(html,/state\.xprgHeaderMode\?\?'sample'/);
+ assert.match(html,/key==='xprgHeaderMode'/);
+});
