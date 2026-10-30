@@ -586,7 +586,7 @@
         'Külön oldalon rögzítheted a darabokat, méreteket és képleteket. A bútor méreteit az előző oldalon módosíthatod.',
         `<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>`)+
         (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3><button class="btn primary" data-action="page" data-page="furniture">Bútor adatai →</button></div>')+
-        `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek.</span><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div>`+warning;
+        `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek. A továbblépés gombja az alkatrészlista alatt található.</span></div>`+warning;
     }
     return intro('01 / BÚTOR ADATAI','Bútor megadása',
       'Itt add meg a bútor méreteit, az anyagszínt és hogy hová készül. Az alkatrészlista a következő oldalon jelenik meg.',
@@ -1294,7 +1294,7 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><div style="flex:2;min-width:290px"><label for="xmix-machine-root">Gépi gyökérmappa – teljes Windows-útvonal</label><input type="text" id="xmix-machine-root" data-scope="settings" data-key="xmixMachineRoot" value="${h(state.xmixMachineRoot??defaultXmixMachineRoot)}" autocomplete="off" spellcheck="false" aria-label="Gépi gyökérmappa teljes elérési útja" style="font-family:Consolas,monospace"></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A <strong>Windowsos Gatterka</strong> mappaválasztója a teljes X: elérési utat automatikusan beírja ebbe a mezőbe, és a kiválasztott mappába ment. A dátum + célhely projektmappában a közös .xMix és az xPrg almappa készül. A mező kézzel is szerkeszthető, és mentésre kerül. A Mix teljes hivatkozása pl. <strong>X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt\\xPrg\\tabla_01.xPrg</strong>.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><div style="flex:2;min-width:290px"><label for="xmix-machine-root">Kiválasztott célmappa (csak tájékoztatás)</label><output id="xmix-machine-root" aria-label="Kiválasztott célmappa" aria-live="polite" style="display:block;min-height:40px;padding:11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);font-family:Consolas,monospace;overflow-wrap:anywhere">${h(state.xmixMachineRoot??defaultXmixMachineRoot)}</output></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A <strong>Windowsos Gatterka</strong> mappaválasztója a teljes X: elérési utat automatikusan beírja ebbe a mezőbe, és a kiválasztott mappába ment. A dátum + célhely projektmappában a közös .xMix és az xPrg almappa készül. Az útvonal csak kijelzésre szolgál, nem szerkeszthető. A mappaválasztó jóváhagyása után a mentés automatikus. A Mix teljes hivatkozása pl. <strong>X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt\\xPrg\\tabla_01.xPrg</strong>.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1780,7 +1780,7 @@
         if(!selected.path)throw Error('A Windows nem adta vissza a kijelölt mappa útvonalát.');
         rememberMachineRoot(selected.path);
         const input=document.getElementById('xmix-machine-root');
-        if(input)input.value=selected.path;
+        if(input)input.textContent=selected.path;
         const bundle=machineExportBundle();
         const saved=await requestNativeMachine('save',{
           cabinetFolder:bundle.cabinetFolder,
@@ -2141,10 +2141,6 @@
     const el=e.target;
     if(el.dataset.themeColor){changeThemeColor(el.dataset.themeColor,el.value);return;}
     const scope=el.dataset.scope,key=el.dataset.key;
-    if(scope==='settings'&&key==='xmixMachineRoot'){
-      rememberMachineRoot(el.value);
-      return; // Gépelés közben nem bontjuk le az inputot és a gombokat.
-    }
     if(scope==='part'&&['a','b','q'].includes(key)){
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
