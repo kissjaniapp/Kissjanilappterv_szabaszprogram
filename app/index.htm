@@ -1854,15 +1854,24 @@
   // Az űrlap egyetlen POST kéréssel indítja a Windows mappaválasztóját
   // és menti a teljes gépi csomagot. A file:// felületnek nincs szüksége
   // cross-origin fetch-re, és megmarad a korábbi helyi projektadatbázis.
+  // A Chromium korlátozhatja a file:// oldalból a 127.0.0.1-re küldött
+  // rejtett iframe kéréseket. A felhasználói kattintásra nyitott külön
+  // böngészőablakba küldött űrlap felső szintű navigációt végez.
+  // Az ablak addig is visszajelzést mutat, amíg a Windows párbeszédablaka nyílik.
+  // A file:// eredetű felületen megmaradnak a régi projektek. A helyi
+  // mentés felső szintű Windows segédablakból működik, nem rejtett iframe-ből.
+  // Az elérhetőséget külön ellenőrizzük, így az elakadás látható hibát ad.
   function nativePickAndSave(bundle){
-    if(!nativeBridge)throw Error('A mentéshez a telepített Windowsos Gatterka.exe fájlt kell elindítani.');
-    const frame=document.createElement('iframe');
-    frame.name='gatterka-machine-output-'+String(Date.now())+'-'+String(++machineRelaySequence);
-    frame.setAttribute('aria-hidden','true');
-    frame.tabIndex=-1;
-    frame.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
-    document.body.appendChild(frame);
-    const id=frame.name;
+    if(!nativeBridge)throw Error('A mentéshez a telepített Gatterka.exe-t kell elindítani.');
+    const id='gatterka-machine-window-'+String(Date.now())+'-'+String(++machineRelaySequence);
+    const popup=window.open('about:blank',id,
+      'popup=yes,width=560,height=260,resizable=yes,scrollbars=yes');
+    if(!popup)throw Error('A böngésző letiltotta a Gatterka mentési segédablakát. Engedélyezd a felugró ablakot.');
+    try{
+      popup.document.title='Gatterka – gépi mentés';
+      popup.document.body.textContent='Kapcsolódás a Gatterka helyi mentőszolgáltatásához…';
+      popup.focus();
+    }catch{}
     const form=document.createElement('form');
     form.method='POST';
     form.enctype='application/x-www-form-urlencoded';
@@ -1886,29 +1895,44 @@
     }
     document.body.appendChild(form);
     return new Promise((resolve,reject)=>{
-      let done=false;
-      let expiry=null;
+      let done=false,stage='connect';
+      let expiry=null,closeCheck=null;
       function finish(error,value){
         if(done)return;
         done=true;
         clearTimeout(expiry);
+        clearInterval(closeCheck);
         window.removeEventListener('message',receive);
         form.remove();
-        frame.remove();
+        try{if(!popup.closed)popup.close();}catch{}
         if(error)reject(error);
         else resolve(value);
       }
       function receive(event){
-        if(event.source!==frame.contentWindow || event.origin!==nativeBridge.url)return;
+        if(event.source!==popup || event.origin!==nativeBridge.url)return;
         const msg=event.data;
-        if(!msg||msg.type!=='gatterka-form-result'||msg.id!==id)return;
-        finish(msg.ok?null:Error(msg.error||'A gépi projekt mentése sikertelen.'),msg.value);
+        if(!msg||msg.id!==id)return;
+        if(msg.type==='gatterka-ready'&&stage==='connect'){
+          stage='saving';
+          clearTimeout(expiry);
+          expiry=setTimeout(()=>finish(Error(
+            'A Windows mappaválasztó nem válaszolt. Nézd meg, nem nyílt-e meg az ablak a Gatterka mögött.'
+          )),120*1000);
+          try{form.submit();}
+          catch(error){finish(error);}
+        }else if(msg.type==='gatterka-form-result'&&stage==='saving'){
+          finish(msg.ok?null:Error(msg.error||'A gépi projekt mentése sikertelen.'),msg.value);
+        }
       }
       window.addEventListener('message',receive);
+      closeCheck=setInterval(()=>{
+        if(popup.closed)finish(Error('Bezáródott a Gatterka mentési segédablaka. Nem történt gépi mentés.'));
+      },700);
       expiry=setTimeout(()=>finish(Error(
-        'A Windows mappamentő nem válaszolt. Ellenőrizd, hogy nem nyílt-e meg az ablak a Gatterka mögött.'
-      )),10*60*1000);
-      try{form.submit();}
+        'Nem érhető el a Gatterka helyi mentőszolgáltatása (127.0.0.1). A segédablakban megjelenő hibát ellenőrizd.'
+      )),9000);
+      // Csak a message listener felállítása után indítjuk a navigációt.
+      try{popup.location.replace(nativeBridge.url+'/native/ready#'+encodeURIComponent(id));}
       catch(error){finish(error);}
     });
   }
