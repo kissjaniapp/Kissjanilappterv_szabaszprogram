@@ -59,7 +59,7 @@ test('a szabásprogramok egy közös bútormappás ZIP letöltést indítanak',a
   assert.equal(calls.downloads[0].blob.zip,true);
   assert.equal(calls.confirms.length,1);
   assert.match(calls.confirms[0],/Letöltések/);
-  assert.match(calls.confirms[0],/C:\\\\WinCut/);
+  assert.match(calls.confirms[0],/C:\\WinCut/);
   assert.match(calls.confirms[0],/NEM igazolt/);
   assert.equal(calls.alerts.length,0);
 });
