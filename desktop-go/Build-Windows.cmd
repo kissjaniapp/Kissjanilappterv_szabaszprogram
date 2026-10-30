@@ -50,8 +50,8 @@ copy /Y assets\bin\Gatterka_Eltavolitas.exe installer\assets\Gatterka_Eltavolita
 copy /Y assets\app\index.htm installer\assets\index.htm >nul
 
 echo [3/3] Saját Windows telepito...
-go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\dist\Gatterka_Telepito_1.0.12_x64.exe .\installer
+go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\dist\Gatterka_Telepito_1.0.13_x64.exe .\installer
 if errorlevel 1 exit /b 1
 echo.
-echo Keszen van: dist\Gatterka_Telepito_1.0.12_x64.exe
+echo Keszen van: dist\Gatterka_Telepito_1.0.13_x64.exe
 endlocal
