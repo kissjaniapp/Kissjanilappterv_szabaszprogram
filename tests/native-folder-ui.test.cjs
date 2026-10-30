@@ -79,6 +79,7 @@ test('a célmappa nem szerepel a program felületén',()=>{
  const a=html.indexOf('function saveView()'),b=html.indexOf('function render(){',a);
  const panel=html.slice(a,b);
  assert.match(panel,/data-action="save-xprg-folder"/);
- assert.match(panel,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(panel,/data-action="download-xprg-project"/);
+ assert.match(panel,/id="machine-save-status"/);
  assert.doesNotMatch(panel,/xmix-machine-root|Kiválasztott célmappa/);
 });

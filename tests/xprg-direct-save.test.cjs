@@ -64,7 +64,7 @@ test('egyszerű HTML-böngészőben nincs hamis abszolút mentés',async()=>{
  const {f,calls}=harness();
  await f.saveXprgToSelectedFolder();
  assert.equal(calls.downloads.length,0);
- assert.ok(calls.notices.at(-1).includes('Windowsos Gatterka'));
+ assert.ok(calls.notices.at(-1).includes('telepített Gatterka'));
 });
 test('hiányos nesting vagy anyagszín esetén nincs gépi ZIP',async()=>{
  for(const option of [{failed:true},{color:''}]){

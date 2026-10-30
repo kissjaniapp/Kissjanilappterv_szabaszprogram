@@ -15,7 +15,7 @@ import (
     "unsafe"
 )
 
-var version = "1.0.10"
+var version = "1.0.11"
 
 func message(s string) {
     title, _ := syscall.UTF16PtrFromString("Gatterka " + version)
@@ -112,14 +112,16 @@ func main(){
     page, _ = filepath.Abs(page)
     // Saját helyi Windows-mappaválasztó és projektmentés: a Chromium
     // file:// környezet önmagában nem tud teljes X:\\... útvonalat lekérni.
-    port,token,stopBridge,bridgeErr:=startNativeBridge()
+    port,token,stopBridge,bridgeErr:=startNativeBridge(page)
     if bridgeErr!=nil {
         message("A gépi programok Windows mappaválasztója nem érhető el:\n"+bridgeErr.Error()+
             "\nA ZIP letöltése ettől még használható.")
     } else {defer stopBridge()}
     appURL:=fileURL(page)
     if bridgeErr==nil {
-        appURL+="#gatterka-native="+strconv.Itoa(port)+"."+token
+        // Ugyanazon helyi HTTP cím szolgálja ki a felületet és a natív mentést.
+        // Ez megszünteti a file:// -> localhost böngészős tiltást.
+        appURL="http://127.0.0.1:"+strconv.Itoa(port)+"/#gatterka-native="+strconv.Itoa(port)+"."+token
     }
     if path,found:=firstBrowser();found {
         local := os.Getenv("LOCALAPPDATA")

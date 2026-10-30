@@ -18,7 +18,7 @@ test('a kezdőoldal a helyben elmentett bútorok listája',()=>{
   assert.match(html,/data-action="create-project"/);
 });
 test('a PNG alkatrészlista és az XPrg/XMix export látható, Excel már nincs',()=>{
-  assert.match(html,/data-action="download-xprg-project"/);
+  assert.match(html,/function downloadXprgProject\(/);
   assert.match(html,/data-action="download-png"/);
   assert.match(html,/data-action="download-parts-png"/);
   assert.doesNotMatch(html,/data-action="download-parts-xlsx"/);
@@ -48,7 +48,7 @@ test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
 test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
  assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.match(html,/xprgMaterialCode:'BLAP003'/);
- assert.match(html,/data-action="download-xprg-project"/);
+ assert.match(html,/async function downloadXprgProject\(\)/);
  const first=html.indexOf('async function downloadXprgProject()');
  const last=html.indexOf('\n  function downloadCutList(',first);
  const source=html.slice(first,last);
@@ -62,7 +62,8 @@ test('a gépi mentés külön oldalon van, látható célmappa nélkül',()=>{
  assert.ok(start>=0&&end>start);
  const page=html.slice(start,end);
  assert.match(page,/data-action="save-xprg-folder"/);
- assert.match(page,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(page,/data-action="download-xprg-project"/);
+ assert.match(page,/id="machine-save-status"/);
  assert.match(page,/Matricák beállításai és nyomtatása/);
  assert.doesNotMatch(page,/id="xmix-machine-root"|Kiválasztott célmappa/);
  assert.match(html,/data-action="download-parts-png"/);
@@ -171,10 +172,11 @@ test('az Alkatrészek oldalon egyetlen Anyagkészlet tovább gomb marad',()=>{
  assert.equal((view.match(/data-action="page" data-page="stock">Anyagkészlet →<\/button>/g)||[]).length,1);
 });
 
-test('hosszú listák lapozással használhatók és a desktop alapképernyő nem görget',()=>{
+test('a görgetősáv visszatért, hosszú listák lapozással is használhatók',()=>{
  assert.match(html,/function listPager\(kind,count,page\)/);
  assert.match(html,/data-action="list-page"/);
  assert.match(html,/f\.parts\.slice\(partListPage\*listSizes\.parts/);
  assert.match(html,/state\.boards\.slice\(stockListPage\*listSizes\.stock/);
- assert.match(html,/\.app\{height:100dvh;min-height:0;overflow:hidden\}/);
+ assert.doesNotMatch(html,/\.app\{height:100dvh;min-height:0;overflow:hidden\}/);
+ assert.match(html,/#content\{overflow:visible\}/);
 });

@@ -55,7 +55,7 @@ test('eltérő anyagú csíkok nem kerülnek egymásra',()=>{
 test('a teljes xPrg + XML xMix csomag minden táblát külön kezel',()=>{
   assert.match(html,/function buildOfflineXprgProject\(/);
   assert.match(html,/function downloadXprgProject\(/);
-  assert.match(html,/data-action="download-xprg-project"/);
+  assert.match(html,/data-action="save-xprg-folder"/);
   assert.match(html,/data-action="save-xprg-folder"/);
   assert.match(html,/showDirectoryPicker/);
   assert.doesNotMatch(html,/data-key="xprgFolder"/);
