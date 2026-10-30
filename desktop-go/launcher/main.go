@@ -149,7 +149,7 @@ func main(){
             // A processz erőforrásait külön takarítjuk, de a mentőszolgáltatás
             // élettartama a látható Gatterka főablakhoz igazodik.
             go func(){_ = cmd.Wait()}()
-            waitForGatterkaWindow(gatterkaMainWindowVisible,500*time.Millisecond,8*time.Hour)
+            waitForGatterkaWindow(gatterkaMainWindowVisible,500*time.Millisecond,8*time.Hour,3*time.Second)
             return
         }
     }
