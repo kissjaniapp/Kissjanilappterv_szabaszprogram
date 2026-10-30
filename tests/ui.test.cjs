@@ -170,3 +170,12 @@ test('a célmappát kizárólag natív kiválasztás módosítja',()=>{
  assert.match(html,/document\.getElementById\('xmix-machine-root'\)/);
  assert.match(html,/const saved=await requestNativeMachine\('save'/);
 });
+
+
+test('az Alkatrészek oldalon egyetlen Anyagkészlet tovább gomb marad',()=>{
+ const start=html.indexOf('function furnitureView(');
+ const end=html.indexOf('function stockView()',start);
+ assert.ok(start>=0&&end>start);
+ const view=html.slice(start,end);
+ assert.equal((view.match(/data-action="page" data-page="stock">Anyagkészlet →<\\/button>/g)||[]).length,1);
+});
