@@ -95,6 +95,10 @@ func TestNativeAppAndSaveShareSameLocalOrigin(t *testing.T){
  if err!=nil{t.Fatal(err)}
  defer stop()
  origin:=fmt.Sprintf("http://127.0.0.1:%d",port)
+ relayResp,err:=http.Get(origin+"/native/relay")
+ if err!=nil{t.Fatal(err)}
+ _=relayResp.Body.Close()
+ if relayResp.StatusCode!=http.StatusOK{t.Fatalf("Relay not served: %d",relayResp.StatusCode)}
  resp,err:=http.Get(origin+"/")
  if err!=nil{t.Fatal(err)}
  _=resp.Body.Close()
