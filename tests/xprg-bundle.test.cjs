@@ -94,7 +94,7 @@ test('a kezdő P mérete minden gépállásban egyezik a fejléccel',()=>{
  }
 });
 test('összetett alkatrésznél az U visszaadás és F zárás megmarad',()=>{
- const xml=xprgs(exportBundle([base('Feya','x',{breadth:300})]))[0][1];
+ const xml=xprgs(exportBundle([base('Feya','x',{width:400,breadth:300})]))[0][1];
  assert.match(xml,/<Cut T="U" Dim="300.00" Rip="1" ID="5" \/>/);
  assert.match(xml,/<Cut T="F" Dim="0.00" Rip="1" ID="6" \/>/);
 });

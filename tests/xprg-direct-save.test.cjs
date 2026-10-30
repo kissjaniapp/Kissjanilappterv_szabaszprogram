@@ -82,7 +82,7 @@ test('a ZIP letöltés továbbra is közvetlen, párbeszéd és mappaválasztás
  const {f,calls}=harness();
  await f.downloadXprgProject();
  assert.equal(calls.downloads.length,1);
- assert.equal(calls.downloads[0].filename,'2026_10_30_Konyha_XPRG_XMIX.zip');
+ assert.equal(calls.downloads[0].name,'2026_10_30_Konyha_XPRG_XMIX.zip');
  assert.equal(calls.pickerCount,0);
  assert.equal(calls.zipInputs.length,1);
  assert.equal(calls.zipInputs[0].length,3);

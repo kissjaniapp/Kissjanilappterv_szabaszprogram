@@ -10,7 +10,7 @@ test('az exportok nem nyitnak Mentés másként ablakot',()=>{
   assert.doesNotMatch(html,/showSaveFilePicker/);
   assert.match(html,/function downloadBlob\(blob,filename\)/);
   assert.match(html,/function download\(data,filename,mime\)\{downloadBlob/);
-  assert.match(html,/downloadBlob\(zip,name\)/);
+  assert.match(html,/downloadBlob\(xlsxZip\(bundle\.files,'application\/zip'\)/);
   assert.match(html,/downloadBlob\(xlsxZip\(files,'application\/zip'\)/);
 });
 test('a korábbi PNG mentés közvetlen letöltéssé vált',async()=>{
