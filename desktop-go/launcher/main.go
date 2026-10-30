@@ -12,10 +12,11 @@ import (
     "strconv"
     "strings"
     "syscall"
+    "time"
     "unsafe"
 )
 
-var version = "1.0.13"
+var version = "1.0.14"
 
 func message(s string) {
     title, _ := syscall.UTF16PtrFromString("Gatterka " + version)
@@ -119,9 +120,8 @@ func main(){
     } else {defer stopBridge()}
     appURL:=fileURL(page)
     if bridgeErr==nil {
-        // A file://-eredet megőrzése elengedhetetlen a korábban helyben
-        // mentett bútorprojektek megtartásához. A natív mentéshez a
-        // felület rejtett helyi relay-iframe-et használ.
+        // A file://-eredet megőrzése szükséges a korábbi helyi
+        // bútorprojektek megtartásához. A mentéshez a helyi API fut.
         appURL+="#gatterka-native="+strconv.Itoa(port)+"."+token
     }
     if path,found:=firstBrowser();found {
@@ -141,10 +141,15 @@ func main(){
         if err=cmd.Start();err==nil {
             // Az alkalmazásablak ikonja is Gatterka legyen, ne Edge/Chrome.
             setRunningWindowIcon(cmd.Process.Pid)
-            // Ne lépjünk ki azonnal a böngésző indítása után.
-            // A Windows kompatibilitási asszisztense a rendkívül gyors
-            // kilépést hibásan megszakadt alkalmazásnak vélheti.
-            _=cmd.Wait()
+            // FONTOS: az Edge/Chrome újrahasznosíthat egy futó
+            // böngészőfolyamatot. Ilyenkor a cmd.Wait() AZONNAL visszatér,
+            // bár a Gatterka ablaka továbbra is nyitva van. A korábbi kód
+            // ekkor leállította a localhost mentőszolgáltatást, ami miatt
+            // a Mentés gombra ERR_CONNECTION_REFUSED jelent meg.
+            // A processz erőforrásait külön takarítjuk, de a mentőszolgáltatás
+            // élettartama a látható Gatterka főablakhoz igazodik.
+            go func(){_ = cmd.Wait()}()
+            waitForGatterkaWindow(gatterkaMainWindowVisible,500*time.Millisecond,8*time.Hour)
             return
         }
     }
