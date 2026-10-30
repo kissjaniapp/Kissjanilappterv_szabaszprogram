@@ -2,6 +2,7 @@ package main
 
 import (
  "encoding/json"
+ "errors"
  "fmt"
  "net/http"
  "net/url"
@@ -96,6 +97,10 @@ func TestNativeAppAndSaveShareSameLocalOrigin(t *testing.T){
  if err!=nil{t.Fatal(err)}
  defer stop()
  origin:=fmt.Sprintf("http://127.0.0.1:%d",port)
+ readyResp,err:=http.Get(origin+"/native/ready")
+ if err!=nil{t.Fatal(err)}
+ _=readyResp.Body.Close()
+ if readyResp.StatusCode!=http.StatusOK{t.Fatalf("Native save ready page not served: %d",readyResp.StatusCode)}
  relayResp,err:=http.Get(origin+"/native/relay")
  if err!=nil{t.Fatal(err)}
  _=relayResp.Body.Close()
@@ -151,5 +156,17 @@ func TestNativeFormSaveBlocksExternalOrigin(t *testing.T){
  bridge.pickAndSave(response,req)
  if !strings.Contains(response.Body.String(),"Idegen weboldalról"){
   t.Fatalf("Foreign origin not rejected: %s",response.Body.String())
+ }
+}
+
+func TestNativePopupResultSignalsOpenerAndDoesNotRequireHiddenIframe(t *testing.T){
+ w:=httptest.NewRecorder()
+ nativeFormResult(w,"dialog-42",false,nil,errors.New("Nem válaszol a mappaválasztó"))
+ page:=w.Body.String()
+ if !strings.Contains(page,"window.opener.postMessage"){
+  t.Fatal("Native result does not report to visible helper window")
+ }
+ if !strings.Contains(page,"dialog-42")||!strings.Contains(page,"Nem válaszol a mappaválasztó"){
+  t.Fatal("Native error is not visible in popup",page)
  }
 }
