@@ -62,8 +62,8 @@ jobs:
           signing-account-name: ${{ secrets.GATTERKA_SIGN_ACCOUNT }}
           certificate-profile-name: ${{ secrets.GATTERKA_SIGN_PROFILE }}
           files: |
-            ${{ github.workspace }}\\desktop-go\\assets\\bin\\Gatterka.exe
-            ${{ github.workspace }}\\desktop-go\\assets\\bin\\Gatterka_Eltavolitas.exe
+            ${{ github.workspace }}\desktop-go\assets\bin\Gatterka.exe
+            ${{ github.workspace }}\desktop-go\assets\bin\Gatterka_Eltavolitas.exe
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
@@ -73,9 +73,9 @@ jobs:
         working-directory: desktop-go
         shell: cmd
         run: |
-          copy /Y assets\\bin\\Gatterka.exe installer\\assets\\Gatterka.exe
-          copy /Y assets\\bin\\Gatterka_Eltavolitas.exe installer\\assets\\Gatterka_Eltavolitas.exe
-          go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\\dist\\Gatterka_Telepito_1.0.10_x64.exe .\\installer
+          copy /Y assets\bin\Gatterka.exe installer\assets\Gatterka.exe
+          copy /Y assets\bin\Gatterka_Eltavolitas.exe installer\assets\Gatterka_Eltavolitas.exe
+          go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\dist\Gatterka_Telepito_1.0.10_x64.exe .\installer
 
       - name: Telepítő aláírása (opcionális)
         if: ${{ vars.GATTERKA_SIGNING_ENABLED == 'true' }}
@@ -87,7 +87,7 @@ jobs:
           endpoint: ${{ secrets.GATTERKA_SIGN_ENDPOINT }}
           signing-account-name: ${{ secrets.GATTERKA_SIGN_ACCOUNT }}
           certificate-profile-name: ${{ secrets.GATTERKA_SIGN_PROFILE }}
-          files: ${{ github.workspace }}\\dist\\Gatterka_Telepito_1.0.10_x64.exe
+          files: ${{ github.workspace }}\dist\Gatterka_Telepito_1.0.10_x64.exe
           file-digest: SHA256
           timestamp-rfc3161: http://timestamp.acs.microsoft.com
           timestamp-digest: SHA256
