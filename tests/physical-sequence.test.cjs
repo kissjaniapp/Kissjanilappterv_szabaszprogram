@@ -21,14 +21,14 @@ const at=c=>c.axis==='y'?c.x1:c.y1;
 test('2800 mm-ről indul: szélezés 2788, két 200-as csík 2583 és 2378',()=>{
   const result=plan();assert.equal(result.failed.length,0);assert.equal(result.bins.length,1);
   const board=result.bins[0];
-  assert.deepEqual(board.machine.strips.map(x=>x.items.length),[2,1]);
-  assert.deepEqual(board.cuts.filter(c=>['head-trim','strip'].includes(c.stage)).map(at),[2788,2583,2378]);
-  assert.deepEqual(board.cuts.filter(c=>c.stripIndex===1&&['cross-head-trim','cross'].includes(c.stage)).map(at),[2058,1089,120]);
-  assert.deepEqual(board.cuts.filter(c=>c.stripIndex===2&&['cross-head-trim','cross'].includes(c.stage)).map(at),[2058,1089]);
+  assert.deepEqual(Array.from(board.machine.strips,x=>x.items.length),[2,1]);
+  assert.deepEqual(Array.from(board.cuts.filter(c=>['head-trim','strip'].includes(c.stage)),at),[2788,2583,2378]);
+  assert.deepEqual(Array.from(board.cuts.filter(c=>c.stripIndex===1&&['cross-head-trim','cross'].includes(c.stage)),at),[2058,1089,120]);
+  assert.deepEqual(Array.from(board.cuts.filter(c=>c.stripIndex===2&&['cross-head-trim','cross'].includes(c.stage)),at),[2058,1089]);
 });
 test('a gyártási számozás valóban a gép visszafelé vágó sorrendjét követi',()=>{
   const board=plan().bins[0];const out=schedule([board]);assert.equal(out.totalCuts,8);
-  const cuts=board.cuts.slice().sort((a,b)=>a.boardOrder-b.boardOrder);
+  const cuts=Array.from(board.cuts).sort((a,b)=>a.boardOrder-b.boardOrder);
   assert.deepEqual(cuts.map(at),[2788,2583,2378,2058,1089,120,2058,1089]);
   assert.deepEqual(cuts.map(c=>c.boardOrder),[1,2,3,4,5,6,7,8]);
   assert.equal(out.machineExecutable,false);
