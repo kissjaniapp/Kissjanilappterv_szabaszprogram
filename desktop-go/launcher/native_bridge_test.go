@@ -210,3 +210,26 @@ func TestWindowsSaveAsRejectsInvalidFileExtension(t *testing.T){
  _,err:=saveMachineFilesAtPath(filepath.Join(t.TempDir(),"wrong.txt"),nativeTestBundle())
  if err==nil{t.Fatal("Invalid XMIX file extension accepted")}
 }
+
+func TestSaveAsIframeResponseIsNotBlockedByFrameAncestors(t *testing.T){
+ w:=httptest.NewRecorder()
+ nativeFormResult(w,"win-dialog",true,map[string]interface{}{"path":"test.xMix"},nil)
+ policy:=w.Header().Get("Content-Security-Policy")
+ if strings.Contains(policy,"frame-ancestors 'none'"){
+  t.Fatal("Browser would block hidden native Save As result frame")
+ }
+ if !strings.Contains(w.Body.String(),"window.parent.postMessage"){
+  t.Fatal("Native Save As iframe cannot report the result")
+ }
+ page:=filepath.Join(t.TempDir(),"index.htm")
+ if err:=os.WriteFile(page,[]byte("<html></html>"),0600);err!=nil{t.Fatal(err)}
+ port,_,stop,err:=startNativeBridge(page)
+ if err!=nil{t.Fatal(err)}
+ defer stop()
+ resp,err:=http.Get(fmt.Sprintf("http://127.0.0.1:%d/native/ready",port))
+ if err!=nil{t.Fatal(err)}
+ _=resp.Body.Close()
+ if strings.Contains(resp.Header.Get("Content-Security-Policy"),"frame-ancestors 'none'"){
+  t.Fatal("Browser would block native Save As ready frame")
+ }
+}
