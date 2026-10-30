@@ -5,126 +5,102 @@ const fs=require('node:fs');
 const path=require('node:path');
 const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+
 const start=html.indexOf('function rememberMachineRoot(');
 const end=html.indexOf('\n  function downloadCutList(',start);
-assert.ok(start>=0&&end>start,'Hiányzik a natív XMIX mentés');
-const js=html.slice(start,end);
-const root=String.raw`C:\Gatterka`;
+assert.ok(start>=0&&end>start,'Hiányzik a natív Windowsos Mix mentés');
+const body=html.slice(start,end);
+const root=String.raw`X:\JANI\szabas_programmal\Legujabb_mentessel`;
 class FixedDate extends Date {
  constructor(...args){super(...(args.length?args:[2026,9,30]));}
 }
-function harness({cancelled=false,formError='',missingBridge=false,noConnection=false}={}){
- const calls={forms:[],notices:[],frames:[],removed:[],openedWindows:0};
+function harness({selected=String.raw`X:\Munka\Megosztas`,cancelled=false,saveError='',missingBridge=false}={}){
+ const calls={requests:[],notices:[],settings:[],saved:0};
+ const input={value:''};
+ const state={active:'nesting',layoutMode:'machine',projectName:'Teszt',
+  kerf:5,furnitures:[],xmixMachineRoot:root};
  const bridge=missingBridge?null:{url:'http://127.0.0.1:31825',token:'A'.repeat(43)};
- const state={active:'save',layoutMode:'machine',projectName:'Teszt',
-   kerf:5,furnitures:[],xmixMachineRoot:root};
- const button={disabled:false};
- const status={hidden:true,className:'',textContent:''};
- const listeners=new Set();
- let frame=null;
- function signal(msg){
-  queueMicrotask(()=>{for(const fn of [...listeners])fn({
-   source:frame.contentWindow,origin:bridge.url,data:msg
-  })});
- }
- const win={
-  addEventListener:(type,fn)=>{if(type==='message')listeners.add(fn)},
-  removeEventListener:(type,fn)=>{if(type==='message')listeners.delete(fn)},
-  open(){calls.openedWindows++;throw Error('Edge-es felugró ablak nem engedélyezett')}
- };
- const doc={
-  body:{appendChild(el){if(el.tag==='iframe'){frame=el;calls.frames.push(el)}}},
-  querySelector:()=>button,
-  getElementById:()=>status,
-  createElement(tag){
-   if(tag==='iframe'){
-    const item={
-      tag,name:'',style:{},contentWindow:{},setAttribute(){},
-      remove(){calls.removed.push('frame')},
-      set src(url){
-       calls.ready=url;
-       if(!noConnection)signal({type:'gatterka-ready',id:item.name});
-      }
-    };
-    return item;
-   }
-   if(tag==='form')return{
-    tag,style:{},fields:[],appendChild(x){this.fields.push(x)},
-    remove(){calls.removed.push('form')},
-    submit(){
-     const fields=Object.fromEntries(this.fields.map(x=>[x.name,x.value]));
-     calls.forms.push({action:this.action,target:this.target,fields});
-     signal({type:'gatterka-form-result',id:fields.id,ok:!formError,
-      value:{path:String.raw`D:\Gyartas\Munka\Teszt.xMix`,
-       programs:2,cancelled},error:formError});
-    }
-   };
-   if(tag==='input')return {tag};
-   throw Error('Unexpected element '+tag);
+ const fetch=async (url,args)=>{
+  const payload=JSON.parse(args.body);
+  calls.requests.push({url,args,payload});
+  assert.equal(args.headers['X-Gatterka-Token'],'A'.repeat(43));
+  if(url.endsWith('/native/choose')){
+   return {ok:true,json:async()=>cancelled?{cancelled:true}:{cancelled:false,path:selected}};
   }
+  if(url.endsWith('/native/save')){
+   if(saveError)return {ok:false,status:403,json:async()=>({error:saveError})};
+   return {ok:true,json:async()=>({path:selected+'\\2026_10_30_Teszt',
+      programs:2,cabinetFolder:'2026_10_30_Teszt'})};
+  }
+  throw Error('Unexpected url '+url);
  };
- const setTimeoutFast=(fn,delay)=>delay===8000&&noConnection?setTimeout(fn,0):setTimeout(fn,delay);
  const sandbox={
-  document:doc,window:win,setTimeout:setTimeoutFast,clearTimeout,
-  nativeBridge:bridge,defaultXmixMachineRoot:root,state,
-  save:()=>{},result:{machineReady:true,error:null,bins:[{machine:{strips:[{}]}}],failed:[]},
+  state,nativeBridge:bridge,defaultXmixMachineRoot:root,savedMachineRoot:root,
+  localStorage:{setItem:(key,value)=>calls.settings.push({key,value})},
+  save:()=>{calls.saved++},fetch,
+  result:{machineReady:true,error:null,bins:[{machine:{strips:[{}]}}],failed:[]},
   getFurniture:()=>({name:'Teszt',destination:'Teszt',materialColor:'Freya'}),
+  document:{getElementById:id=>id==='xmix-machine-root'?input:null},
   buildOfflineXprgProject:(_bins,_project,_color,_kerf,_date,location,_mode,dest)=>{
    const cabinet='2026_10_30_'+dest;
-   return {cabinetFolder:cabinet,files:[
-     [cabinet+'/test.xMix','<xMix><RigheMix><RigaMix File="'+location+'a.xPrg" /><RigaMix File="'+location+'b.xPrg" /></RigheMix></xMix>'],
+   return {cabinetFolder:cabinet,names:['a.xPrg','b.xPrg'],files:[
+     [cabinet+'/test.xMix','<xMix><RigheMix><RigaMix File="'+location+
+       'a.xPrg" /></RigheMix></xMix>'],
      [cabinet+'/xPrg/a.xPrg','<SchemaDoc></SchemaDoc>'],
      [cabinet+'/xPrg/b.xPrg','<SchemaDoc></SchemaDoc>']
    ]};
   },
-  showNotice:x=>calls.notices.push(x),Date:FixedDate
+  showNotice:msg=>calls.notices.push(msg),
+  window:{showDirectoryPicker:async()=>{throw Error('A natív mentés nem használhat böngészős mappaválasztót');}},
+  Date:FixedDate
  };
- const api=vm.runInNewContext('(function(){'+js+
-   ';return {machineRootPath,machineExportBundle,saveXprgToSelectedFolder};})()',sandbox);
- return {api,calls,status,button,bridge};
+ const out=vm.runInNewContext('(function(){'+body+
+    ';return {rememberMachineRoot,requestNativeMachine,machineRootPath,'+
+    'machineExportBundle,saveXprgToSelectedFolder};})()',sandbox);
+ return {out,calls,input,state};
 }
-test('csak a Windows Mentés másként nyílik meg, nincs külön Edge segédablak',async()=>{
- const {api,calls,status,button,bridge}=harness();
- await api.saveXprgToSelectedFolder();
- assert.equal(calls.openedWindows,0);
- assert.equal(calls.frames.length,1);
- assert.ok(calls.ready.startsWith(bridge.url+'/native/ready#'));
- assert.equal(calls.forms.length,1);
- assert.equal(calls.forms[0].action,bridge.url+'/native/pick-save');
- assert.equal(calls.forms[0].fields.token,bridge.token);
- assert.equal(JSON.parse(calls.forms[0].fields.request).files.length,3);
- assert.equal(button.disabled,false);
- assert.ok(status.textContent.includes('Sikeres gépi mentés'));
- assert.deepEqual(calls.removed,['form','frame']);
+test('a natív Windows mappaválasztó tényleges X: elérési útját beírja és elmenti',async()=>{
+ const {out,calls,input,state}=harness();
+ await out.saveXprgToSelectedFolder();
+ assert.equal(state.xmixMachineRoot,String.raw`X:\Munka\Megosztas`);
+ assert.equal(input.value,String.raw`X:\Munka\Megosztas`);
+ assert.ok(calls.settings.some(s=>s.key==='gatterka-machine-root-v1'));
+ assert.equal(calls.saved,1);
+ assert.equal(calls.requests.length,2);
+ assert.ok(calls.requests[0].url.endsWith('/native/choose'));
+ assert.ok(calls.requests[1].url.endsWith('/native/save'));
+ assert.ok(calls.notices.at(-1).includes('Sikeres gépi mentés'));
+ const payload=calls.requests[1].payload;
+ assert.equal(payload.cabinetFolder,'2026_10_30_Teszt');
+ assert.ok(payload.files[0].content.includes(
+    String.raw`X:\Munka\Megosztas\2026_10_30_Teszt\xPrg\a.xPrg`));
+ assert.equal(payload.files.length,3);
 });
-test('a Mégse gombra nem történik gépi mentés',async()=>{
- const {api,status}=harness({cancelled:true});
- await api.saveXprgToSelectedFolder();
- assert.equal(status.hidden,true);
+test('a Gatterka a natív hibát is kiírja, nem jelzi tévesen sikeresnek a mentést',async()=>{
+ const {out,calls}=harness({saveError:'A célmappa írásvédett'});
+ await out.saveXprgToSelectedFolder();
+ assert.ok(calls.notices.at(-1).includes('A célmappa írásvédett'));
+ assert.ok(!calls.notices.at(-1).includes('Sikeres'));
 });
-test('a Windows hibaüzenete látható',async()=>{
- const {api,status}=harness({formError:'Nincs írási jogosultság'});
- await api.saveXprgToSelectedFolder();
- assert.ok(status.textContent.includes('Nincs írási jogosultság'));
- assert.ok(status.className.includes('error'));
+test('a mappaválasztó megszakítása nem változtatja meg a korábban megadott útvonalat',async()=>{
+ const {out,calls,state}=harness({cancelled:true});
+ await out.saveXprgToSelectedFolder();
+ assert.equal(state.xmixMachineRoot,root);
+ assert.equal(calls.requests.length,1);
+ assert.equal(calls.saved,0);
 });
-test('a nem induló mentőszolgáltatás rövid idő után hibát ad',async()=>{
- const {api,status,button}=harness({noConnection:true});
- await api.saveXprgToSelectedFolder();
- assert.equal(button.disabled,false);
- assert.ok(status.textContent.includes('nem elérhető'));
-});
-test('index.htm külön megnyitása nem ment titokban',async()=>{
- const {api,calls,status}=harness({missingBridge:true});
- await api.saveXprgToSelectedFolder();
- assert.equal(calls.forms.length,0);
- assert.ok(status.textContent.includes('Gatterka.exe'));
-});
-test('a Mentés oldalon egyetlen gépi mentési gomb van, ZIP gomb nélkül',()=>{
- const a=html.indexOf('function saveView()'),b=html.indexOf('function render(){',a);
- const panel=html.slice(a,b);
- assert.match(panel,/data-action="save-xprg-folder"/);
- assert.doesNotMatch(panel,/data-action="download-xprg-project"/);
- assert.match(panel,/Mentés másként/);
- assert.doesNotMatch(panel,/xmix-machine-root|Kiválasztott célmappa/);
+test('a gépi útvonal élő input kezelője gépelés közben is ment, újrarajzolás nélkül',()=>{
+ const from=html.indexOf("document.addEventListener('input',e=>{");
+ const to=html.indexOf("document.addEventListener('change',e=>{",from);
+ assert.ok(from>=0&&to>from);
+ let inputHandler;
+ const entries=[];
+ vm.runInNewContext(html.slice(from,to),{
+   document:{addEventListener:(name,fn)=>{assert.equal(name,'input');inputHandler=fn}},
+   rememberMachineRoot:v=>entries.push(v),
+   state:{furnitures:[]}
+ });
+ inputHandler({target:{dataset:{scope:'settings',key:'xmixMachineRoot'},
+    value:String.raw`X:\JANI\Frissitett`}});
+ assert.deepEqual(entries,[String.raw`X:\JANI\Frissitett`]);
 });
