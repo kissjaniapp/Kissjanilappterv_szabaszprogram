@@ -62,7 +62,7 @@ test('a Nesting terv nem jeleníti meg a három felesleges magyarázó blokkot',
  assert.ok(start>=0&&end>start);
  const panel=html.slice(start,end);
  assert.doesNotMatch(panel,/A BLAP003 mintakód; ellenőrizd az anyagtörzsben/);
- assert.doesNotMatch(panel,/C:\\\\WinCut/);
+ assert.match(panel,/C:\\\\WinCut\\\\Prg/);
  assert.doesNotMatch(panel,/Csak offline ellenőrző minta/);
  assert.doesNotMatch(panel,/nem hitelesített/);
  assert.match(panel,/data-key="xprgMaterialCode"/);
@@ -93,7 +93,7 @@ test('nincs újraszámolás gomb; a nesting és az élő képletszámítás auto
 
 test('az XML xMix-ben az xPrg mappa beállítható és a régi bútorprojektek is működnek',()=>{
   assert.match(html,/data-key="xprgFolder"/);
-  assert.match(html,/xprgFolder:'\.\\xPrg\\'/);
+  assert.match(html,/xprgFolder:'\.\\\\xPrg\\\\'/);
   assert.match(html,/XPrg fájlok helye az XMix-ben/);
   assert.match(html,/key==='xprgMaterialCode'\|\|key==='xprgFolder'/);
   assert.match(html,/state\.xprgFolder\?\?/);
