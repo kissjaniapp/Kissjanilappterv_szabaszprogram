@@ -1804,52 +1804,9 @@
       }
       return;
     }
-    let parent;
-    try{
-      const root=machineRootPath();
-      if(typeof window.showDirectoryPicker!=='function')
-        throw Error('A mappaválasztás nem érhető el. Használd a ZIP letöltését.');
-      parent=await window.showDirectoryPicker({mode:'readwrite'});
-      const expected=root.split('\\').filter(Boolean).at(-1);
-      if(String(parent.name).toLocaleLowerCase('hu-HU')!==expected.toLocaleLowerCase('hu-HU'))
-        throw Error('A kijelölt mappa ('+parent.name+') eltér a megadott X: útvonal végétől ('+expected+'). Válaszd ki a helyes gyökérmappát vagy javítsd az útvonalat.');
-    }catch(err){
-      if(err?.name==='AbortError')return;
-      showNotice('Mappaválasztás: '+(err?.message||'nem sikerült'));return;
-    }
-    try{
-      const initial=machineExportBundle();
-      let folderName=initial.cabinetFolder;
-      let nameNumber=1;
-      while(nameNumber<100){
-        try{
-          await parent.getDirectoryHandle(folderName,{create:false});
-          folderName=initial.cabinetFolder+'_'+(++nameNumber);
-        }catch(err){
-          if(err?.name==='NotFoundError')break;
-          throw err;
-        }
-      }
-      if(nameNumber>=100)throw Error('Túl sok azonos nevű projektmappa.');
-      const bundle=folderName===initial.cabinetFolder?initial:
-        machineExportBundle({cabinetFolder:folderName});
-      const folder=await parent.getDirectoryHandle(folderName,{create:true});
-      for(const [archivePath,contents] of bundle.files){
-        const relative=archivePath.slice(bundle.cabinetFolder.length+1);
-        if(!archivePath.startsWith(bundle.cabinetFolder+'/')||!relative)
-          throw Error('A projekt fájlszerkezete hibás.');
-        const segments=relative.split('/');
-        const filename=segments.pop();
-        let directory=folder;
-        for(const segment of segments)
-          directory=await directory.getDirectoryHandle(segment,{create:true});
-        const file=await directory.getFileHandle(filename,{create:true});
-        const writable=await file.createWritable();
-        try{await writable.write(contents);}finally{await writable.close();}
-      }
-      showNotice('Gépi projekt elmentve: '+machineRootPath()+'\\'+folderName+
-        ' · '+bundle.names.length+' xPrg és 1 xMix; a Mix a teljes X: útvonalra mutat.');
-    }catch(err){showNotice('Gépi projekt mentése: '+(err?.message||'nem sikerült'));}
+    // A böngésző nem adja vissza a teljes Windows-útvonalat, ezért a
+    // másik mappába mentett projektben az XMIX hivatkozás hibás lenne.
+    showNotice('A közvetlen mappamentéshez indítsd a telepített Windowsos Gatterka programot. Böngészőben ZIP letöltése használható.');
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;
