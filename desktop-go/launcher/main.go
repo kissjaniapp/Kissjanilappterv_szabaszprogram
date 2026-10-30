@@ -2,11 +2,13 @@
 package main
 
 import (
+    "encoding/json"
     "fmt"
     "net/url"
     "os"
     "os/exec"
     "path/filepath"
+    "regexp"
     "strings"
     "syscall"
     "unsafe"
@@ -39,6 +41,67 @@ func firstBrowser() (string, bool) {
     return "",false
 }
 
+
+// Letöltések ismert Windows-mappa: a registry helyes akkor is, ha a felhasználó
+// áthelyezte a Letöltések mappát (például egy másik meghajtóra).
+func downloadsFolder() string {
+    home,err:=os.UserHomeDir()
+    if err!=nil || home=="" {home=os.Getenv("USERPROFILE")}
+    fallback:=filepath.Join(home,"Downloads")
+    key:="HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\User Shell Folders"
+    const folderID="{374DE290-123F-4565-9164-39C4925E467B}"
+    cmd:=exec.Command("reg.exe","QUERY",key,"/v",folderID)
+    cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
+    out,err:=cmd.Output()
+    if err!=nil {return fallback}
+    envRef:=regexp.MustCompile(`%([^%]+)%`)
+    for _,line:=range strings.Split(string(out),"\n"){
+        fields:=strings.Fields(line)
+        if len(fields)<3 || !strings.EqualFold(fields[0],folderID) || !strings.HasPrefix(fields[1],"REG_"){continue}
+        raw:=strings.Join(fields[2:]," ")
+        expanded:=envRef.ReplaceAllStringFunc(raw,func(text string)string{
+            val:=os.Getenv(text[1:len(text)-1])
+            if val=="" {return text}
+            return val
+        })
+        if filepath.IsAbs(expanded) {return filepath.Clean(expanded)}
+    }
+    return fallback
+}
+
+// A Gatterka dedikált Edge/Chrome profilját használjuk: nem módosítjuk
+// a felhasználó normál böngészőjének beállításait, és nem kapcsolunk ki
+// Windows biztonsági szolgáltatásokat.
+// A Chromium Preferences többi mezőjét érintetlenül hagyjuk.
+func configureBrowserDownloads(profile string) error {
+    dir:=downloadsFolder()
+    if err:=os.MkdirAll(dir,0700);err!=nil{return fmt.Errorf("Letöltések mappa: %w",err)}
+    preferences:=filepath.Join(profile,"Default","Preferences")
+    if err:=os.MkdirAll(filepath.Dir(preferences),0700);err!=nil{return err}
+    existing,err:=os.ReadFile(preferences)
+    if err!=nil && !os.IsNotExist(err){return err}
+    prefs:=map[string]interface{}{}
+    if len(existing)>0 {
+        if err=json.Unmarshal(existing,&prefs);err!=nil {
+            return fmt.Errorf("Böngészőprofil beállításai nem olvashatók (nem írjuk felül): %w",err)
+        }
+    }
+    section:=func(name string)map[string]interface{}{
+        if val,ok:=prefs[name].(map[string]interface{});ok{return val}
+        val:=map[string]interface{}{}
+        prefs[name]=val
+        return val
+    }
+    download:=section("download")
+    download["default_directory"]=dir
+    download["prompt_for_download"]=false
+    download["directory_upgrade"]=true
+    section("savefile")["default_directory"]=dir
+    data,err:=json.MarshalIndent(prefs,"","  ")
+    if err!=nil{return err}
+    return os.WriteFile(preferences,data,0600)
+}
+
 func main(){
     exe,err := os.Executable()
     if err != nil { message("Nem található az alkalmazás elérési útja.\n"+err.Error()); return }
@@ -51,11 +114,20 @@ func main(){
         if local == "" {local = os.TempDir()}
         userDataDir := filepath.Join(local,"Lapterv","BongeszoProfil")
         _ = os.MkdirAll(userDataDir, 0700)
+        // A fájlok a Windows saját Letöltések mappájába kerülnek,
+        // nem a telepítés mappájába, és nincs Mentés másként kérdés.
+        if err:=configureBrowserDownloads(userDataDir);err!=nil {
+            message("A Letöltések mappa beállítása sikertelen:\n"+err.Error()+
+                "\nEllenőrizd a böngésző mentési beállítását.")
+        }
         cmd:=exec.Command(path,"--app="+fileURL(page),"--user-data-dir="+userDataDir,"--no-first-run","--window-size=1440,900")
         if err=cmd.Start();err==nil {
             // Az alkalmazásablak ikonja is Gatterka legyen, ne Edge/Chrome.
             setRunningWindowIcon(cmd.Process.Pid)
-            _=cmd.Process.Release()
+            // Ne lépjünk ki azonnal a böngésző indítása után.
+            // A Windows kompatibilitási asszisztense a rendkívül gyors
+            // kilépést hibásan megszakadt alkalmazásnak vélheti.
+            _=cmd.Wait()
             return
         }
     }

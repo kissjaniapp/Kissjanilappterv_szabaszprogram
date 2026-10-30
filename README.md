@@ -218,3 +218,34 @@ a gyártási kompatibilitás ellenőrzése továbbra is szükséges.
 - A bútoralkatrész X/Y méreténél a képletet kis, halvány, de **közvetlenül szerkeszthető** sorban, alatta a **nagy méretű kiszámolt szabásméretet** mutatja a felület. A szabásméret az élzárás és előmarás levonása utáni szám, ugyanaz, amit a program a nestinghez használ. Puszta szám beírásakor hagyományos, egy soros méretmező marad.
 - Gépeléskor a képlet eredménye, darabszám-összesítő és nettó alkatrészterület azonnal frissül, teljes oldal-újrarajzolás nélkül; a kurzor a képletben marad. A korábbi projektek képletei változatlan szövegként maradnak mentve.
 - A hosszú, költséges gépi nesting számítás rövid gépelési szünet után frissül, illetve a mező változtatásakor automatikusan újraszámolódik, amennyiben már létezett terv. A Nesting lap megnyitásakor a terv automatikusan kiszámolódik, külön „Újraszámolás” vagy „Nesting indítása” gomb nélkül.
+
+## 2026-10-30 – Megjelenés beállítások, Letöltések, Windows-bezárás
+
+- A Gatterka felső sávján, a **Bútorválasztó** mellett a **⚙ Beállítások**
+  ikon az indításkor megjelenő bútorválasztón is elérhető. A megjelenés
+  világos vagy sötét előbeállítást kaphat. A felhasználó egyénileg
+  állíthatja a **szövegszínt, a gombok színét és a háttérszínt**.
+  A színek azonnal érvényesülnek, és **gatterka-theme-v1** kulcson,
+  a bútorprojektek mentésétől függetlenül maradnak meg. A korábbi projektek
+  és képletek változatlanok.
+
+- **Egységes letöltés:** a PNG, SVG, JSON, CSV és ZIP exportok a böngésző
+  közvetlen letöltését használják. Az alkatrészlista PNG már nem nyit
+  `showSaveFilePicker` Mentés másként ablakot. Ha több oldalas a lista,
+  **egyetlen ZIP** tartalmazza az összes PNG-t (a matricákhoz hasonlóan).
+  A Gatterka által indított Edge/Chrome saját, meglévő böngészőprofiljában
+  a **Windows beállított Letöltések mappája** lesz a cél: a launcher a
+  Felhasználói Shell-mappák registry-bejegyzését olvassa, különben
+  `%USERPROFILE%\Downloads` mappát használ. Csak a Gatterka dedikált
+  profiljának letöltési preferenciáit módosítja.
+  **Korlát:** külső böngészővel való tartalék indítás, böngészőházirend,
+  külső kiegészítő vagy Windows-letöltési korlátozás esetén a külső program
+  saját beállításai elsőbbséget élvezhetnek.
+
+- A Gatterka EXE, telepítő és eltávolító saját `RT_MANIFEST` Windows
+  kompatibilitási erőforrást kap (`asInvoker`, Windows 10/11).
+  A launcher **nem lép ki rögtön a böngésző megnyitásakor**: megvárja a
+  saját Edge/Chrome folyamatát. Ez a Windows Program Compatibility Assistant
+  esetleges „Megfelelően futott a program?” jelzésének okát kezeli anélkül,
+  hogy az operációs rendszer hibavédelmét vagy a szolgáltatását letiltanánk.
+  A jelzés teljes megszűnését az érintett számítógépen kell ellenőrizni.

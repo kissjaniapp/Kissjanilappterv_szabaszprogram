@@ -69,17 +69,79 @@
     @media(max-width:760px){.main{padding:0 13px 45px}.topbar{min-height:64px}.topbar .brand-name{font-size:17px}.topbar .brand-logo{width:30px;height:30px}.top-actions .status{display:none}.top-actions .btn{padding:7px 8px;font-size:11px}#top-steps{padding:8px 0}.step{min-height:55px}.intro{padding-top:17px}.drawing-area{height:clamp(310px,56vh,560px);padding:10px}.two-col>.panel:first-child .job-info{grid-template-columns:minmax(0,1fr)}}
     @media print{#top-steps{display:none!important}}
     @media print{.sidebar,.topbar,.steps,.intro .actions,.btn,.footer,.board-tabs,.board-meta,.export-box{display:none!important}.main{padding:0;width:100%}.drawing-area{border:0;padding:0}.display-board{display:block}.panel{border:0;box-shadow:none}.panel-body,.panel-head{padding:10px}body{background:white}.intro{padding:5px}}
+
+    /* Világos, sötét és egyénileg színezhető megjelenés. */
+    :root{--surface:#fff;--control-bg:#fff;--soft-bg:#f1f6f1;--primary-text:#fff;--table-head:#f8faf8;--table-hover:#f6faf7}
+    html[data-gatterka-base="dark"]{color-scheme:dark;--white:#21312a;--surface:#21312a;--control-bg:#1a2922;--soft-bg:#2b4135;--line:#425b4d;--muted:#a9beb0;--leaf:#294235;--table-head:#263b30;--table-hover:#2a4035;--shadow:0 5px 20px #00000024}
+    html[data-gatterka-base="dark"] .panel,html[data-gatterka-base="dark"] .stat,
+    html[data-gatterka-base="dark"] .step,html[data-gatterka-base="dark"] .library-row,
+    html[data-gatterka-base="dark"] .board-meta,html[data-gatterka-base="dark"] .res-card,
+    html[data-gatterka-base="dark"] .stock-card,html[data-gatterka-base="dark"] .label-preview,
+    html[data-gatterka-base="dark"] .label-sheet-preview,html[data-gatterka-base="dark"] .settings-dialog{
+      background:var(--surface)!important;border-color:var(--line)!important;color:var(--ink)}
+    html[data-gatterka-base="dark"] input:not([type="checkbox"]):not([type="color"]),
+    html[data-gatterka-base="dark"] select,html[data-gatterka-base="dark"] .expr-cell.has-formula{
+      background:var(--control-bg)!important;border-color:var(--line)!important;color:var(--ink)!important}
+    html[data-gatterka-base="dark"] .expr-cell.has-formula .expr{background:transparent!important;color:var(--muted)!important}
+    html[data-gatterka-base="dark"] .expr-cell.has-formula .expr-result{color:var(--ink)!important}
+    html[data-gatterka-base="dark"] .drawing-area,html[data-gatterka-base="dark"] .cabinet-visual,
+    html[data-gatterka-base="dark"] .mini-info,html[data-gatterka-base="dark"] .formula-bar,
+    html[data-gatterka-base="dark"] .edge-tick,html[data-gatterka-base="dark"] .notice,
+    html[data-gatterka-base="dark"] .tag,html[data-gatterka-base="dark"] .callout,
+    html[data-gatterka-base="dark"] .step.active{background:var(--soft-bg)!important;border-color:var(--line)!important;color:var(--ink)!important}
+    html[data-gatterka-base="dark"] .edge-tick:has(input:checked){background:#355844!important}
+    html[data-gatterka-base="dark"] th{background:var(--table-head)!important;color:var(--muted)!important}
+    html[data-gatterka-base="dark"] tbody tr:hover{background:var(--table-hover)!important}
+    html[data-gatterka-base="dark"] td,html[data-gatterka-base="dark"] th,
+    html[data-gatterka-base="dark"] .panel-head,html[data-gatterka-base="dark"] .topbar{border-color:var(--line)!important}
+    html[data-gatterka-base="dark"] .btn:not(.primary):not(.orange),
+    html[data-gatterka-base="dark"] .board-tab:not(.active){background:var(--surface);border-color:var(--line)}
+    html[data-gatterka-base="dark"] .btn:not(.primary):not(.orange):hover{background:var(--soft-bg)}
+    html[data-gatterka-base="dark"] .board-contents div{color:var(--muted);border-color:var(--line)}
+    html[data-gatterka-base="dark"] #top-steps{background:var(--bg)}
+    html .btn.primary,html .board-tab.active,html .step.active .step-number{
+      background:var(--pine)!important;border-color:var(--pine)!important;color:var(--primary-text)!important}
+    html .btn:not(.primary):not(.orange){color:var(--pine)}
+    html .btn.primary:hover{filter:brightness(1.14)}
+    html .panel-title,html .intro h1,html .library-info strong,html .stat .value,
+    html .board-contents strong,html .empty h3,html .topbar .brand-name{color:var(--ink)}
+    html[data-gatterka-base="dark"] .muted,html[data-gatterka-base="dark"] .panel-sub,
+    html[data-gatterka-base="dark"] .stat .label,html[data-gatterka-base="dark"] .stat .detail,
+    html[data-gatterka-base="dark"] .field-hint,html[data-gatterka-base="dark"] .part-summary,
+    html[data-gatterka-base="dark"] .topbar .brand-sub,html[data-gatterka-base="dark"] .crumb,
+    html[data-gatterka-base="dark"] .formula-bar code{color:var(--muted)!important}
+    html[data-gatterka-base="dark"] label{color:var(--muted)}
+    html[data-gatterka-base="dark"] .topbar .brand-logo{background:var(--soft-bg);color:var(--ink)}
+    html[data-gatterka-base="dark"] .label-sheet-preview,html[data-gatterka-base="dark"] .label-preview{background:var(--surface)!important}
+    html[data-gatterka-base="dark"] .label-sheet-preview svg,html[data-gatterka-base="dark"] .label-preview svg{background:#fff!important}
+    .settings-overlay{position:fixed;inset:0;z-index:150;background:#071710a8;display:flex;align-items:center;justify-content:center;padding:18px}
+    .settings-dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:18px;width:min(510px,100%);max-height:calc(100vh - 36px);overflow-y:auto;box-shadow:0 20px 80px #0004;padding:23px}
+    .settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px}
+    .settings-header h2{margin:0}
+    .theme-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0 19px}
+    .theme-choice{padding:18px 12px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font-weight:750;cursor:pointer;display:grid;gap:9px;justify-items:center}
+    .theme-choice.active{border-color:var(--pine);box-shadow:0 0 0 2px color-mix(in srgb,var(--pine) 15%,transparent)}
+    .theme-swatch{width:100%;max-width:140px;height:40px;border-radius:8px;border:1px solid #8fa99b;display:flex;align-items:center;justify-content:center;font-size:11px}
+    .theme-swatch.light{background:#f5f7f4;color:#17392f}.theme-swatch.dark{background:#131e19;color:#e6f0e8}
+    .theme-colors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px;margin:12px 0 17px}
+    .theme-color-field{display:block;min-width:0}
+    .theme-color-field span{display:block;color:var(--muted);font-size:12px;font-weight:650;margin-bottom:7px}
+    .theme-color-field input[type="color"]{width:100%;height:43px;padding:3px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--surface)}
+    .theme-note{font-size:12px;color:var(--muted);line-height:1.6}
+    .settings-actions{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+    @media(max-width:500px){.theme-colors{grid-template-columns:1fr 1fr}.settings-dialog{padding:16px}}
   </style>
 </head>
 <body>
 <div class="app">
   <main class="main">
-    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">gatterka<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">gatterka<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button><button class="btn sm settings-gear" data-action="open-settings" title="Megjelenés és színek beállítása" aria-label="Beállítások megnyitása">⚙ Beállítások</button></div></header>
     <nav id="top-steps" aria-label="Munkafolyamat lépései"></nav>
     <div id="content"></div>
     <div class="footer">Gatterka · Windowsos szabásztervező · Az optimalizálás heurisztikus; a vágási tervet gyártás előtt ellenőrizd.</div>
   </main>
 </div>
+<div id="settings-overlay" class="settings-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title"></div>
 <input class="file-input" type="file" id="import-input" accept="application/json,.json">
 <script>
 (() => {
@@ -90,6 +152,95 @@
   const nfmt = value => Number(value).toLocaleString('hu-HU',{maximumFractionDigits:1});
   const pnum = value => Number(String(value).replace(',','.'));
   const paneNames = {furniture:'Bútorok',stock:'Anyagkészlet',nesting:'Nesting'};
+
+  // A téma minden bútorprojektben azonos, külön felhasználói beállításként tárolva.
+  const themeKey='gatterka-theme-v1';
+  const themePalettes={
+    light:{text:'#23322c',button:'#17392f',background:'#f5f7f4'},
+    dark:{text:'#e6f0e8',button:'#3c8064',background:'#131e19'}
+  };
+  const isHexColor=x=>/^#[0-9a-fA-F]{6}$/.test(String(x));
+  function loadTheme(){
+    const initial={mode:'light',base:'light',colors:{...themePalettes.light}};
+    try{
+      const saved=JSON.parse(localStorage.getItem(themeKey)||'null');
+      if(!saved||!['light','dark','custom'].includes(saved.mode))return initial;
+      if(!['light','dark'].includes(saved.base))return initial;
+      const base=saved.mode==='custom'?saved.base:saved.mode;
+      const colors={...themePalettes[base]};
+      if(saved.mode==='custom'){
+        for(const key of Object.keys(colors))
+          if(isHexColor(saved.colors?.[key]))colors[key]=saved.colors[key];
+      }
+      return {mode:saved.mode,base,colors};
+    }catch{return initial;}
+  }
+  let themeSettings=loadTheme();
+  function buttonTextColor(hex){
+    const rgb=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
+    return (rgb[0]*299+rgb[1]*587+rgb[2]*114)/1000>=150?'#12231b':'#ffffff';
+  }
+  function applyTheme(){
+    const root=document.documentElement;
+    root.dataset.gatterkaBase=themeSettings.base;
+    root.style.setProperty('--ink',themeSettings.colors.text);
+    root.style.setProperty('--pine',themeSettings.colors.button);
+    root.style.setProperty('--bg',themeSettings.colors.background);
+    root.style.setProperty('--primary-text',buttonTextColor(themeSettings.colors.button));
+    const meta=document.querySelector('meta[name="theme-color"]');
+    if(meta)meta.setAttribute('content',themeSettings.colors.background);
+  }
+  function persistTheme(){
+    try{localStorage.setItem(themeKey,JSON.stringify(themeSettings));}
+    catch(e){console.warn('A téma mentése nem sikerült:',e);}
+  }
+  function settingsPanel(){
+    const choice=mode=>`<button type="button" class="theme-choice ${themeSettings.mode===mode?'active':''}" data-action="theme-preset" data-mode="${mode}" aria-pressed="${themeSettings.mode===mode}">
+      <span class="theme-swatch ${mode}">${mode==='light'?'Világos előnézet':'Sötét előnézet'}</span>${mode==='light'?'☀ Világos téma':'☾ Sötét téma'}</button>`;
+    const fields=[
+      ['text','Szöveg színe'],['button','Gombok színe'],['background','Háttér színe']
+    ].map(([key,label])=>`<label class="theme-color-field"><span>${label}</span><input type="color" data-theme-color="${key}" value="${h(themeSettings.colors[key])}" aria-label="${label}"></label>`).join('');
+    return `<div class="settings-dialog"><div class="settings-header"><h2 id="settings-title">⚙ Megjelenés beállításai</h2>
+       <button class="btn sm" type="button" data-action="close-settings" aria-label="Beállítások bezárása">✕</button></div>
+       <p class="theme-note">Válassz kész témát, vagy állítsd be a saját színeidet. A beállítás a következő indításkor is megmarad.</p>
+       <div class="theme-choices">${choice('light')}${choice('dark')}</div>
+       <h3>Egyéni színek ${themeSettings.mode==='custom'?'· saját téma':''}</h3>
+       <div class="theme-colors">${fields}</div>
+       <p class="theme-note">A színek azonnal módosítják a megjelenést. A mentett bútorokat nem érintik.</p>
+       <div class="settings-actions"><button class="btn sm" data-action="theme-reset">Alapszínek visszaállítása</button>
+         <button class="btn primary" data-action="close-settings">Kész</button></div></div>`;
+  }
+  function openSettings(){
+    const overlay=$('#settings-overlay');
+    overlay.innerHTML=settingsPanel();
+    overlay.classList.remove('hidden');
+    overlay.querySelector('[data-action="close-settings"]')?.focus();
+  }
+  function closeSettings(){
+    const overlay=$('#settings-overlay');
+    overlay.classList.add('hidden');
+    overlay.innerHTML='';
+    document.querySelector('[data-action="open-settings"]')?.focus();
+  }
+  function selectTheme(mode){
+    if(!['light','dark'].includes(mode))return;
+    themeSettings={mode,base:mode,colors:{...themePalettes[mode]}};
+    persistTheme();applyTheme();
+    if(!$('#settings-overlay').classList.contains('hidden'))
+      $('#settings-overlay').innerHTML=settingsPanel();
+  }
+  function changeThemeColor(key,value){
+    if(!['text','button','background'].includes(key)||!isHexColor(value))return;
+    themeSettings.mode='custom';
+    themeSettings.colors[key]=value;
+    persistTheme();applyTheme();
+    const overlay=$('#settings-overlay');
+    overlay.querySelectorAll('[data-action="theme-preset"]').forEach(btn=>{
+      btn.classList.remove('active');btn.setAttribute('aria-pressed','false');
+    });
+  }
+  applyTheme();
+
   const defaultState = () => ({
     projectName:'Új bútorprojekt',
     active:'furniture',
@@ -1106,7 +1257,7 @@
     return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body;
   }
   function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
-  function download(data,filename,mime){const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
+  function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
     const encoder=new TextEncoder(),chunks=[],directory=[];
@@ -1232,21 +1383,9 @@
     }
     return pages;
   }
+  // Közvetlen letöltés, Mentés másként ablak nélkül. A böngésző
+  // dedikált profiljában a Windows Letöltések mappája lesz a cél.
   async function saveFileToDisk(blob,filename,extension,mime){
-    if(typeof window.showSaveFilePicker==='function'){
-      try{
-        const handle=await window.showSaveFilePicker({
-          suggestedName:filename,
-          types:[{description:extension.toUpperCase()+' fájl',accept:{[mime]:[extension]}}]
-        });
-        const writable=await handle.createWritable();
-        try{await writable.write(blob);}finally{await writable.close();}
-        return true;
-      }catch(err){
-        if(err?.name==='AbortError')return false;
-        console.warn('A fájlmentési ablak nem érhető el, letöltéssel próbálkozunk.',err);
-      }
-    }
     downloadBlob(blob,filename);
     return true;
   }
@@ -1254,14 +1393,20 @@
     try{
       const pages=buildPartsPngPages(getParts());
       const cabinet=fileName(getFurniture()?.name||state.projectName||'Gatterka')||'Gatterka';
+      const files=[];
       for(let i=0;i<pages.length;i++){
         const blob=await new Promise((resolve,reject)=>
           pages[i].toBlob(b=>b?resolve(b):reject(Error('Nem sikerült PNG-fájlt készíteni.')),'image/png'));
-        const suffix=pages.length>1?'_oldal_'+String(i+1).padStart(2,'0'):'';
-        const file=cabinet+'_alkatreszlista'+suffix+'.png';
-        const saved=await saveFileToDisk(blob,file,'.png','image/png');
-        if(!saved)return;
+        if(pages.length===1){
+          downloadBlob(blob,cabinet+'_alkatreszlista.png');
+          return;
+        }
+        files.push([cabinet+'_alkatreszlista_oldal_'+String(i+1).padStart(2,'0')+'.png',
+          new Uint8Array(await blob.arrayBuffer())]);
       }
+      // Többoldalas alkatrészlista egyetlen ZIP, nem engedélykérő többes letöltés.
+      if(files.length)
+        downloadBlob(xlsxZip(files,'application/zip'),cabinet+'_alkatreszlista_PNG.zip');
     }catch(err){
       showNotice('Az alkatrészlista PNG mentése sikertelen: '+(err?.message||'ismeretlen hiba'));
     }
@@ -1718,8 +1863,13 @@
     download(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${y}" width="${width}" height="${y}"><rect width="100%" height="100%" fill="white"/>${body}</svg>`,'gatterka_osszes_tabla.svg','image/svg+xml;charset=utf-8');
   }
   document.addEventListener('click',e=>{
+    if(e.target?.id==='settings-overlay'){closeSettings();return;}
     const el=e.target.closest('[data-action]');if(!el)return;
     const action=el.dataset.action;
+    if(action==='open-settings'){openSettings();return;}
+    if(action==='close-settings'){closeSettings();return;}
+    if(action==='theme-preset'){selectTheme(el.dataset.mode);return;}
+    if(action==='theme-reset'){selectTheme(themeSettings.base);return;}
     if(action==='library-home'){save();projectScreen='library';result=null;notice='';render();window.scrollTo(0,0);}
     else if(action==='create-project')freshProject();
     else if(action==='open-saved-project')openSavedProject(el.dataset.project,el.dataset.furniture);
@@ -1773,7 +1923,9 @@
   });
   // A méretképletek, darabszámok és bútorparaméterek élő frissítése.
   document.addEventListener('input',e=>{
-    const el=e.target,scope=el.dataset.scope,key=el.dataset.key;
+    const el=e.target;
+    if(el.dataset.themeColor){changeThemeColor(el.dataset.themeColor,el.value);return;}
+    const scope=el.dataset.scope,key=el.dataset.key;
     if(scope==='part'&&['a','b','q'].includes(key)){
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
@@ -1830,6 +1982,9 @@
       }
     }
     notice='';render();
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&!$('#settings-overlay').classList.contains('hidden'))closeSettings();
   });
   $('#import-input').addEventListener('change',async e=>{
     const file=e.target.files?.[0];if(!file)return;

@@ -45,6 +45,23 @@ def pe_icon_images(file):
         raise ValueError(f"{file}: no RT_GROUP_ICON")
     return sorted(icons)
 
+def pe_manifest(file):
+    """Read an embedded RT_MANIFEST without altering Windows security settings."""
+    pe = pefile.PE(str(file), fast_load=False)
+    try:
+        if not hasattr(pe, "DIRECTORY_ENTRY_RESOURCE"):
+            raise ValueError(f"{file}: no Windows resources")
+        for resource in pe.DIRECTORY_ENTRY_RESOURCE.entries:
+            if resource.id != 24:
+                continue
+            for item in resource.directory.entries:
+                for language in item.directory.entries:
+                    detail = language.data.struct
+                    return pe.get_data(detail.OffsetToData, detail.Size)
+        raise ValueError(f"{file}: no embedded RT_MANIFEST")
+    finally:
+        pe.close()
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         sys.exit("Usage: check-pe-icon.py Gatterka.ico launcher.exe installer.exe ...")
@@ -55,4 +72,9 @@ if __name__ == "__main__":
             raise SystemExit(
                 f"ICON MISMATCH: {path}: {len(got)} resources vs {len(expected)} original images"
             )
-        print(f"Verified icon: {path} — {len(got)} original ICO images embedded")
+        manifest=pe_manifest(path)
+        for required in (b'requestedExecutionLevel level="asInvoker"',
+                         b'8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a'):
+            if required not in manifest:
+                raise SystemExit(f"MANIFEST MISMATCH: {path}: {required!r}")
+        print(f"Verified icon and Windows compatibility manifest: {path} — {len(got)} ICO images")

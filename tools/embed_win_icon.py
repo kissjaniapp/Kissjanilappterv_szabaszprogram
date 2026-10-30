@@ -4,6 +4,29 @@ import pathlib
 import struct
 import sys
 
+# UAC- és Windows 10/11-kompatibilis alkalmazásazonosító. Ez az
+# alkalmazásra vonatkozik, nem kapcsolja ki a Windows kompatibilitási védelmét.
+APP_MANIFEST = """<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0"
+          xmlns:asmv3="urn:schemas-microsoft-com:asm.v3">
+  <assemblyIdentity type="win32" name="Gatterka.Desktop" version="1.0.9.0"
+                    processorArchitecture="amd64"/>
+  <description>Gatterka furniture cutting planner</description>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="asInvoker" uiAccess="false"/>
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}"/>
+    </application>
+  </compatibility>
+</assembly>
+""".encode("utf-8")
+
 def align4(n):
     return (n + 3) & ~3
 
@@ -28,6 +51,7 @@ def make_resource(ico):
         group.extend(struct.pack('<BBBBHHIH', w, h, colors, 0, planes, bpp, len(data), i+1))
     records = [(3, i+1, image[5]) for i, image in enumerate(images)]
     records.append((14, 1, bytes(group)))
+    records.append((24, 1, APP_MANIFEST))  # RT_MANIFEST
 
     section = bytearray()
     def directory(keys):
@@ -36,9 +60,10 @@ def make_resource(ico):
         for key in keys:
             section.extend(struct.pack('<II', key, 0))
         return pos
-    root = directory([3, 14])
+    resource_kinds = [3, 14, 24]
+    root = directory(resource_kinds)
     subdirs = {}
-    for kind, index in ((3, 0), (14, 1)):
+    for index, kind in enumerate(resource_kinds):
         d = directory([record[1] for record in records if record[0] == kind])
         struct.pack_into('<I', section, root + 16 + index*8 + 4, 0x80000000 | d)
         subdirs[kind] = d
