@@ -65,7 +65,7 @@ test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
  assert.match(panel,/<output id="xmix-machine-root"/);
  assert.match(panel,/csak tájékoztatás/);
  assert.doesNotMatch(panel,/data-key="xmixMachineRoot"/);
- assert.match(panel,/Gépi gyökérmappa/);
+ assert.match(panel,/Kiválasztott célmappa \(csak tájékoztatás\)/);
  assert.match(panel,/data-action="download-xprg-project"/);
  assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
  assert.doesNotMatch(panel,/data-key="xprgFolder"/);

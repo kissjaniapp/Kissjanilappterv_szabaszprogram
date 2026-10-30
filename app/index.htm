@@ -2178,10 +2178,6 @@
         if(scope==='part' && (key==='edgeThickness'||key==='mill') && Number(target.edgeThickness)===0.4)target.mill=false;
         if(scope==='part'&&key==='grainRequired')target.rot=!value;
       }
-      if(scope==='settings'&&key==='xmixMachineRoot'){
-        rememberMachineRoot(value);
-        return;
-      }
       if(scope==='settings'&&(key==='xprgMaterialCode'||key==='xprgFolder'||key==='xprgHeaderMode')){
         // Szövegmezőről a letöltés gombra váltáskor nem bontjuk le
         // a gomb DOM-ját: a blur utáni kattintás így nem vész el.
