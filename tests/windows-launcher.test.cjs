@@ -62,3 +62,12 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(native,/bridge\.selectedDirectory=dir/);
  assert.match(native,/X-Gatterka-Token/);
 });
+
+test('a natív mentőszolgáltatás nem áll le az Edge indítófolyamatának gyors kilépésekor',()=>{
+ assert.match(go,/go func\(\)\{_ = cmd\.Wait\(\)\}\(\)/);
+ assert.match(go,/waitForGatterkaWindow\(gatterkaMainWindowVisible/);
+ assert.doesNotMatch(go,/\n\s+_=cmd\.Wait\(\)\n/);
+ assert.match(windowIcon,/func gatterkaMainWindowVisible\(\) bool/);
+ assert.match(windowIcon,/GetWindowTextW/);
+ assert.match(windowIcon,/func waitForGatterkaWindow\(/);
+});

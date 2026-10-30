@@ -5,6 +5,7 @@ package main
 // erőforrásikonja ettől önmagában még nem kerül az ablak fejlécére.
 import (
     "syscall"
+    "strings"
     "time"
     "unsafe"
 )
@@ -54,5 +55,58 @@ func setRunningWindowIcon(browserPID int) {
         enumWindows.Call(cb,0)
         if found {return}
         time.Sleep(250*time.Millisecond)
+    }
+}
+
+
+// A Chromium indítófolyamata véget érhet anélkül, hogy a Gatterka
+// alkalmazásablak bezárulna (Edge/Chrome: meglévő böngészőfolyamat
+// újrahasznosítása). Ilyenkor a 127.0.0.1-es mentőszolgáltatásnak
+// tovább kell futnia az alkalmazásablak teljes élettartamáig.
+func gatterkaMainWindowVisible() bool {
+    user32:=syscall.NewLazyDLL("user32.dll")
+    enumWindows:=user32.NewProc("EnumWindows")
+    isVisible:=user32.NewProc("IsWindowVisible")
+    getText:=user32.NewProc("GetWindowTextW")
+    getLength:=user32.NewProc("GetWindowTextLengthW")
+    found:=false
+    callback:=syscall.NewCallback(func(hwnd,param uintptr) uintptr {
+        visible,_,_:=isVisible.Call(hwnd)
+        if visible==0{return 1}
+        length,_,_:=getLength.Call(hwnd)
+        if length==0||length>1024{return 1}
+        buffer:=make([]uint16,int(length)+1)
+        getText.Call(hwnd,uintptr(unsafe.Pointer(&buffer[0])),uintptr(len(buffer)))
+        title:=strings.ToLower(syscall.UTF16ToString(buffer))
+        if strings.Contains(title,"gatterka") &&
+           strings.Contains(title,"nesting tervező") {
+           found=true
+           return 0
+        }
+        return 1
+    })
+    enumWindows.Call(callback,0)
+    return found
+}
+
+// A launcher nem állhat le csupán azért, mert az Edge/Chrome
+// indítófolyamata véget ért. A főablak bezárását figyeljük.
+// A hosszú indulási türelmi idő megőrzi a mentést akkor is,
+// ha a böngésző az ablak címét eltérően jeleníti meg.
+func waitForGatterkaWindow(probe func() bool,poll,initialGrace,closeGrace time.Duration) {
+    seen:=false
+    started:=time.Now()
+    var absentSince time.Time
+    for {
+        if probe() {
+            seen=true
+            absentSince=time.Time{}
+        } else if seen {
+            if absentSince.IsZero() {absentSince=time.Now()}
+            if time.Since(absentSince)>=closeGrace {return}
+        } else if time.Since(started)>=initialGrace {
+            return
+        }
+        time.Sleep(poll)
     }
 }
