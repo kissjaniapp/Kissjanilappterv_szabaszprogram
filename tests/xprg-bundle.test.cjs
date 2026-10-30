@@ -143,3 +143,31 @@ test('a működő WinCut sorparaméterezéshez minden xPrg-hivatkozás ,1,0 vég
  assert.ok(out.files.filter(([name])=>name.endsWith('.xPrg'))
    .every(([,xml])=>xml.startsWith('<SchemaDoc>')));
 });
+
+// A gép alaplapméretei nem fordulhatnak meg a beadási iránnyal együtt.
+// A P parancs továbbra is az adott beadás irányában értelmezett méret.
+test('az xPrg fejléc Lunghezza/Larghezza méretei mindkét beadási iránynál állandók',()=>{
+  const sizes=[
+    {a:2800,b:2070,expectedLength:'2070.00',expectedWidth:'2800.00'},
+    {a:2070,b:2800,expectedLength:'2800.00',expectedWidth:'2070.00'}
+  ];
+  for(const size of sizes){
+    for(const feed of ['x','y']){
+      const bin=base();
+      bin.a=size.a;
+      bin.b=size.b;
+      bin.machine.feed=feed;
+      const out=generate([bin],'Teszt','BLAP003',5,'30/10/2026');
+      const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
+      const header=xml.match(/<Header\s+[^>]+\/>/);
+      assert.ok(header,'A Header hiányzik');
+      assert.match(header[0],new RegExp('Lunghezza="'+size.expectedLength+'"'));
+      assert.match(header[0],new RegExp('Larghezza="'+size.expectedWidth+'"'));
+      const actualP=xml.match(/<Cut T="P" Dim="([0-9.]+)"/);
+      assert.ok(actualP,'A kezdő P parancs hiányzik');
+      const expectedFeed=feed==='x'?size.b:size.a;
+      assert.equal(actualP[1],expectedFeed.toFixed(2),
+        'A P parancsot nem szabad a fejléc tájolásával együtt megváltoztatni');
+    }
+  }
+});

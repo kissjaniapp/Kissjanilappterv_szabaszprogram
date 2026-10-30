@@ -1291,8 +1291,12 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      const length=m.feed==='x'?bin.b:bin.a;
-      const width=m.feed==='x'?bin.a:bin.b;
+      // A gépi alaplap fejlécének tengelysorrendje ÁLLANDÓ:
+      // Lunghezza = a tábla Y-mérete, Larghezza = a tábla X-mérete.
+      // A beadás iránya csak a P vágási parancsot érinti, a fejlécet nem.
+      const headerLength=bin.b;
+      const headerWidth=bin.a;
+      const feedLength=m.feed==='x'?bin.b:bin.a;
       const boardName=safePart(bin.name,'Tabla',30);
       const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
       names.push(file);
@@ -1310,7 +1314,7 @@
         cuts.push('\t\t<Cut T="'+type+'" Dim="'+num(value)+
           '" Rip="1" ID="'+cuts.length+'" />');
       };
-      add('P',length);
+      add('P',feedLength);
       add('RY',bin.trim);
       for(const strip of m.strips){
         if(!Number.isFinite(strip.width)||strip.width<=0)
@@ -1343,7 +1347,7 @@
       const xml='<SchemaDoc>\r\n'+
         '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(materialCode)+
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
-        '" Lunghezza="'+num(length)+'" Larghezza="'+num(width)+
+        '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
         '" SpessoreLama="'+num(kerf)+'" />\r\n'+
         '\t<Material Tipologia="" Codice="'+esc(materialCode)+'" />\r\n'+
         '\t<Pattern>\r\n'+cuts.join('\r\n')+

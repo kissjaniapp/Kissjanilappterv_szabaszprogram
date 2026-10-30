@@ -185,3 +185,12 @@ A `.012` fájl pontos belső formátuma ismeretlen. Pusztán az átnevezés
 nem alakítja át az XML-t érvényes `.012` programmá. A hibakereséshez egy
 eredeti, működő `.012` fájl és a hozzá tartozó páros `.xMix`
 szükséges; addig a gépi import / végrehajtás **nem igazolt**.
+
+## 2026-10-30 – állandó .xPrg-fejlécméretek
+
+Az eredeti SCM-minta alapján az .xPrg `<Header>` mindig az alaplap saját
+X/Y tengelyeihez kötött méreteket használja: `Lunghezza = bin.b` (Y),
+`Larghezza = bin.a` (X). A `feed='x'` vagy `feed='y'` gépállás
+**nem cseréli fel a két fejlécmezőt**. A `<Cut T="P">` kezdőparancs
+változatlanul a kiválasztott beadási irány szerinti méretet használja.
+A WinCut-kompatibilitás ettől még gépi tesztet igényel.
