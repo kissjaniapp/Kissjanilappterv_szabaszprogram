@@ -59,7 +59,8 @@ test('a szabásprogramok egy közös bútormappás ZIP letöltést indítanak',a
   assert.equal(calls.downloads[0].blob.zip,true);
   assert.equal(calls.confirms.length,1);
   assert.match(calls.confirms[0],/Letöltések/);
-  assert.match(calls.confirms[0],/X: meghajtó útvonala kizárólag/);
+  assert.match(calls.confirms[0],/C:\\\\WinCut/);
+  assert.match(calls.confirms[0],/NEM igazolt/);
   assert.equal(calls.alerts.length,0);
 });
 test('a böngészős mappaválasztó semmikor nem kerül meghívásra',()=>{

@@ -159,3 +159,29 @@ A GitHub-tárhely URL-je és a belső workflow-fájl neve változatlan.
 - Az alkatrészlista PNG-jén az élzárás összefoglalója megmarad, de az X1/X2/Y1/Y2 élhelyjelölések nem jelennek meg. Az élzárás működése változatlan.
 - A Nesting oldalon a számozott vágási sorrend részletes táblázata nem jelenik meg; a háttérszámítás és a gépi fájlexport tovább működik.
 - Az xMix fájl kötelező fejléce változatlan: `[Intestazione]`, `Descrizione=`, üres sor, `[Righe]`, `NumeroRighe=N`; a két táblát tartalmazó projektnél `NumeroRighe=2`.
+
+## 2026-10-30 – a működő WinCut xMix-minta összehasonlítása
+
+A felhasználó képernyőképén a **működő INI xMix** a következő formátumú:
+
+```ini
+[Intestazione]
+Descrizione=
+
+[Righe]
+NumeroRighe=2
+1=C:\WinCut\Prg\2025_10_31__12_02_46_1.012,1,0
+2=C:\WinCut\Prg\2025_10_31__12_02_46_2.012,1,0
+```
+
+A Gatterka az ellenőrző **INI xMix sorhivatkozásait** ennek megfelelően
+`C:\WinCut\Prg\<programneve>.xPrg,1,0` alakban adja ki. A programlistában
+a darabszámot továbbra is a valós táblaszám alapján tölti ki.
+A ZIP fájljait **nem telepíti automatikusan** a gép `C:` meghajtójára.
+
+**Fontos kompatibilitási hiány:** a működő képen a WinCut `.012`
+fájlokra hivatkozik, a Gatterka pedig csak XML `.xPrg` mintákat állít elő.
+A `.012` fájl pontos belső formátuma ismeretlen. Pusztán az átnevezés
+nem alakítja át az XML-t érvényes `.012` programmá. A hibakereséshez egy
+eredeti, működő `.012` fájl és a hozzá tartozó páros `.xMix`
+szükséges; addig a gépi import / végrehajtás **nem igazolt**.

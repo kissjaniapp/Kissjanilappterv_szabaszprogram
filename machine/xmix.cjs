@@ -1,9 +1,11 @@
 'use strict';
 /**
- * WinCut INI xMix: a Mix és az összes xPrg egyetlen bútormappában található.
- * A generált .xPrg fájlok gépi kompatibilitása nem hitelesített.
+ * WinCut INI xMix: a működő felhasználói minta a C:\WinCut\Prg\ mappára
+ * hivatkozik, és minden sor végén ,1,0 szerepel.
+ * A generált .xPrg fájlok gépi kompatibilitása nem hitelesített;
+ * a működő mintában .012 kiterjesztésű programokra mutatnak a sorok.
  */
-const DIRECTORY='X:\\JANI\\szabas_programmal\\';
+const DIRECTORY='C:\\WinCut\\Prg\\';
 function validateFolder(folder){
   if(typeof folder!=='string'||!/^[A-Za-z0-9_-]{1,70}$/.test(folder))
     throw new Error('Érvénytelen bútormappa. Csak betű, szám, aláhúzás vagy kötőjel megengedett.');
@@ -23,7 +25,7 @@ function createXMix({programs,folder,description=''}) {
     throw new Error('Érvénytelen leírás a .xMix fájlhoz.');
   const rows=programs.map((p,i)=>{
     const filename=validateFilename(typeof p==='string'?p:p?.filename);
-    return (i+1)+'='+DIRECTORY+cabinet+'\\'+filename;
+    return (i+1)+'='+DIRECTORY+filename+',1,0';
   });
   return ['[Intestazione]','Descrizione='+description,'',
     '[Righe]','NumeroRighe='+rows.length,...rows,''].join('\r\n');
