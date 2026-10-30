@@ -48,35 +48,97 @@ jobs:
         shell: cmd
         run: call desktop-go\Build-Windows.cmd
 
+      # Csak hiteles kiadói tanúsítvány birtokában kapcsolható be.
+      # Fontos: előbb a beágyazandó EXE-ket írjuk alá, majd újraépítjük
+      # és aláírjuk a telepítőt; a privát kulcs nem kerül a forráskódba.
+      - name: Alkalmazás és eltávolító aláírása (opcionális)
+        if: ${{ vars.GATTERKA_SIGNING_ENABLED == 'true' }}
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.GATTERKA_AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.GATTERKA_AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.GATTERKA_AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.GATTERKA_SIGN_ENDPOINT }}
+          signing-account-name: ${{ secrets.GATTERKA_SIGN_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.GATTERKA_SIGN_PROFILE }}
+          files: |
+            ${{ github.workspace }}\\desktop-go\\assets\\bin\\Gatterka.exe
+            ${{ github.workspace }}\\desktop-go\\assets\\bin\\Gatterka_Eltavolitas.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Telepítő újraépítése aláírt belső EXE-kből
+        if: ${{ vars.GATTERKA_SIGNING_ENABLED == 'true' }}
+        working-directory: desktop-go
+        shell: cmd
+        run: |
+          copy /Y assets\\bin\\Gatterka.exe installer\\assets\\Gatterka.exe
+          copy /Y assets\\bin\\Gatterka_Eltavolitas.exe installer\\assets\\Gatterka_Eltavolitas.exe
+          go build -trimpath -ldflags="-s -w -H=windowsgui" -o ..\\dist\\Gatterka_Telepito_1.0.10_x64.exe .\\installer
+
+      - name: Telepítő aláírása (opcionális)
+        if: ${{ vars.GATTERKA_SIGNING_ENABLED == 'true' }}
+        uses: azure/artifact-signing-action@v2
+        with:
+          azure-tenant-id: ${{ secrets.GATTERKA_AZURE_TENANT_ID }}
+          azure-client-id: ${{ secrets.GATTERKA_AZURE_CLIENT_ID }}
+          azure-client-secret: ${{ secrets.GATTERKA_AZURE_CLIENT_SECRET }}
+          endpoint: ${{ secrets.GATTERKA_SIGN_ENDPOINT }}
+          signing-account-name: ${{ secrets.GATTERKA_SIGN_ACCOUNT }}
+          certificate-profile-name: ${{ secrets.GATTERKA_SIGN_PROFILE }}
+          files: ${{ github.workspace }}\\dist\\Gatterka_Telepito_1.0.10_x64.exe
+          file-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+          timestamp-digest: SHA256
+
+      - name: Hiteles digitális aláírások ellenőrzése
+        if: ${{ vars.GATTERKA_SIGNING_ENABLED == 'true' }}
+        shell: pwsh
+        run: |
+          foreach ($file in @('desktop-go/assets/bin/Gatterka.exe','desktop-go/assets/bin/Gatterka_Eltavolitas.exe','dist/Gatterka_Telepito_1.0.10_x64.exe')) {
+            $signature = Get-AuthenticodeSignature -FilePath $file
+            if ($signature.Status -ne 'Valid') { throw "Érvénytelen aláírás: $file ($($signature.Status))" }
+            Write-Host "Hiteles aláírás: $file – $($signature.SignerCertificate.Subject)"
+          }
+
       - name: Ikon ellenorzese a harom Windows EXE-ben
         shell: pwsh
         run: |
           python -m pip install --disable-pip-version-check -q pefile
           if ($LASTEXITCODE -ne 0) { throw 'PE ikon ellenorzo nem telepult' }
-          python tests/check-pe-icon.py Gatterka.ico desktop-go/assets/bin/Gatterka.exe desktop-go/assets/bin/Gatterka_Eltavolitas.exe dist/Gatterka_Telepito_1.0.9_x64.exe
+          python tests/check-pe-icon.py Gatterka.ico desktop-go/assets/bin/Gatterka.exe desktop-go/assets/bin/Gatterka_Eltavolitas.exe dist/Gatterka_Telepito_1.0.10_x64.exe
           if ($LASTEXITCODE -ne 0) { throw 'Hianyzik vagy elter a Gatterka ikon valamelyik EXE-ben' }
 
       - name: Hordozhato valtozat es ellenorzo hash
         shell: pwsh
+        env:
+          GATTERKA_SIGNING_ENABLED: ${{ vars.GATTERKA_SIGNING_ENABLED }}
         run: |
           $ErrorActionPreference = 'Stop'
-          $installer = 'dist/Gatterka_Telepito_1.0.9_x64.exe'
+          $installer = 'dist/Gatterka_Telepito_1.0.10_x64.exe'
           if (-not (Test-Path $installer)) { throw 'Nem keszult el a telepito EXE!' }
           New-Item -ItemType Directory -Force -Path 'dist/portable/app' | Out-Null
           Copy-Item 'desktop-go/assets/bin/Gatterka.exe' 'dist/portable/Gatterka.exe'
           Copy-Item 'desktop-go/assets/app/index.htm' 'dist/portable/app/index.htm'
-          Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Gatterka_Portable_1.0.9.zip' -Force
+          Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Gatterka_Portable_1.0.10.zip' -Force
           $hash = (Get-FileHash -Algorithm SHA256 $installer).Hash
-          "$hash  Gatterka_Telepito_1.0.9_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
+          "$hash  Gatterka_Telepito_1.0.10_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
+          if ($env:GATTERKA_SIGNING_ENABLED -eq 'true') {
+            'ALAIRVA: hiteles Windows Authenticode / Azure Artifact Signing' | Set-Content -Encoding ascii 'dist/ALAIRAS_STATUSZ.txt'
+          } else {
+            'NINCS DIGITALIS ALAIRAS: kiadoi tanusitvany nincs beallitva' | Set-Content -Encoding ascii 'dist/ALAIRAS_STATUSZ.txt'
+          }
           Write-Host "A telepito merete: $((Get-Item $installer).Length) byte"
 
       - name: Telepito es hordozhato program letoltheto atadasa
         uses: actions/upload-artifact@v4
         with:
-          name: Gatterka-Windows-Telepito-1.0.9
+          name: Gatterka-Windows-Telepito-1.0.10
           path: |
-            dist/Gatterka_Telepito_1.0.9_x64.exe
-            dist/Gatterka_Portable_1.0.9.zip
+            dist/Gatterka_Telepito_1.0.10_x64.exe
+            dist/Gatterka_Portable_1.0.10.zip
             dist/SHA256.txt
+            dist/ALAIRAS_STATUSZ.txt
           if-no-files-found: error
           retention-days: 30
