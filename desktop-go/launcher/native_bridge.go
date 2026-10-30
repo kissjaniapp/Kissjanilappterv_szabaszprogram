@@ -58,23 +58,21 @@ func machineError(w http.ResponseWriter,status int,err error) {
  machineJSON(w,status,map[string]string{"error":err.Error()})
 }
 func (bridge *nativeBridge) allow(w http.ResponseWriter,r *http.Request) bool {
- w.Header().Set("Access-Control-Allow-Origin","null")
- w.Header().Set("Access-Control-Allow-Methods","POST, OPTIONS")
- w.Header().Set("Access-Control-Allow-Headers","Content-Type, X-Gatterka-Token")
- w.Header().Set("Access-Control-Allow-Private-Network","true")
- w.Header().Set("Vary","Origin")
+ // A felület és a mentési API ugyanarról a 127.0.0.1 szerverről fut.
+ // Nincs cross-origin kérés, ezért a böngésző nem tilthatja le a mappaválasztást.
+ w.Header().Set("Cache-Control","no-store")
  if r.Method==http.MethodOptions {w.WriteHeader(http.StatusNoContent);return false}
  if r.Method!=http.MethodPost {machineError(w,405,errors.New("Csak POST engedélyezett."));return false}
  if r.Header.Get("X-Gatterka-Token")!=bridge.token {
    machineError(w,403,errors.New("Érvénytelen Gatterka munkamenet."));return false
  }
- if origin:=r.Header.Get("Origin");origin!=""&&origin!="null" {
+ if origin:=r.Header.Get("Origin");origin!=""&&origin!="null"&&origin!="http://"+r.Host {
    machineError(w,403,errors.New("A kérés nem a helyi Gatterka ablakból érkezett."));return false
  }
  return true
 }
 
-func startNativeBridge()(int,string,func(),error){
+func startNativeBridge(page string)(int,string,func(),error){
  secret:=make([]byte,32)
  if _,err:=rand.Read(secret);err!=nil{return 0,"",nil,err}
  token:=base64.RawURLEncoding.EncodeToString(secret)
@@ -84,6 +82,13 @@ func startNativeBridge()(int,string,func(),error){
  router:=http.NewServeMux()
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
+ router.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
+  if (r.URL.Path!="/"&&r.URL.Path!="/index.htm")||r.Method!=http.MethodGet {http.NotFound(w,r);return}
+  w.Header().Set("Cache-Control","no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
+  w.Header().Set("Content-Type","text/html; charset=utf-8")
+  http.ServeFile(w,r,page)
+ })
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -106,7 +111,12 @@ if($start -and [System.IO.Directory]::Exists($start)){$picker.SelectedPath=$star
 $owner=New-Object System.Windows.Forms.Form
 $owner.TopMost=$true
 $owner.ShowInTaskbar=$false
+$owner.FormBorderStyle='None'
+$owner.Size=New-Object System.Drawing.Size(1,1)
+$owner.Opacity=0
 try {
+  $owner.Show()
+  $owner.Activate()
   $result=$picker.ShowDialog($owner)
   if($result -eq [System.Windows.Forms.DialogResult]::OK){
     [Console]::WriteLine($picker.SelectedPath)
@@ -115,6 +125,7 @@ try {
   }
 } finally {
   $picker.Dispose()
+  $owner.Close()
   $owner.Dispose()
 }`
  chars:=utf16.Encode([]rune(script))
