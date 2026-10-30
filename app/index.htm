@@ -151,8 +151,8 @@
   const uuid = () => (globalThis.crypto?.randomUUID?.() || 'id'+Date.now()+Math.random().toString(36).slice(2));
   const nfmt = value => Number(value).toLocaleString('hu-HU',{maximumFractionDigits:1});
   const pnum = value => Number(String(value).replace(',','.'));
-  const paneNames = {furniture:'Bútor adatai',parts:'Alkatrészek',stock:'Anyagkészlet',nesting:'Szabásterv'};
-  const defaultXmixMachineRoot='X:\\JANI\\szabas_programmal\\Legujabb_mentessel';
+  const paneNames = {furniture:'Bútor adatai',parts:'Alkatrészek',stock:'Anyagkészlet',nesting:'Szabásterv',save:'Mentés'};
+  const defaultXmixMachineRoot='C:\\Gatterka';
   // A Windowsos Gatterka indító munkamenetenként saját, helyi mappamentő
   // szolgáltatást nyit. Ez csak az EXE-vel futtatott felületen érhető el.
   const nativeLaunch=/^#gatterka-native=(\d{1,5})\.([A-Za-z0-9_-]{32,})$/.exec(location.hash||'');
@@ -160,12 +160,8 @@
     url:'http://127.0.0.1:'+nativeLaunch[1],
     token:nativeLaunch[2]
   }:null;
-  // A választott gépi gyökérmappát új bútoroknál is megjegyezzük.
-  const savedMachineRoot=(()=>{
-    try{return localStorage.getItem('gatterka-machine-root-v1')||defaultXmixMachineRoot;}
-    catch{return defaultXmixMachineRoot;}
-  })();
-
+  // A Windows mappaválasztó minden alkalommal a C:\\Gatterka helyről indul.
+  const savedMachineRoot=defaultXmixMachineRoot;
   // A téma minden bútorprojektben azonos, külön felhasználói beállításként tárolva.
   const themeKey='gatterka-theme-v1';
   const themePalettes={
@@ -478,7 +474,7 @@
   function intro(eyebrow,title,desc,actions=''){
     return `<section class="intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></section>`;
   }
-  function steps(){return `<div class="steps">${[['furniture','01','Bútor adatai','Méretek és anyagszín'],['parts','02','Alkatrészek','Képletek és darabszámok'],['stock','03','Anyagkészlet','Egész és maradék táblák'],['nesting','04','Szabásterv','Kihozatal és gépi export']].map(([id,num,title,sub])=>`<button class="step ${state.active===id?'active':''}" data-action="page" data-page="${id}"><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;}
+  function steps(){return `<div class="steps">${[['furniture','01','Bútor adatai','Méretek és anyagszín'],['parts','02','Alkatrészek','Képletek és darabszámok'],['stock','03','Anyagkészlet','Egész és maradék táblák'],['nesting','04','Szabásterv','Kihozatal'],['save','05','Mentés','Gépi fájlok']].map(([id,num,title,sub])=>`<button class="step ${state.active===id?'active':''}" data-action="page" data-page="${id}"><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;}
   function renderNav(){ $('#top-steps').innerHTML=steps(); }
   function cabinet(f){
     if(!f)return '';
@@ -1699,7 +1695,6 @@
   // ilyen jogosultság, ott továbbra is a ZIP letöltése használható.
   function rememberMachineRoot(value){
     state.xmixMachineRoot=String(value??'');
-    try{localStorage.setItem('gatterka-machine-root-v1',state.xmixMachineRoot);}catch{}
     save();
   }
   async function requestNativeMachine(action,payload){
@@ -1754,7 +1749,7 @@
     const preview=buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
       date,'.\\xPrg\\','color',destination);
     const cabinet=String(options.cabinetFolder||preview.cabinetFolder);
-    const directory=machineRootPath()+'\\'+cabinet+'\\xPrg\\';
+    const directory=machineRootPath()+'\\'+[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-')+'\\'+cabinet+'\\xPrg\\';
     return buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
       date,directory,'color',destination,
       cabinet===preview.cabinetFolder?'':cabinet);
@@ -1774,13 +1769,12 @@
         // A valódi Windows könyvtárválasztó tényleges X:\... útvonalat
         // küld vissza, amit azonnal eltárolunk és a képernyőn is frissítünk.
         const selected=await requestNativeMachine('choose',{
-          initial:state.xmixMachineRoot||savedMachineRoot
+          initial:defaultXmixMachineRoot
         });
         if(selected.cancelled)return;
         if(!selected.path)throw Error('A Windows nem adta vissza a kijelölt mappa útvonalát.');
         rememberMachineRoot(selected.path);
-        const input=document.getElementById('xmix-machine-root');
-        if(input)input.textContent=selected.path;
+
         const bundle=machineExportBundle();
         const saved=await requestNativeMachine('save',{
           cabinetFolder:bundle.cabinetFolder,
