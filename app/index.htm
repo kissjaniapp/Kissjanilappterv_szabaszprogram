@@ -446,6 +446,7 @@
     const entry=library.find(x=>x.id===id);
     if(!entry)return;
     Object.assign(state,defaultState(),JSON.parse(JSON.stringify(entry.data)));
+    state.xmixMachineRoot=defaultXmixMachineRoot;
     normalizeEdgeSettings(state.furnitures);
     normalizeFurnitureMeta(state.furnitures,state);
     normalizeFurnitureSizes(state.furnitures);
@@ -1366,7 +1367,7 @@
       'XMIX és XPRG mentés, alkatrészlista és matricák külön oldalon.',
       '<button class="btn" data-action="page" data-page="nesting">← Szabásterv</button>');
     if(!result||result.error)return heading+'<div class="notice error">'+h(result?.error||'Nincs elkészült szabásterv.')+'</div>';
-    const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A Windows mappaválasztó alapból a <strong>C:\Gatterka</strong> mappánál nyílik meg. Más helyre is navigálhatsz. A kiválasztott mappában az aktuális dátum, azon belül a projekt és az xPrg almappa készül. Az XMIX mindig a tényleges Windows-útvonalakat tartalmazza.</div></div></div>`;
+    const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A Windows mappaválasztó a Gatterka alapértelmezett könyvtáránál nyílik meg. Más helyre is navigálhatsz. A kiválasztott mappában az aktuális dátum, azon belül a projekt és az xPrg almappa készül. Az XMIX mindig a tényleges Windows-útvonalakat tartalmazza.</div></div></div>`;
     return heading+machinePanel+
       '<div class="save-secondary"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button>'+
       '<button class="btn" data-action="download-png">↓ Szabásterv PNG</button></div>'+
@@ -1805,7 +1806,7 @@
       /(?:^|\\)\.\.?(?:\\|$)/.test(root)||
       root.split('\\').filter(Boolean).some(p=>p.endsWith(' ')||p.endsWith('.')||
         (p.includes(':')&&!/^[A-Za-z]:$/.test(p))))
-      throw Error('Hibás teljes Windows-útvonal. Példa: X:\\JANI\\szabas_programmal\\Legujabb_mentessel');
+      throw Error('Hibás teljes Windows-útvonal. Példa: C:\\Gatterka');
     return root;
   }
   function machineExportBundle(options={}){
@@ -1835,15 +1836,14 @@
       const bundle=machineExportBundle();
       downloadBlob(xlsxZip(bundle.files,'application/zip'),
         bundle.cabinetFolder+'_XPRG_XMIX.zip');
-      showNotice('A ZIP-et ide bontsd ki: '+machineRootPath()+
-        ' · a .xMix a megadott teljes X: útvonalon keresi az xPrg programokat.');
+      showNotice('ZIP letöltve. A kibontás helye: '+machineRootPath()+'\\'+new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(new Date().getDate()).padStart(2,'0')+' . Más mappába mentéshez válaszd a Windowsos mentést.');
     }catch(err){showNotice('Gépi projekt letöltése: '+(err?.message||'nem sikerült'));}
   }
   async function saveXprgToSelectedFolder(){
     if(nativeBridge){
       try{
-        // A valódi Windows könyvtárválasztó tényleges X:\... útvonalat
-        // küld vissza, amit azonnal eltárolunk és a képernyőn is frissítünk.
+        // A valódi Windows könyvtárválasztó abszolút útvonalát kizárólag
+        // a mentési adatokban használjuk, nem jelenítjük meg a képernyőn.
         const selected=await requestNativeMachine('choose',{
           initial:defaultXmixMachineRoot
         });
@@ -2243,7 +2243,7 @@
       const obj=JSON.parse(await file.text());
       if(!Array.isArray(obj.furnitures)||!Array.isArray(obj.boards))throw Error('Hibás projektfájl');
       if(!confirm('A betöltött projekt lecseréli a jelenlegi adatokat. Folytatod?'))return;
-      const fresh=defaultState();Object.assign(state,fresh,obj);normalizeEdgeSettings(state.furnitures);normalizeFurnitureMeta(state.furnitures,state);normalizeFurnitureSizes(state.furnitures);normalizeLabelSettings(state);state.active='furniture';state.selectedFurniture=state.furnitures[0]?.id||null;result=null;showNotice('Projekt betöltve.');
+      const fresh=defaultState();Object.assign(state,fresh,obj);state.xmixMachineRoot=defaultXmixMachineRoot;normalizeEdgeSettings(state.furnitures);normalizeFurnitureMeta(state.furnitures,state);normalizeFurnitureSizes(state.furnitures);normalizeLabelSettings(state);state.active='furniture';state.selectedFurniture=state.furnitures[0]?.id||null;result=null;showNotice('Projekt betöltve.');
     }catch(err){showNotice('Nem sikerült betölteni a projektet: '+err.message);}finally{e.target.value='';}
   });
   render();
