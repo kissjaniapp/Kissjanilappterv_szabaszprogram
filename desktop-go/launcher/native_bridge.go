@@ -41,7 +41,7 @@ type nativeChoose struct {
 }
 
 const maxNativeBody = 12 << 20
-const defaultMachineDirectory = `C:\\Gatterka`
+const defaultMachineDirectory = `C:\Gatterka`
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
 var machineXmixName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xMix$`)
