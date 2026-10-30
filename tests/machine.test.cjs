@@ -12,7 +12,7 @@ test('a gépen működő xMix XML Header, Materials és RigaMix szerkezetét ír
     '<xMix>\r\n'+
     '\t<Header Descrizione="" Import="" Date="30/10/2026" />\r\n'+
     '\t<Materials>\r\n'+
-    '\t\t<Material Tipologia="Onixszürke" Codice="U960" Quantita="999" />\r\n'+
+    '\t\t<Material Tipologia="Onixszürke" Codice="Onixszürke" Quantita="999" />\r\n'+
     '\t</Materials>\r\n'+
     '\t<RigheMix>\r\n'+
     '\t\t<RigaMix File=".\\xPrg\\2026_10_30_Konyha_tabla_01.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />\r\n'+
@@ -61,3 +61,11 @@ test('XML karaktereket biztonságosan escape-el, nem enged tiltott útvonalat',(
   assert.throws(()=>createXMix({folder:'Konyha',date:'2026-10-30',programs:['b.xPrg']}));
 });
 test('az xPrg gyártási hitelesítés hiánya változatlan',()=>assert.throws(createXPrg,/Nincs hiteles xPrg/));
+
+test('az elavult anyagkódot felülírja a bútor kezdetén megadott anyagszín',()=>{
+ const mix=createXMix({folder:'Konyha',date:'30/10/2026',
+  materials:['Feya','Tölgy'],materialCode:'BLAP003',programs:['tabla.xPrg']});
+ assert.match(mix,/Tipologia="Feya" Codice="Feya"/);
+ assert.match(mix,/Tipologia="Tölgy" Codice="Tölgy"/);
+ assert.doesNotMatch(mix,/BLAP003/);
+});

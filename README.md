@@ -306,3 +306,14 @@ sokvágásos programok fizikai végrehajtását. Különösen a korábbi
 `SpessoreLamaNonValido` gépi hiba újbóli felmerülését ellenőrizni
 kell. A legfrissebb XML-es xMix és a beállítható xPrg mappa
 változatlan.
+
+
+## 2026-10-30 – Gatterka: gépi tükörnézet, négy képernyő, közvetlen projektmappa-mentés
+
+- A szabásrajz **a függőleges középvonalára tükrözve** jelenik meg (a WinCut képernyőjével összhangban); a PNG és az SVG is ezt a nézetet exportálja. A belső alkatrészkoordináták és az .xPrg `P/RY/Y/RX/X/U/F` utasítások változatlanok.
+- A fejlécben a program neve **Gatterka**, nagy kezdőbetűvel és könnyebb betűvastagsággal. A láblécben szerepel: **„A programot készítette: Kiss János · A program Kiss János tulajdona.”**
+- Négy különálló munkaképernyő: **01 Bútor adatai → 02 Alkatrészek → 03 Anyagkészlet → 04 Szabásterv**. A bútorlap már nem tartalmazza az alkatrész-táblázatot, azt az „Alkatrészek megadása” gomb nyitja meg önálló oldalon.
+- A Bútor adatai képernyő **Anyag színe / dekorja** mezője határozza meg a gépi anyagkódot és az `xPrg Header Descrizione` értékét, továbbá a közös XML xMix `Materials Tipologia` és `Codice` értékeit. Az exportpanelen a gépi anyagkód és a fejlécmód kézi állítását megszüntettük; régi projektek örökölt mezői az exportot nem befolyásolják.
+- Új **„Hely kiválasztása és mentés”** gomb a Szabásterv oldalon. A Chromium natív `showDirectoryPicker({mode:'readwrite'})` ablakával választott mappában automatikusan létrehozza a **YYYY_MM_DD_Hova_keszul** könyvtárat. Ezen belül **egy közös XML .xMix és az xPrg almappa** található az összes táblaprogrammal; a Mix hivatkozásai **.\\xPrg\\** relatív útvonalra mutatnak. Ha a projektmappa már létezik, sorszámozott új mappát hoz létre; korábbi mentést nem ír felül.
+- A különálló **ZIP letöltése** gomb továbbra is használható, különösen akkor, ha a böngésző nem támogatja a natív mappaválasztót. A fájlstruktúrája megegyezik a mappába mentett változattal.
+- **Gépi megkötés:** az anyagszínnek meg kell egyeznie a WinCut anyagtörzsében elvárt azonosítóval. A gépen már sikeresen lefutott egyszerű próba nem garantálja az összes bonyolult vágás és eltérő anyagkódok kompatibilitását; először offline/szoftveres ellenőrzést kell végezni.

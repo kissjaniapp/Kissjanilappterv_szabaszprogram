@@ -89,3 +89,12 @@ a közös XML xMix `Materials` adataitól függetlenül.
 
 Az xPrg vágási parancsok és a `SpessoreLama` értéke nem
 változott; a tényleges gépi validálás továbbra is szükséges.
+
+
+## A Gatterka 2026-10-30-i gépi és felületi változtatásai
+
+A valós gépen lefutott egytáblás próbát követően a rajzot a függőleges tengelyére tükrözzük, a tényleges xPrg vágássor módosítása nélkül. A Gatterka bútoradatlapján található anyagszín jelenik meg az xPrg Header Descrizione és Material Codice mezőiben, valamint az XML xMix Materials Tipologia és Codice mezőiben. Az új gépi mentési panelen nem szerkeszthető külön sem az anyagkód, sem a fejlécleírás.
+
+A felhasználó a rendszer könyvtárválasztójával kiválaszt egy mappát, amelybe a program YYYY_MM_DD_Celhely nevű alkönyvtárat készít. Ebben a .xMix és az xPrg alkönyvtárban az összes .xPrg file szerepel. A közös .xMix relatív .\\xPrg\\ hivatkozásai nem függnek a külső meghajtó betűjelétől. Meglévő projektnév esetén nem írunk felül fájlokat. Nem támogatott böngészőben ZIP letöltéssel történik a mentés.
+
+Az oldalak külön: bútoradatok, alkatrészek, anyagkészlet, szabásterv. A lábléc Kiss János készítői és tulajdonosi megjelölését tartalmazza.

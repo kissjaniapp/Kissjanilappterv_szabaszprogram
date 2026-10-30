@@ -8,7 +8,7 @@
   <title>Gatterka — Bútoralkatrész és nesting tervező</title>
   <style>
     :root { --pine:#17392f; --pine2:#245144; --leaf:#dcece4; --orange:#c86b42; --orange-pale:#fff0e7; --ink:#23322c; --muted:#77837b; --line:#e4e9e4; --bg:#f5f7f4; --white:#fff; --shadow:0 5px 20px rgba(28,54,40,.045); --radius:17px; }
-    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input,select{width:100%;background:#fff;border:1px solid #dbe3dc;border-radius:9px;padding:10px 11px;min-width:0;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}input:focus,select:focus{border-color:#5d987e;box-shadow:0 0 0 3px #deeee5}input[type=number]{font-variant-numeric:tabular-nums}input[type=checkbox]{accent-color:var(--pine2);width:16px;height:16px;box-shadow:none}label{display:block;font-size:12px;font-weight:700;color:#596a60;margin-bottom:7px}h1,h2,h3,p{margin-top:0}h1{font-size:29px;letter-spacing:-.9px;line-height:1.2;margin-bottom:8px}h2{font-size:19px;letter-spacing:-.45px;margin-bottom:6px}h3{font-size:15px;margin-bottom:5px}p{line-height:1.55}.muted{color:var(--muted)}.tiny{font-size:11px}.small{font-size:12px}.num{font-variant-numeric:tabular-nums}.app{min-height:100vh;display:grid;grid-template-columns:254px minmax(0,1fr)}.sidebar{background:var(--pine);color:#eaf4ed;padding:28px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;min-height:680px}.brand{display:flex;align-items:center;gap:11px;padding:1px 13px 33px}.brand-logo{height:37px;width:37px;border-radius:10px;background:#e5efe8;color:var(--pine);display:grid;place-items:center;font-size:20px;font-weight:900}.brand-name{font-size:20px;font-weight:800;letter-spacing:-1px}.brand-sub{font-size:10px;letter-spacing:1.7px;color:#8eafa0;margin-top:2px}.side-title{color:#89a99b;font-size:10px;letter-spacing:1.5px;font-weight:800;padding:0 14px;margin-bottom:14px}.navbtn{background:transparent;border:0;width:100%;text-align:left;color:#bed2c7;padding:13px 13px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:650;margin-bottom:5px}.navbtn:hover{background:#25483c;color:white}.navbtn.active{background:#e3f0e8;color:var(--pine);box-shadow:0 2px 10px #0d2e251b}.navicon{width:23px;text-align:center;font-size:17px}.sidebar-foot{margin-top:auto;padding:17px 14px 8px;border-top:1px solid #3d5d50;color:#a8c2b4}.sidebar-foot strong{display:block;color:#e6f2eb;margin-bottom:5px}.sidebar-foot .tiny{line-height:1.5}.side-foot-actions{display:flex;gap:7px;margin-top:16px}.side-foot-actions button{flex:1;background:#295446;border:1px solid #43695b;color:#e9f5ee;border-radius:9px;padding:9px 5px;font-size:11px;font-weight:700}.side-foot-actions button:hover{background:#3b6556}.main{min-width:0;padding:0 39px 70px;max-width:1740px;width:100%;margin:auto}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:20px}.crumb{display:flex;align-items:center;gap:10px;color:#839087;font-size:12px}.crumb b{color:#3f594a}.status{display:flex;align-items:center;gap:8px;color:#638273;font-size:12px}.dot{height:7px;width:7px;border-radius:100%;background:#4a9c71}.avatar{width:34px;height:34px;border-radius:50%;background:#dfebe4;color:#385945;display:grid;place-items:center;font-weight:800;margin-left:10px}.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:32px 0 24px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.7px;color:var(--orange);margin-bottom:9px}.intro p{color:var(--muted);margin:0;max-width:730px}.actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.btn{border-radius:10px;padding:11px 15px;border:1px solid #dce5df;background:#fff;color:#355046;display:inline-flex;justify-content:center;align-items:center;gap:8px;font-weight:750;white-space:nowrap;box-shadow:0 1px 2px #1b43321a}.btn:hover{background:#f8fbf8;border-color:#afc6b8}.btn.primary{color:#fff;background:var(--pine);border-color:var(--pine)}.btn.primary:hover{background:#245244}.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}.btn.orange:hover{background:#b65b35}.btn.soft{background:#edf5ef;border-color:#e5eee8}.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}.btn.danger{color:#ad4e44}.btn.sm{font-size:12px;padding:8px 11px}.btn.icon{padding:8px;width:34px;height:34px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input,select{width:100%;background:#fff;border:1px solid #dbe3dc;border-radius:9px;padding:10px 11px;min-width:0;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}input:focus,select:focus{border-color:#5d987e;box-shadow:0 0 0 3px #deeee5}input[type=number]{font-variant-numeric:tabular-nums}input[type=checkbox]{accent-color:var(--pine2);width:16px;height:16px;box-shadow:none}label{display:block;font-size:12px;font-weight:700;color:#596a60;margin-bottom:7px}h1,h2,h3,p{margin-top:0}h1{font-size:29px;letter-spacing:-.9px;line-height:1.2;margin-bottom:8px}h2{font-size:19px;letter-spacing:-.45px;margin-bottom:6px}h3{font-size:15px;margin-bottom:5px}p{line-height:1.55}.muted{color:var(--muted)}.tiny{font-size:11px}.small{font-size:12px}.num{font-variant-numeric:tabular-nums}.app{min-height:100vh;display:grid;grid-template-columns:254px minmax(0,1fr)}.sidebar{background:var(--pine);color:#eaf4ed;padding:28px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;min-height:680px}.brand{display:flex;align-items:center;gap:11px;padding:1px 13px 33px}.brand-logo{height:37px;width:37px;border-radius:10px;background:#e5efe8;color:var(--pine);display:grid;place-items:center;font-size:20px;font-weight:900}.brand-name{font-size:20px;font-weight:600;letter-spacing:-.45px}.brand-sub{font-size:10px;letter-spacing:1.7px;color:#8eafa0;margin-top:2px}.side-title{color:#89a99b;font-size:10px;letter-spacing:1.5px;font-weight:800;padding:0 14px;margin-bottom:14px}.navbtn{background:transparent;border:0;width:100%;text-align:left;color:#bed2c7;padding:13px 13px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:650;margin-bottom:5px}.navbtn:hover{background:#25483c;color:white}.navbtn.active{background:#e3f0e8;color:var(--pine);box-shadow:0 2px 10px #0d2e251b}.navicon{width:23px;text-align:center;font-size:17px}.sidebar-foot{margin-top:auto;padding:17px 14px 8px;border-top:1px solid #3d5d50;color:#a8c2b4}.sidebar-foot strong{display:block;color:#e6f2eb;margin-bottom:5px}.sidebar-foot .tiny{line-height:1.5}.side-foot-actions{display:flex;gap:7px;margin-top:16px}.side-foot-actions button{flex:1;background:#295446;border:1px solid #43695b;color:#e9f5ee;border-radius:9px;padding:9px 5px;font-size:11px;font-weight:700}.side-foot-actions button:hover{background:#3b6556}.main{min-width:0;padding:0 39px 70px;max-width:1740px;width:100%;margin:auto}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:20px}.crumb{display:flex;align-items:center;gap:10px;color:#839087;font-size:12px}.crumb b{color:#3f594a}.status{display:flex;align-items:center;gap:8px;color:#638273;font-size:12px}.dot{height:7px;width:7px;border-radius:100%;background:#4a9c71}.avatar{width:34px;height:34px;border-radius:50%;background:#dfebe4;color:#385945;display:grid;place-items:center;font-weight:800;margin-left:10px}.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:32px 0 24px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.7px;color:var(--orange);margin-bottom:9px}.intro p{color:var(--muted);margin:0;max-width:730px}.actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.btn{border-radius:10px;padding:11px 15px;border:1px solid #dce5df;background:#fff;color:#355046;display:inline-flex;justify-content:center;align-items:center;gap:8px;font-weight:750;white-space:nowrap;box-shadow:0 1px 2px #1b43321a}.btn:hover{background:#f8fbf8;border-color:#afc6b8}.btn.primary{color:#fff;background:var(--pine);border-color:var(--pine)}.btn.primary:hover{background:#245244}.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}.btn.orange:hover{background:#b65b35}.btn.soft{background:#edf5ef;border-color:#e5eee8}.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}.btn.danger{color:#ad4e44}.btn.sm{font-size:12px;padding:8px 11px}.btn.icon{padding:8px;width:34px;height:34px}
     .library-row{display:flex;align-items:center;justify-content:space-between;gap:14px;
       padding:13px 15px;background:#fff;border:1px solid var(--line);
       border-radius:13px;margin:10px 0;box-shadow:0 1px 4px #17392f0b}
@@ -16,7 +16,7 @@
     .library-open{flex:0 0 auto!important;align-self:center;width:auto!important;
       min-width:105px;max-width:145px;padding:9px 16px!important;border-radius:10px}
     @media(max-width:500px){.library-row{gap:8px;padding:10px}.library-open{min-width:91px;padding:8px 11px!important}}
-    .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px}.step{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #e2e9e3;background:#fff;border-radius:13px;padding:14px 16px;min-width:0}.step.active{border-color:#9abdaa;background:#edf6ef}.step:hover{border-color:#8fb8a2}.step-number{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#e9efe9;color:#577563;font-size:13px;font-weight:850}.step.active .step-number{background:var(--pine);color:white}.step-name{font-weight:800;font-size:13px}.step-sub{font-size:11px;color:var(--muted);margin-top:3px}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}.panel-head{padding:21px 23px;border-bottom:1px solid #eef1ed;display:flex;justify-content:space-between;align-items:center;gap:13px}.panel-body{padding:22px 23px}.panel-title{font-weight:800;font-size:16px;letter-spacing:-.3px}.panel-sub{font-size:12px;color:var(--muted);margin-top:5px}.two-col{display:grid;grid-template-columns:minmax(325px, .78fr) minmax(0,1.22fr);gap:18px}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px}.field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.field-hint{font-size:11px;color:#94a198;margin-top:5px}.input-unit{position:relative}.input-unit input{padding-right:38px}.input-unit span{position:absolute;right:12px;top:10px;color:#91a096;font-size:12px;pointer-events:none}.furniture-select{display:flex;gap:8px;align-items:center;margin-bottom:18px}.furniture-select select{flex:1;font-weight:700}.mini-info{display:flex;align-items:center;gap:8px;margin-top:18px;padding:10px 12px;background:#f2f7f2;border-radius:10px;color:#587364;font-size:12px}.cabinet-visual{margin:20px 0 0;padding:12px;background:linear-gradient(145deg,#fafcf8,#f0f4f0);border:1px solid #edf0ec;border-radius:13px}.cabinet-visual svg{display:block;margin:auto;max-width:100%;height:auto}.table-wrap{overflow-x:auto;min-width:0}table{width:100%;border-collapse:collapse;text-align:left}th{color:#809086;background:#f8faf8;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.65px;white-space:nowrap}td,th{border-bottom:1px solid #edf0ed;padding:11px 10px;vertical-align:middle}td:first-child,th:first-child{padding-left:18px}td:last-child,th:last-child{padding-right:18px}tbody tr:hover{background:#fbfcfa}tbody tr:last-child td{border-bottom:0}td input{padding:8px 9px;font-size:12px}td .expr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;width:100%;min-width:0}
+    .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}.step{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #e2e9e3;background:#fff;border-radius:13px;padding:14px 16px;min-width:0}.step.active{border-color:#9abdaa;background:#edf6ef}.step:hover{border-color:#8fb8a2}.step-number{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#e9efe9;color:#577563;font-size:13px;font-weight:850}.step.active .step-number{background:var(--pine);color:white}.step-name{font-weight:800;font-size:13px}.step-sub{font-size:11px;color:var(--muted);margin-top:3px}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}.panel-head{padding:21px 23px;border-bottom:1px solid #eef1ed;display:flex;justify-content:space-between;align-items:center;gap:13px}.panel-body{padding:22px 23px}.panel-title{font-weight:800;font-size:16px;letter-spacing:-.3px}.panel-sub{font-size:12px;color:var(--muted);margin-top:5px}.two-col{display:grid;grid-template-columns:minmax(325px, .78fr) minmax(0,1.22fr);gap:18px}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px}.field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.field-hint{font-size:11px;color:#94a198;margin-top:5px}.input-unit{position:relative}.input-unit input{padding-right:38px}.input-unit span{position:absolute;right:12px;top:10px;color:#91a096;font-size:12px;pointer-events:none}.furniture-select{display:flex;gap:8px;align-items:center;margin-bottom:18px}.furniture-select select{flex:1;font-weight:700}.mini-info{display:flex;align-items:center;gap:8px;margin-top:18px;padding:10px 12px;background:#f2f7f2;border-radius:10px;color:#587364;font-size:12px}.cabinet-visual{margin:20px 0 0;padding:12px;background:linear-gradient(145deg,#fafcf8,#f0f4f0);border:1px solid #edf0ec;border-radius:13px}.cabinet-visual svg{display:block;margin:auto;max-width:100%;height:auto}.table-wrap{overflow-x:auto;min-width:0}table{width:100%;border-collapse:collapse;text-align:left}th{color:#809086;background:#f8faf8;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.65px;white-space:nowrap}td,th{border-bottom:1px solid #edf0ed;padding:11px 10px;vertical-align:middle}td:first-child,th:first-child{padding-left:18px}td:last-child,th:last-child{padding-right:18px}tbody tr:hover{background:#fbfcfa}tbody tr:last-child td{border-bottom:0}td input{padding:8px 9px;font-size:12px}td .expr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;width:100%;min-width:0}
     .expr-cell{width:132px;min-width:110px}
     .expr-cell .expr-result{display:none}
     .expr-cell.has-formula{padding:5px 9px 6px;background:#fff;border:1px solid #dbe3dc;border-radius:9px;transition:border-color .15s,box-shadow .15s}
@@ -135,10 +135,10 @@
 <body>
 <div class="app">
   <main class="main">
-    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">gatterka<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button><button class="btn sm settings-gear" data-action="open-settings" title="Megjelenés és színek beállítása" aria-label="Beállítások megnyitása">⚙ Beállítások</button></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">Gatterka<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button><button class="btn sm settings-gear" data-action="open-settings" title="Megjelenés és színek beállítása" aria-label="Beállítások megnyitása">⚙ Beállítások</button></div></header>
     <nav id="top-steps" aria-label="Munkafolyamat lépései"></nav>
     <div id="content"></div>
-    <div class="footer">Gatterka · Windowsos szabásztervező · Az optimalizálás heurisztikus; a vágási tervet gyártás előtt ellenőrizd.</div>
+    <div class="footer"><strong>Gatterka</strong> · A programot készítette: <strong>Kiss János</strong> · A program Kiss János tulajdona.<div class="tiny muted" style="margin-top:5px">A szabástervet gyártás előtt ellenőrizd.</div></div>
   </main>
 </div>
 <div id="settings-overlay" class="settings-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title"></div>
@@ -151,7 +151,7 @@
   const uuid = () => (globalThis.crypto?.randomUUID?.() || 'id'+Date.now()+Math.random().toString(36).slice(2));
   const nfmt = value => Number(value).toLocaleString('hu-HU',{maximumFractionDigits:1});
   const pnum = value => Number(String(value).replace(',','.'));
-  const paneNames = {furniture:'Bútorok',stock:'Anyagkészlet',nesting:'Nesting'};
+  const paneNames = {furniture:'Bútor adatai',parts:'Alkatrészek',stock:'Anyagkészlet',nesting:'Szabásterv'};
 
   // A téma minden bútorprojektben azonos, külön felhasználói beállításként tárolva.
   const themeKey='gatterka-theme-v1';
@@ -448,7 +448,7 @@
   function intro(eyebrow,title,desc,actions=''){
     return `<section class="intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></section>`;
   }
-  function steps(){return `<div class="steps">${[['furniture','01','Bútorok megadása','Méret és alkatrész'],['stock','02','Anyagkészlet','Egész és maradék táblák'],['nesting','03','Nesting terv','Kihozatal és letöltés']].map(([id,num,title,sub])=>`<button class="step ${state.active===id?'active':''}" data-action="page" data-page="${id}"><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;}
+  function steps(){return `<div class="steps">${[['furniture','01','Bútor adatai','Méretek és anyagszín'],['parts','02','Alkatrészek','Képletek és darabszámok'],['stock','03','Anyagkészlet','Egész és maradék táblák'],['nesting','04','Szabásterv','Kihozatal és gépi export']].map(([id,num,title,sub])=>`<button class="step ${state.active===id?'active':''}" data-action="page" data-page="${id}"><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;}
   function renderNav(){ $('#top-steps').innerHTML=steps(); }
   function cabinet(f){
     if(!f)return '';
@@ -523,7 +523,7 @@
       if(result)result=computeNesting();
     },300);
   }
-  function furnitureView(){
+  function furnitureView(stage='furniture'){
     const f=getFurniture(),summary=getParts();
     const actions=f?`<button class="btn" data-action="new-furniture">＋ Új bútor / széria</button>`:'';
     const left=f?`<div class="panel ${state.furnitures.length===1?'single-furniture':''}">
@@ -537,11 +537,11 @@
         </div>
         <div class="job-info">
           <div><label>Hová készül? / Megrendelő</label><input aria-label="Hová készül" data-scope="furniture" data-id="${f.id}" data-key="destination" value="${h(f.destination||'')}"><div class="field-hint">A matrica legfelső sorába kerül.</div></div>
-          <div><label>Anyag színe / dekorja</label><input aria-label="Anyag színe" data-scope="furniture" data-id="${f.id}" data-key="materialColor" value="${h(f.materialColor||'')}"><div class="field-hint">A matricán az anyag megnevezéseként jelenik meg.</div></div>
+          <div><label>Anyag színe / dekorja</label><input aria-label="Anyag színe" data-scope="furniture" data-id="${f.id}" data-key="materialColor" value="${h(f.materialColor||'')}"><div class="field-hint">A matrica és a gépi .xPrg / .xMix anyagkódja és megnevezése is innen származik.</div></div>
         </div>
         <div data-live-cabinet>${cabinet(f)}</div>
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
-        ${f.partsOpen===false?`<div class="furniture-next"><span class="muted small">Add meg a bútor nevét és ellenőrizd a méreteket, majd lépj tovább.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>`:''}
+        <div class="furniture-next"><span class="muted small">A bútor neve és célhelye később is megadható. A méretek és az anyagszín bármikor módosítható.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>
       </div>
     </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
     const rows=f?f.parts.map(part=>{
@@ -550,11 +550,21 @@
       return `<tr><td><input class="part-name" aria-label="Alkatrész neve" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"></td><td>${partDimensionInput(part,f,'a','Első méret szálirányban')}</td><td>${partDimensionInput(part,f,'b','Második méret keresztirányban')}</td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="Élzáró vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'1 mm előmarás élzárás előtt'}" aria-label="Élmarás, 1 mm" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
     }).join(''):'';
     const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Alkatrészek <span class="pill gray">${f?f.parts.length:0} sor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. Az X1/X2 és Y1/Y2 négyzetekkel kijelölheted, melyik éleket zárjuk.</div></div><div class="actions"><button class="btn sm" data-action="download-parts-png">↓ Lista PNG</button><button class="btn sm" data-action="add-part" ${!f?'disabled':''}>＋ Alkatrész</button></div></div><div class="table-wrap"><table><thead><tr><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>Élzárás · 2+2 él</th><th>Élvastagság</th><th title="Élzárás előtt 1 mm-t marunk le">Marás 1 mm</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szálirány kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="9" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> <code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> lapvastagság<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor élenként 1 mm-t vonunk le, de a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A „Szálirány kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num" data-live-part-total>${nfmt(summary.total)} db</strong><div class="part-summary" data-live-part-area>${nfmt(summary.area/1e6)} m² nettó alkatrészterület · összes bútor</div></div><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div></div></div>`;
-    return intro('01 / BÚTOROK','Bútorok és alkatrészek','Adj meg egy bútorcsaládot, módosítsd a külméretet vagy építs saját alkatrészlistát.',actions)+`<div class="two-col">${left}${f&&f.partsOpen!==false?right:''}</div>${f&&f.partsOpen!==false?`<div class="section-bottom"><div class="muted small">${state.furnitures.length} bútortípus a projektben · a teljes nesting mindegyiket figyelembe veszi</div><div class="actions"></div></div>`:''}`+(summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'');
+    const warning=summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'';
+    if(stage==='parts'){
+      return intro('02 / ALKATRÉSZEK','Alkatrészek megadása',
+        'Külön oldalon rögzítheted a darabokat, méreteket és képleteket. A bútor méreteit az előző oldalon módosíthatod.',
+        `<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>`)+
+        (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3><button class="btn primary" data-action="page" data-page="furniture">Bútor adatai →</button></div>')+
+        `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek.</span><button class="btn primary" data-action="page" data-page="stock">Anyagkészlet →</button></div>`+warning;
+    }
+    return intro('01 / BÚTOR ADATAI','Bútor megadása',
+      'Itt add meg a bútor méreteit, az anyagszínt és hogy hová készül. Az alkatrészlista a következő oldalon jelenik meg.',
+      actions)+`<div class="two-col">${left}</div>`+warning;
   }
   function stockView(){
     const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
-    return intro('02 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
+    return intro('03 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
   }
 
   // Guillotine cutting: every cut spans the entire CURRENT separated rectangle.
@@ -1071,9 +1081,13 @@
   function svgBoard(bin,compact=false){
     const size=svgBoardSize(bin,compact),{rotated,boardWidth,boardHeight,width:w,height:hgt}=size;
     const tx=size.pad,ty=size.top;
-    // Csak a rajzi nézet fordul: a szabászméretek, szálirány és guillotine sorrend változatlan.
-    const point=(x,y)=>rotated?{x:tx+bin.b-y,y:ty+x}:{x:tx+x,y:ty+y};
-    const rect=(x,y,a,b)=>rotated?{x:tx+bin.b-y-b,y:ty+x,a:b,b:a}:{x:tx+x,y:ty+y,a,b};
+    // A gépi képernyővel azonos irány: a vizuális rajzot a FÜGGŐLEGES
+    // középvonalra tükrözzük, a valós vágási parancsok nem változnak.
+    const originalPoint=(x,y)=>rotated?{x:tx+bin.b-y,y:ty+x}:{x:tx+x,y:ty+y};
+    const originalRect=(x,y,a,b)=>rotated?{x:tx+bin.b-y-b,y:ty+x,a:b,b:a}:{x:tx+x,y:ty+y,a,b};
+    const mirrorX=x=>2*tx+boardWidth-x;
+    const point=(x,y)=>{const p=originalPoint(x,y);return {x:mirrorX(p.x),y:p.y};};
+    const rect=(x,y,a,b)=>{const r=originalRect(x,y,a,b);return {...r,x:mirrorX(r.x+r.a)};};
     const labelSize=Math.max(18,Math.min(40,boardWidth/30));
     const lineSize=Math.max(13,Math.min(27,boardWidth/45));
     const shapes=bin.placements.map((r,i)=>{
@@ -1082,8 +1096,8 @@
       const short=Math.min(a,b),canShow=short>95;
       const fsize=Math.min(labelSize,Math.max(15,short/5.5));
       const grainPath=rotated?
-        `M${x+a*.79} ${y+b*.1}v${Math.min(55,b*.14)} m-7 -10l7 10 7 -10`:
-        `M${x+a*.1} ${y+b*.79}h${Math.min(55,a*.14)} m-10 -7l10 7 -10 7`;
+        `M${x+a*.21} ${y+b*.1}v${Math.min(55,b*.14)} m-7 -10l7 10 7 -10`:
+        `M${x+a*.9} ${y+b*.79}h-${Math.min(55,a*.14)} m10 -7l-10 7 10 7`;
       const desc= `${r.part.name} · szabás: ${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm · kész: ${nfmt(r.part.originalA)} × ${nfmt(r.part.originalB)} mm · él: ${r.part.edge||'0-0'} / ${nfmt(r.part.edgeThickness)} mm${r.part.mill?' / marás 1 mm':''}${r.turned?' (forgatva)':''}`;
       return `<g><title>${h(desc)}</title><rect x="${x}" y="${y}" width="${a}" height="${b}" fill="${colors[i%colors.length]}" stroke="#4b6e5a" stroke-width="2"/><text x="${x+a/2}" y="${y+b/2-(canShow?fsize*.35:0)}" fill="#253c31" font-size="${fsize}" text-anchor="middle" font-weight="700">${h(r.part.name.length>Math.max(10,a/22)?r.part.name.slice(0,Math.max(7,Math.floor(a/22)))+'…':r.part.name)}</text>${canShow?`<text x="${x+a/2}" y="${y+b/2+fsize*1.05}" text-anchor="middle" fill="#3b5f4e" font-size="${Math.min(lineSize,fsize*.82)}">${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm</text><path d="${grainPath}" fill="none" stroke="#779c86" stroke-width="3"/>`:''}</g>`;
     }).join('');
@@ -1103,15 +1117,15 @@
         return `<g><title>1. vágás · Y tengely · ${nfmt(cut.length)} mm · kezdés felülről</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
       }
       const mx=x+dx*.69,my=y+dy*.69;
-      const head=cut.axis==='x'?`M${mx-18} ${my-13}L${mx} ${my}L${mx-18} ${my+13}`:`M${mx-13} ${my-18}L${mx} ${my}L${mx+13} ${my-18}`;
-      const labelX=cut.axis==='x'?x+30:x+23,labelY=cut.axis==='x'?y-30:y+60;
-      return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><path d="${head}" fill="none" stroke="#a93e22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="${labelX-10}" y="${labelY-30}" width="190" height="46" rx="11" fill="#bb512c"/><text x="${labelX+85}" y="${labelY+1}" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="25" font-weight="700">1. VÁGÁS ${cut.axis==='x'?'→':'↓'}</text></g>`;
+      const head=cut.axis==='x'?`M${mx+18} ${my-13}L${mx} ${my}L${mx+18} ${my+13}`:`M${mx-13} ${my-18}L${mx} ${my}L${mx+13} ${my-18}`;
+      const labelX=cut.axis==='x'?x-190:x+23,labelY=cut.axis==='x'?y-30:y+60;
+      return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><path d="${head}" fill="none" stroke="#a93e22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="${labelX-10}" y="${labelY-30}" width="190" height="46" rx="11" fill="#bb512c"/><text x="${labelX+85}" y="${labelY+1}" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="25" font-weight="700">1. VÁGÁS ${cut.axis==='x'?'←':'↓'}</text></g>`;
     }).join('');
     const trim=bin.trim||0;
     const t=rect(trim,trim,bin.a-2*trim,bin.b-2*trim);
     const trimBoundary=trim>0?`<rect x="${t.x}" y="${t.y}" width="${t.a}" height="${t.b}" stroke="#b97f58" stroke-width="2" stroke-dasharray="12 8" fill="none"/>`:'';
-    const entryX=tx+Math.min(145,Math.max(45,boardWidth*.12));
-    const startingArrow=rotated?`<g><title>Kezdővágás felülről lefelé</title><text x="${tx+12}" y="${ty-110}" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#a84a27">KEZDŐVÁGÁS FELÜLRŐL ↓</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
+    const entryX=tx+boardWidth-Math.min(145,Math.max(45,boardWidth*.12));
+    const startingArrow=rotated?`<g><title>Kezdővágás felülről lefelé</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#a84a27">KEZDŐVÁGÁS FELÜLRŐL ↓</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
     const name=h(bin.name),allUsed=bin.used/(bin.a*bin.b)*100;
     const horizontalLabel=rotated?`${nfmt(bin.b)} mm · Y: keresztirány ↔`:`${nfmt(bin.a)} mm · X: szálirány ↔`;
     const verticalLabel=rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
@@ -1250,13 +1264,13 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix megnyitja az összes tábla külön .xPrg fájlját.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="width:165px;max-width:100%"><label for="xprg-material-code">Gépi anyagkód</label><input id="xprg-material-code" type="text" maxlength="40" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgMaterialCode" value="${h(state.xprgMaterialCode??'BLAP003')}" aria-label="Gépi anyagkód" style="font-family:Consolas,monospace"></div><div style="flex:1;min-width:230px"><label for="xprg-folder">XPrg fájlok helye az XMix-ben</label><input id="xprg-folder" type="text" maxlength="260" autocomplete="off" spellcheck="false" data-scope="settings" data-key="xprgFolder" value="${h(state.xprgFolder??'.\\xPrg\\')}" aria-label="XPrg fájlok helye" style="font-family:Consolas,monospace;width:100%"></div><div style="width:190px;max-width:100%"><label for="xprg-header-mode">XPrg fejléc leírása</label><select id="xprg-header-mode" data-scope="settings" data-key="xprgHeaderMode" aria-label="XPrg fejléc leírása"><option value="sample" ${(state.xprgHeaderMode??'sample')==='sample'?'selected':''}>Próba szerint · anyagkód</option><option value="color" ${state.xprgHeaderMode==='color'?'selected':''}>Anyagszín / dekor</option></select></div><button class="btn primary" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted tiny" style="margin-top:8px">Relatív példa: .\\xPrg\\ (a ZIP mappaszerkezete is követi). Teljes útvonal: C:\\WinCut\\Prg\\ (ide az .xPrg fájlokat külön kell bemásolni).</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A bútor anyagszíne automatikusan kerül a gépi fájlokba. A közös XML-es .xMix az összes tábla .xPrg programjára hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong> · ezt a bútoradatok első oldalán állíthatod.</span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Hely kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A kijelölt mappában automatikusan létrejön a dátummal és a bútor célhelyével elnevezett projektmappa, benne a közös .xMix és az xPrg almappa. A Mix relatív hivatkozása mindig az xPrg almappára mutat.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
-    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body;
+    return intro('04 / SZABÁSTERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body;
   }
-  function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
+  function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='stock'?stockView():nestingView());save();}
   function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
@@ -1490,7 +1504,7 @@
   // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
   // Egy projekt = egy .xMix + táblánként egy .xPrg ugyanabban a ZIP-ben.
   // A formátumot csak a kapott minták támasztják alá, a gépi futtatás NINCS igazolva.
-  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\',headerMode='sample'){
+  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\',headerMode='color',destination=''){
     if(!Array.isArray(bins)||!bins.length)throw Error('Nincsenek táblák a gépi csomaghoz.');
     const esc=t=>String(t??'').replace(/[&<>"']/g,
       c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
@@ -1498,10 +1512,10 @@
       if(!Number.isFinite(Number(n)))throw Error('Hibás méret az .xPrg adatban.');
       return Number(n).toFixed(2);
     };
-    if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
-      throw Error('Hibás ellenőrző anyagkód.');
-    if(!['sample','color'].includes(headerMode))
-      throw Error('Ismeretlen XPrg fejlécformátum.');
+    // A gépi anyagkód és a fejléc kizárólag a bútor elején megadott
+    // anyagszínből származik. A régi projektmezők már nem módosítják.
+    if(!Number.isFinite(Number(kerf))||Number(kerf)<0)
+      throw Error('Hibás fűrészrés.');
 
     // A működő WinCut xMix XML relatív .\xPrg\ mappára mutat.
     // Megadható abszolút meghajtóútvonal vagy UNC megosztás is. Utóbbi
@@ -1537,8 +1551,8 @@
       const cleaned=(fileName(String(value||''))||'').replace(/^_+|_+$/g,'').slice(0,maxLength);
       return cleaned||fallback;
     };
-    const cabinet=safePart(project,'Szekreny',42);
-    const root=dateStamp+'_'+cabinet;
+    const cabinet=dateStamp+'_'+safePart(destination||project,'Butor',42);
+    const root=dateStamp+'_'+safePart(project,'Szekreny',42);
     const names=[],files=[],summary=[],materials=[];
     bins.forEach((bin,i)=>{
       const m=bin.machine;
@@ -1564,9 +1578,9 @@
         throw Error((i+1)+'. tábla: több eltérő anyagszín ('+
           materialColors.join(', ')+'). Egy .xPrg fejlécéhez egyetlen anyagszín szükséges.');
       const materialDescription=materialColors[0]||'';
-      // A működő xPrg próba mintájában a Descrizione az anyagkód.
-      // A korábban kért anyagszín ettől függetlenül választható marad.
-      const headerDescription=headerMode==='color'?materialDescription:materialCode;
+      if(!materialDescription)
+        throw Error((i+1)+'. tábla: az anyagszín hiányzik. A bútor adatainál add meg.');
+      const headerDescription=materialDescription;
       if(!materials.includes(materialDescription))materials.push(materialDescription);
       const boardName=safePart(bin.name,'Tabla',30);
       const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
@@ -1620,7 +1634,7 @@
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
         '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
         '" SpessoreLama="'+num(kerf)+'" />\r\n'+
-        '\t<Material Tipologia="" Codice="'+esc(materialCode)+'" />\r\n'+
+        '\t<Material Tipologia="" Codice="'+esc(materialDescription)+'" />\r\n'+
         '\t<Pattern>\r\n'+cuts.join('\r\n')+
         '\r\n\t</Pattern>\r\n</SchemaDoc>\r\n';
       // A Mix és minden XPrg ugyanabban a bútornév szerinti mappában lesz.
@@ -1634,7 +1648,7 @@
       '\t<Header Descrizione="" Import="" Date="'+esc(date)+'" />\r\n'+
       '\t<Materials>\r\n'+
       materials.map(color=>'\t\t<Material Tipologia="'+esc(color)+
-        '" Codice="'+esc(materialCode)+'" Quantita="999" />').join('\r\n')+
+        '" Codice="'+esc(color)+'" Quantita="999" />').join('\r\n')+
       '\r\n\t</Materials>\r\n'+
       '\t<RigheMix>\r\n'+
       names.map(file=>'\t\t<RigaMix File="'+esc(xprgLocation.directory+file)+
@@ -1647,29 +1661,77 @@
       archiveSubdir:xprgLocation.archiveSubdir,materials,
       complexBoards:summary.filter(x=>x.complex).length};
   }
+  // A WinCut által feldolgozható struktúra relatív .\xPrg\ hivatkozást
+  // tartalmaz: így a közös Mix és a hozzá tartozó XPrg-k együtt mozgathatók.
+  function machineExportBundle(){
+    if(!result||result.error||!['machine','economy'].includes(state.layoutMode)||
+       !result.machineReady||!result.bins?.length)
+      throw Error('Előbb készíts teljes, gépi csíkos vagy anyagtakarékos szabástervet.');
+    if(result.failed?.length)
+      throw Error('Van ki nem táblásított alkatrész. Előbb javítsd a nestinget.');
+    const now=new Date();
+    const date=String(now.getDate()).padStart(2,'0')+'/'+
+      String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
+    const f=getFurniture();
+    const project=String(f?.name||state.projectName||'Gatterka').trim()||'Gatterka';
+    const destination=String(f?.destination||state.furnitures.find(x=>x.destination)?.destination||project).trim();
+    const color=String(f?.materialColor||'').trim();
+    if(!color)throw Error('Az anyag színét a Bútor adatai oldalon add meg.');
+    return buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
+      date,'.\\xPrg\\','color',destination);
+  }
   async function downloadXprgProject(){
     try{
-      if(!result||result.error||!['machine','economy'].includes(state.layoutMode)||!result.machineReady||!result.bins?.length)
-        throw Error('Előbb készíts teljes átvágásos gépi csíkos vagy anyagtakarékos nestinget.');
-      if(result.failed?.length)
-        throw Error('Van ki nem táblásított alkatrész. Előbb javítsd a nestinget a teljes projekt mentéséhez.');
-      const now=new Date();
-      const date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
-      const project=String(getFurniture()?.name||state.projectName||'Gatterka').trim()||'Gatterka';
-      // Az anyagkód a letöltőpanelen előre megadható, felugró ablak nélkül.
-      // A régi projektekben hiányzó mező az eddigi mintakódra áll vissza.
-      const code=String(state.xprgMaterialCode??'BLAP003').trim();
-      if(!/^[A-Za-z0-9_.-]{2,40}$/.test(code))
-        throw Error('Érvénytelen gépi anyagkód: 2–40 betű, szám, pont, aláhúzás vagy kötőjel szükséges. Javítsd a letöltőpanelen.');
-      const bundle=buildOfflineXprgProject(result.bins,project,code,
-        Number(state.kerf),date,state.xprgFolder??'.\\xPrg\\',state.xprgHeaderMode??'sample');
-      // Nem nyitunk X: meghajtós mappaválasztót, és nem használunk
-      // Mentés másként ablakot. A böngésző szabványos letöltési módja
-      // a felhasználó saját Letöltések-beállítását követi.
-      const zip=xlsxZip(bundle.files,'application/zip');
-      const name=(fileName(project)||'Gatterka')+'_XPRG_XMIX_OFFLINE.zip';
-      downloadBlob(zip,name);
-    }catch(err){showNotice('Gépi ellenőrző csomag: '+(err?.message||'a mentés nem sikerült'));}
+      const bundle=machineExportBundle();
+      downloadBlob(xlsxZip(bundle.files,'application/zip'),
+        bundle.cabinetFolder+'_XPRG_XMIX.zip');
+    }catch(err){showNotice('Gépi projekt letöltése: '+(err?.message||'nem sikerült'));}
+  }
+  // A helyválasztás közvetlen kattintásból indul. A Chromium biztonsága
+  // miatt a program csak a felhasználó által jóváhagyott mappába írhat.
+  async function saveXprgToSelectedFolder(){
+    let parent;
+    try{
+      if(typeof window.showDirectoryPicker!=='function')
+        throw Error('A mappaválasztás ebben a böngészőben nem elérhető. Használd a ZIP letöltését.');
+      parent=await window.showDirectoryPicker({mode:'readwrite'});
+    }catch(err){
+      if(err?.name==='AbortError')return;
+      showNotice('Mappaválasztás: '+(err?.message||'nem sikerült'));return;
+    }
+    try{
+      const bundle=machineExportBundle();
+      // Ha a mai, azonos nevű mappa már létezik, új néven mentjük a
+      // projektet, hogy a korábban generált vágási kódokat ne írjuk felül.
+      let folderName=bundle.cabinetFolder;
+      let nameNumber=1;
+      while(nameNumber<100){
+        try{
+          await parent.getDirectoryHandle(folderName,{create:false});
+          folderName=bundle.cabinetFolder+'_'+(++nameNumber);
+        }catch(err){
+          if(err?.name==='NotFoundError')break;
+          throw err;
+        }
+      }
+      if(nameNumber>=100)throw Error('Túl sok azonos nevű projektmappa.');
+      const root=await parent.getDirectoryHandle(folderName,{create:true});
+      for(const [archivePath,contents] of bundle.files){
+        const relative=archivePath.slice(bundle.cabinetFolder.length+1);
+        if(!archivePath.startsWith(bundle.cabinetFolder+'/')||!relative)
+          throw Error('A projekt fájlszerkezete hibás.');
+        const segments=relative.split('/');
+        const filename=segments.pop();
+        let directory=root;
+        for(const segment of segments)
+          directory=await directory.getDirectoryHandle(segment,{create:true});
+        const file=await directory.getFileHandle(filename,{create:true});
+        const writable=await file.createWritable();
+        try{await writable.write(contents);}finally{await writable.close();}
+      }
+      showNotice('Gépi projekt elmentve: '+parent.name+'\\'+folderName+
+        ' · '+bundle.names.length+' xPrg és 1 xMix.');
+    }catch(err){showNotice('Gépi projekt mentése: '+(err?.message||'nem sikerült'));}
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;
@@ -1932,8 +1994,7 @@
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
       if(!f)return;
-      if(!['w','ht','d','t','qty'].every(k=>Number(f[k])>0)){showNotice('Ellenőrizd a bútor méreteit és darabszámát.');return;}
-      f.partsOpen=true;notice='';render();
+      f.partsOpen=true;state.active='parts';notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='remove-furniture'){
       if(!confirm('Biztosan törlöd ezt a bútorszériát?'))return;
@@ -1964,6 +2025,7 @@
     else if(action==='download-cuts-json')downloadCutList('json');
     else if(action==='download-machine-review')downloadMachineReview();
     else if(action==='download-xprg-project')downloadXprgProject();
+    else if(action==='save-xprg-folder')saveXprgToSelectedFolder();
     else if(action==='download-png')downloadBoardImage();
     else if(action==='download-overview')downloadOverview();
   });

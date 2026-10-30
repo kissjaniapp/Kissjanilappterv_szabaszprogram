@@ -36,7 +36,7 @@ test('beágyazott Gatterka JavaScript hibátlanul fordítható',()=>{
 
 test('a Gatterka felirat jelenik meg a régi Lapterv név helyett',()=>{
   assert.match(html,/<title>Gatterka/);
-  assert.match(html,/brand-name">gatterka/);
+  assert.match(html,/brand-name">Gatterka/);
   assert.doesNotMatch(html,/<title>Lapterv/);
   assert.match(html,/lapterv-library-v1/);
 });
@@ -46,7 +46,7 @@ test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
  assert.doesNotMatch(html,/Szál kötelező/);
 });
 test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
- assert.match(html,/data-key="xprgMaterialCode"/);
+ assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.match(html,/xprgMaterialCode:'BLAP003'/);
  assert.match(html,/data-action="download-xprg-project"/);
  const first=html.indexOf('async function downloadXprgProject()');
@@ -56,17 +56,17 @@ test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablak
  assert.doesNotMatch(source,/\bconfirm\s*\(/);
 });
 
-test('a Nesting terv nem jeleníti meg a három felesleges magyarázó blokkot',()=>{
+test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
  const start=html.indexOf('const machinePanel=');
  const end=html.indexOf('// A gépi csíkok és vágási műveletek',start);
  assert.ok(start>=0&&end>start);
  const panel=html.slice(start,end);
- assert.doesNotMatch(panel,/A BLAP003 mintakód; ellenőrizd az anyagtörzsben/);
- assert.match(panel,/C:\\\\WinCut\\\\Prg/);
- assert.doesNotMatch(panel,/Csak offline ellenőrző minta/);
- assert.doesNotMatch(panel,/nem hitelesített/);
- assert.match(panel,/data-key="xprgMaterialCode"/);
+ assert.match(panel,/data-action="save-xprg-folder"/);
  assert.match(panel,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
+ assert.doesNotMatch(panel,/data-key="xprgFolder"/);
+ assert.doesNotMatch(panel,/data-key="xprgHeaderMode"/);
+ assert.doesNotMatch(panel,/Csak offline ellenőrző minta/);
  assert.doesNotMatch(html,/<div class="callout top-gap"><strong>Fontos:<\/strong>/);
  assert.match(html,/data-action="download-parts-png"/);
 });
@@ -91,21 +91,33 @@ test('nincs újraszámolás gomb; a nesting és az élő képletszámítás auto
  assert.match(html,/result=hadNesting\|\|state\.active==='nesting'\?computeNesting\(\):null/);
 });
 
-test('az XML xMix-ben az xPrg mappa beállítható és a régi bútorprojektek is működnek',()=>{
-  assert.match(html,/data-key="xprgFolder"/);
-  assert.match(html,/xprgFolder:'\.\\\\xPrg\\\\'/);
-  assert.match(html,/XPrg fájlok helye az XMix-ben/);
-  assert.match(html,/key==='xprgMaterialCode'\|\|key==='xprgFolder'/);
-  assert.match(html,/state\.xprgFolder\?\?/);
-});
 
-test('xPrg a gépen működő próbakód fejlécstílusát választja alapértelmezetten',()=>{
- assert.match(html,/xprgHeaderMode:'sample'/);
- assert.match(html,/data-key="xprgHeaderMode"/);
- assert.match(html,/value="sample"/);
- assert.match(html,/value="color"/);
- assert.match(html,/Próba szerint · anyagkód/);
- assert.match(html,/Anyagszín \/ dekor/);
- assert.match(html,/state\.xprgHeaderMode\?\?'sample'/);
- assert.match(html,/key==='xprgHeaderMode'/);
+test('a kezdőképernyőn Kiss János szerzői és tulajdonosi felirata jelenik meg',()=>{
+ assert.match(html,/A programot készítette: <strong>Kiss János<\/strong>/);
+ assert.match(html,/A program Kiss János tulajdona/);
+ assert.match(html,/brand-name\{font-size:20px;font-weight:600/);
+});
+test('a bútoradatok, alkatrészek, anyagkészlet és a szabásterv külön képernyő',()=>{
+ const start=html.indexOf('function steps(){');
+ const end=html.indexOf('\n  function renderNav()',start);
+ const nav=html.slice(start,end);
+ for(const page of ["'furniture'","'parts'","'stock'","'nesting'"])
+  assert.ok(nav.includes(page),page);
+ assert.match(html,/state\.active==='parts'\?furnitureView\('parts'\)/);
+ assert.match(html,/if\(stage==='parts'\)/);
+ assert.match(html,/data-action="open-parts"/);
+ assert.match(html,/state\.active='parts'/);
+ assert.match(html,/return intro\('01 \/ BÚTOR ADATAI'/);
+ assert.match(html,/return intro\('02 \/ ALKATRÉSZEK'/);
+ assert.match(html,/intro\('03 \/ ANYAGKÉSZLET'/);
+ assert.match(html,/intro\('04 \/ SZABÁSTERV'/);
+});
+test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átírni',()=>{
+ assert.match(html,/getFurniture\(\)\?\.materialColor/);
+ assert.match(html,/const color=String\(f\?\.materialColor/);
+ assert.match(html,/machineExportBundle\(/);
+ assert.match(html,/showDirectoryPicker/);
+ assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
+ assert.doesNotMatch(html,/data-key="xprgHeaderMode"/);
+ assert.doesNotMatch(html,/data-key="xprgFolder"/);
 });

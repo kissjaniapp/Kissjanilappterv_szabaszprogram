@@ -47,8 +47,8 @@ function createXMix({programs,folder,date,materialCode='BLAP003',materials=[''],
     throw new Error('Legalább egy .xPrg hivatkozás szükséges.');
   if(!/^\d{2}\/\d{2}\/\d{4}$/.test(String(date)))
     throw new Error('Hibás xMix dátum.');
-  if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
-    throw new Error('Hibás gépi anyagkód.');
+  // materialCode: régebbi hívásokhoz megtartott, figyelmen kívül hagyott paraméter.
+  // A gépi kódot az adott anyagszínből képezzük, mint a Gatterka felületén.
   const location=normalizeXprgDirectory(xprgDirectory);
   const names=programs.map(p=>validateFilename(typeof p==='string'?p:p?.filename));
   const colors=[...new Set(materials.map(t=>String(t??'').trim()))];
@@ -57,7 +57,7 @@ function createXMix({programs,folder,date,materialCode='BLAP003',materials=[''],
     '\t<Header Descrizione="'+xml(description)+'" Import="" Date="'+xml(date)+'" />\r\n'+
     '\t<Materials>\r\n'+
     colors.map(color=>'\t\t<Material Tipologia="'+xml(color)+
-      '" Codice="'+xml(materialCode)+'" Quantita="999" />').join('\r\n')+
+      '" Codice="'+xml(color)+'" Quantita="999" />').join('\r\n')+
     '\r\n\t</Materials>\r\n'+
     '\t<RigheMix>\r\n'+
     names.map(name=>'\t\t<RigaMix File="'+xml(location.directory+name)+
