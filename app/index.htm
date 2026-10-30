@@ -1854,15 +1854,23 @@
   // Az űrlap egyetlen POST kéréssel indítja a Windows mappaválasztóját
   // és menti a teljes gépi csomagot. A file:// felületnek nincs szüksége
   // cross-origin fetch-re, és megmarad a korábbi helyi projektadatbázis.
+  // A Chromium korlátozhatja a file:// oldalból a 127.0.0.1-re küldött
+  // rejtett iframe kéréseket. A felhasználói kattintásra nyitott külön
+  // böngészőablakba küldött űrlap felső szintű navigációt végez.
+  // Az ablak addig is visszajelzést mutat, amíg a Windows párbeszédablaka nyílik.
   function nativePickAndSave(bundle){
-    if(!nativeBridge)throw Error('A mentéshez a telepített Windowsos Gatterka.exe fájlt kell elindítani.');
-    const frame=document.createElement('iframe');
-    frame.name='gatterka-machine-output-'+String(Date.now())+'-'+String(++machineRelaySequence);
-    frame.setAttribute('aria-hidden','true');
-    frame.tabIndex=-1;
-    frame.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
-    document.body.appendChild(frame);
-    const id=frame.name;
+    if(!nativeBridge)throw Error('A mentéshez a telepített Gatterka.exe-t kell elindítani.');
+    const id='gatterka-machine-window-'+String(Date.now())+'-'+String(++machineRelaySequence);
+    const popup=window.open('about:blank',id,'popup=yes,width=560,height=260,resizable=yes,scrollbars=yes');
+    if(!popup)throw Error('A mentési ablakot letiltotta a böngésző. Engedélyezd a felugró ablakot a Gatterka számára.');
+    try{
+      popup.document.title='Gatterka – gépi mentés';
+      popup.document.body.style.cssText='font:15px Segoe UI,Arial,sans-serif;padding:25px;color:#17392f;background:#f5f7f4;';
+      popup.document.body.textContent='Gatterka – a Windows célmappa-választó előkészítése…';
+      popup.focus();
+    }catch(error){
+      // A mentési célablak így is használható, ha a böngésző nem engedi formázni.
+    }
     const form=document.createElement('form');
     form.method='POST';
     form.enctype='application/x-www-form-urlencoded';
@@ -1888,26 +1896,31 @@
     return new Promise((resolve,reject)=>{
       let done=false;
       let expiry=null;
+      let closeCheck=null;
       function finish(error,value){
         if(done)return;
         done=true;
         clearTimeout(expiry);
+        clearInterval(closeCheck);
         window.removeEventListener('message',receive);
         form.remove();
-        frame.remove();
+        try{if(!popup.closed)popup.close();}catch{}
         if(error)reject(error);
         else resolve(value);
       }
       function receive(event){
-        if(event.source!==frame.contentWindow || event.origin!==nativeBridge.url)return;
+        if(event.source!==popup || event.origin!==nativeBridge.url)return;
         const msg=event.data;
         if(!msg||msg.type!=='gatterka-form-result'||msg.id!==id)return;
         finish(msg.ok?null:Error(msg.error||'A gépi projekt mentése sikertelen.'),msg.value);
       }
       window.addEventListener('message',receive);
+      closeCheck=setInterval(()=>{
+        if(popup.closed)finish(Error('A mentési segédablakot bezártad. A mentést megszakítottuk.'));
+      },700);
       expiry=setTimeout(()=>finish(Error(
-        'A Windows mappamentő nem válaszolt. Ellenőrizd, hogy nem nyílt-e meg az ablak a Gatterka mögött.'
-      )),10*60*1000);
+        'A Windows mappamentő nem válaszolt. A megnyitott Gatterka segédablakban látható hiba segít a diagnosztikában.'
+      )),120*1000);
       try{form.submit();}
       catch(error){finish(error);}
     });
