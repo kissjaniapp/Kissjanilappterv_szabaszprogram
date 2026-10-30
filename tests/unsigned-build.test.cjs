@@ -7,16 +7,16 @@ const workflow=fs.readFileSync(path.join(__dirname,'../.github/workflows/lapterv
 const build=fs.readFileSync(path.join(__dirname,'../desktop-go/Build-Windows.cmd'),'utf8');
 const launcher=fs.readFileSync(path.join(__dirname,'../desktop-go/launcher/main.go'),'utf8');
 const installer=fs.readFileSync(path.join(__dirname,'../desktop-go/installer/main.go'),'utf8');
-test('Gatterka 1.0.10 tanúsítvány és GitHub-titkok nélkül épül',()=>{
+test('Gatterka 1.0.11 tanúsítvány és GitHub-titkok nélkül épül',()=>{
  for(const forbidden of ['GATTERKA_SIGNING_ENABLED','artifact-signing-action','Get-AuthenticodeSignature','GATTERKA_AZURE_','ALAIRAS_STATUSZ']){
   assert.ok(!workflow.includes(forbidden),'Váratlan aláírási függőség: '+forbidden);
  }
- for(const required of ['run: call desktop-go','Gatterka-Windows-Telepito-1.0.10','Gatterka_Telepito_1.0.10_x64.exe','Gatterka_Portable_1.0.10.zip','SHA256.txt']){
+ for(const required of ['run: call desktop-go','Gatterka-Windows-Telepito-1.0.11','Gatterka_Telepito_1.0.11_x64.exe','Gatterka_Portable_1.0.11.zip','SHA256.txt']){
   assert.ok(workflow.includes(required),'Hiányzik: '+required);
  }
 });
 test('program, telepítő és build fájlverziója következetes',()=>{
- assert.ok(build.includes('Gatterka_Telepito_1.0.10_x64.exe'));
- assert.ok(launcher.includes('var version = "1.0.10"'));
- assert.ok(installer.includes('const version = "1.0.10"'));
+ assert.ok(build.includes('Gatterka_Telepito_1.0.11_x64.exe'));
+ assert.ok(launcher.includes('var version = "1.0.11"'));
+ assert.ok(installer.includes('const version = "1.0.11"'));
 });
