@@ -103,6 +103,17 @@ func startNativeBridge(page string)(int,string,func(),error){
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/pick-save",bridge.pickAndSave)
+ // A natív mentés elérhetőségét felső szintű böngészőablakból teszteljük:
+ // nincs CORS, iframe vagy fájl-eredetű fetch. Ha nem érkezik vissza
+ // ez az üzenet, a felület néhány másodpercen belül hibát jelez.
+ router.HandleFunc("/native/ready",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!=http.MethodGet{http.Error(w,"Only GET",http.StatusMethodNotAllowed);return}
+  w.Header().Set("Content-Type","text/html; charset=utf-8")
+  w.Header().Set("Cache-Control","no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
+  w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'")
+  _,_=w.Write([]byte(`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka gépi mentés</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:25px;color:#17392f;background:#f5f7f4"><h2>Gatterka – gépi mentés</h2><p>A kapcsolat működik. A Windows mappaválasztó megnyitása következik.</p><script>if(window.opener){window.opener.postMessage({type:'gatterka-ready',id:decodeURIComponent(location.hash.slice(1))},'*')}</script></body></html>`))
+ })
  router.HandleFunc("/native/relay",func(w http.ResponseWriter,r *http.Request){
   if r.Method!=http.MethodGet{http.Error(w,"Method not allowed",http.StatusMethodNotAllowed);return}
   w.Header().Set("Content-Type","text/html; charset=utf-8")
