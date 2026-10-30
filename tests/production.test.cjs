@@ -58,7 +58,8 @@ test('a teljes xPrg + xMix csomag minden táblát külön kezel',()=>{
   assert.match(html,/data-action="download-xprg-project"/);
   assert.match(html,/\[Intestazione\]/);
   assert.match(html,/NumeroRighe=/);
-  assert.match(html,/szabas_programmal/);
+  assert.match(html,/WinCut/);
+  assert.match(html,/,1,0/);
   assert.match(html,/winCutDirectory/);
   assert.match(html,/<SchemaDoc>/);
   assert.match(html,/add\('U',part\.breadth\)/);
