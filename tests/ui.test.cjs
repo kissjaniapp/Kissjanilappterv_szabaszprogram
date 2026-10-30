@@ -18,7 +18,7 @@ test('a kezdőoldal a helyben elmentett bútorok listája',()=>{
   assert.match(html,/data-action="create-project"/);
 });
 test('a PNG alkatrészlista és az XPrg/XMix export látható, Excel már nincs',()=>{
-  assert.match(html,/function downloadXprgProject\(/);
+  assert.match(html,/data-action="download-xprg-project"/);
   assert.match(html,/data-action="download-png"/);
   assert.match(html,/data-action="download-parts-png"/);
   assert.doesNotMatch(html,/data-action="download-parts-xlsx"/);
@@ -48,7 +48,7 @@ test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
 test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
  assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.match(html,/xprgMaterialCode:'BLAP003'/);
- assert.match(html,/async function downloadXprgProject\(\)/);
+ assert.match(html,/data-action="download-xprg-project"/);
  const first=html.indexOf('async function downloadXprgProject()');
  const last=html.indexOf('\n  function downloadCutList(',first);
  const source=html.slice(first,last);
@@ -56,16 +56,20 @@ test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablak
  assert.doesNotMatch(source,/\bconfirm\s*\(/);
 });
 
-test('a gépi mentés külön oldalon van, látható célmappa nélkül',()=>{
- const start=html.indexOf('function saveView()');
- const end=html.indexOf('function render(){',start);
+test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
+ const start=html.indexOf('const machinePanel=');
+ const end=html.indexOf('// A gépi csíkok és vágási műveletek',start);
  assert.ok(start>=0&&end>start);
- const page=html.slice(start,end);
- assert.match(page,/data-action="save-xprg-folder"/);
- assert.doesNotMatch(page,/data-action="download-xprg-project"/);
- assert.match(page,/id="machine-save-status"/);
- assert.match(page,/Matricák beállításai és nyomtatása/);
- assert.doesNotMatch(page,/id="xmix-machine-root"|Kiválasztott célmappa/);
+ const panel=html.slice(start,end);
+ assert.match(panel,/data-action="save-xprg-folder"/);
+ assert.match(panel,/data-key="xmixMachineRoot"/);
+ assert.match(panel,/Gépi gyökérmappa/);
+ assert.match(panel,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
+ assert.doesNotMatch(panel,/data-key="xprgFolder"/);
+ assert.doesNotMatch(panel,/data-key="xprgHeaderMode"/);
+ assert.doesNotMatch(panel,/Csak offline ellenőrző minta/);
+ assert.doesNotMatch(html,/<div class="callout top-gap"><strong>Fontos:<\/strong>/);
  assert.match(html,/data-action="download-parts-png"/);
 });
 
@@ -95,26 +99,26 @@ test('a kezdőképernyőn Kiss János szerzői és tulajdonosi felirata jelenik 
  assert.match(html,/A program Kiss János tulajdona/);
  assert.match(html,/brand-name\{font-size:20px;font-weight:600/);
 });
-test('az öt munkalépés között a szabásterv és mentés önálló képernyő',()=>{
+test('a bútoradatok, alkatrészek, anyagkészlet és a szabásterv külön képernyő',()=>{
  const start=html.indexOf('function steps(){');
  const end=html.indexOf('\n  function renderNav()',start);
  const nav=html.slice(start,end);
- for(const page of ["'furniture'","'parts'","'stock'","'nesting'","'save'"])
+ for(const page of ["'furniture'","'parts'","'stock'","'nesting'"])
   assert.ok(nav.includes(page),page);
- assert.match(html,/function saveView\(/);
- assert.match(html,/state\.active==='save'\?saveView\(\)/);
- assert.match(html,/data-page="save"/);
+ assert.match(html,/state\.active==='parts'\?furnitureView\('parts'\)/);
+ assert.match(html,/if\(stage==='parts'\)/);
+ assert.match(html,/data-action="open-parts"/);
+ assert.match(html,/state\.active='parts'/);
  assert.match(html,/return intro\('01 \/ BÚTOR ADATAI'/);
  assert.match(html,/return intro\('02 \/ ALKATRÉSZEK'/);
  assert.match(html,/intro\('03 \/ ANYAGKÉSZLET'/);
  assert.match(html,/intro\('04 \/ SZABÁSTERV'/);
 });
-
 test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átírni',()=>{
  assert.match(html,/getFurniture\(\)\?\.materialColor/);
  assert.match(html,/const color=String\(f\?\.materialColor/);
  assert.match(html,/machineExportBundle\(/);
- assert.match(html,/requestNativeMachine/);
+ assert.match(html,/showDirectoryPicker/);
  assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.doesNotMatch(html,/data-key="xprgHeaderMode"/);
  assert.doesNotMatch(html,/data-key="xprgFolder"/);
@@ -143,42 +147,24 @@ test('a régi Feya beállítás kizárólag Freyára javul, az egyéb anyagok é
  assert.match(html,/if\(corrected\)localStorage\.setItem\(libraryKey,JSON\.stringify\(library\)\)/);
 });
 
-test('a WinCut Mix C:\\Gatterka és napi almappa útvonalat használ',()=>{
- assert.match(html,/const defaultXmixMachineRoot='C:\\\\Gatterka'/);
+test('a WinCut Mix a megadott teljes X: gépi utat menti, nem csak a relatív xPrg nevet',()=>{
+ assert.match(html,/const defaultXmixMachineRoot='X:\\\\JANI\\\\szabas_programmal\\\\Legujabb_mentessel'/);
  assert.match(html,/xmixMachineRoot:savedMachineRoot/);
+ assert.match(html,/data-key="xmixMachineRoot"/);
  assert.match(html,/function machineRootPath\(\)/);
- assert.match(html,/now\.getFullYear\(\)/);
- assert.match(html,/now\.getMonth\(\)/);
- assert.match(html,/now\.getDate\(\)/);
- assert.doesNotMatch(html,/data-key="xmixMachineRoot"/);
+ assert.match(html,/machineRootPath\(\)\+'\\\\'\+cabinet\+'\\\\xPrg\\\\'/);
+ assert.match(html,/String\(parent.name\)\.toLocaleLowerCase/);
+ assert.match(html,/machineExportBundle\(\{cabinetFolder:folderName\}\)/);
+ assert.match(html,/key==='xmixMachineRoot'/);
 });
 
-test('a Windows mappaválasztó alapértelmezése C:\\Gatterka és a tényleges út kerül mentésre',()=>{
+test('a gépi gyökérmappát gépelés közben menti és natív ablakból módosítja',()=>{
  assert.match(html,/function rememberMachineRoot\(value\)/);
- assert.match(html,/const defaultXmixMachineRoot='C:\\\\Gatterka'/);
+ assert.match(html,/localStorage\.setItem\('gatterka-machine-root-v1'/);
+ assert.match(html,/rememberMachineRoot\(el\.value\)/);
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
- assert.match(html,/function requestNativeViaRelay\(action,payload\)/);
- assert.match(html,/gatterka-native-relay/);
- assert.match(html,/function nativePickAndSave\(bundle\)/);
- assert.match(html,/form\.action=nativeBridge\.url/);
- assert.match(html,/const saved=await nativePickAndSave\(bundle\)/);
- assert.doesNotMatch(html,/document\.getElementById\('xmix-machine-root'\)/);
- assert.doesNotMatch(html,/gatterka-machine-root-v1/);
-});
-
-test('az Alkatrészek oldalon egyetlen Anyagkészlet tovább gomb marad',()=>{
- const start=html.indexOf('function furnitureView(');
- const end=html.indexOf('function stockView()',start);
- assert.ok(start>=0&&end>start);
- const view=html.slice(start,end);
- assert.equal((view.match(/data-action="page" data-page="stock">Anyagkészlet →<\/button>/g)||[]).length,1);
-});
-
-test('a görgetősáv visszatért, hosszú listák lapozással is használhatók',()=>{
- assert.match(html,/function listPager\(kind,count,page\)/);
- assert.match(html,/data-action="list-page"/);
- assert.match(html,/f\.parts\.slice\(partListPage\*listSizes\.parts/);
- assert.match(html,/state\.boards\.slice\(stockListPage\*listSizes\.stock/);
- assert.doesNotMatch(html,/\.app\{height:100dvh;min-height:0;overflow:hidden\}/);
- assert.match(html,/#content\{overflow:visible\}/);
+ assert.match(html,/const selected=await requestNativeMachine\('choose'/);
+ assert.match(html,/rememberMachineRoot\(selected\.path\)/);
+ assert.match(html,/document\.getElementById\('xmix-machine-root'\)/);
+ assert.match(html,/const saved=await requestNativeMachine\('save'/);
 });

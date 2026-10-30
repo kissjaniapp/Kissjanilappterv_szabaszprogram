@@ -19,7 +19,7 @@ import (
 //go:embed assets/Gatterka.exe assets/Gatterka_Eltavolitas.exe assets/index.htm
 var payload embed.FS
 
-const version = "1.0.15"
+const version = "1.0.16"
 
 func message(body string, typ uintptr) uintptr {
  t, _ := syscall.UTF16PtrFromString("Gatterka " + version + " – Windows telepítő")
