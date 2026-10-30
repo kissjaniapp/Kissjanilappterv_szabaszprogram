@@ -112,7 +112,7 @@ $owner=New-Object System.Windows.Forms.Form
 $owner.TopMost=$true
 $owner.ShowInTaskbar=$false
 $owner.FormBorderStyle='None'
-$owner.Size=New-Object System.Drawing.Size(1,1)
+$owner.Size=[System.Drawing.Size]::new(1,1)
 $owner.Opacity=0
 try {
   $owner.Show()
