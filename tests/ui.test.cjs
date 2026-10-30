@@ -70,3 +70,22 @@ test('a Nesting terv nem jeleníti meg a három felesleges magyarázó blokkot',
  assert.doesNotMatch(html,/<div class="callout top-gap"><strong>Fontos:<\/strong>/);
  assert.match(html,/data-action="download-parts-png"/);
 });
+
+test('az alkatrészméret az élő eredményt és a szerkeszthető képletet egymás alatt mutatja',()=>{
+ assert.match(html,/function partDimensionInput\(/);
+ assert.match(html,/function partDimensionPreview\(/);
+ assert.match(html,/expr-cell has-formula|expr-cell \\$\{/);
+ assert.match(html,/class="expr-result/);
+ assert.match(html,/data-expr-axis/);
+ assert.match(html,/data-live-part-total/);
+ assert.match(html,/data-live-part-area/);
+});
+test('nincs újraszámolás gomb; a nesting és az élő képletszámítás automatikus',()=>{
+ assert.doesNotMatch(html,/Újraszámolás/);
+ assert.doesNotMatch(html,/data-action="run-nesting"/);
+ assert.match(html,/if\(!result\)result=computeNesting\(\)/);
+ assert.match(html,/document\.addEventListener\('input'/);
+ assert.match(html,/refreshLiveFormulaValues\(\)/);
+ assert.match(html,/scheduleLiveNesting\(\)/);
+ assert.match(html,/result=hadNesting\|\|state\.active==='nesting'\?computeNesting\(\):null/);
+});

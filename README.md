@@ -212,3 +212,9 @@ kiemelt figyelmeztetődobozt. A gépi anyagkód szerkesztőmező, az XPrg + XMix
 ZIP-letöltőgomb, a szabásrajz és az alkatrészlista PNG export megmaradt.
 A változás **csak a képernyő szövegeit és elrendezését érinti**;
 a gyártási kompatibilitás ellenőrzése továbbra is szükséges.
+
+## 2026-10-30 – élő alkatrész-képletek és automatikus Nesting
+
+- A bútoralkatrész X/Y méreténél a képletet kis, halvány, de **közvetlenül szerkeszthető** sorban, alatta a **nagy méretű kiszámolt szabásméretet** mutatja a felület. A szabásméret az élzárás és előmarás levonása utáni szám, ugyanaz, amit a program a nestinghez használ. Puszta szám beírásakor hagyományos, egy soros méretmező marad.
+- Gépeléskor a képlet eredménye, darabszám-összesítő és nettó alkatrészterület azonnal frissül, teljes oldal-újrarajzolás nélkül; a kurzor a képletben marad. A korábbi projektek képletei változatlan szövegként maradnak mentve.
+- A hosszú, költséges gépi nesting számítás rövid gépelési szünet után frissül, illetve a mező változtatásakor automatikusan újraszámolódik, amennyiben már létezett terv. A Nesting lap megnyitásakor a terv automatikusan kiszámolódik, külön „Újraszámolás” vagy „Nesting indítása” gomb nélkül.
