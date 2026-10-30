@@ -1383,9 +1383,9 @@
     }
     return pages;
   }
-  // Közvetlen letöltés, Mentés másként ablak nélkül. A böngésző
-  // dedikált profiljában a Windows Letöltések mappája lesz a cél.
   async function saveFileToDisk(blob,filename,extension,mime){
+    // Közvetlen letöltés Mentés másként ablak nélkül.
+    // A dedikált profilban a Windows Letöltések mappája a cél.
     downloadBlob(blob,filename);
     return true;
   }
