@@ -55,3 +55,18 @@ test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablak
  assert.doesNotMatch(source,/\bprompt\s*\(/);
  assert.doesNotMatch(source,/\bconfirm\s*\(/);
 });
+
+test('a Nesting terv nem jeleníti meg a három felesleges magyarázó blokkot',()=>{
+ const start=html.indexOf('const machinePanel=');
+ const end=html.indexOf('// A gépi csíkok és vágási műveletek',start);
+ assert.ok(start>=0&&end>start);
+ const panel=html.slice(start,end);
+ assert.doesNotMatch(panel,/A BLAP003 mintakód; ellenőrizd az anyagtörzsben/);
+ assert.doesNotMatch(panel,/C:\\\\WinCut/);
+ assert.doesNotMatch(panel,/Csak offline ellenőrző minta/);
+ assert.doesNotMatch(panel,/nem hitelesített/);
+ assert.match(panel,/data-key="xprgMaterialCode"/);
+ assert.match(panel,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(html,/<div class="callout top-gap"><strong>Fontos:<\/strong>/);
+ assert.match(html,/data-action="download-parts-png"/);
+});

@@ -202,3 +202,13 @@ A WinCut-kompatibilitás ettől még gépi tesztet igényel.
 - A Gatterka `XPrg + XMix letöltése (ZIP)` gomb megnyomása már **nem** jelenít meg két felugró párbeszédablakot: az anyagkód előre, a letöltőgomb mellett szerkeszthető; a letöltéshez külön megerősítés nem kell.
 - A korábbi mentésekben hiányzó anyagkód alapértelmezése a **példaként használt BLAP003**, amit a tényleges gépi anyagtörzsnek megfelelően ellenőrizni kell. A megadott anyagkód a projekttel mentődik.
 - A böngésző normál ZIP-letöltése indul (alapesetben Letöltések); a mentési helyről szóló böngészőbeállításra az alkalmazás nem tud garanciát adni. A gépi .012/.xPrg kompatibilitás továbbra sincs hitelesítve.
+
+## 2026-10-30 – tisztított Nesting exportfelület
+
+A Nesting képernyőről eltávolítottuk a ZIP-letöltés melletti hosszú
+WinCut/hivatkozás tájékoztató szöveget, az „offline ellenőrző minta”
+figyelmeztető sort és a képernyő alatti „Fontos: a kiosztás heurisztikus…”
+kiemelt figyelmeztetődobozt. A gépi anyagkód szerkesztőmező, az XPrg + XMix
+ZIP-letöltőgomb, a szabásrajz és az alkatrészlista PNG export megmaradt.
+A változás **csak a képernyő szövegeit és elrendezését érinti**;
+a gyártási kompatibilitás ellenőrzése továbbra is szükséges.
