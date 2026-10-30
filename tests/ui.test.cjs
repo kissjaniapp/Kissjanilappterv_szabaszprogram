@@ -159,9 +159,9 @@ test('a Windows mappaválasztó alapértelmezése C:\\Gatterka és a tényleges 
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
  assert.match(html,/function requestNativeViaRelay\(action,payload\)/);
  assert.match(html,/gatterka-native-relay/);
- assert.match(html,/const selected=await requestNativeMachine\('choose'/);
- assert.match(html,/rememberMachineRoot\(selected\.path\)/);
- assert.match(html,/const saved=await requestNativeMachine\('save'/);
+ assert.match(html,/function nativePickAndSave\(bundle\)/);
+ assert.match(html,/form\.action=nativeBridge\.url/);
+ assert.match(html,/const saved=await nativePickAndSave\(bundle\)/);
  assert.doesNotMatch(html,/document\.getElementById\('xmix-machine-root'\)/);
  assert.doesNotMatch(html,/gatterka-machine-root-v1/);
 });
