@@ -4,6 +4,7 @@ import (
  "encoding/json"
  "fmt"
  "net/http"
+ "net/url"
  "net/http/httptest"
  "os"
  "path/filepath"
@@ -119,4 +120,36 @@ func TestNativeAppAndSaveShareSameLocalOrigin(t *testing.T){
  if err!=nil{t.Fatal(err)}
  _=resp.Body.Close()
  if resp.StatusCode!=http.StatusForbidden{t.Fatalf("external origin accepted: %d",resp.StatusCode)}
+}
+
+func TestNativeFormSaveRejectsUnknownTokenWithoutOpeningDialog(t *testing.T){
+ bridge:=&nativeBridge{token:"valid-token"}
+ form:=url.Values{}
+ form.Set("id","case-1")
+ form.Set("token","wrong-token")
+ payload,_:=json.Marshal(nativeTestBundle())
+ form.Set("request",string(payload))
+ req:=httptest.NewRequest(http.MethodPost,"/native/pick-save",strings.NewReader(form.Encode()))
+ req.Header.Set("Content-Type","application/x-www-form-urlencoded")
+ req.Header.Set("Origin","null")
+ response:=httptest.NewRecorder()
+ bridge.pickAndSave(response,req)
+ text:=response.Body.String()
+ if !strings.Contains(text,"gatterka-form-result")||
+    !strings.Contains(text,"case-1")||
+    !strings.Contains(text,"false"){
+   t.Fatalf("Missing authenticated form error: %s",text)
+ }
+}
+func TestNativeFormSaveBlocksExternalOrigin(t *testing.T){
+ bridge:=&nativeBridge{token:"valid-token"}
+ form:=url.Values{"id":{"case-2"},"token":{"valid-token"}}
+ req:=httptest.NewRequest(http.MethodPost,"/native/pick-save",strings.NewReader(form.Encode()))
+ req.Header.Set("Content-Type","application/x-www-form-urlencoded")
+ req.Header.Set("Origin","https://evil.example")
+ response:=httptest.NewRecorder()
+ bridge.pickAndSave(response,req)
+ if !strings.Contains(response.Body.String(),"Idegen weboldalról"){
+  t.Fatalf("Foreign origin not rejected: %s",response.Body.String())
+ }
 }
