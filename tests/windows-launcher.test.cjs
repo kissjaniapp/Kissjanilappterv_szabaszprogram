@@ -51,8 +51,12 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
  assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
- assert.match(native,/FolderBrowserDialog/);
- assert.match(native,/GATTERKA_INITIAL_FOLDER/);
+ assert.match(native,/router\.HandleFunc\("\/native\/pick-save"/);
+ const dialog=fs.readFileSync(path.join(__dirname,"../desktop-go/launcher/native_dialog_windows.go"),"utf8");
+ assert.match(dialog,/SHBrowseForFolderW/);
+ assert.match(dialog,/GetForegroundWindow/);
+ assert.doesNotMatch(dialog,/powershell\.exe|FolderBrowserDialog/);
+ assert.match(native,/defaultMachineDirectory/);
  assert.match(native,/datedRoot/);
  assert.match(native,/func saveMachineFiles\(root string/);
  assert.match(native,/bridge\.selectedDirectory=dir/);

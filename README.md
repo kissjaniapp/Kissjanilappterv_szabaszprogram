@@ -1,19 +1,19 @@
-# Gatterka 1.0.11 – Windowsos szabásztervező
+# Gatterka 1.0.12 – Windowsos szabásztervező
 
 Ez a **működő Gatterka program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 
-### Aktuális tudnivalók – 1.0.11
+### Aktuális tudnivalók – 1.0.12
 
 A Windowsos Gatterka natív mappaválasztójával közvetlenül menti az xPrg/xMix projektet: a kiválasztott célmappában dátumos projektmappát és xPrg almappát hoz létre, az xMix a tényleges Windows-útvonalat tartalmazza. A célmappa elérési útja a felületen **csak kijelzés**, nem szerkeszthető. Az Alkatrészek oldalon egyetlen „Anyagkészlet →” gomb van. A ZIP továbbra is választható alternatíva.
 
-**Telepítő:** a Gatterka 1.0.11 kiadása **digitális tanúsítvány nélkül** épül. Nincs Azure-titok, aláírási szolgáltatás vagy külön beállítás. A Windows SmartScreen a telepítő futtatásakor az ismeretlen kiadóra figyelmeztethet; ez normális aláíratlan EXE esetén.
+**Telepítő:** a Gatterka 1.0.12 kiadása **digitális tanúsítvány nélkül** épül. Nincs Azure-titok, aláírási szolgáltatás vagy külön beállítás. A Windows SmartScreen a telepítő futtatásakor az ismeretlen kiadóra figyelmeztethet; ez normális aláíratlan EXE esetén.
 
 
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Gatterka.exe` indítóval és
-`Gatterka_Telepito_1.0.11_x64.exe` telepítővel. Offline fut. A teljes
+`Gatterka_Telepito_1.0.12_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -21,7 +21,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Gatterka - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Gatterka-Windows-Telepito-1.0.11` nevű **Artifacts** csomagban.
+a `Gatterka-Windows-Telepito-1.0.12` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Gatterka.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
 A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Gatterka ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
@@ -404,14 +404,14 @@ A módosítás automatikus Windows/JavaScript tesztjei a mentési útvonalakra
 vágást továbbra is külön ellenőrizni kell.
 
 
-## 1.0.11 – közvetlen mentés, tanúsítvány nélküli Windows-kiadás
+## 1.0.12 – közvetlen mentés, tanúsítvány nélküli Windows-kiadás
 
 A Gatterka.exe indítóból megnyitott **📁 Mappa kiválasztása és mentés** gomb a Windows natív mappaválasztóját használja. A jóváhagyáskor a Go segédszolgáltatás azonnal menti a fájlokat a kiválasztott gyökérkönyvtár alatt létrehozott dátumos projektmappába, azon belül külön xPrg mappába. A közös xMix mindegyik táblához abszolút, a valós mentési útvonallal egyező hivatkozást kap. A felületen látható célmappa immár csak olvasható; nem kézzel megadható. Ez megőrzi az xMix-projektfájlok jelenlegi, a gép által már kipróbált szerkezetét. A ZIP továbbra is választható.
 
 ### Telepítő tanúsítvány nélkül
 
-A `.github/workflows/lapterv-windows.yml` minden `main` ágra történő feltöltéskor elindítja a teszteket és lefordítja a `Gatterka_Telepito_1.0.11_x64.exe` telepítőt, a `Gatterka_Portable_1.0.11.zip` hordozható csomagot és az ellenőrző `SHA256.txt` állományt. A fordításhoz **nem szükséges tanúsítvány, kiadói kulcs, Azure-fiók vagy aláírás**. A program offline működik és megőrzi a korábbi helyi bútoradatokat.
+A `.github/workflows/lapterv-windows.yml` minden `main` ágra történő feltöltéskor elindítja a teszteket és lefordítja a `Gatterka_Telepito_1.0.12_x64.exe` telepítőt, a `Gatterka_Portable_1.0.12.zip` hordozható csomagot és az ellenőrző `SHA256.txt` állományt. A fordításhoz **nem szükséges tanúsítvány, kiadói kulcs, Azure-fiók vagy aláírás**. A program offline működik és megőrzi a korábbi helyi bútoradatokat.
 
 **Windows-figyelmeztetés:** az aláíratlan telepítő ismeretlen kiadóként jelenhet meg a Windows biztonsági kérdéseiben. Ez nem helyettesíti a tényleges vírusellenőrzést, de nem akadálya annak, hogy a program működő, kész Windows-alkalmazás legyen.
 
-**Megjegyzés:** a korábbi fejlesztési napló egyes szakaszai történeti információk. Az 1.0.11-es működésben a célmappa útvonala *csak olvasható*, és a mentést a Windowsos Gatterka saját mappaválasztója indítja.
+**Megjegyzés:** a korábbi fejlesztési napló egyes szakaszai történeti információk. Az 1.0.12-es működésben a célmappa útvonala *csak olvasható*, és a mentést a Windowsos Gatterka saját mappaválasztója indítja.
