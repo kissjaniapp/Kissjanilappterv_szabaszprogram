@@ -42,11 +42,11 @@ test('a kép szerinti 1–36 logika: fő sáv, alsó fő, alsó alábontás, fel
   const out=schedule([bin]);
   assert.equal(out.totalCuts,36);
   assert.deepEqual(primary.map(c=>c.globalOrder),[1,2,3]);
-  assert.deepEqual(lowerMain.slice().sort((a,b)=>a.x1-b.x1).map(c=>c.globalOrder),
+  assert.deepEqual(lowerMain.map(c=>c.globalOrder),
     Array.from({length:15},(_,i)=>i+4));
-  assert.deepEqual(lowerDetail.slice().sort((a,b)=>a.sectionX-b.sectionX).map(c=>c.globalOrder),
+  assert.deepEqual(lowerDetail.map(c=>c.globalOrder),
     Array.from({length:10},(_,i)=>i+19));
-  assert.deepEqual(upperMain.slice().sort((a,b)=>a.x1-b.x1).map(c=>c.globalOrder),
+  assert.deepEqual(upperMain.map(c=>c.globalOrder),
     Array.from({length:8},(_,i)=>i+29));
   const firstRefeed=out.events.findIndex(e=>e.type==='refeed');
   assert.equal(firstRefeed,3);
@@ -70,11 +70,11 @@ test('két tábla esetén mindkét rajz sorszámai 1–36 és külön ciklust al
   assert.deepEqual(Array.from(plan.boards,b=>b.cutCount),[36,36]);
   for(const board of [first,second]){
     assert.deepEqual(board.primary.map(c=>c.boardOrder),[1,2,3]);
-    assert.deepEqual(board.lowerMain.slice().sort((a,b)=>a.x1-b.x1)
+    assert.deepEqual(board.lowerMain
       .map(c=>c.boardOrder),Array.from({length:15},(_,i)=>i+4));
-    assert.deepEqual(board.lowerDetail.slice().sort((a,b)=>a.sectionX-b.sectionX)
+    assert.deepEqual(board.lowerDetail
       .map(c=>c.boardOrder),Array.from({length:10},(_,i)=>i+19));
-    assert.deepEqual(board.upperMain.slice().sort((a,b)=>a.x1-b.x1)
+    assert.deepEqual(board.upperMain
       .map(c=>c.boardOrder),Array.from({length:8},(_,i)=>i+29));
   }
   const firstBoardEvents=plan.events.filter(e=>e.board===1);

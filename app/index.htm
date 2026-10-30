@@ -88,7 +88,7 @@
     selectedFurniture:null,
     furnitures:[],
     boards:[],
-    kerf:5,trim:10,cutDirection:'auto',layoutMode:'machine',selectedBoard:0,
+    kerf:5,trim:12,cutDirection:'auto',layoutMode:'machine',selectedBoard:0,
     labelWidth:48.5,labelHeight:25.4,labelMarginX:8,labelMarginY:8.8,labelFormatV2:true
   });
   const parse = str => { try { return JSON.parse(str); } catch { return null; } };
@@ -327,7 +327,7 @@
   }
   function stockView(){
     const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
-    return intro('02 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Alkatrészigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szál kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
+    return intro('02 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A megadott kisebb maradékokat használjuk először; szükség esetén korlátlan 2800 × 2070 × 18 mm-es táblát veszünk elő.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A nesting automatikusan korlátlan 2800 × 2070 × 18 mm-es alaptáblákkal dolgozik.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szál kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Nesting készítése →</button></div></div></div>`;
   }
 
   // Guillotine cutting: every cut spans the entire CURRENT separated rectangle.
@@ -706,18 +706,12 @@
         strip.items.map(p=>[round(p.along),round(p.breadth),p.turned]),
         cuts.map(cutSignature)]);
     };
-    const cutsInNumberOrder=job=>{
-      const rotated=job.bin.machine.feed==='y';
-      const visualX=c=>rotated?
-        job.bin.b-(c.axis==='x'?c.y1:c.sectionY+c.sectionH):
-        (c.axis==='y'?c.x1:c.sectionX);
-      const ascending=(a,b)=>visualX(a)-visualX(b)||(a.order||0)-(b.order||0);
-      return [
-        ...job.cuts.filter(c=>c.stage==='cross-head-trim'||c.stage==='cross-trim'),
-        ...job.cuts.filter(c=>c.stage==='cross').sort(ascending),
-        ...job.cuts.filter(c=>c.stage==='rip').sort(ascending)
-      ];
-    };
+    // A gép először a teljes táblát sávozza fel. A visszaadott csík
+    // összes vágását az eredeti, a csík végétől a nullpont felé haladó
+    // geometriai sorrendben hajtjuk végre; a rajz X-koordinátája szerinti
+    // újrarendezés az ellenkező irányt eredményezheti.
+    const cutsInNumberOrder=job=>job.cuts.slice()
+      .sort((a,b)=>(a.order||0)-(b.order||0));
     for(let boardIndex=0;boardIndex<bins.length;boardIndex++){
       const bin=bins[boardIndex],board=boardIndex+1;
       let order=0,boardPairs=0;
@@ -1025,12 +1019,21 @@
           </div>
         </div>
       </div>`:'';
-      // Egyetlen xPrg mentés, csak a kijelölt táblához.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP kerül a Letöltések közé: a bútormappában együtt van a .xMix és minden táblánkénti .xPrg.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">Nincs X: meghajtós közvetlen mentés. A megadott útvonal csak a .xMix fájl hivatkozásaiban szerepel. Az XPrg-k továbbra is nem hitelesített offline minták.</span><button class="btn primary" data-action="download-xprg-project" ${state.layoutMode!=='machine'||result.failed.length?'disabled title="Teljes gépi csíkos nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
+      // A ZIP táblánként külön xPrg fájlt, valamint egy közös xMix-et tartalmaz.
+      // A vágásokat a valós gépi menettel azonos sorrendben mutatjuk:
+      // előbb teljes táblás szélezés és sávozás, azután csíkonként visszaadás.
+      const stageNames={'head-trim':'Tábla szélezése','strip':'Csík leválasztása',
+        'cross-head-trim':'Visszaadott csík szélezése','cross-trim':'Csíkvég szélezése',
+        'cross':'Alkatrész hosszvágása','rip':'Alkatrész alábontása'};
+      const orderedCuts=b?.machine?b.cuts.filter(c=>Number.isInteger(c.boardOrder))
+        .slice().sort((a,z)=>a.boardOrder-z.boardOrder||a.order-z.order):[];
+      const cutOrderPanel=b?.machine?
+        `<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási sorrend · Tábla ${state.selectedBoard+1}</div><div class="panel-sub">Egész tábla szélezése → csíkok teljes leválasztása → csíkok visszaadása → készméretre vágás. A pozíciók a fűrész középvonalára vonatkoznak.</div></div><div class="actions"><button class="btn sm" data-action="download-cuts-csv">↓ Vágáslista CSV</button><button class="btn sm" data-action="download-cuts-json">↓ JSON</button></div></div><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>#</th><th>Művelet</th><th>Csík</th><th>Irány</th><th>Pozíció (mm)</th><th>Kész méret (mm)</th></tr></thead><tbody>${orderedCuts.map(c=>`<tr><td><b>${c.boardOrder}</b></td><td>${h(stageNames[c.stage]||c.stage)}</td><td>${c.stripIndex||'–'}</td><td>${c.axis==='y'?'X':'Y'}</td><td><b>${nfmt(c.axis==='y'?c.x1:c.y1)}</b></td><td>${c.kind==='trim'?'Szélezés':nfmt(c.pieceSize)}</td></tr>`).join('')}</tbody></table></div><p class="muted small" style="margin:14px 0 0">Visszaadott csík esetén a mért pozíció a csík eredeti nulla pontjától értendő. Az azonos számmal jelölt, egymásra rakott csíkok közös vágást jelentenek (csak gépi ellenőrzés után). Ez az ellenőrző vágássorrend nem igazolja az .xPrg gépi futtathatóságát.</p></div></div>`:'';
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP kerül a Letöltések közé: a bútormappában együtt van a .xMix és minden táblánkénti .xPrg.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">Nincs X: meghajtós közvetlen mentés. A megadott útvonal csak a .xMix fájl hivatkozásaiban szerepel. Az XPrg-k továbbra is nem hitelesített offline minták.</span><button class="btn primary" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
-      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
+      body=stats+unfitted+boardPanel+cutOrderPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
-    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A gépi vágássorrendet később, a szabászgép programformátumához igazítva adjuk ki.</div>`;
+    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A vágássorrend már táblánként megtekinthető; az .xPrg parancsok tényleges gépi működése továbbra is külön ellenőrzést igényel.</div>`;
   }
   function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
   function download(data,filename,mime){const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
@@ -1094,7 +1097,7 @@
     const total=rows.reduce((sum,r)=>sum+r.qty,0);
     const format=n=>Number(n).toLocaleString('hu-HU',{maximumFractionDigits:1});
     const pages=[],perPage=100;
-    const paintWrapped=(ctx,str,x,y,maxWidth,maxLines=2,lineHeight=26)=>{
+    const paintWrapped=(ctx,str,x,y,maxWidth,maxLines=2,lineHeight=26,singleLineShift=0)=>{
       const words=String(str||'').split(/\s+/).filter(Boolean),lines=[];
       let line='';
       for(const word of words){
@@ -1103,10 +1106,11 @@
         else{lines.push(line);line=word;}
       }
       if(line)lines.push(line);
-      lines.slice(0,maxLines).forEach((text,i)=>{
+      const visibleLines=lines.slice(0,maxLines);
+      visibleLines.forEach((text,i)=>{
         while(ctx.measureText(text).width>maxWidth&&text.length>1)
           text=text.slice(0,-2)+'…';
-        ctx.fillText(text,x,y+i*lineHeight);
+        ctx.fillText(text,x,y+i*lineHeight+(visibleLines.length===1?singleLineShift:0));
       });
     };
     for(let start=0;start<rows.length;start+=perPage){
@@ -1138,18 +1142,18 @@
         if(i%2===0){ctx.fillStyle='#f3f7f3';ctx.fillRect(pad,y,width-pad*2,rowHeight);}
         ctx.fillStyle='#e4eae6';ctx.fillRect(pad,y+rowHeight-1,width-pad*2,1);
         ctx.font='600 25px "Segoe UI",Arial,sans-serif';ctx.fillStyle='#213e32';
-        paintWrapped(ctx,r.part.name,columns[0],y+13,630,2,27);
+        paintWrapped(ctx,r.part.name,columns[0],y+32,630,2,27,10);
         ctx.font='600 25px "Segoe UI",Arial,sans-serif';
-        ctx.fillText(format(r.originalA)+' × '+format(r.originalB),columns[1],y+23);
-        ctx.fillText(String(r.qty),columns[2],y+23);
+        ctx.fillText(format(r.originalA)+' × '+format(r.originalB),columns[1],y+42);
+        ctx.fillText(String(r.qty),columns[2],y+42);
         ctx.font='21px "Segoe UI",Arial,sans-serif';
         const labels=['x1','x2','y1','y2'].filter(k=>r.part.edgeSides?.[k])
           .map(k=>k.toUpperCase()).join(', ');
         const edge=r.edge==='0-0'?'Nincs élzárás':
           r.edge+' · '+format(r.edgeThickness)+' mm'+(r.mill?' · előmarás':'');
-        ctx.fillText(edge,columns[3],y+9);
+        ctx.fillText(edge,columns[3],y+30);
         if(labels){ctx.font='19px "Segoe UI",Arial,sans-serif';
-          ctx.fillStyle='#597267';ctx.fillText(labels,columns[3],y+38);}
+          ctx.fillStyle='#597267';ctx.fillText(labels,columns[3],y+56);}
       });
       const fy=head+section.length*rowHeight+50;
       ctx.fillStyle='#17392f';ctx.font='700 24px "Segoe UI",Arial,sans-serif';
@@ -1379,8 +1383,8 @@
   }
   async function downloadXprgProject(){
     try{
-      if(!result||result.error||state.layoutMode!=='machine'||!result.bins?.length)
-        throw Error('Előbb készíts gépi csíkos nestinget.');
+      if(!result||result.error||!['machine','economy'].includes(state.layoutMode)||!result.machineReady||!result.bins?.length)
+        throw Error('Előbb készíts teljes átvágásos gépi csíkos vagy anyagtakarékos nestinget.');
       if(result.failed?.length)
         throw Error('Van ki nem táblásított alkatrész. Előbb javítsd a nestinget a teljes projekt mentéséhez.');
       const now=new Date();

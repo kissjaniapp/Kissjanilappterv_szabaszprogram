@@ -134,3 +134,11 @@ gépi programok biztonságát offline ellenőrizte.
 Az `.xPrg` minták továbbra sem hitelesített gépi vezérlőprogramok;
 fizikai vágás előtt a vezérlő saját, megfelelő szimulációja és
 szakmai ellenőrzés szükséges.
+
+## 2026-10-30 – teljes átvágásos sorrend ellenőrzése
+
+- A gépi csíkos és anyagtakarékos mód is készít táblánkénti ellenőrző vágássorrendet (szélezés → összes csík → visszaadott csíkok keresztvágása).
+- A vágási sorrendnél a fűrészpozíció a teljes tábla / csík eredeti nullpontjára vonatkozik; a sorrend a gépi visszafelé haladást követi, nem a rajzi balról jobbra rendezettséget.
+- Alapbeállítás: 5 mm fűrészrés és 12 mm szélezés. A korábban mentett projektek egyedi beállításait nem írja felül.
+- Az anyagtakarékos tervből is kérhető az eredeti formátummintát követő, táblánkénti `.xPrg` + `.xMix` offline ZIP.
+- Az `.xPrg` valódi vezérlőn való végrehajtása **nem hitelesített**: a P/RY/Y/RX/X/U/F parancsok gépspecifikus értelmezése, az U és a kötegelt vágás külön offline gépi tesztet igényel. A sikeres GitHub-teszt nem helyettesíti a vezérlő ellenőrzését.
