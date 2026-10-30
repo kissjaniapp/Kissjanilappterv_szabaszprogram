@@ -1739,20 +1739,67 @@
     state.xmixMachineRoot=String(value??'');
     save();
   }
+  let machineRelayFrame=null,machineRelaySequence=0;
+  function requestNativeViaRelay(action,payload){
+    if(!machineRelayFrame){
+      const frame=document.createElement('iframe');
+      frame.id='gatterka-native-relay';
+      frame.setAttribute('aria-hidden','true');
+      frame.tabIndex=-1;
+      frame.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
+      frame.src=nativeBridge.url+'/native/relay';
+      document.body.appendChild(frame);
+      machineRelayFrame=frame;
+    }
+    const frame=machineRelayFrame;
+    const id='gatterka-'+String(++machineRelaySequence);
+    return new Promise((resolve,reject)=>{
+      const timeout=setTimeout(()=>finish(Error('A Windows mentőablak nem válaszolt. Zárd be a párbeszédablakot, majd próbáld újra.')),30*60*1000);
+      function finish(error,value){
+        clearTimeout(timeout);
+        window.removeEventListener('message',receive);
+        if(error)reject(error);
+        else resolve(value);
+      }
+      function receive(event){
+        if(event.source!==frame.contentWindow || event.origin!==nativeBridge.url)return;
+        const message=event.data;
+        if(!message||message.type!=='gatterka-result'||message.id!==id)return;
+        finish(message.ok?null:Error(message.error||'Windows mentési hiba.'),message.value);
+      }
+      function send(){
+        if(!frame.contentWindow){
+          finish(Error('A Windows mappamentő kerete nem indult el.'));
+          return;
+        }
+        frame.contentWindow.postMessage({
+          type:'gatterka-command',id,action,payload,token:nativeBridge.token
+        },nativeBridge.url);
+      }
+      window.addEventListener('message',receive);
+      if(frame.dataset.loaded==='1')send();
+      else frame.addEventListener('load',()=>{
+        frame.dataset.loaded='1';
+        send();
+      },{once:true});
+    });
+  }
   async function requestNativeMachine(action,payload){
     if(!nativeBridge)
       throw Error('Ehhez a Gatterka telepített Windowsos alkalmazása szükséges.');
+    // A böngésző file:// eredetű felületén megmaradnak a régi projektek.
+    // Az iframe saját localhost eredetéről végzi a natív API kéréseit.
+    if(typeof document!=='undefined')return requestNativeViaRelay(action,payload);
+    // Tesztkörnyezet: a két natív API-válasz közvetlenül modellezhető.
     let response;
     try{
       response=await fetch(nativeBridge.url+'/native/'+action,{
         method:'POST',
         headers:{'Content-Type':'application/json','X-Gatterka-Token':nativeBridge.token},
-        body:JSON.stringify(payload),
-        mode:'cors',
-        cache:'no-store'
+        body:JSON.stringify(payload),mode:'cors',cache:'no-store'
       });
     }catch(err){
-      throw Error('Nem érhető el a Windowsos mappamentő. Indítsd újra a telepített Gatterka alkalmazást. ('+(err?.message||'kapcsolati hiba')+')');
+      throw Error('Nem érhető el a Windowsos mappamentő. ('+(err?.message||'kapcsolati hiba')+')');
     }
     let value;
     try{value=await response.json();}
