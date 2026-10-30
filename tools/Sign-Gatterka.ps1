@@ -31,10 +31,10 @@ $files=@((Join-Path $bin 'Gatterka.exe'),(Join-Path $bin 'Gatterka_Eltavolitas.e
 foreach($path in $files){if(-not(Test-Path $path)){throw "Hianyzik az EXE: $path. Elobb futtasd a desktop-go\Build-Windows.cmd fajlt."}}
 function Sign-File([string]$path){
  Write-Host "Kiadói aláírás: $path"
- $args=@('sign','/v','/sha1',$thumb,'/fd','SHA256','/tr','http://timestamp.digicert.com','/td','SHA256')
- if($MachineStore){$args+=@('/sm')}
- $args+=$path
- & $signtool @args
+ $signArguments=@('sign','/v','/sha1',$thumb,'/fd','SHA256','/tr','http://timestamp.digicert.com','/td','SHA256')
+ if($MachineStore){$signArguments+=@('/sm')}
+ $signArguments+=$path
+ & $signtool @signArguments
  if($LASTEXITCODE -ne 0){throw "Az alairas sikertelen: $path"}
  & $signtool verify /pa /v $path
  if($LASTEXITCODE -ne 0){throw "Az alairas ellenorzese sikertelen: $path"}
