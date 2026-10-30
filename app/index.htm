@@ -1524,6 +1524,16 @@
       const headerWidth=rotated?bin.a:bin.b;
       // A P parancs irányfüggő mérete továbbra is változatlan.
       const feedLength=m.feed==='x'?bin.b:bin.a;
+      // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
+      // NEM a készlettábla neve és NEM a gépi anyagkód.
+      // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
+      const materialColors=[...new Set(m.strips.flatMap(strip=>
+        (strip.items||[]).map(entry=>String(entry.item?.materialColor||'').trim())
+      ).filter(Boolean))];
+      if(materialColors.length>1)
+        throw Error((i+1)+'. tábla: több eltérő anyagszín ('+
+          materialColors.join(', ')+'). Egy .xPrg fejlécéhez egyetlen anyagszín szükséges.');
+      const materialDescription=materialColors[0]||'';
       const boardName=safePart(bin.name,'Tabla',30);
       const file=root+'_'+boardName+'_tabla_'+String(i+1).padStart(2,'0')+'.xPrg';
       names.push(file);
@@ -1572,7 +1582,7 @@
           ' gépi parancs szükséges (99 a biztonságosan alkalmazott korlát). '+
           'A programot kisebb mintákra kell bontani, _REP parancsokat nem találunk ki.');
       const xml='<SchemaDoc>\r\n'+
-        '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(materialCode)+
+        '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(materialDescription)+
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
         '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
         '" SpessoreLama="'+num(kerf)+'" />\r\n'+

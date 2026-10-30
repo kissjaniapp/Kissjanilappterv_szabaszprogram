@@ -249,3 +249,9 @@ a gyártási kompatibilitás ellenőrzése továbbra is szükséges.
   esetleges „Megfelelően futott a program?” jelzésének okát kezeli anélkül,
   hogy az operációs rendszer hibavédelmét vagy a szolgáltatását letiltanánk.
   A jelzés teljes megszűnését az érintett számítógépen kell ellenőrizni.
+
+## 2026-10-30 – xPrg anyagszín a fejléc Descrizione mezőjében
+
+A Gatterka minden táblához a kihelyezett alkatrészeken beállított **Anyag színe / dekorja** mezőt írja az XML `<Header Descrizione="...">` attribútumába. Például `Feya`, `Freya`, `Fehér tölgy`. A gépi anyagtörzskód változatlanul a `<Material Tipologia="" Codice="BLAP003" />` mezőbe kerül (vagy a felületen megadott kód). A tábla tájolása, méretei, a teljes `<Pattern>` és a WinCut `.xMix` szerkezete nem változik. Az XML speciális karaktereit escape-eli. Ha egyetlen tábla több különböző, nem üres anyagszínű alkatrészt tartalmaz, a program nem exportál félrevezető fejlécet, hanem jelzi a problémát. Hiányzó anyagszín esetén üres `Descrizione` készül, nem a `BLAP003` anyagkód.
+
+Ez a módosítás az anyagleírás kijelzésének kipróbálására szolgál; éles vágás előtt az adott vezérlőn külön ellenőrizendő.

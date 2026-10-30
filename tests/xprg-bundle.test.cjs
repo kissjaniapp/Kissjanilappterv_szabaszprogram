@@ -53,7 +53,7 @@ test('az összetett táblánál is SchemaDoc a gyökér és X-U-F a részvágás
   assert.equal(out.complexBoards,1);
   const xml=out.files.find(([p])=>p==='Konyha/'+out.names[1])[1];
   assert.ok(xml.startsWith('<SchemaDoc>\r\n'));
-  assert.match(xml,/<Header NumFogliPacco="1.00" Descrizione="BLAP003" Spessore="18.00" Date="29\/10\/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00"/);
+  assert.match(xml,/<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="29\/10\/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00"/);
   assert.match(xml,/<Material Tipologia="" Codice="BLAP003" \/>/);
   assert.match(xml,/<Pattern>\r\n/);
   assert.match(xml,/<Cut T="X" Dim="700.00" Rip="1" ID="4" \/>/);
@@ -172,4 +172,48 @@ test('xPrg fejléc = szabásrajz teteje / bal oldala minden gépállásban',()=>
      'A kezdő P parancs beadásirányhoz kötött méretét megtartjuk');
   }
  }
+});
+
+test('az xPrg Header Descrizione a bútor anyagszíne, nem a gépi anyagkód vagy készlettáblanév',()=>{
+  const bin=base(false,'Freya','Alaptábla · automatikus');
+  const out=generate([bin],'Proba','BLAP003',5,'30/10/2026');
+  const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
+  assert.match(xml,/<Header[^>]*Descrizione="Freya"/);
+  assert.match(xml,/<Material Tipologia="" Codice="BLAP003" \/>/);
+  assert.doesNotMatch(xml,/Descrizione="BLAP003"/);
+  assert.doesNotMatch(xml,/Descrizione="Alaptábla/);
+  assert.match(xml,/<Cut T="P" Dim="2070.00" Rip="1" ID="0" \/>/);
+});
+test('a leírás külön készül minden táblához, a táblaprogramok vágási parancsai érintetlenek',()=>{
+  const first=base(false,'Freya');
+  const second=base(false,'Fehér tölgy');
+  const out=generate([first,second],'Szekreny','BLAP003',5,'30/10/2026');
+  const programs=out.files.filter(([name])=>name.endsWith('.xPrg'));
+  assert.equal(programs.length,2);
+  assert.match(programs[0][1],/Descrizione="Freya"/);
+  assert.match(programs[1][1],/Descrizione="Fehér tölgy"/);
+  assert.equal(programs[0][1].match(/<Cut /g).length,programs[1][1].match(/<Cut /g).length);
+  assert.equal(programs[0][1].replace(/Descrizione="[^"]*"/,'Descrizione=""'),
+               programs[1][1].replace(/Descrizione="[^"]*"/,'Descrizione=""'));
+});
+test('az anyagszínt XML-biztosan írja, az anyagkód külön marad',()=>{
+  const bin=base(false,'Fehér & natúr "dekor"');
+  const out=generate([bin],'Teszt','BLAP003',5,'30/10/2026');
+  const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
+  assert.match(xml,/Descrizione="Fehér &amp; natúr &quot;dekor&quot;"/);
+  assert.match(xml,/Codice="BLAP003"/);
+});
+test('ha egy táblán különböző anyagszínek keverednek, ne adjunk félrevezető gépi leírást',()=>{
+  const bin=base();
+  bin.machine.strips[0].items.push({
+    along:300,breadth:400,item:{name:'Másik elem',materialColor:'Másik szín'}
+  });
+  assert.throws(()=>generate([bin],'Teszt','BLAP003',5,'30/10/2026'),/több eltérő anyagszín/);
+});
+test('hiányzó anyagszínt ne írja ki tévesen BLAP003 anyagmegnevezésként',()=>{
+  const bin=base(false,'');
+  const out=generate([bin],'Teszt','BLAP003',5,'30/10/2026');
+  const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
+  assert.match(xml,/Descrizione=""/);
+  assert.match(xml,/Codice="BLAP003"/);
 });
