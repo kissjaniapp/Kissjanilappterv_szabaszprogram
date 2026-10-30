@@ -40,7 +40,29 @@ type nativeChoose struct {
  Initial string `json:"initial"`
 }
 
-const maxNativeBody = 12 << 20
+const nativeRelayHTML = `<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka helyi mentés</title></head><body><script>
+window.addEventListener('message', async function(event) {
+  var message=event.data;
+  if(event.source!==window.parent || !message || message.type!=='gatterka-command' ||
+     (message.action!=='choose' && message.action!=='save') ||
+     typeof message.token!=='string' || typeof message.id!=='string') return;
+  try {
+    var response=await fetch('/native/'+message.action,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-Gatterka-Token':message.token},
+      body:JSON.stringify(message.payload),
+      cache:'no-store'
+    });
+    var data=await response.json();
+    window.parent.postMessage({type:'gatterka-result',id:message.id,ok:response.ok,
+      value:data,error:response.ok?'':(data.error||'Windows mentési hiba.')},'*');
+  }catch(error){
+    window.parent.postMessage({type:'gatterka-result',id:message.id,ok:false,
+      error:'A helyi Windows-mappamentő nem válaszolt: '+(error.message||error)},'*');
+  }
+});
+</script></body></html>`
+\nconst maxNativeBody = 12 << 20
 const defaultMachineDirectory = `C:\Gatterka`
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
@@ -58,8 +80,8 @@ func machineError(w http.ResponseWriter,status int,err error) {
  machineJSON(w,status,map[string]string{"error":err.Error()})
 }
 func (bridge *nativeBridge) allow(w http.ResponseWriter,r *http.Request) bool {
- // A felület és a mentési API ugyanarról a 127.0.0.1 szerverről fut.
- // Nincs cross-origin kérés, ezért a böngésző nem tilthatja le a mappaválasztást.
+ // A fájl-eredetű felület egy localhost-iframe-en keresztül kéri a
+ // mentést. Az iframe és ez az API azonos eredetű, a token kötelező.
  w.Header().Set("Cache-Control","no-store")
  if r.Method==http.MethodOptions {w.WriteHeader(http.StatusNoContent);return false}
  if r.Method!=http.MethodPost {machineError(w,405,errors.New("Csak POST engedélyezett."));return false}
@@ -82,6 +104,14 @@ func startNativeBridge(page string)(int,string,func(),error){
  router:=http.NewServeMux()
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
+ router.HandleFunc("/native/relay",func(w http.ResponseWriter,r *http.Request){
+  if r.Method!=http.MethodGet{http.Error(w,"Method not allowed",http.StatusMethodNotAllowed);return}
+  w.Header().Set("Content-Type","text/html; charset=utf-8")
+  w.Header().Set("Cache-Control","no-store")
+  w.Header().Set("X-Content-Type-Options","nosniff")
+  w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; connect-src 'self'")
+  _,_=w.Write([]byte(nativeRelayHTML))
+ })
  router.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
   if (r.URL.Path!="/"&&r.URL.Path!="/index.htm")||r.Method!=http.MethodGet {http.NotFound(w,r);return}
   w.Header().Set("Cache-Control","no-store")
