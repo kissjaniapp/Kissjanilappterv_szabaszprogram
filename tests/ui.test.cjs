@@ -121,3 +121,26 @@ test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átí
  assert.doesNotMatch(html,/data-key="xprgHeaderMode"/);
  assert.doesNotMatch(html,/data-key="xprgFolder"/);
 });
+
+test('az alapértelmezett bútor anyagszíne Freya, nem a korábban elírt Feya',()=>{
+ assert.match(html,/materialColor:'Freya'/);
+ assert.equal((html.match(/materialColor:'Freya'/g)||[]).length,2,
+   'Az új bútor és az új projekt azonos alapanyagot kap');
+ assert.doesNotMatch(html,/materialColor:'Feya'/);
+ assert.match(html,/f\.materialColor\|\|'Freya'/);
+});
+test('a régi Feya beállítás kizárólag Freyára javul, az egyéb anyagok érintetlenek',()=>{
+ const from=html.indexOf('function normalizeFurnitureMeta(');
+ const to=html.indexOf('\n  function normalizeFurnitureSizes(',from);
+ assert.ok(from>0&&to>from);
+ const normalize=vm.runInNewContext('('+html.slice(from,to).trim()+')');
+ const furniture=[
+   {materialColor:'Feya'}, {materialColor:'Freya'},
+   {materialColor:'Tölgy'}, {materialColor:'Fehér tölgy'},
+   {materialColor:'Onixszürke'}
+ ];
+ normalize(furniture,{labelMaterial:''});
+ assert.deepEqual(furniture.map(f=>f.materialColor),
+   ['Freya','Freya','Tölgy','Fehér tölgy','Onixszürke']);
+ assert.match(html,/if\(corrected\)localStorage\.setItem\(libraryKey,JSON\.stringify\(library\)\)/);
+});

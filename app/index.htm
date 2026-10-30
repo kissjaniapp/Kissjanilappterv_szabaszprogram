@@ -302,6 +302,9 @@
     for(const f of furnitures){
       if(f.destination==null)f.destination=String(project.labelCompany||'');
       if(f.materialColor==null)f.materialColor=String(project.labelMaterial||'');
+      // A korábbi alapanyag-elnevezésben a Feya elírás volt.
+      // Csak a pontosan egyező téves értéket javítjuk; egyéb dekorok érintetlenek.
+      if(String(f.materialColor||'').trim()==='Feya')f.materialColor='Freya';
     }
   }
   function normalizeFurnitureSizes(furnitures){
@@ -326,6 +329,19 @@
   }
   normalizeEdgeSettings(state.furnitures);
   normalizeFurnitureMeta(state.furnitures,state);
+  // A mentett bútorválasztóban is frissítsük a régi alapértéket, különben
+  // az export előtt a projektkártya továbbra is a téves anyagszínt mutatná.
+  try{
+    let corrected=false;
+    for(const entry of library){
+      for(const furniture of entry.data.furnitures||[]){
+        if(String(furniture.materialColor||'').trim()==='Feya'){
+          furniture.materialColor='Freya';corrected=true;
+        }
+      }
+    }
+    if(corrected)localStorage.setItem(libraryKey,JSON.stringify(library));
+  }catch(e){console.warn('A korábbi anyagszín javítása nem sikerült:',e);}
   normalizeFurnitureSizes(state.furnitures);
   normalizeLabelSettings(state);
   if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
@@ -347,7 +363,7 @@
   }
   function freshProject(){
     Object.assign(state,defaultState());
-    const f={id:uuid(),name:'',destination:'',materialColor:'Feya',w:1000,ht:910,d:600,t:18,s:0,
+    const f={id:uuid(),name:'',destination:'',materialColor:'Freya',w:1000,ht:910,d:600,t:18,s:0,
       qty:1,partsOpen:false,parts:[]};
     state.furnitures.push(f);state.selectedFurniture=f.id;
     currentProjectId=uuid();
@@ -379,7 +395,7 @@
         const fs=entry.data.furnitures||[];
         const cards=fs.length?fs.map(f=>'<div class="library-row">'+
           '<div class="library-info"><strong>'+h(f.name||'Névtelen bútor')+'</strong>'+
-          '<div class="small muted">'+h(f.destination||'Nincs megadott célhely')+' · '+h(f.materialColor||'Feya')+
+          '<div class="small muted">'+h(f.destination||'Nincs megadott célhely')+' · '+h(f.materialColor||'Freya')+
           ' · '+h(f.w)+' × '+h(f.ht)+' × '+h(f.d)+' mm · '+(f.parts?.length||0)+' alkatrészsor</div></div>'+
           '<button class="btn primary library-open" data-action="open-saved-project" data-project="'+h(entry.id)+'" data-furniture="'+h(f.id)+'">Megnyitás</button>'+
           '</div>').join(''):'<div class="muted small">Üres projekt</div>';
@@ -1990,7 +2006,7 @@
       }
     }
     else if(action==='page'){state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});}
-    else if(action==='new-furniture'){const f={id:uuid(),name:'',destination:'',materialColor:'Feya',w:1000,ht:910,d:600,t:18,s:0,qty:1,partsOpen:false,parts:[]};state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
+    else if(action==='new-furniture'){const f={id:uuid(),name:'',destination:'',materialColor:'Freya',w:1000,ht:910,d:600,t:18,s:0,qty:1,partsOpen:false,parts:[]};state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
       if(!f)return;

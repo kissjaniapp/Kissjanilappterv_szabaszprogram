@@ -317,3 +317,7 @@ változatlan.
 - Új **„Hely kiválasztása és mentés”** gomb a Szabásterv oldalon. A Chromium natív `showDirectoryPicker({mode:'readwrite'})` ablakával választott mappában automatikusan létrehozza a **YYYY_MM_DD_Hova_keszul** könyvtárat. Ezen belül **egy közös XML .xMix és az xPrg almappa** található az összes táblaprogrammal; a Mix hivatkozásai **.\\xPrg\\** relatív útvonalra mutatnak. Ha a projektmappa már létezik, sorszámozott új mappát hoz létre; korábbi mentést nem ír felül.
 - A különálló **ZIP letöltése** gomb továbbra is használható, különösen akkor, ha a böngésző nem támogatja a natív mappaválasztót. A fájlstruktúrája megegyezik a mappába mentett változattal.
 - **Gépi megkötés:** az anyagszínnek meg kell egyeznie a WinCut anyagtörzsében elvárt azonosítóval. A gépen már sikeresen lefutott egyszerű próba nem garantálja az összes bonyolult vágás és eltérő anyagkódok kompatibilitását; először offline/szoftveres ellenőrzést kell végezni.
+
+## 2026-10-30 – az alapértelmezett anyagszín javítása
+
+A korábbi „Feya” elírás helyes alakja **Freya**. Minden új bútor és új projekt Freya anyagszínnel indul. A helyi mentésekben kizárólag a pontosan „Feya” értékű anyagszínt javítjuk automatikusan „Freya” értékre, a többi felhasználói anyagszín változatlan marad. A bútorválasztó mentett projektjei szintén frissülnek, és a gépi xPrg/xMix exportban az adott bútor javított anyagszíne jelenik meg.
