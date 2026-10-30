@@ -44,7 +44,9 @@ test('a Gatterka maximalizált, visszaállítható Windows-ablakban indul',()=>{
  assert.doesNotMatch(go,/--kiosk|--start-fullscreen/);
 });
 test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bekerült',()=>{
- assert.match(go,/startNativeBridge\(\)/);
+ assert.match(go,/startNativeBridge\(page\)/);
+ assert.match(go,/http:\/\/127\.0\.0\.1:/);
+ assert.match(native,/http\.ServeFile\(w,r,page\)/);
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
  assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
