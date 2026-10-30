@@ -2,6 +2,7 @@ package main
 
 import (
  "encoding/json"
+ "fmt"
  "net/http"
  "net/http/httptest"
  "os"
@@ -85,4 +86,33 @@ func TestNativeMachineSaveRequiresSessionToken(t *testing.T){
  response=httptest.NewRecorder()
  bridge.save(response,request)
  if response.Code!=http.StatusOK{t.Fatal("Native authorized save failed",response.Body.String())}
+}
+
+func TestNativeAppAndSaveShareSameLocalOrigin(t *testing.T){
+ page:=filepath.Join(t.TempDir(),"index.htm")
+ if err:=os.WriteFile(page,[]byte("<!doctype html><title>Gatterka</title>"),0600);err!=nil{t.Fatal(err)}
+ port,token,stop,err:=startNativeBridge(page)
+ if err!=nil{t.Fatal(err)}
+ defer stop()
+ origin:=fmt.Sprintf("http://127.0.0.1:%d",port)
+ resp,err:=http.Get(origin+"/")
+ if err!=nil{t.Fatal(err)}
+ _=resp.Body.Close()
+ if resp.StatusCode!=http.StatusOK{t.Fatalf("UI not served on native origin: %d",resp.StatusCode)}
+ req,err:=http.NewRequest(http.MethodPost,origin+"/native/save",strings.NewReader("{}"))
+ if err!=nil{t.Fatal(err)}
+ req.Header.Set("Origin",origin)
+ req.Header.Set("X-Gatterka-Token",token)
+ resp,err=http.DefaultClient.Do(req)
+ if err!=nil{t.Fatal(err)}
+ _=resp.Body.Close()
+ if resp.StatusCode!=http.StatusBadRequest{t.Fatalf("same-origin native request rejected: %d",resp.StatusCode)}
+ req,err=http.NewRequest(http.MethodPost,origin+"/native/save",strings.NewReader("{}"))
+ if err!=nil{t.Fatal(err)}
+ req.Header.Set("Origin","https://external.example")
+ req.Header.Set("X-Gatterka-Token",token)
+ resp,err=http.DefaultClient.Do(req)
+ if err!=nil{t.Fatal(err)}
+ _=resp.Body.Close()
+ if resp.StatusCode!=http.StatusForbidden{t.Fatalf("external origin accepted: %d",resp.StatusCode)}
 }
