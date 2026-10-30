@@ -53,7 +53,7 @@ test('az összetett táblánál is SchemaDoc a gyökér és X-U-F a részvágás
   assert.equal(out.complexBoards,1);
   const xml=out.files.find(([p])=>p==='Konyha/'+out.names[1])[1];
   assert.ok(xml.startsWith('<SchemaDoc>\r\n'));
-  assert.match(xml,/<Header NumFogliPacco="1.00" Descrizione="BLAP003" Spessore="18.00" Date="29\/10\/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00"/);
+  assert.match(xml,/<Header NumFogliPacco="1.00" Descrizione="BLAP003" Spessore="18.00" Date="29\/10\/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00"/);
   assert.match(xml,/<Material Tipologia="" Codice="BLAP003" \/>/);
   assert.match(xml,/<Pattern>\r\n/);
   assert.match(xml,/<Cut T="X" Dim="700.00" Rip="1" ID="4" \/>/);
@@ -144,30 +144,32 @@ test('a működő WinCut sorparaméterezéshez minden xPrg-hivatkozás ,1,0 vég
    .every(([,xml])=>xml.startsWith('<SchemaDoc>')));
 });
 
-// A gép alaplapméretei nem fordulhatnak meg a beadási iránnyal együtt.
-// A P parancs továbbra is az adott beadás irányában értelmezett méret.
-test('az xPrg fejléc Lunghezza/Larghezza méretei mindkét beadási iránynál állandók',()=>{
-  const sizes=[
-    {a:2800,b:2070,expectedLength:'2070.00',expectedWidth:'2800.00'},
-    {a:2070,b:2800,expectedLength:'2800.00',expectedWidth:'2070.00'}
-  ];
-  for(const size of sizes){
-    for(const feed of ['x','y']){
-      const bin=base();
-      bin.a=size.a;
-      bin.b=size.b;
-      bin.machine.feed=feed;
-      const out=generate([bin],'Teszt','BLAP003',5,'30/10/2026');
-      const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
-      const header=xml.match(/<Header\s+[^>]+\/>/);
-      assert.ok(header,'A Header hiányzik');
-      assert.match(header[0],new RegExp('Lunghezza="'+size.expectedLength+'"'));
-      assert.match(header[0],new RegExp('Larghezza="'+size.expectedWidth+'"'));
-      const actualP=xml.match(/<Cut T="P" Dim="([0-9.]+)"/);
-      assert.ok(actualP,'A kezdő P parancs hiányzik');
-      const expectedFeed=feed==='x'?size.b:size.a;
-      assert.equal(actualP[1],expectedFeed.toFixed(2),
-        'A P parancsot nem szabad a fejléc tájolásával együtt megváltoztatni');
-    }
+// A rajzon felül szereplő számnak egyeznie kell az xPrg Lunghezza
+// attribútummal. A bal oldalon szereplőnek a Larghezza attribútummal.
+test('xPrg fejléc = szabásrajz teteje / bal oldala minden gépállásban',()=>{
+ const sizes=[{a:2800,b:2070},{a:2070,b:2800}];
+ const svgBegin=html.indexOf('function svgBoardSize(');
+ const svgEnd=html.indexOf('\n  function svgBoard(',svgBegin);
+ assert.ok(svgBegin>=0&&svgEnd>svgBegin,'Nincs rajzméret-számoló');
+ for(const size of sizes){
+  for(const feed of ['x','y']){
+   const bin=base();
+   bin.a=size.a;bin.b=size.b;bin.machine.feed=feed;
+   const displaySize=vm.runInNewContext('('+html.slice(svgBegin,svgEnd).trim()+')',{
+     result:{cutAxis:feed},state:{cutDirection:feed}
+   })(bin);
+   assert.equal(displaySize.boardWidth,feed==='y'?size.b:size.a);
+   assert.equal(displaySize.boardHeight,feed==='y'?size.a:size.b);
+   const out=generate([bin],'Teszt','BLAP003',5,'30/10/2026');
+   const xml=out.files.find(([name])=>name.endsWith('.xPrg'))[1];
+   const header=xml.match(/<Header\s+[^>]+\/>/);
+   assert.ok(header);
+   assert.match(header[0],new RegExp('Lunghezza="'+displaySize.boardWidth.toFixed(2)+'"'));
+   assert.match(header[0],new RegExp('Larghezza="'+displaySize.boardHeight.toFixed(2)+'"'));
+   const actualP=xml.match(/<Cut T="P" Dim="([0-9.]+)"/);
+   assert.ok(actualP);
+   assert.equal(actualP[1],(feed==='x'?size.b:size.a).toFixed(2),
+     'A kezdő P parancs beadásirányhoz kötött méretét megtartjuk');
   }
+ }
 });

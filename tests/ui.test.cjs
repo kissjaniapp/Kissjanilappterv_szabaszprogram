@@ -40,3 +40,18 @@ test('a Gatterka felirat jelenik meg a régi Lapterv név helyett',()=>{
   assert.doesNotMatch(html,/<title>Lapterv/);
   assert.match(html,/lapterv-library-v1/);
 });
+
+test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
+ assert.match(html,/Szálirány kötelező/);
+ assert.doesNotMatch(html,/Szál kötelező/);
+});
+test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
+ assert.match(html,/data-key="xprgMaterialCode"/);
+ assert.match(html,/xprgMaterialCode:'BLAP003'/);
+ assert.match(html,/data-action="download-xprg-project"/);
+ const first=html.indexOf('async function downloadXprgProject()');
+ const last=html.indexOf('\n  function downloadCutList(',first);
+ const source=html.slice(first,last);
+ assert.doesNotMatch(source,/\bprompt\s*\(/);
+ assert.doesNotMatch(source,/\bconfirm\s*\(/);
+});

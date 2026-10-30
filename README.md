@@ -194,3 +194,11 @@ X/Y tengelyeihez kötött méreteket használja: `Lunghezza = bin.b` (Y),
 **nem cseréli fel a két fejlécmezőt**. A `<Cut T="P">` kezdőparancs
 változatlanul a kiválasztott beadási irány szerinti méretet használja.
 A WinCut-kompatibilitás ettől még gépi tesztet igényel.
+
+## 2026-10-30 – rajzi tájolású xPrg-fejléc és közvetlen ZIP-letöltés
+
+- Az .xPrg `Lunghezza` értéke **pontosan a szabásrajz tetején vízszintesen látható** táblaoldal. A `Larghezza` pedig a **bal oldali függőleges** táblaoldal. Normál, X gépállásnál: `Lunghezza = a`, `Larghezza = b`; Y gépállásban, amikor a rajz elfordul: `Lunghezza = b`, `Larghezza = a`. A `P` vágási parancs beadásirányfüggő számítása változatlan.
+- Az alkatrészlistában a korábbi `Szál kötelező` minden előfordulása `Szálirány kötelező` feliratra változott.
+- A Gatterka `XPrg + XMix letöltése (ZIP)` gomb megnyomása már **nem** jelenít meg két felugró párbeszédablakot: az anyagkód előre, a letöltőgomb mellett szerkeszthető; a letöltéshez külön megerősítés nem kell.
+- A korábbi mentésekben hiányzó anyagkód alapértelmezése a **példaként használt BLAP003**, amit a tényleges gépi anyagtörzsnek megfelelően ellenőrizni kell. A megadott anyagkód a projekttel mentődik.
+- A böngésző normál ZIP-letöltése indul (alapesetben Letöltések); a mentési helyről szóló böngészőbeállításra az alkalmazás nem tud garanciát adni. A gépi .012/.xPrg kompatibilitás továbbra sincs hitelesítve.
