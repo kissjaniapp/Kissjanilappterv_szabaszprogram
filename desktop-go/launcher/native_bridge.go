@@ -279,15 +279,26 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
  
 // Egyetlen böngészős űrlap-POST. Nem igényel file:// -> localhost fetch/CORS-t,
 // ezért a natív mentés olyan Edge/Chrome verzión is működik, amely tiltja a cross-origin fetch-et.
+// A mentés válasza felső szintű segédablakban jelenik meg, nem rejtett
+// iframe-ben. A visszajelzés az indító Gatterka ablakába is átkerül.
 func nativeFormResult(w http.ResponseWriter,id string,success bool,data interface{},err error){
  w.Header().Set("Content-Type","text/html; charset=utf-8")
  w.Header().Set("Cache-Control","no-store")
  w.Header().Set("X-Content-Type-Options","nosniff")
- w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'")
+ w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-ancestors 'none'")
  message:=map[string]interface{}{"type":"gatterka-form-result","id":id,"ok":success,"value":data}
- if err!=nil{message["error"]=err.Error()}
- jsonMessage,_:=json.Marshal(message) // Az encoding/json kódolja a <, > és & karaktereket.
- _,_=fmt.Fprintf(w,"<!doctype html><html><head><meta charset='utf-8'></head><body><script>window.parent.postMessage(%s, '*')</script></body></html>",jsonMessage)
+ visible:="A gépi fájlok mentése sikerült."
+ if err!=nil{
+  message["error"]=err.Error()
+  visible="A mentés nem sikerült: "+err.Error()
+ }
+ if success {
+  if item,ok:=data.(map[string]interface{});ok&&item["cancelled"]==true{
+   visible="A mappaválasztást megszakítottad."
+  }
+ }
+ jsonMessage,_:=json.Marshal(message)
+ _,_=fmt.Fprintf(w,`<!doctype html><html lang="hu"><head><meta charset="utf-8"><title>Gatterka – mentési eredmény</title></head><body style="font:15px Segoe UI,Arial,sans-serif;padding:24px;color:#17392f;background:#f5f7f4"><h2>Gatterka</h2><p>%s</p><p>Ablak bezárása után visszatérhetsz a Gatterkához.</p><script>if(window.opener&&!window.opener.closed){window.opener.postMessage(%s,'*');setTimeout(function(){window.close()},500);}</script></body></html>`,html.EscapeString(visible),jsonMessage)
 }
 func (bridge *nativeBridge) pickAndSave(w http.ResponseWriter,r *http.Request){
  if r.Method!=http.MethodPost {
