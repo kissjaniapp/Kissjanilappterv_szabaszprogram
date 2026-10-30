@@ -103,7 +103,7 @@ func waitForGatterkaWindow(probe func() bool,poll,initialGrace,closeGrace time.D
             absentSince=time.Time{}
         } else if seen {
             if absentSince.IsZero() {absentSince=time.Now()}
-            if time.Since(absentSince)>=3*time.Second {return}
+            if time.Since(absentSince)>=closeGrace {return}
         } else if time.Since(started)>=initialGrace {
             return
         }
