@@ -56,6 +56,6 @@ test('régi projektek 1 mm alapértéke és az eredeti 14:05 Szabásterv megmara
  assert.match(source,/function cuttingStepsView\(/);
  assert.match(source,/data-key="millDepth"/);
  assert.match(source,/0–2 mm között/);
- assert.match(source,/data-action="page" data-page="nesting"/);
+ assert.match(source,/\['nesting','04','Szabásterv'/);
  assert.doesNotMatch(source,/data-page="save"/);
 });
