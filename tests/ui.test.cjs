@@ -177,5 +177,5 @@ test('az Alkatrészek oldalon egyetlen Anyagkészlet tovább gomb marad',()=>{
  const end=html.indexOf('function stockView()',start);
  assert.ok(start>=0&&end>start);
  const view=html.slice(start,end);
- assert.equal((view.match(/data-action="page" data-page="stock">Anyagkészlet →<\\/button>/g)||[]).length,1);
+ assert.equal((view.match(/data-action="page" data-page="stock">Anyagkészlet →<\/button>/g)||[]).length,1);
 });
