@@ -5,7 +5,7 @@ const path=require('node:path');
 const assert=require('node:assert/strict');
 const vm=require('node:vm');
 const html=readFileSync(path.join(__dirname,'..','app','index.htm'),'utf8');
-test('a Lapterv és a grafikus táblaelrendezés megmaradt',()=>{
+test('a Gatterka és a grafikus táblaelrendezés megmaradt',()=>{
   assert.match(html,/function computeNesting\(/);
   assert.match(html,/function svgBoard\(/);
   assert.match(html,/function orderedLabels\(/);
@@ -28,8 +28,15 @@ test('a PNG alkatrészlista és az XPrg/XMix export látható, Excel már nincs'
   assert.doesNotMatch(html,/data-action="download-xprg-review"/);
   assert.match(html,/class="btn primary library-open"/);
 });
-test('beágyazott Lapterv JavaScript hibátlanul fordítható',()=>{
+test('beágyazott Gatterka JavaScript hibátlanul fordítható',()=>{
   const m=html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(m,'Nem található beágyazott szkript');
   assert.doesNotThrow(()=>new vm.Script(m[1],{filename:'app/index.htm'}));
+});
+
+test('a Gatterka felirat jelenik meg a régi Lapterv név helyett',()=>{
+  assert.match(html,/<title>Gatterka/);
+  assert.match(html,/brand-name">gatterka/);
+  assert.doesNotMatch(html,/<title>Lapterv/);
+  assert.match(html,/lapterv-library-v1/);
 });

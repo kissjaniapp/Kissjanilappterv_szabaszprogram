@@ -24,7 +24,7 @@ function makeHarness({approved=true,failed=false}={}){
   };
   const sandbox={
     state:{layoutMode:'machine',projectName:'Konyha',kerf:5},
-    result:{bins:[{machine:{strips:[{}]}}],failed:failed?[{}]:[]},
+    result:{machineReady:true,bins:[{machine:{strips:[{}]}}],failed:failed?[{}]:[]},
     getFurniture:()=>({name:'Konyha'}),
     prompt:()=> 'BLAP003',
     confirm:text=>{calls.confirms.push(text);return approved;},

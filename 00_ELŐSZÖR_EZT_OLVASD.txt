@@ -1,21 +1,14 @@
-LAPTERV — EGY LÉPÉSBEN FELTÖLTHETŐ GITHUB PROJEKT (0.2.0)
+GATTERKA — WINDOWS TELEPÍTŐ ÉS PROGRAM
 
-A projekt GitHub-repositoryja már létezik:
-https://github.com/kissjaniapp/Lapterv-Windows
+GitHub-projekt:
+https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 
-1. Nyisd meg a GITHUBRA_FELTOLTENDO mappát (EBBEN VAGY MOST).
-2. Nyomj Ctrl+A-t, hogy az ÖSSZES itteni fájl és mappa ki legyen jelölve.
-3. GitHub → Lapterv-Windows → Code → uploading an existing file vagy Add file / Upload files.
-4. Az egész kijelölést EGYSZERRE húzd a GitHub feltöltési területére.
-5. Ellenőrizd, hogy a GitHub a következő útvonalat mutatja:
-     .github/workflows/lapterv-windows.yml
-   (A .github egy mappa, ezt a helyén kell hagyni.)
-6. Kattints: Commit changes (main).
-7. Actions → Lapterv - Windows telepito automatikus epites.
-8. A sikeres futás Artifacts részénél töltsd le a telepítő ZIP-et.
+A main ágra mentett változások automatikus Windows-fordítást indítanak.
+A GitHub Actions -> Gatterka - Windows telepito automatikus epites
+sikeres futása után az Artifacts szekcióban található a
+Gatterka-Windows-Telepito-1.0.9 csomag.
 
-NEM kell almappákat megnyitni, NEM kell fájlokat áthelyezni,
-NEM kell egyesével feltöltögetni.
+Benne: Gatterka_Telepito_1.0.9_x64.exe és Gatterka_Portable_1.0.9.zip.
+A régi bútormentések a korábbi böngészőprofilban megmaradnak.
 
-FIGYELEM: A .xPrg export még nincs gépre hitelesítve.
-A Windows próbaverzió nem ad ki valódi végrehajtható .xPrg programot.
+FONTOS: az xPrg gépi parancsformátum még nincs valós gépen hitelesítve.

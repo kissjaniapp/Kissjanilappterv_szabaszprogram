@@ -1,4 +1,6 @@
-NEM KELL EGYENKENT FELTOLTENI!
-A NATIV_LAPTERV_V04 teljes mappat huzd be a GitHub Code -> Add file -> Upload files teruletere.
-Ne a ZIP-et huzd be. Ekkor a mappan beluli almappak helyesen jelennek meg.
-A build workflow-t a ChatGPT kozvetlenul hozzaadja a GitHub repositoryhoz.
+GATTERKA — a fájlokat már a GitHub-tárhelyen kezeljük.
+
+https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
+
+Nem kell kézzel régi Lapterv-csomagot feltölteni vagy a workflow-t újra létrehozni.
+A telepítő a GitHub Actions sikeres futásának Artifacts részéből tölthető le.

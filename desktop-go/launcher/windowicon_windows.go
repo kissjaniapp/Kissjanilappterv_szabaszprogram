@@ -1,6 +1,6 @@
 package main
 
-// A Lapterv.exe saját, beágyazott Windows-ikonját az Edge/Chrome
+// A Gatterka.exe saját, beágyazott Windows-ikonját az Edge/Chrome
 // --app ablakára is beállítjuk. A böngésző külön folyamat, az EXE
 // erőforrásikonja ettől önmagában még nem kerül az ablak fejlécére.
 import (

@@ -1,4 +1,4 @@
-name: Lapterv - Windows telepito automatikus epites
+name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   windows-exe:
-    name: Windows 64 bites Lapterv forditas
+    name: Windows 64 bites Gatterka forditas
     runs-on: windows-latest
     timeout-minutes: 25
     steps:
@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Lapterv ellenorzesek
+      - name: Gatterka ellenorzesek
         run: node --test
 
       - name: Windows EXE es telepito leforditasa
@@ -45,30 +45,30 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check -q pefile
           if ($LASTEXITCODE -ne 0) { throw 'PE ikon ellenorzo nem telepult' }
-          python tests/check-pe-icon.py Lapterv.ico desktop-go/assets/bin/Lapterv.exe desktop-go/assets/bin/Lapterv_Eltavolitas.exe dist/Lapterv_Telepito_1.0.9_x64.exe
-          if ($LASTEXITCODE -ne 0) { throw 'Hianyzik vagy elter a Lapterv ikon valamelyik EXE-ben' }
+          python tests/check-pe-icon.py Gatterka.ico desktop-go/assets/bin/Gatterka.exe desktop-go/assets/bin/Gatterka_Eltavolitas.exe dist/Gatterka_Telepito_1.0.9_x64.exe
+          if ($LASTEXITCODE -ne 0) { throw 'Hianyzik vagy elter a Gatterka ikon valamelyik EXE-ben' }
 
       - name: Hordozhato valtozat es ellenorzo hash
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $installer = 'dist/Lapterv_Telepito_1.0.9_x64.exe'
+          $installer = 'dist/Gatterka_Telepito_1.0.9_x64.exe'
           if (-not (Test-Path $installer)) { throw 'Nem keszult el a telepito EXE!' }
           New-Item -ItemType Directory -Force -Path 'dist/portable/app' | Out-Null
-          Copy-Item 'desktop-go/assets/bin/Lapterv.exe' 'dist/portable/Lapterv.exe'
+          Copy-Item 'desktop-go/assets/bin/Gatterka.exe' 'dist/portable/Gatterka.exe'
           Copy-Item 'desktop-go/assets/app/index.htm' 'dist/portable/app/index.htm'
-          Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Lapterv_Portable_1.0.9.zip' -Force
+          Compress-Archive -Path 'dist/portable/*' -DestinationPath 'dist/Gatterka_Portable_1.0.9.zip' -Force
           $hash = (Get-FileHash -Algorithm SHA256 $installer).Hash
-          "$hash  Lapterv_Telepito_1.0.9_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
+          "$hash  Gatterka_Telepito_1.0.9_x64.exe" | Set-Content -Encoding ascii 'dist/SHA256.txt'
           Write-Host "A telepito merete: $((Get-Item $installer).Length) byte"
 
       - name: Telepito es hordozhato program letoltheto atadasa
         uses: actions/upload-artifact@v4
         with:
-          name: Lapterv-Windows-Telepito-1.0.9
+          name: Gatterka-Windows-Telepito-1.0.9
           path: |
-            dist/Lapterv_Telepito_1.0.9_x64.exe
-            dist/Lapterv_Portable_1.0.9.zip
+            dist/Gatterka_Telepito_1.0.9_x64.exe
+            dist/Gatterka_Portable_1.0.9.zip
             dist/SHA256.txt
           if-no-files-found: error
           retention-days: 30

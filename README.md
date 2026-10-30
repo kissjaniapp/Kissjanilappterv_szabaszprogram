@@ -1,22 +1,22 @@
-# Lapterv 1.0.9 – Windowsos szabásztervező
+# Gatterka 1.0.9 – Windowsos szabásztervező
 
-Ez a **működő Lapterv program** hivatalos forráskódja:
+Ez a **működő Gatterka program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 
 ## Windows alkalmazás és telepítő
 
-A program Windows 10/11-re készül, saját `Lapterv.exe` indítóval és
-`Lapterv_Telepito_1.0.9_x64.exe` telepítővel. Offline fut. A teljes
+A program Windows 10/11-re készül, saját `Gatterka.exe` indítóval és
+`Gatterka_Telepito_1.0.9_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 **nem natív Windows Forms átírás**. Nem szükséges hozzá internetkapcsolat.
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
-`Lapterv - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Lapterv-Windows-Telepito-1.0.9` nevű **Artifacts** csomagban.
-Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Lapterv.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
-A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Lapterv ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
+`Gatterka - Windows telepito automatikus epites` folyamatból tölthető le,
+a `Gatterka-Windows-Telepito-1.0.9` nevű **Artifacts** csomagban.
+Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Gatterka.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
+A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Gatterka ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
 ## Indítás, helyi mentés és korábbi bútorok
 
@@ -26,19 +26,21 @@ vagy az **Új bútor létrehozása** gombbal lehet új projektet létrehozni.
 Az előző projekt nem nyílik meg automatikusan.
 
 A program az adatokat a helyi, Windowsos böngészőprofil tárhelyén őrzi.
-A profil könyvtára: `%LOCALAPPDATA%\Lapterv\BongeszoProfil`.
+A profil könyvtára a korábbi mentések megőrzéséhez változatlanul `%LOCALAPPDATA%\Lapterv\BongeszoProfil`.
 A böngészőmotor ezen belül tartja a `localStorage` adatokat:
 `lapterv-library-v1` (projektlista), és a korábbi
 `lapterv-project-v2` (régi mentés/migrációs kompatibilitás).
 
-A telepítő programfájljai a
-`%LOCALAPPDATA%\Programs\Lapterv` mappában vannak.
-Az **1.0.9-os telepítő automatikusan frissít**: felismeri a meglévő Laptervet,
-a saját böngészőprofiljával futó programablakokat bezárja, új programfájlokat
-előre elkészíti, majd a korábbi telepítést lecseréli. Sikertelen fájlcsere esetén
-megpróbálja visszaállítani a régi programfájlokat. **Nem kell kézzel eltávolítani**
-a korábbi kiadást. A mentett bútoradatokat és a helyi böngészőprofilt a frissítés
-nem törli.
+A Gatterka telepítő alapértelmezett mappája új telepítésnél
+`%LOCALAPPDATA%\Programs\Gatterka`.
+Ha a korábbi Lapterv már telepítve van, a biztonságos helybeni frissítés
+megtartja a meglévő `%LOCALAPPDATA%\Programs\Lapterv` mappát, viszont az
+új program, telepítő, eltávolító, Windows-parancsikon és a telepített
+alkalmazás neve már **Gatterka**. A régi asztali és Start menü parancsikont
+és a Lapterv eltávolítási bejegyzését sikeres átállás után törli.
+A frissítő a futó programot bezárja, az új fájlokat előre elkészíti,
+átnevezi a régieket biztonsági másolatnak, majd sikertelen fájlcsere
+esetén visszaállítja az eredetit. A helyi mentéseket nem törli.
 
 Az eltávolító a böngészőprofilt **szándékosan nem törli**,
 így a régi projektek újratelepítés után is megmaradnak.
@@ -113,7 +115,7 @@ elfogadja. A gép saját offline előnézete / importja szükséges.
 
 ### A szabásprogramok letöltése és az .xMix gépi hivatkozása
 
-A Lapterv **nem ír az X: meghajtóra**. A gépi szabásfájlok egyetlen
+A Gatterka **nem ír az X: meghajtóra**. A gépi szabásfájlok egyetlen
 `<bútor neve>_XPRG_XMIX_OFFLINE.zip` csomagban, szabványos
 **böngészős letöltésként** készülnek. A böngésző alapértelmezett
 célja a **Letöltések** mappa; ha a felhasználó a böngészőben a
@@ -142,3 +144,12 @@ szakmai ellenőrzés szükséges.
 - Alapbeállítás: 5 mm fűrészrés és 12 mm szélezés. A korábban mentett projektek egyedi beállításait nem írja felül.
 - Az anyagtakarékos tervből is kérhető az eredeti formátummintát követő, táblánkénti `.xPrg` + `.xMix` offline ZIP.
 - Az `.xPrg` valódi vezérlőn való végrehajtása **nem hitelesített**: a P/RY/Y/RX/X/U/F parancsok gépspecifikus értelmezése, az U és a kötegelt vágás külön offline gépi tesztet igényel. A sikeres GitHub-teszt nem helyettesíti a vezérlő ellenőrzését.
+
+## Gatterka névváltás (2026-10-30)
+
+A Windows EXE, telepítő, eltávolító, Start menü/asztali ikon és felület
+elnevezése Gatterka. A korábbi `lapterv-library-v1` és
+`lapterv-project-v2` adatkulcsok **szándékosan változatlanok**,
+mert átnevezésük a mentett bútorok látszólagos eltűnését okozná.
+Az alkalmazás ugyanazt a régi böngészőprofilt használja.
+A GitHub-tárhely URL-je és a belső workflow-fájl neve változatlan.

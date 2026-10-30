@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#17392f">
   <meta name="description" content="Bútorszériák, képletes alkatrészjegyzék, anyagkészlet és szálirányos nesting egy helyen.">
-  <title>Lapterv — Bútoralkatrész és nesting tervező</title>
+  <title>Gatterka — Bútoralkatrész és nesting tervező</title>
   <style>
     :root { --pine:#17392f; --pine2:#245144; --leaf:#dcece4; --orange:#c86b42; --orange-pale:#fff0e7; --ink:#23322c; --muted:#77837b; --line:#e4e9e4; --bg:#f5f7f4; --white:#fff; --shadow:0 5px 20px rgba(28,54,40,.045); --radius:17px; }
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:Inter,"Segoe UI",Arial,sans-serif;color:var(--ink);background:var(--bg);font-size:14px}button,input,select{font:inherit}button{cursor:pointer}button:disabled{opacity:.5;cursor:not-allowed}input,select{width:100%;background:#fff;border:1px solid #dbe3dc;border-radius:9px;padding:10px 11px;min-width:0;color:var(--ink);outline:none;transition:border-color .15s,box-shadow .15s}input:focus,select:focus{border-color:#5d987e;box-shadow:0 0 0 3px #deeee5}input[type=number]{font-variant-numeric:tabular-nums}input[type=checkbox]{accent-color:var(--pine2);width:16px;height:16px;box-shadow:none}label{display:block;font-size:12px;font-weight:700;color:#596a60;margin-bottom:7px}h1,h2,h3,p{margin-top:0}h1{font-size:29px;letter-spacing:-.9px;line-height:1.2;margin-bottom:8px}h2{font-size:19px;letter-spacing:-.45px;margin-bottom:6px}h3{font-size:15px;margin-bottom:5px}p{line-height:1.55}.muted{color:var(--muted)}.tiny{font-size:11px}.small{font-size:12px}.num{font-variant-numeric:tabular-nums}.app{min-height:100vh;display:grid;grid-template-columns:254px minmax(0,1fr)}.sidebar{background:var(--pine);color:#eaf4ed;padding:28px 16px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;min-height:680px}.brand{display:flex;align-items:center;gap:11px;padding:1px 13px 33px}.brand-logo{height:37px;width:37px;border-radius:10px;background:#e5efe8;color:var(--pine);display:grid;place-items:center;font-size:20px;font-weight:900}.brand-name{font-size:20px;font-weight:800;letter-spacing:-1px}.brand-sub{font-size:10px;letter-spacing:1.7px;color:#8eafa0;margin-top:2px}.side-title{color:#89a99b;font-size:10px;letter-spacing:1.5px;font-weight:800;padding:0 14px;margin-bottom:14px}.navbtn{background:transparent;border:0;width:100%;text-align:left;color:#bed2c7;padding:13px 13px;border-radius:10px;display:flex;gap:12px;align-items:center;font-weight:650;margin-bottom:5px}.navbtn:hover{background:#25483c;color:white}.navbtn.active{background:#e3f0e8;color:var(--pine);box-shadow:0 2px 10px #0d2e251b}.navicon{width:23px;text-align:center;font-size:17px}.sidebar-foot{margin-top:auto;padding:17px 14px 8px;border-top:1px solid #3d5d50;color:#a8c2b4}.sidebar-foot strong{display:block;color:#e6f2eb;margin-bottom:5px}.sidebar-foot .tiny{line-height:1.5}.side-foot-actions{display:flex;gap:7px;margin-top:16px}.side-foot-actions button{flex:1;background:#295446;border:1px solid #43695b;color:#e9f5ee;border-radius:9px;padding:9px 5px;font-size:11px;font-weight:700}.side-foot-actions button:hover{background:#3b6556}.main{min-width:0;padding:0 39px 70px;max-width:1740px;width:100%;margin:auto}.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:20px}.crumb{display:flex;align-items:center;gap:10px;color:#839087;font-size:12px}.crumb b{color:#3f594a}.status{display:flex;align-items:center;gap:8px;color:#638273;font-size:12px}.dot{height:7px;width:7px;border-radius:100%;background:#4a9c71}.avatar{width:34px;height:34px;border-radius:50%;background:#dfebe4;color:#385945;display:grid;place-items:center;font-weight:800;margin-left:10px}.intro{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:32px 0 24px}.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.7px;color:var(--orange);margin-bottom:9px}.intro p{color:var(--muted);margin:0;max-width:730px}.actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}.btn{border-radius:10px;padding:11px 15px;border:1px solid #dce5df;background:#fff;color:#355046;display:inline-flex;justify-content:center;align-items:center;gap:8px;font-weight:750;white-space:nowrap;box-shadow:0 1px 2px #1b43321a}.btn:hover{background:#f8fbf8;border-color:#afc6b8}.btn.primary{color:#fff;background:var(--pine);border-color:var(--pine)}.btn.primary:hover{background:#245244}.btn.orange{background:var(--orange);color:#fff;border-color:var(--orange)}.btn.orange:hover{background:#b65b35}.btn.soft{background:#edf5ef;border-color:#e5eee8}.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}.btn.danger{color:#ad4e44}.btn.sm{font-size:12px;padding:8px 11px}.btn.icon{padding:8px;width:34px;height:34px}
@@ -66,10 +66,10 @@
 <body>
 <div class="app">
   <main class="main">
-    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">lapterv<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button></div></header>
+    <header class="topbar"><div class="brand"><div class="brand-logo">▥</div><div><div class="brand-name">gatterka<span style="color:#d69b72">.</span></div><div class="brand-sub">BÚTOR • SZABÁSTERV • WINDOWS</div></div></div><div class="top-actions"><span class="status"><span class="dot"></span> Saját gépen mentve</span><button class="btn sm" data-action="library-home">▤ Bútorválasztó</button></div></header>
     <nav id="top-steps" aria-label="Munkafolyamat lépései"></nav>
     <div id="content"></div>
-    <div class="footer">Lapterv · Windowsos szabásztervező · Az optimalizálás heurisztikus; a vágási tervet gyártás előtt ellenőrizd.</div>
+    <div class="footer">Gatterka · Windowsos szabásztervező · Az optimalizálás heurisztikus; a vágási tervet gyártás előtt ellenőrizd.</div>
   </main>
 </div>
 <input class="file-input" type="file" id="import-input" accept="application/json,.json">
@@ -209,7 +209,7 @@
   }
   function projectLibraryView(){
     const items=library.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
-    return '<section class="intro"><div><div class="eyebrow">LAPTERV / BÚTORVÁLASZTÓ</div>'+
+    return '<section class="intro"><div><div class="eyebrow">GATTERKA / BÚTORVÁLASZTÓ</div>'+
       '<h1>Melyik bútort szeretnéd megnyitni?</h1>'+
       '<p>Indításkor nem nyitjuk meg automatikusan az előző munkát. Válassz az elmentett bútorok közül, vagy hozz létre újat. Az adatok a számítógépen maradnak.</p></div>'+
       '<div class="actions"><button class="btn primary" data-action="create-project">＋ Új bútor létrehozása</button></div></section>'+
@@ -1124,7 +1124,7 @@
       ctx.fillStyle='#ffffff';ctx.fillRect(0,0,width,canvas.height);
       ctx.fillStyle='#17392f';ctx.fillRect(0,0,width,172);
       ctx.fillStyle='#dcece4';ctx.font='700 22px "Segoe UI",Arial,sans-serif';
-      ctx.fillText('LAPTERV  /  SZABÁSZTERVEZŐ',pad,50);
+      ctx.fillText('GATTERKA  /  SZABÁSZTERVEZŐ',pad,50);
       ctx.fillStyle='#ffffff';ctx.font='700 49px "Segoe UI",Arial,sans-serif';
       ctx.fillText('ALKATRÉSZLISTA',pad,120);
       ctx.fillStyle='#587269';ctx.font='700 21px "Segoe UI",Arial,sans-serif';
@@ -1186,7 +1186,7 @@
   async function downloadPartsPng(){
     try{
       const pages=buildPartsPngPages(getParts());
-      const cabinet=fileName(getFurniture()?.name||state.projectName||'Lapterv')||'Lapterv';
+      const cabinet=fileName(getFurniture()?.name||state.projectName||'Gatterka')||'Gatterka';
       for(let i=0;i<pages.length;i++){
         const blob=await new Promise((resolve,reject)=>
           pages[i].toBlob(b=>b?resolve(b):reject(Error('Nem sikerült PNG-fájlt készíteni.')),'image/png'));
@@ -1222,7 +1222,7 @@
       ])
     ]:null;
     return {
-      kind:'Lapterv guillotine cutting instructions — pre-machine review',
+      kind:'Gatterka guillotine cutting instructions — pre-machine review',
       project:getFurniture()?.name||state.projectName,
       board:{name:bin.name,index:state.selectedBoard+1,x:bin.a,y:bin.b,thickness:bin.thickness,trim:bin.trim},
       kerf:Number(state.kerf),
@@ -1263,7 +1263,7 @@
     }
     const manifest={format:'lapterv-machine-review-v1',machineExecutable:false,
       note:'NEM xMix és NEM xPrg. Gépbe betölteni tilos. A vágások értelmezését az eredeti xPrg fájlokkal még igazolni kell.',
-      project:String(getFurniture()?.name||state.projectName||'Lapterv'),boards:all,
+      project:String(getFurniture()?.name||state.projectName||'Gatterka'),boards:all,
       settings:{kerfMm:Number(state.kerf),trimMm:Number(state.trim),cutDirection:state.cutDirection,layoutMode:state.layoutMode}};
     if(result.production){
       files.push(['gyartasi_sorrend_ellenorzes.json',JSON.stringify(result.production,null,2)]);
@@ -1271,7 +1271,7 @@
       manifest.pairedStripGroups=result.production.pairedGroups;
     }
     files.unshift(['manifest.json',JSON.stringify(manifest,null,2)]);
-    files.push(['OLVASSEL.txt','LAPTERV - GÉPI ELŐKÉSZÍTŐ CSOMAG\r\n\r\nEz NEM végrehajtható gépi program.\r\nNem tartalmaz xMix vagy xPrg fájlokat.\r\nA *.json állományokat kizárólag ellenőrzésre és a későbbi hiteles gépi export fejlesztéséhez használd.\r\nÉles gépi futtatás előtt igazolni kell a gép valódi xPrg parancsformátumát.\r\n']);
+    files.push(['OLVASSEL.txt','GATTERKA - GÉPI ELŐKÉSZÍTŐ CSOMAG\r\n\r\nEz NEM végrehajtható gépi program.\r\nNem tartalmaz xMix vagy xPrg fájlokat.\r\nA *.json állományokat kizárólag ellenőrzésre és a későbbi hiteles gépi export fejlesztéséhez használd.\r\nÉles gépi futtatás előtt igazolni kell a gép valódi xPrg parancsformátumát.\r\n']);
     downloadBlob(xlsxZip(files,'application/zip'),(fileName(manifest.project)||'lapterv')+'_gepi_elokeszites_NEM_gepi_program.zip');
   }
   // Kísérleti XML-állományok az eredeti XPrg/XMix minták megfigyelt alakjában.
@@ -1389,7 +1389,7 @@
         throw Error('Van ki nem táblásított alkatrész. Előbb javítsd a nestinget a teljes projekt mentéséhez.');
       const now=new Date();
       const date=String(now.getDate()).padStart(2,'0')+'/'+String(now.getMonth()+1).padStart(2,'0')+'/'+now.getFullYear();
-      const project=String(getFurniture()?.name||state.projectName||'Lapterv').trim()||'Lapterv';
+      const project=String(getFurniture()?.name||state.projectName||'Gatterka').trim()||'Gatterka';
       // A gép tényleges anyagtörzséből származó azonosító kell.
       // A felhasználói minta BLAP003, ez csak előre kitöltött javaslat.
       const enteredCode=prompt('Gépi anyagkód (a fűrész anyagtörzse szerint, a mintában BLAP003):','BLAP003');
@@ -1407,13 +1407,13 @@
       // Mentés másként ablakot. A böngésző szabványos letöltési módja
       // a felhasználó saját Letöltések-beállítását követi.
       const zip=xlsxZip(bundle.files,'application/zip');
-      const name=(fileName(project)||'Lapterv')+'_XPRG_XMIX_OFFLINE.zip';
+      const name=(fileName(project)||'Gatterka')+'_XPRG_XMIX_OFFLINE.zip';
       downloadBlob(zip,name);
     }catch(err){showNotice('Gépi ellenőrző csomag: '+(err?.message||'a mentés nem sikerült'));}
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;
-    const data=cutExportData(bin),prefix=fileName(data.project||'Lapterv')||'lapterv';
+    const data=cutExportData(bin),prefix=fileName(data.project||'Gatterka')||'lapterv';
     if(!data.cuts){showNotice('A szélezési méret nem lehet kisebb a vágásrésnél, ha gépi vágáslistát kérsz.');return;}
     const filename=`${prefix}_tabla_${state.selectedBoard+1}_vagaslista`;
     if(format==='json'){
@@ -1449,7 +1449,7 @@
     download('\uFEFF'+lines.map(row=>row.map(safe).join(';')).join('\r\n'),
       filename+'.csv','text/csv;charset=utf-8');
   }
-  function downloadBoardSvg(){const b=selectedBin();if(b)download(svgBoard(b),`lapterv_tabla_${state.selectedBoard+1}.svg`,'image/svg+xml;charset=utf-8');}
+  function downloadBoardSvg(){const b=selectedBin();if(b)download(svgBoard(b),`gatterka_tabla_${state.selectedBoard+1}.svg`,'image/svg+xml;charset=utf-8');}
   function downloadBlob(blob,filename){
     const url=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
@@ -1474,7 +1474,7 @@
         ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
         ctx.drawImage(img,0,0,canvas.width,canvas.height);
         canvas.toBlob(blob=>{
-          if(blob)downloadBlob(blob,`lapterv_tabla_${index}.${ext}`);
+          if(blob)downloadBlob(blob,`gatterka_tabla_${index}.${ext}`);
           else showNotice(`A ${ext.toUpperCase()} kép mentése nem sikerült. Próbáld az SVG mentést.`);
         },mime);
       }catch{showNotice(`A ${ext.toUpperCase()} kép mentése nem sikerült. Próbáld az SVG mentést.`);}
@@ -1598,7 +1598,7 @@
     if(!popup){showNotice('A böngésző blokkolta a nyomtatóablakot. Engedélyezd a felugró ablakokat.');return;}
     popup.document.open();
     popup.document.write('<!doctype html><html lang="hu"><head><meta charset="utf-8">'+
-      '<title>'+h(getFurniture()?.name||state.projectName||'Lapterv')+' · alkatrészmatricák</title>'+
+      '<title>'+h(getFurniture()?.name||state.projectName||'Gatterka')+' · alkatrészmatricák</title>'+
       '<style>@page{size:A4;margin:0}*{box-sizing:border-box}body{margin:0;padding:0;background:#fff}'+
       '.sheet{width:210mm;height:297mm;break-after:page;page-break-after:always;overflow:hidden}'+
       '.sheet svg{width:210mm;height:297mm;display:block}.sheet:last-child{break-after:auto;page-break-after:auto}'+
@@ -1612,7 +1612,7 @@
     if(!orderedLabels().length){showNotice('Előbb készíts nesting tervet a matricákhoz.');return;}
     try{
       const pages=labelPages().pages,files=[];
-      const project=fileName(getFurniture()?.name||state.projectName||'Lapterv')||'Lapterv';
+      const project=fileName(getFurniture()?.name||state.projectName||'Gatterka')||'Gatterka';
       for(let page=0;page<pages.length;page++){
         const svgUrl=URL.createObjectURL(new Blob([pages[page]],{type:'image/svg+xml;charset=utf-8'}));
         try{
@@ -1646,7 +1646,7 @@
     if(!result?.bins?.length)return;
     const margin=60,width=Math.max(...result.bins.map(b=>svgBoardSize(b).width))+2*margin;let y=75;
     const body=result.bins.map((bin,i)=>{const inner=svgBoard(bin).replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'');const {width:w,height}=svgBoardSize(bin);const section=`<text x="${margin}" y="${y-20}" font-family="Arial" font-weight="700" font-size="30" fill="#234335">Tábla ${i+1}: ${h(bin.name)}</text><svg x="${margin}" y="${y}" width="${w}" height="${height}" viewBox="0 0 ${w} ${height}">${inner}</svg>`;y+=height+90;return section;}).join('');
-    download(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${y}" width="${width}" height="${y}"><rect width="100%" height="100%" fill="white"/>${body}</svg>`,'lapterv_osszes_tabla.svg','image/svg+xml;charset=utf-8');
+    download(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${y}" width="${width}" height="${y}"><rect width="100%" height="100%" fill="white"/>${body}</svg>`,'gatterka_osszes_tabla.svg','image/svg+xml;charset=utf-8');
   }
   document.addEventListener('click',e=>{
     const el=e.target.closest('[data-action]');if(!el)return;
@@ -1686,7 +1686,7 @@
     else if(action==='select-board'){state.selectedBoard=Number(el.dataset.index);render();}
     else if(action==='clear-notice'){notice='';render();}
     else if(action==='export-json'){
-      const title=String(getFurniture()?.name||state.projectName||'Lapterv').trim();
+      const title=String(getFurniture()?.name||state.projectName||'Gatterka').trim();
       download(JSON.stringify({...state,projectName:title,active:'furniture'},null,2),
         `${fileName(title)||'lapterv'}_projekt.json`,'application/json');
     }

@@ -1,4 +1,4 @@
-// Lapterv Windows desktop launcher using installed Edge/Chrome engine (offline UI).
+// Gatterka Windows desktop launcher using installed Edge/Chrome engine (offline UI).
 package main
 
 import (
@@ -15,7 +15,7 @@ import (
 var version = "1.0.9"
 
 func message(s string) {
-    title, _ := syscall.UTF16PtrFromString("Lapterv " + version)
+    title, _ := syscall.UTF16PtrFromString("Gatterka " + version)
     body, _ := syscall.UTF16PtrFromString(s)
     syscall.NewLazyDLL("user32.dll").NewProc("MessageBoxW").Call(0, uintptr(unsafe.Pointer(body)), uintptr(unsafe.Pointer(title)), 0x40)
 }
@@ -44,7 +44,7 @@ func main(){
     if err != nil { message("Nem található az alkalmazás elérési útja.\n"+err.Error()); return }
     root := filepath.Dir(exe)
     page := filepath.Join(root,"app","index.htm")
-    if _,err := os.Stat(page); err != nil {message("Hiányzik az alkalmazás fájlja:\n"+page+"\nTelepítsd újra a Laptervet.");return}
+    if _,err := os.Stat(page); err != nil {message("Hiányzik az alkalmazás fájlja:\n"+page+"\nTelepítsd újra a Gatterkaet.");return}
     page, _ = filepath.Abs(page)
     if path,found:=firstBrowser();found {
         local := os.Getenv("LOCALAPPDATA")
@@ -53,7 +53,7 @@ func main(){
         _ = os.MkdirAll(userDataDir, 0700)
         cmd:=exec.Command(path,"--app="+fileURL(page),"--user-data-dir="+userDataDir,"--no-first-run","--window-size=1440,900")
         if err=cmd.Start();err==nil {
-            // Az alkalmazásablak ikonja is Lapterv legyen, ne Edge/Chrome.
+            // Az alkalmazásablak ikonja is Gatterka legyen, ne Edge/Chrome.
             setRunningWindowIcon(cmd.Process.Pid)
             _=cmd.Process.Release()
             return
@@ -62,7 +62,7 @@ func main(){
     // Fallback: any registered system browser, retains normal browser UI.
     cmd:=exec.Command("rundll32.exe","url.dll,FileProtocolHandler",fileURL(page))
     if err=cmd.Start();err!=nil {
-        message("Nem tudtam elindítani a Laptervet.\n"+err.Error()+"\nNyisd meg közvetlenül ezt a fájlt:\n"+page)
+        message("Nem tudtam elindítani a Gatterkaet.\n"+err.Error()+"\nNyisd meg közvetlenül ezt a fájlt:\n"+page)
     }
     _=fmt.Sprint(strings.TrimSpace(version)) // reserved version marker
 }

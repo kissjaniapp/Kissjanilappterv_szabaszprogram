@@ -5,9 +5,11 @@ const {readFileSync}=require('node:fs');
 const path=require('node:path');
 const go=readFileSync(path.join(__dirname,'..','desktop-go','installer','main.go'),'utf8');
 
-test('a telepítő felismeri a korábbi Laptervet és frissítési párbeszédet mutat',()=>{
+test('a telepítő felismeri a korábbi Gatterkát és frissítési párbeszédet mutat',()=>{
  assert.match(go,/func previousInstalled\(root string\)/);
  assert.match(go,/func installedVersion\(\)/);
+ assert.match(go,/func chooseRoot\(local string\)/);
+ assert.match(go,/cleanupLegacyIdentity\(\)/);
  assert.match(go,/if updating\s*\{/);
  assert.match(go,/const version = "\d+\.\d+\.\d+"/);
 });
@@ -19,11 +21,19 @@ test('a fájlfrissítés staged, mentett és visszaállítható',()=>{
  assert.match(go,/retryRename\(backup,root\)/);
  assert.match(go,/os\.RemoveAll\(backup\)/);
 });
-test('a telepítő a dedikált Lapterv böngészőprofilt ismeri fel, nem törli',()=>{
- assert.match(go,/func stopLapterv\(root,local string\)/);
+test('a telepítő a dedikált Gatterka böngészőprofilt ismeri fel, nem törli',()=>{
+ assert.match(go,/func stopGatterka\(root,local string\)/);
  assert.match(go,/"Lapterv","BongeszoProfil"/);
  assert.match(go,/Get-CimInstance Win32_Process/);
  assert.doesNotMatch(go,/RemoveAll\(profile\)/);
  assert.doesNotMatch(go,/Remove-Item.*BongeszoProfil/);
  assert.match(go,/A MENTETT BUTOROK ES A HELYI PROJEKTEK MEGMARADNAK/);
+});
+
+test('a Gatterka névvel települ, de felismeri az előző Lapterv.exe fájlt',()=>{
+ assert.match(go,/"Gatterka.exe"/);
+ assert.match(go,/"Lapterv.exe"/);
+ assert.match(go,/"Gatterka.lnk"/);
+ assert.match(go,/"DisplayName","Gatterka"/);
+ assert.match(go,/func cleanupLegacyIdentity\(\)/);
 });

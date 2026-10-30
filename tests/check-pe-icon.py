@@ -47,7 +47,7 @@ def pe_icon_images(file):
 
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        sys.exit("Usage: check-pe-icon.py Lapterv.ico launcher.exe installer.exe ...")
+        sys.exit("Usage: check-pe-icon.py Gatterka.ico launcher.exe installer.exe ...")
     expected = ico_images(sys.argv[1])
     for path in sys.argv[2:]:
         got = pe_icon_images(path)

@@ -7,11 +7,11 @@ const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
 const begin=html.indexOf('  const STANDARD_BOARD=');
 const end=html.indexOf('  // Gyártási sorrend:',begin);
-const makeStripPlan=vm.runInNewContext('(function(){\\n'+html.slice(begin,end)+'\\nreturn makeStripPlan;\\n})()'.replace(/\\\\n/g,'\\n'),{
+const makeStripPlan=vm.runInNewContext('(function(){'+String.fromCharCode(10)+html.slice(begin,end)+String.fromCharCode(10)+'return makeStripPlan;'+String.fromCharCode(10)+'})()',{
   state:{trim:12,kerf:5,boards:[{id:'tabla',name:'Feya',a:2070,b:2800,thickness:18,qty:1}]}
 });
 const scheduleStart=html.indexOf('function buildProductionSequence(bins){');
-const scheduleEnd=html.indexOf('\\n  function computeNesting(){',scheduleStart);
+const scheduleEnd=html.indexOf('function computeNesting(){',scheduleStart);
 const schedule=vm.runInNewContext('('+html.slice(scheduleStart,scheduleEnd)+')');
 function plan(){
   const parts={errors:[],total:3,rows:[{part:{id:'A',name:'Elem'},furniture:{name:'Feya',materialColor:'Feya'},qty:3,a:964,b:200,originalA:964,originalB:200,thickness:18,rot:false,edge:'0-0',edgeThickness:2,mill:false}]};
@@ -34,8 +34,9 @@ test('a gyártási számozás valóban a gép visszafelé vágó sorrendjét kö
   assert.equal(out.machineExecutable,false);
 });
 test('a gazdaságos módban is elérhető az ellenőrző projekt export',()=>{
-  assert.match(html,/\\['machine','economy'\\]\\.includes\\(state\\.layoutMode\\)/);
-  assert.match(html,/const cutOrderPanel=/);
-  assert.match(html,/kerf:5,trim:12,cutDirection/);
-  assert.match(html,/class="label">Anyagigény<\\/div>/);
+  assert.ok(html.includes("['machine','economy'].includes(state.layoutMode)"));
+  assert.ok(html.includes('const cutOrderPanel='));
+  assert.ok(html.includes('kerf:5,trim:12,cutDirection'));
+  assert.ok(html.includes('class="label">Anyagigény</div>'));
+
 });
