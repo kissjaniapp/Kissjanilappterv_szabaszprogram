@@ -1851,6 +1851,67 @@
       showNotice('ZIP letöltve. A kibontás helye: '+machineRootPath()+'\\'+new Date().getFullYear()+'-'+String(new Date().getMonth()+1).padStart(2,'0')+'-'+String(new Date().getDate()).padStart(2,'0')+' . Más mappába mentéshez válaszd a Windowsos mentést.');
     }catch(err){showNotice('Gépi projekt letöltése: '+(err?.message||'nem sikerült'));}
   }
+  // Az űrlap egyetlen POST kéréssel indítja a Windows mappaválasztóját
+  // és menti a teljes gépi csomagot. A file:// felületnek nincs szüksége
+  // cross-origin fetch-re, és megmarad a korábbi helyi projektadatbázis.
+  function nativePickAndSave(bundle){
+    if(!nativeBridge)throw Error('A mentéshez a telepített Windowsos Gatterka.exe fájlt kell elindítani.');
+    const frame=document.createElement('iframe');
+    frame.name='gatterka-machine-output-'+String(Date.now())+'-'+String(++machineRelaySequence);
+    frame.setAttribute('aria-hidden','true');
+    frame.tabIndex=-1;
+    frame.style.cssText='position:absolute;width:0;height:0;border:0;visibility:hidden;pointer-events:none';
+    document.body.appendChild(frame);
+    const id=frame.name;
+    const form=document.createElement('form');
+    form.method='POST';
+    form.enctype='application/x-www-form-urlencoded';
+    form.action=nativeBridge.url+'/native/pick-save';
+    form.target=id;
+    form.style.display='none';
+    const data={
+      id,
+      token:nativeBridge.token,
+      request:JSON.stringify({
+        cabinetFolder:bundle.cabinetFolder,
+        files:bundle.files.map(([path,content])=>({path,content}))
+      })
+    };
+    for(const [name,value] of Object.entries(data)){
+      const field=document.createElement('input');
+      field.type='hidden';
+      field.name=name;
+      field.value=value;
+      form.appendChild(field);
+    }
+    document.body.appendChild(form);
+    return new Promise((resolve,reject)=>{
+      let done=false;
+      let expiry=null;
+      function finish(error,value){
+        if(done)return;
+        done=true;
+        clearTimeout(expiry);
+        window.removeEventListener('message',receive);
+        form.remove();
+        frame.remove();
+        if(error)reject(error);
+        else resolve(value);
+      }
+      function receive(event){
+        if(event.source!==frame.contentWindow || event.origin!==nativeBridge.url)return;
+        const msg=event.data;
+        if(!msg||msg.type!=='gatterka-form-result'||msg.id!==id)return;
+        finish(msg.ok?null:Error(msg.error||'A gépi projekt mentése sikertelen.'),msg.value);
+      }
+      window.addEventListener('message',receive);
+      expiry=setTimeout(()=>finish(Error(
+        'A Windows mappamentő nem válaszolt. Ellenőrizd, hogy nem nyílt-e meg az ablak a Gatterka mögött.'
+      )),10*60*1000);
+      try{form.submit();}
+      catch(error){finish(error);}
+    });
+  }
   async function saveXprgToSelectedFolder(){
     const button=typeof document==='undefined'?null:document.querySelector('[data-action="save-xprg-folder"]');
     const status=typeof document==='undefined'?null:document.getElementById('machine-save-status');
@@ -1863,27 +1924,22 @@
     };
     if(button?.disabled)return;
     try{
-      if(!nativeBridge)throw Error('A közvetlen Windows-mappamentéshez a telepített Gatterka alkalmazást indítsd el.');
+      if(!nativeBridge)throw Error('A Windows mappaválasztóhoz a Gatterka.exe-t indítsd el, ne az index.htm oldalt külön.');
+      const bundle=machineExportBundle();
       if(button)button.disabled=true;
       if(status){
-        status.hidden=false;status.className='notice';
-        status.textContent='A célmappa kiválasztása következik…';
+        status.hidden=false;
+        status.className='notice';
+        status.textContent='A Windows célmappa-választó megnyitása…';
       }
-      const selected=await requestNativeMachine('choose',{initial:defaultXmixMachineRoot});
-      if(selected.cancelled){
+      const saved=await nativePickAndSave(bundle);
+      if(saved?.cancelled){
         if(status)status.hidden=true;
         return;
       }
-      if(!selected.path)throw Error('A Windows nem adta vissza a kijelölt mappa elérési útját.');
-      rememberMachineRoot(selected.path);
-      if(status)status.textContent='XMIX és XPRG fájlok mentése…';
-      const bundle=machineExportBundle();
-      const saved=await requestNativeMachine('save',{
-        cabinetFolder:bundle.cabinetFolder,
-        files:bundle.files.map(([path,content])=>({path,content}))
-      });
+      if(!saved?.path)throw Error('A Windows nem adta vissza a mentett projekt helyét.');
       feedback('Sikeres gépi mentés: '+saved.path+' · '+saved.programs+
-        ' XPRG és 1 XMIX. A MIX fájl a tényleges Windows-útvonalakat tartalmazza.');
+        ' XPRG és 1 XMIX. A MIX fájlban a tényleges Windows-útvonalak szerepelnek.');
     }catch(err){
       feedback('Windows gépi mentés sikertelen: '+(err?.message||'Ismeretlen hiba.'),true);
     }finally{
