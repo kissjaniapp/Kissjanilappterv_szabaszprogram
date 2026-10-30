@@ -1864,10 +1864,14 @@
   function nativePickAndSave(bundle){
     if(!nativeBridge)throw Error('A mentéshez a telepített Gatterka.exe-t kell elindítani.');
     const id='gatterka-machine-window-'+String(Date.now())+'-'+String(++machineRelaySequence);
-    const popup=window.open(nativeBridge.url+'/native/ready#'+encodeURIComponent(id),
-      id,'popup=yes,width=560,height=260,resizable=yes,scrollbars=yes');
+    const popup=window.open('about:blank',id,
+      'popup=yes,width=560,height=260,resizable=yes,scrollbars=yes');
     if(!popup)throw Error('A böngésző letiltotta a Gatterka mentési segédablakát. Engedélyezd a felugró ablakot.');
-    try{popup.focus();}catch{}
+    try{
+      popup.document.title='Gatterka – gépi mentés';
+      popup.document.body.textContent='Kapcsolódás a Gatterka helyi mentőszolgáltatásához…';
+      popup.focus();
+    }catch{}
     const form=document.createElement('form');
     form.method='POST';
     form.enctype='application/x-www-form-urlencoded';
@@ -1927,6 +1931,9 @@
       expiry=setTimeout(()=>finish(Error(
         'Nem érhető el a Gatterka helyi mentőszolgáltatása (127.0.0.1). A segédablakban megjelenő hibát ellenőrizd.'
       )),9000);
+      // Csak a message listener felállítása után indítjuk a navigációt.
+      try{popup.location.replace(nativeBridge.url+'/native/ready#'+encodeURIComponent(id));}
+      catch(error){finish(error);}
     });
   }
   async function saveXprgToSelectedFolder(){
