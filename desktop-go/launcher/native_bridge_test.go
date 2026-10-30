@@ -8,6 +8,7 @@ import (
  "path/filepath"
  "strings"
  "testing"
+ "time"
 )
 
 func nativeTestBundle() nativeSave {
@@ -32,7 +33,7 @@ func TestNativeMachineProjectPersistsAbsolutePaths(t *testing.T){
  req:=nativeTestBundle()
  full,err:=saveMachineFiles(root,req)
  if err!=nil{t.Fatal(err)}
- if full!=filepath.Join(root,"2026_10_30_Teszt"){t.Fatal("Wrong project folder:",full)}
+ if full!=filepath.Join(root,time.Now().Format("2006-01-02"),"2026_10_30_Teszt"){t.Fatal("Wrong project folder:",full)}
  data,err:=os.ReadFile(filepath.Join(full,"proba.xMix"))
  if err!=nil{t.Fatal(err)}
  mix:=string(data)
