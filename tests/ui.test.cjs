@@ -155,7 +155,7 @@ test('a WinCut Mix C:\\Gatterka és napi almappa útvonalat használ',()=>{
 
 test('a Windows mappaválasztó alapértelmezése C:\\Gatterka és a tényleges út kerül mentésre',()=>{
  assert.match(html,/function rememberMachineRoot\(value\)/);
- assert.match(html,/initial:defaultXmixMachineRoot/);
+ assert.match(html,/const defaultXmixMachineRoot='C:\\\\Gatterka'/);
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
  assert.match(html,/function requestNativeViaRelay\(action,payload\)/);
  assert.match(html,/gatterka-native-relay/);
