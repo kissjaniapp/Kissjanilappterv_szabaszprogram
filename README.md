@@ -153,3 +153,9 @@ elnevezése Gatterka. A korábbi `lapterv-library-v1` és
 mert átnevezésük a mentett bútorok látszólagos eltűnését okozná.
 Az alkalmazás ugyanazt a régi böngészőprofilt használja.
 A GitHub-tárhely URL-je és a belső workflow-fájl neve változatlan.
+
+## 2026-10-30 – Gatterka egyszerűsített nyomtatás és felület
+
+- Az alkatrészlista PNG-jén az élzárás összefoglalója megmarad, de az X1/X2/Y1/Y2 élhelyjelölések nem jelennek meg. Az élzárás működése változatlan.
+- A Nesting oldalon a számozott vágási sorrend részletes táblázata nem jelenik meg; a háttérszámítás és a gépi fájlexport tovább működik.
+- Az xMix fájl kötelező fejléce változatlan: `[Intestazione]`, `Descrizione=`, üres sor, `[Righe]`, `NumeroRighe=N`; a két táblát tartalmazó projektnél `NumeroRighe=2`.

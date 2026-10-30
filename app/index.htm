@@ -1019,21 +1019,12 @@
           </div>
         </div>
       </div>`:'';
-      // A ZIP táblánként külön xPrg fájlt, valamint egy közös xMix-et tartalmaz.
-      // A vágásokat a valós gépi menettel azonos sorrendben mutatjuk:
-      // előbb teljes táblás szélezés és sávozás, azután csíkonként visszaadás.
-      const stageNames={'head-trim':'Tábla szélezése','strip':'Csík leválasztása',
-        'cross-head-trim':'Visszaadott csík szélezése','cross-trim':'Csíkvég szélezése',
-        'cross':'Alkatrész hosszvágása','rip':'Alkatrész alábontása'};
-      const orderedCuts=b?.machine?b.cuts.filter(c=>Number.isInteger(c.boardOrder))
-        .slice().sort((a,z)=>a.boardOrder-z.boardOrder||a.order-z.order):[];
-      const cutOrderPanel=b?.machine?
-        `<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási sorrend · Tábla ${state.selectedBoard+1}</div><div class="panel-sub">Egész tábla szélezése → csíkok teljes leválasztása → csíkok visszaadása → készméretre vágás. A pozíciók a fűrész középvonalára vonatkoznak.</div></div><div class="actions"><button class="btn sm" data-action="download-cuts-csv">↓ Vágáslista CSV</button><button class="btn sm" data-action="download-cuts-json">↓ JSON</button></div></div><div class="panel-body"><div class="table-wrap"><table><thead><tr><th>#</th><th>Művelet</th><th>Csík</th><th>Irány</th><th>Pozíció (mm)</th><th>Kész méret (mm)</th></tr></thead><tbody>${orderedCuts.map(c=>`<tr><td><b>${c.boardOrder}</b></td><td>${h(stageNames[c.stage]||c.stage)}</td><td>${c.stripIndex||'–'}</td><td>${c.axis==='y'?'X':'Y'}</td><td><b>${nfmt(c.axis==='y'?c.x1:c.y1)}</b></td><td>${c.kind==='trim'?'Szélezés':nfmt(c.pieceSize)}</td></tr>`).join('')}</tbody></table></div><p class="muted small" style="margin:14px 0 0">Visszaadott csík esetén a mért pozíció a csík eredeti nulla pontjától értendő. Az azonos számmal jelölt, egymásra rakott csíkok közös vágást jelentenek (csak gépi ellenőrzés után). Ez az ellenőrző vágássorrend nem igazolja az .xPrg gépi futtathatóságát.</p></div></div>`:'';
+      // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
       const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Egy ZIP kerül a Letöltések közé: a bútormappában együtt van a .xMix és minden táblánkénti .xPrg.</div></div></div><div class="panel-body"><div class="toolbar"><span class="muted small">Nincs X: meghajtós közvetlen mentés. A megadott útvonal csak a .xMix fájl hivatkozásaiban szerepel. Az XPrg-k továbbra is nem hitelesített offline minták.</span><button class="btn primary" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ XPrg + XMix letöltése (ZIP)</button></div><div class="muted small" style="margin-top:12px"><strong>Csak megtekintésre vagy offline szimulációra.</strong> A gépi végrehajtás még nem hitelesített.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
-      body=stats+unfitted+boardPanel+cutOrderPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
+      body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
-    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A vágássorrend már táblánként megtekinthető; az .xPrg parancsok tényleges gépi működése továbbra is külön ellenőrzést igényel.</div>`;
+    return intro('03 / NESTING TERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body+`<div class="callout top-gap"><strong>Fontos:</strong> a kiosztás heurisztikus, nem garantáltan optimális. Gyártás előtt ellenőrizd a méreteket, a szálirányt, a befogási lehetőségeket és a ráhagyásokat. A vágássorrendet a program a háttérben számítja; az .xPrg parancsok tényleges gépi működése továbbra is külön ellenőrzést igényel.</div>`;
   }
   function render(){if(projectScreen==='library'){$('#top-steps').style.display='none';$('#content').innerHTML=projectLibraryView();return;}$('#top-steps').style.display='';renderNav();$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='stock'?stockView():nestingView());save();}
   function download(data,filename,mime){const blob=new Blob([data],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),2000);}
@@ -1147,13 +1138,10 @@
         ctx.fillText(format(r.originalA)+' × '+format(r.originalB),columns[1],y+42);
         ctx.fillText(String(r.qty),columns[2],y+42);
         ctx.font='21px "Segoe UI",Arial,sans-serif';
-        const labels=['x1','x2','y1','y2'].filter(k=>r.part.edgeSides?.[k])
-          .map(k=>k.toUpperCase()).join(', ');
         const edge=r.edge==='0-0'?'Nincs élzárás':
           r.edge+' · '+format(r.edgeThickness)+' mm'+(r.mill?' · előmarás':'');
-        ctx.fillText(edge,columns[3],y+30);
-        if(labels){ctx.font='19px "Segoe UI",Arial,sans-serif';
-          ctx.fillStyle='#597267';ctx.fillText(labels,columns[3],y+56);}
+        // Az X1/X2/Y1/Y2 azonosítók megmaradnak az alkatrész adataiban, de nem kerülnek a PNG-re.
+        ctx.fillText(edge,columns[3],y+42);
       });
       const fy=head+section.length*rowHeight+50;
       ctx.fillStyle='#17392f';ctx.font='700 24px "Segoe UI",Arial,sans-serif';
@@ -1368,9 +1356,9 @@
     // A Mix az X:\JANI\szabas_programmal\<butor_neve>\ útvonalra hivatkozik.
     // Az xMix és az összes xPrg a kicsomagolt ZIP egyetlen közös mappájában van.
     const winCutDirectory='X:\\JANI\\szabas_programmal\\'+cabinet+'\\';
-    const mix='[Intestazione]\r\n'+
-      'Descrizione=\r\n\r\n'+
-      '[Righe]\r\n'+
+    // Az xMix fejléc szerkezete állandó; a NumeroRighe mindig a tényleges táblaszám.
+    const mixHeader='[Intestazione]\r\nDescrizione=\r\n\r\n[Righe]\r\n';
+    const mix=mixHeader+
       'NumeroRighe='+names.length+'\r\n'+
       names.map((file,index)=>(index+1)+'='+winCutDirectory+file).join('\r\n')+
       '\r\n';

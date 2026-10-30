@@ -120,3 +120,12 @@ test('a megadott X: meghajtó csak a Mix-ben fordul elő, nem külön exportfáj
       'Hibás fájlban szerepel a gépi elérési út: '+path);
   }
 });
+
+test('fix Mix fejléc, NumeroRighe pontosan az összes táblaprogram száma',()=>{
+ for(const count of [1,2,4]){
+  const out=generate(Array.from({length:count},()=>base()),'Konyha','BLAP003',5,'30/10/2026');
+  const mix=out.files.find(([name])=>name.endsWith('.xMix'))[1];
+  assert.ok(mix.startsWith('[Intestazione]\\r\\nDescrizione=\\r\\n\\r\\n[Righe]\\r\\nNumeroRighe='+count+'\\r\\n'));
+  assert.equal(out.files.filter(([name])=>name.endsWith('.xPrg')).length,count);
+ }
+});

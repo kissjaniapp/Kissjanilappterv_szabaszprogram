@@ -40,7 +40,7 @@ test('PNG fejlécében az anyag és gyártási célhely; sorban készméret és 
   assert.equal(pages[0].width,1600);
   const text=pages[0].text.map(x=>x.str).join('\n');
   for(const expected of ['ALKATRÉSZLISTA','Feya','Kiskunfélegyháza',
-    'Oldallap 1','910 × 600','1-1 · 2 mm · előmarás','X1, Y2','Összesen: 2 db'])
+    'Oldallap 1','910 × 600','1-1 · 2 mm · előmarás','Összesen: 2 db'])
     assert.ok(text.includes(expected),'Nem jelenik meg: '+expected);
 });
 test('többoldalas PNG: nem vágja le a 100 sornál hosszabb alkatrészlistát',()=>{
@@ -56,4 +56,17 @@ test('hibás vagy üres alkatrészlistából nem ment félkész képet',()=>{
   const doc=mockDocument();
   assert.throws(()=>render({errors:['Hibás hossz'],rows:[part(1)]},doc),/Hibás hossz/);
   assert.throws(()=>render({errors:[],rows:[]},doc),/Nincs exportálható alkatrész/);
+});
+
+test('az X1/X2/Y1/Y2 élhely-jelölések nem szerepelnek a PNG szövegeiben',()=>{
+ const doc=mockDocument();
+ const rows=[part(1),part(2)];
+ rows[0].part.edgeSides={x1:true,x2:true,y1:true,y2:true};
+ render({errors:[],rows},doc);
+ const text=doc.canvases.flatMap(c=>c.text.map(x=>x.str));
+ for(const marker of ['X1','X2','Y1','Y2']){
+  assert.ok(!text.some(s=>new RegExp('^'+marker+'(?:,|$)').test(s)),
+    'A PNG-ben tiltott kód szerepel: '+marker);
+ }
+ assert.ok(text.includes('1-1 · 2 mm · előmarás'));
 });

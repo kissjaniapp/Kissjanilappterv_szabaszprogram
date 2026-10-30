@@ -35,7 +35,7 @@ test('a gyártási számozás valóban a gép visszafelé vágó sorrendjét kö
 });
 test('a gazdaságos módban is elérhető az ellenőrző projekt export',()=>{
   assert.ok(html.includes("['machine','economy'].includes(state.layoutMode)"));
-  assert.ok(html.includes('const cutOrderPanel='));
+  assert.ok(!html.includes('const cutOrderPanel='));
   assert.ok(html.includes('kerf:5,trim:12,cutDirection'));
   assert.ok(html.includes('class="label">Anyagigény</div>'));
 
