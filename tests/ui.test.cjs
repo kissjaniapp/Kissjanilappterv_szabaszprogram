@@ -62,6 +62,8 @@ test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
  assert.ok(start>=0&&end>start);
  const panel=html.slice(start,end);
  assert.match(panel,/data-action="save-xprg-folder"/);
+ assert.match(panel,/data-key="xmixMachineRoot"/);
+ assert.match(panel,/Gépi gyökérmappa/);
  assert.match(panel,/data-action="download-xprg-project"/);
  assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
  assert.doesNotMatch(panel,/data-key="xprgFolder"/);
@@ -143,4 +145,15 @@ test('a régi Feya beállítás kizárólag Freyára javul, az egyéb anyagok é
  assert.deepEqual(furniture.map(f=>f.materialColor),
    ['Freya','Freya','Tölgy','Fehér tölgy','Onixszürke']);
  assert.match(html,/if\(corrected\)localStorage\.setItem\(libraryKey,JSON\.stringify\(library\)\)/);
+});
+
+test('a WinCut Mix a megadott teljes X: gépi utat menti, nem csak a relatív xPrg nevet',()=>{
+ assert.match(html,/const defaultXmixMachineRoot='X:\\\\JANI\\\\szabas_programmal\\\\Legujabb_mentessel'/);
+ assert.match(html,/xmixMachineRoot:defaultXmixMachineRoot/);
+ assert.match(html,/data-key="xmixMachineRoot"/);
+ assert.match(html,/function machineRootPath\(\)/);
+ assert.match(html,/machineRootPath\(\)\+'\\\\'\+cabinet\+'\\\\xPrg\\\\'/);
+ assert.match(html,/String\(parent.name\)\.toLocaleLowerCase/);
+ assert.match(html,/machineExportBundle\(\{cabinetFolder:folderName\}\)/);
+ assert.match(html,/key==='xmixMachineRoot'/);
 });

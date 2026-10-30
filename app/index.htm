@@ -152,6 +152,7 @@
   const nfmt = value => Number(value).toLocaleString('hu-HU',{maximumFractionDigits:1});
   const pnum = value => Number(String(value).replace(',','.'));
   const paneNames = {furniture:'Bútor adatai',parts:'Alkatrészek',stock:'Anyagkészlet',nesting:'Szabásterv'};
+  const defaultXmixMachineRoot='X:\\JANI\\szabas_programmal\\Legujabb_mentessel';
 
   // A téma minden bútorprojektben azonos, külön felhasználói beállításként tárolva.
   const themeKey='gatterka-theme-v1';
@@ -249,6 +250,7 @@
     boards:[],
     kerf:5,trim:12,cutDirection:'auto',layoutMode:'machine',selectedBoard:0,
     xprgMaterialCode:'BLAP003',xprgFolder:'.\\xPrg\\',xprgHeaderMode:'sample',
+    xmixMachineRoot:defaultXmixMachineRoot,
     labelWidth:48.5,labelHeight:25.4,labelMarginX:8,labelMarginY:8.8,labelFormatV2:true
   });
   const parse = str => { try { return JSON.parse(str); } catch { return null; } };
@@ -1280,7 +1282,7 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A bútor anyagszíne automatikusan kerül a gépi fájlokba. A közös XML-es .xMix az összes tábla .xPrg programjára hivatkozik.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong> · ezt a bútoradatok első oldalán állíthatod.</span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Hely kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A kijelölt mappában automatikusan létrejön a dátummal és a bútor célhelyével elnevezett projektmappa, benne a közös .xMix és az xPrg almappa. A Mix relatív hivatkozása mindig az xPrg almappára mutat.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><div style="flex:2;min-width:290px"><label for="xmix-machine-root">Gépi gyökérmappa – teljes Windows-útvonal</label><input type="text" id="xmix-machine-root" data-scope="settings" data-key="xmixMachineRoot" value="${h(state.xmixMachineRoot??defaultXmixMachineRoot)}" autocomplete="off" spellcheck="false" aria-label="Gépi gyökérmappa teljes elérési útja" style="font-family:Consolas,monospace"></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mappa kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A mappaválasztóval a fenti <strong>gyökérmappát</strong> válaszd (pl. Legujabb_mentessel), ne a dátumos almappát. A böngésző nem adja át a teljes meghajtóutat, ezért ezt a mezőben egyszer meg kell adni; a Gatterka megjegyzi és ellenőrzi a mappa nevét. A választott mappában létrejön a dátum + célhely projektmappa, benne a .xMix és xPrg almappa. A Mix teljes hivatkozása pl. <strong>X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt\\xPrg\\tabla_01.xPrg</strong>.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1520,7 +1522,7 @@
   // Csak OFFLINE szimulációhoz: a gép által végrehajtott sorrend NEM igazolt!
   // Egy projekt = egy .xMix + táblánként egy .xPrg ugyanabban a ZIP-ben.
   // A formátumot csak a kapott minták támasztják alá, a gépi futtatás NINCS igazolva.
-  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\',headerMode='color',destination=''){
+  function buildOfflineXprgProject(bins,project,materialCode,kerf,date,xprgFolder='.\\xPrg\\',headerMode='color',destination='',cabinetOverride=''){
     if(!Array.isArray(bins)||!bins.length)throw Error('Nincsenek táblák a gépi csomaghoz.');
     const esc=t=>String(t??'').replace(/[&<>"']/g,
       c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
@@ -1567,7 +1569,11 @@
       const cleaned=(fileName(String(value||''))||'').replace(/^_+|_+$/g,'').slice(0,maxLength);
       return cleaned||fallback;
     };
-    const cabinet=dateStamp+'_'+safePart(destination||project,'Butor',42);
+    const defaultCabinet=dateStamp+'_'+safePart(destination||project,'Butor',42);
+    if(cabinetOverride&&(!/^[A-Za-z0-9_-]{1,90}$/.test(cabinetOverride)||
+        !cabinetOverride.startsWith(defaultCabinet+'_')))
+      throw Error('Érvénytelen egyedi gépi projektmappanév.');
+    const cabinet=cabinetOverride||defaultCabinet;
     const root=dateStamp+'_'+safePart(project,'Szekreny',42);
     const names=[],files=[],summary=[],materials=[];
     bins.forEach((bin,i)=>{
@@ -1677,9 +1683,21 @@
       archiveSubdir:xprgLocation.archiveSubdir,materials,
       complexBoards:summary.filter(x=>x.complex).length};
   }
-  // A WinCut által feldolgozható struktúra relatív .\xPrg\ hivatkozást
-  // tartalmaz: így a közös Mix és a hozzá tartozó XPrg-k együtt mozgathatók.
-  function machineExportBundle(){
+  // A Chromium showDirectoryPicker nem ad abszolút Windows-útvonalat.
+  // Az elérési utat ezért a felhasználó egyszer megadja, és elmentjük.
+  function machineRootPath(){
+    const raw=String(state.xmixMachineRoot??defaultXmixMachineRoot).trim().replace(/\//g,'\\');
+    const root=raw.replace(/\\+$/,'');
+    const drive=/^[A-Za-z]:\\/.test(root);
+    const unc=/^\\\\[^\\]+\\[^\\]+(?:\\|$)/.test(root);
+    if((!drive&&!unc)||root.length>210||/[\x00-\x1f<>"|?*]/.test(root)||
+      /(?:^|\\)\.\.?(?:\\|$)/.test(root)||
+      root.split('\\').filter(Boolean).some(p=>p.endsWith(' ')||p.endsWith('.')||
+        (p.includes(':')&&!/^[A-Za-z]:$/.test(p))))
+      throw Error('Hibás teljes Windows-útvonal. Példa: X:\\JANI\\szabas_programmal\\Legujabb_mentessel');
+    return root;
+  }
+  function machineExportBundle(options={}){
     if(!result||result.error||!['machine','economy'].includes(state.layoutMode)||
        !result.machineReady||!result.bins?.length)
       throw Error('Előbb készíts teljes, gépi csíkos vagy anyagtakarékos szabástervet.');
@@ -1693,60 +1711,69 @@
     const destination=String(f?.destination||state.furnitures.find(x=>x.destination)?.destination||project).trim();
     const color=String(f?.materialColor||'').trim();
     if(!color)throw Error('Az anyag színét a Bútor adatai oldalon add meg.');
-    return buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
+    const preview=buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
       date,'.\\xPrg\\','color',destination);
+    const cabinet=String(options.cabinetFolder||preview.cabinetFolder);
+    const directory=machineRootPath()+'\\'+cabinet+'\\xPrg\\';
+    return buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
+      date,directory,'color',destination,
+      cabinet===preview.cabinetFolder?'':cabinet);
   }
   async function downloadXprgProject(){
     try{
       const bundle=machineExportBundle();
       downloadBlob(xlsxZip(bundle.files,'application/zip'),
         bundle.cabinetFolder+'_XPRG_XMIX.zip');
+      showNotice('A ZIP-et ide bontsd ki: '+machineRootPath()+
+        ' · a .xMix a megadott teljes X: útvonalon keresi az xPrg programokat.');
     }catch(err){showNotice('Gépi projekt letöltése: '+(err?.message||'nem sikerült'));}
   }
-  // A helyválasztás közvetlen kattintásból indul. A Chromium biztonsága
-  // miatt a program csak a felhasználó által jóváhagyott mappába írhat.
   async function saveXprgToSelectedFolder(){
     let parent;
     try{
+      const root=machineRootPath();
       if(typeof window.showDirectoryPicker!=='function')
-        throw Error('A mappaválasztás ebben a böngészőben nem elérhető. Használd a ZIP letöltését.');
+        throw Error('A mappaválasztás nem érhető el. Használd a ZIP letöltését.');
       parent=await window.showDirectoryPicker({mode:'readwrite'});
+      const expected=root.split('\\').filter(Boolean).at(-1);
+      if(String(parent.name).toLocaleLowerCase('hu-HU')!==expected.toLocaleLowerCase('hu-HU'))
+        throw Error('A kijelölt mappa ('+parent.name+') eltér a megadott X: útvonal végétől ('+expected+'). Válaszd ki a helyes gyökérmappát vagy javítsd az útvonalat.');
     }catch(err){
       if(err?.name==='AbortError')return;
       showNotice('Mappaválasztás: '+(err?.message||'nem sikerült'));return;
     }
     try{
-      const bundle=machineExportBundle();
-      // Ha a mai, azonos nevű mappa már létezik, új néven mentjük a
-      // projektet, hogy a korábban generált vágási kódokat ne írjuk felül.
-      let folderName=bundle.cabinetFolder;
+      const initial=machineExportBundle();
+      let folderName=initial.cabinetFolder;
       let nameNumber=1;
       while(nameNumber<100){
         try{
           await parent.getDirectoryHandle(folderName,{create:false});
-          folderName=bundle.cabinetFolder+'_'+(++nameNumber);
+          folderName=initial.cabinetFolder+'_'+(++nameNumber);
         }catch(err){
           if(err?.name==='NotFoundError')break;
           throw err;
         }
       }
       if(nameNumber>=100)throw Error('Túl sok azonos nevű projektmappa.');
-      const root=await parent.getDirectoryHandle(folderName,{create:true});
+      const bundle=folderName===initial.cabinetFolder?initial:
+        machineExportBundle({cabinetFolder:folderName});
+      const folder=await parent.getDirectoryHandle(folderName,{create:true});
       for(const [archivePath,contents] of bundle.files){
         const relative=archivePath.slice(bundle.cabinetFolder.length+1);
         if(!archivePath.startsWith(bundle.cabinetFolder+'/')||!relative)
           throw Error('A projekt fájlszerkezete hibás.');
         const segments=relative.split('/');
         const filename=segments.pop();
-        let directory=root;
+        let directory=folder;
         for(const segment of segments)
           directory=await directory.getDirectoryHandle(segment,{create:true});
         const file=await directory.getFileHandle(filename,{create:true});
         const writable=await file.createWritable();
         try{await writable.write(contents);}finally{await writable.close();}
       }
-      showNotice('Gépi projekt elmentve: '+parent.name+'\\'+folderName+
-        ' · '+bundle.names.length+' xPrg és 1 xMix.');
+      showNotice('Gépi projekt elmentve: '+machineRootPath()+'\\'+folderName+
+        ' · '+bundle.names.length+' xPrg és 1 xMix; a Mix a teljes X: útvonalra mutat.');
     }catch(err){showNotice('Gépi projekt mentése: '+(err?.message||'nem sikerült'));}
   }
   function downloadCutList(format){
@@ -2087,7 +2114,7 @@
         if(scope==='part' && (key==='edgeThickness'||key==='mill') && Number(target.edgeThickness)===0.4)target.mill=false;
         if(scope==='part'&&key==='grainRequired')target.rot=!value;
       }
-      if(scope==='settings'&&(key==='xprgMaterialCode'||key==='xprgFolder'||key==='xprgHeaderMode')){
+      if(scope==='settings'&&(key==='xprgMaterialCode'||key==='xprgFolder'||key==='xprgHeaderMode'||key==='xmixMachineRoot')){
         // Szövegmezőről a letöltés gombra váltáskor nem bontjuk le
         // a gomb DOM-ját: a blur utáni kattintás így nem vész el.
         save();return;

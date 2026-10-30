@@ -133,3 +133,27 @@ test('egyedi Windows útvonal nem írhat át .xPrg fájlnevet és nem enged útv
   assert.throws(()=>exportBundle([base()],'Konyha',folder));
  }
 });
+
+test('WinCut Mix két táblánál a teljes X: gépi útvonalat tartalmazza',()=>{
+ const baseDir='X:\\JANI\\szabas_programmal\\Legujabb_mentessel';
+ const dest='2026_10_30_Teszt';
+ const out=generate([base('Freya'),base('Freya')],'Eles vagas','Freya',5,
+  '30/10/2026',baseDir+'\\'+dest+'\\xPrg\\','color','Teszt');
+ assert.equal(out.cabinetFolder,dest);
+ const mix=xmix(out);
+ assert.equal((mix.match(/<RigaMix File=/g)||[]).length,2);
+ for(const file of out.names){
+  assert.ok(mix.includes('File="'+baseDir+'\\'+dest+'\\xPrg\\'+file+'"'));
+  assert.ok(out.files.some(([name])=>name===dest+'/xPrg/'+file));
+ }
+ assert.doesNotMatch(mix,/File="\.\\xPrg\\/);
+});
+test('egyedi _2 mentési mappánál ugyanaz a tényleges út szerepel a Mixben',()=>{
+ const baseDir='X:\\JANI\\szabas_programmal\\Legujabb_mentessel';
+ const folder='2026_10_30_Teszt_2';
+ const out=generate([base('Freya')],'Eles vagas','Freya',5,'30/10/2026',
+    baseDir+'\\'+folder+'\\xPrg\\','color','Teszt',folder);
+ assert.equal(out.cabinetFolder,folder);
+ assert.match(xmix(out),/File="X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt_2\\xPrg\\/);
+ assert.ok(out.files[0][0].startsWith(folder+'/'));
+});

@@ -321,3 +321,40 @@ változatlan.
 ## 2026-10-30 – az alapértelmezett anyagszín javítása
 
 A korábbi „Feya” elírás helyes alakja **Freya**. Minden új bútor és új projekt Freya anyagszínnel indul. A helyi mentésekben kizárólag a pontosan „Feya” értékű anyagszínt javítjuk automatikusan „Freya” értékre, a többi felhasználói anyagszín változatlan marad. A bútorválasztó mentett projektjei szintén frissülnek, és a gépi xPrg/xMix exportban az adott bútor javított anyagszíne jelenik meg.
+
+
+## 2026-10-30 – WinCut xMix teljes gépi fájlútvonal (X:)
+
+A géphez tartozó XML-es `.xMix` korábban minden `RigaMix File` attribútumban
+csak `.\\xPrg\\fajl.xPrg` relatív hivatkozást tartalmazott.
+Most a **Szabásterv** oldalon projektbe menthető
+**„Gépi gyökérmappa – teljes Windows-útvonal”** mező szerepel.
+Ennek alapértéke az ismert gépi könyvtár:
+`X:\\JANI\\szabas_programmal\\Legujabb_mentessel`.
+
+A **Mappa kiválasztása és mentés** gombbal pontosan ezt a
+**gyökérmappát** kell kiválasztani. A beágyazott Chromium mappaválasztója
+a fájlrendszerhez való írási jogosultságot és a mappa nevét adja, de a
+teljes Windows-meghajtóutat **nem** teszi közzé a webalkalmazásnak; ezért
+a fenti mezőt egyszer kézzel kell beállítani, ha a tényleges mentési hely eltér.
+A Gatterka a kiválasztott mappa nevének egyezését ellenőrzi a megadott
+Windows-útvonal utolsó elemével, de nem tudja a teljes fizikai útvonalat
+függetlenül bizonyítani.
+
+A program a gyökérmappán belül `YYYY_MM_DD_Hova_keszul`
+például `2026_10_30_Teszt` alkönyvtárat készít, a közös Mix és
+`xPrg` almappa változatlan mappaszerkezetével. A `RigaMix` ezentúl
+például:
+
+```xml
+<RigaMix File="X:\JANI\szabas_programmal\Legujabb_mentessel\2026_10_30_Teszt\xPrg\2026_10_30_Eles_vagas_Maradek_tabla_tabla_01.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+```
+
+Ha már létezik egy ugyanilyen nevű projektmappa, a mentés
+`_2`, `_3`... végű új mappát hoz létre, és a Mixben is pontosan
+ezt a tényleges alkönyvtárat hivatkozza.
+
+A **ZIP letöltése** is teljes X: meghajtós Mix útvonalat ír, ezért
+a kibontott projektmappát **a megadott gépi gyökérmappába** kell másolni;
+más helyre kibontva a gép nem fogja megtalálni az xPrg-ket.
+Az .xPrg fájlok vágási parancsait, anyagait és fejléceit ez a javítás nem módosítja.

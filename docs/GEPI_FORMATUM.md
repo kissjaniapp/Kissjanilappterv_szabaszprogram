@@ -98,3 +98,40 @@ A valós gépen lefutott egytáblás próbát követően a rajzot a függőleges
 A felhasználó a rendszer könyvtárválasztójával kiválaszt egy mappát, amelybe a program YYYY_MM_DD_Celhely nevű alkönyvtárat készít. Ebben a .xMix és az xPrg alkönyvtárban az összes .xPrg file szerepel. A közös .xMix relatív .\\xPrg\\ hivatkozásai nem függnek a külső meghajtó betűjelétől. Meglévő projektnév esetén nem írunk felül fájlokat. Nem támogatott böngészőben ZIP letöltéssel történik a mentés.
 
 Az oldalak külön: bútoradatok, alkatrészek, anyagkészlet, szabásterv. A lábléc Kiss János készítői és tulajdonosi megjelölését tartalmazza.
+
+
+## 2026-10-30 – WinCut xMix teljes gépi fájlútvonal (X:)
+
+A géphez tartozó XML-es `.xMix` korábban minden `RigaMix File` attribútumban
+csak `.\\xPrg\\fajl.xPrg` relatív hivatkozást tartalmazott.
+Most a **Szabásterv** oldalon projektbe menthető
+**„Gépi gyökérmappa – teljes Windows-útvonal”** mező szerepel.
+Ennek alapértéke az ismert gépi könyvtár:
+`X:\\JANI\\szabas_programmal\\Legujabb_mentessel`.
+
+A **Mappa kiválasztása és mentés** gombbal pontosan ezt a
+**gyökérmappát** kell kiválasztani. A beágyazott Chromium mappaválasztója
+a fájlrendszerhez való írási jogosultságot és a mappa nevét adja, de a
+teljes Windows-meghajtóutat **nem** teszi közzé a webalkalmazásnak; ezért
+a fenti mezőt egyszer kézzel kell beállítani, ha a tényleges mentési hely eltér.
+A Gatterka a kiválasztott mappa nevének egyezését ellenőrzi a megadott
+Windows-útvonal utolsó elemével, de nem tudja a teljes fizikai útvonalat
+függetlenül bizonyítani.
+
+A program a gyökérmappán belül `YYYY_MM_DD_Hova_keszul`
+például `2026_10_30_Teszt` alkönyvtárat készít, a közös Mix és
+`xPrg` almappa változatlan mappaszerkezetével. A `RigaMix` ezentúl
+például:
+
+```xml
+<RigaMix File="X:\JANI\szabas_programmal\Legujabb_mentessel\2026_10_30_Teszt\xPrg\2026_10_30_Eles_vagas_Maradek_tabla_tabla_01.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+```
+
+Ha már létezik egy ugyanilyen nevű projektmappa, a mentés
+`_2`, `_3`... végű új mappát hoz létre, és a Mixben is pontosan
+ezt a tényleges alkönyvtárat hivatkozza.
+
+A **ZIP letöltése** is teljes X: meghajtós Mix útvonalat ír, ezért
+a kibontott projektmappát **a megadott gépi gyökérmappába** kell másolni;
+más helyre kibontva a gép nem fogja megtalálni az xPrg-ket.
+Az .xPrg fájlok vágási parancsait, anyagait és fejléceit ez a javítás nem módosítja.
