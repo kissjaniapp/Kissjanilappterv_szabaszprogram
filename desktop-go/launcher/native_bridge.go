@@ -41,6 +41,7 @@ type nativeChoose struct {
 }
 
 const maxNativeBody = 12 << 20
+const defaultMachineDirectory = `C:\\Gatterka`
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
 var machineXmixName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xMix$`)
@@ -142,7 +143,15 @@ func (bridge *nativeBridge) choose(w http.ResponseWriter,r *http.Request){
   machineError(w,400,err);return
  }
  initial:=strings.TrimSpace(input.Initial)
- if initial=="" {initial=bridge.selectedDirectory}
+ if initial=="" {initial=defaultMachineDirectory}
+ // A felhasználó a mappaválasztóban másik meghajtóra is navigálhat.
+ // A C:\Gatterka mappa a párbeszédablak megnyitásakor létrejön, ha lehet.
+ if filepath.Clean(initial)==filepath.Clean(defaultMachineDirectory) {
+  if err:=os.MkdirAll(defaultMachineDirectory,0700);err!=nil {
+   // Írásvédett C: gyökér esetén a Windows C: könyvtárában induljon a választó.
+   initial=filepath.VolumeName(defaultMachineDirectory)+string(filepath.Separator)
+  }
+ }
  dir,err:=chooseWindowsFolder(initial)
  if err!=nil {machineError(w,500,err);return}
  if dir==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
@@ -219,11 +228,15 @@ func xmlEscapeNative(path string)string{
 func saveMachineFiles(root string, req nativeSave)(string,error){
  _,files,err:=safeNativeProgramFiles(req)
  if err!=nil{return "",err}
+ // A kiválasztott szülőmappában külön naponkénti mappa készül.
+ // A .xMix teljes elérési útja erre a valós könyvtárra mutat.
+ datedRoot:=filepath.Join(root,time.Now().Format("2006-01-02"))
+ if err:=os.MkdirAll(datedRoot,0700);err!=nil{return "",err}
  var folder string
  for n:=1;n<=99;n++{
   name:=req.CabinetFolder
   if n>1{name+=fmt.Sprintf("_%d",n)}
-  candidate:=filepath.Join(root,name)
+  candidate:=filepath.Join(datedRoot,name)
   err=os.Mkdir(candidate,0700)
   if os.IsExist(err){continue}
   if err!=nil{return "",err}
@@ -231,7 +244,7 @@ func saveMachineFiles(root string, req nativeSave)(string,error){
   break
  }
  if folder==""{return "",errors.New("Túl sok azonos nevű gépi projektmappa.")}
- full:=filepath.Join(root,folder)
+ full:=filepath.Join(datedRoot,folder)
  success:=false
  defer func(){if !success{_ = os.RemoveAll(full)}}()
  if err=os.Mkdir(filepath.Join(full,"xPrg"),0700);err!=nil{return "",err}
@@ -243,7 +256,7 @@ func saveMachineFiles(root string, req nativeSave)(string,error){
   if strings.HasPrefix(rel,"xPrg/"){
    target=filepath.Join(full,"xPrg",name)
   } else {
-   content,err=patchNativeMix(content,root,folder)
+   content,err=patchNativeMix(content,datedRoot,folder)
    if err!=nil{return "",err}
   }
   if err=os.WriteFile(target,[]byte(content),0600);err!=nil{return "",err}
