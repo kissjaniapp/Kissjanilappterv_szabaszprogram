@@ -52,20 +52,22 @@ test('eltérő anyagú csíkok nem kerülnek egymásra',()=>{
   const out=schedule([board('Feya'),board('Tölgy')]);
   assert.equal(out.pairedGroups,0);
 });
-test('a teljes xPrg + xMix csomag minden táblát külön kezel',()=>{
+test('a teljes xPrg + XML xMix csomag minden táblát külön kezel',()=>{
   assert.match(html,/function buildOfflineXprgProject\(/);
   assert.match(html,/function downloadXprgProject\(/);
   assert.match(html,/data-action="download-xprg-project"/);
-  assert.match(html,/\[Intestazione\]/);
-  assert.match(html,/NumeroRighe=/);
-  assert.match(html,/WinCut/);
-  assert.match(html,/,1,0/);
-  assert.match(html,/winCutDirectory/);
+  assert.match(html,/data-key="xprgFolder"/);
+  assert.match(html,/<xMix>/);
+  assert.match(html,/<Materials>/);
+  assert.match(html,/<RigheMix>/);
+  assert.match(html,/<RigaMix File=/);
+  assert.match(html,/CambioMateriale="0"/);
   assert.match(html,/<SchemaDoc>/);
   assert.match(html,/add\('U',part\.breadth\)/);
   assert.match(html,/machineExecutable:false/);
   assert.doesNotMatch(html,/data-action="download-xprg-review"/);
 });
+
 test('a kezdőképernyő választólistával indul, nem automatikusan nyit munkát',()=>{
   assert.match(html,/let projectScreen='library'/);
   assert.match(html,/function projectLibraryView\(/);

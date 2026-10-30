@@ -1,14 +1,17 @@
 'use strict';
 /**
- * WinCut INI xMix: a működő felhasználói minta a C:\WinCut\Prg\ mappára
- * hivatkozik, és minden sor végén ,1,0 szerepel.
- * A generált .xPrg fájlok gépi kompatibilitása nem hitelesített;
- * a működő mintában .012 kiterjesztésű programokra mutatnak a sorok.
+ * A Gatterka által exportált xMix XML a valódi WinCut mintával egyezik:
+ * <xMix><Header/><Materials><Material/></Materials>
+ * <RigheMix><RigaMix File=".\xPrg\..." ... /></RigheMix></xMix>.
+ * A Windows-útvonal csak hivatkozás: önmagában nem másolja a fájlt a gépre.
  */
-const DIRECTORY='C:\\WinCut\\Prg\\';
+const DIRECTORY='.\\xPrg\\';
+const xml=t=>String(t??'').replace(/[&<>"']/g,
+  c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
+
 function validateFolder(folder){
   if(typeof folder!=='string'||!/^[A-Za-z0-9_-]{1,70}$/.test(folder))
-    throw new Error('Érvénytelen bútormappa. Csak betű, szám, aláhúzás vagy kötőjel megengedett.');
+    throw new Error('Érvénytelen bútormappa.');
   return folder;
 }
 function validateFilename(s){
@@ -17,20 +20,51 @@ function validateFilename(s){
     throw new Error('Érvénytelen .xPrg fájlnév.');
   return s;
 }
-function createXMix({programs,folder,description=''}) {
-  const cabinet=validateFolder(folder);
+function normalizeXprgDirectory(input=DIRECTORY){
+  const raw=String(input??DIRECTORY).trim().replace(/\//g,'\\');
+  if(!raw||raw.length>260||/[\x00-\x1f<>"|?*]/.test(raw))
+    throw new Error('Hibás XPrg mappaútvonal.');
+  const relative=raw.startsWith('.\\'),drive=/^[A-Za-z]:\\/.test(raw);
+  const unc=/^\\\\[^\\]+\\[^\\]+(?:\\|$)/.test(raw);
+  if(!relative&&!drive&&!unc)
+    throw new Error('Relatív (.\\) vagy teljes Windows XPrg mappaútvonal kell.');
+  const pieces=raw.split('\\').filter(Boolean);
+  const segments=relative?pieces.slice(1):drive?pieces.slice(1):pieces.slice(2);
+  if(segments.some(segment=>segment==='.'||segment==='..'||segment.endsWith(' ')||
+      segment.endsWith('.')||segment.includes(':')||/[^\S ]/.test(segment)))
+    throw new Error('Érvénytelen XPrg mappanév.');
+  if(segments.some(segment=>/\.xprg$/i.test(segment)))
+    throw new Error('Mappát adj meg, ne .xPrg fájlt.');
+  const directory=relative?'.\\'+(segments.length?segments.join('\\')+'\\':''):
+    drive?pieces[0]+'\\'+(segments.length?segments.join('\\')+'\\':''):
+    '\\\\'+pieces.slice(0,2).join('\\')+'\\'+(segments.length?segments.join('\\')+'\\':'');
+  return {directory,relative,archiveSubdir:relative?segments.join('/'):'xPrg'};
+}
+function createXMix({programs,folder,date,materialCode='BLAP003',materials=[''],
+                    description='',xprgDirectory=DIRECTORY}){
+  validateFolder(folder);
   if(!Array.isArray(programs)||!programs.length)
     throw new Error('Legalább egy .xPrg hivatkozás szükséges.');
-  if(typeof description!=='string'||/[\r\n[\]=]/.test(description))
-    throw new Error('Érvénytelen leírás a .xMix fájlhoz.');
-  const rows=programs.map((p,i)=>{
-    const filename=validateFilename(typeof p==='string'?p:p?.filename);
-    return (i+1)+'='+DIRECTORY+filename+',1,0';
-  });
-  return ['[Intestazione]','Descrizione='+description,'',
-    '[Righe]','NumeroRighe='+rows.length,...rows,''].join('\r\n');
+  if(!/^\d{2}\/\d{2}\/\d{4}$/.test(String(date)))
+    throw new Error('Hibás xMix dátum.');
+  if(!/^[A-Za-z0-9_.-]{2,40}$/.test(materialCode))
+    throw new Error('Hibás gépi anyagkód.');
+  const location=normalizeXprgDirectory(xprgDirectory);
+  const names=programs.map(p=>validateFilename(typeof p==='string'?p:p?.filename));
+  const colors=[...new Set(materials.map(t=>String(t??'').trim()))];
+  if(!colors.length)colors.push('');
+  return '<xMix>\r\n'+
+    '\t<Header Descrizione="'+xml(description)+'" Import="" Date="'+xml(date)+'" />\r\n'+
+    '\t<Materials>\r\n'+
+    colors.map(color=>'\t\t<Material Tipologia="'+xml(color)+
+      '" Codice="'+xml(materialCode)+'" Quantita="999" />').join('\r\n')+
+    '\r\n\t</Materials>\r\n'+
+    '\t<RigheMix>\r\n'+
+    names.map(name=>'\t\t<RigaMix File="'+xml(location.directory+name)+
+      '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\r\n')+
+    '\r\n\t</RigheMix>\r\n</xMix>\r\n';
 }
 function createXPrg(){
-  throw new Error('Nincs hiteles xPrg specifikáció. A kísérleti minták fizikai gépre nem tölthetők.');
+  throw new Error('Nincs hiteles xPrg specifikáció. Fizikai gépre csak ellenőrzés után tölthető.');
 }
-module.exports={DIRECTORY,validateFolder,validateFilename,createXMix,createXPrg};
+module.exports={DIRECTORY,validateFolder,validateFilename,normalizeXprgDirectory,createXMix,createXPrg};

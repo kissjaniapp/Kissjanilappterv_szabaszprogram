@@ -255,3 +255,25 @@ a gyártási kompatibilitás ellenőrzése továbbra is szükséges.
 A Gatterka minden táblához a kihelyezett alkatrészeken beállított **Anyag színe / dekorja** mezőt írja az XML `<Header Descrizione="...">` attribútumába. Például `Feya`, `Freya`, `Fehér tölgy`. A gépi anyagtörzskód változatlanul a `<Material Tipologia="" Codice="BLAP003" />` mezőbe kerül (vagy a felületen megadott kód). A tábla tájolása, méretei, a teljes `<Pattern>` és a WinCut `.xMix` szerkezete nem változik. Az XML speciális karaktereit escape-eli. Ha egyetlen tábla több különböző, nem üres anyagszínű alkatrészt tartalmaz, a program nem exportál félrevezető fejlécet, hanem jelzi a problémát. Hiányzó anyagszín esetén üres `Descrizione` készül, nem a `BLAP003` anyagkód.
 
 Ez a módosítás az anyagleírás kijelzésének kipróbálására szolgál; éles vágás előtt az adott vezérlőn külön ellenőrizendő.
+
+## 2026-10-30 – XML-es WinCut xMix és szabadon beállítható xPrg-mappa
+
+A Nesting export a felhasználó gépéről származó működő XML-es xMix
+szerkezetet írja, nem az INI-jellegű korábbi xMix-et.
+A közös projekt minden táblához külön xPrg-t kap, és az összes táblát
+a RigheMix / RigaMix elemek kapcsolják össze.
+
+A Nesting exportpanelen az **XPrg fájlok helye az XMix-ben** mező
+projektbe mentődik. Alapértelmezése a relatív xPrg almappa.
+A ZIP ezzel egyező mappaszerkezetet tartalmaz. Teljes meghajtóútvonal
+vagy hálózati UNC útvonal is megadható; a fájlokat ekkor külön kell
+a gép megfelelő könyvtárába másolni.
+
+A Mix tartalmaz dátumot, Materials listát a bútorok anyagszínével és
+gépi anyagkódjával, valamint a táblákra mutató fájlhivatkozásokat.
+A biztonságos XML-karakterkezelés és Windows-mappaellenőrzés bekerült.
+
+**A gépi xPrg vágási parancsok, a P mérete és a fűrészlapvastagság
+nem változnak.** A korábban észlelt SpessoreLamaNonValido hiba okát
+külön kell tisztázni: a generált xPrg fizikai gépi végrehajtása nincs
+hitelesítve. Részletes leírás: docs/GEPI_FORMATUM.md.

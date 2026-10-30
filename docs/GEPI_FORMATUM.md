@@ -1,34 +1,69 @@
-# Gépi formátum – megállapított és ismeretlen részek
+# Gépi formátumok – Gatterka / WinCut (2026-10-30)
 
-## Eredeti, csatolt .xMix
+## Melyik formátumot használjuk?
 
-A csatolt `.xMix` fájl `<Header>`, `<Materials>`, `<RigheMix>` szerkezetű XML.
-
-A `RigaMix` hivatkozás például:
+A felhasználó gépéről érkezett **működő XML-es .xMix** minta:
 
 ```xml
-<RigaMix File=".\xPrg\2026_10_21__08_35_16_1.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+<xMix>
+  <Header Descrizione="" Import="" Date="30/10/2026" />
+  <Materials>
+    <Material Tipologia="Onixszürke" Codice="U960" Quantita="999" />
+  </Materials>
+  <RigheMix>
+    <RigaMix File=".\xPrg\2026_10_30__09_06_34_1.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />
+  </RigheMix>
+</xMix>
 ```
 
-Vagyis a `.xMix` **másik fájlra hivatkozik**. Nem találtunk magában a mintában fűrészpozíciókat vagy gépi csíkvágási utasításokat. A `machine/xmix.cjs` ezt a manifestet tudja sorosítani, ha már rendelkezésre állnak valódi, helyes `.xPrg` fájlok. A `File` attribútumhoz egyező mappa-struktúra is szükséges (`xPrg/`).
+Ez projekt-összesítő: **több .xPrg programot** tud sorban hivatkozni. Az xMix
+nem tárolja az alkatrészvágások teljes parancssorát, az a kapcsolt xPrg-kben van.
 
-## Az F0/F1/F2/F3 „proba” mintáról
+Korábban a program INI-jellegű xMix-et állított elő a
+`[Intestazione] / [Righe] / NumeroRighe` szerkezettel. Egy másik, gépen
+működő minta ilyen xMix-ből **.012** programra mutatott, ami nem bizonyítja
+az INI formátum megfelelőségét az itt vizsgált XML-es xPrg projektekhez.
+A Gatterka exportja ezért az előbbi XML struktúrát követi.
 
-A `fixtures/proba` egy további, ettől eltérő szöveges szabástervfájl. Az `F3` csík- és darabszámkódjai részlegesen visszafejthetők; de nem bizonyított, hogy ezek az `.xPrg` bináris/szöveges formátumával megegyeznek. A `fixtures/proba_dekoder.py` elemzési segédlet.
+## Beállítható xPrg könyvtár
 
-## Jelenlegi Lapterv „Gépi előkészítés ZIP”
+A Nesting terv exportpaneljén a **XPrg fájlok helye az XMix-ben** mező
+projektfüggő, mentett beállítás. Alapérték: .\xPrg\.
+A `RigaMix File` attribútum pontosan ezt a mappát és az xPrg fájlnevét tartalmazza.
 
-A felületen az export: `manifest.json`, `tabla_NN_ellenorzo_vagasok.json`, `OLVASSEL.txt`.
+- .\xPrg\ → ZIP-ben: Konyha/projekt.xMix és Konyha/xPrg/tabla_01.xPrg.
+- .\Gep\Programok\ → ZIP-ben: Konyha/Gep/Programok/tabla_01.xPrg.
+- C:\WinCut\Prg\ vagy hálózati UNC → az XML a gépi teljes
+  útvonalra hivatkozik. A ZIP a táblaprogramokat biztonságosan xPrg/ alá
+  csomagolja, a felhasználónak viszont **külön át kell másolnia őket** a hivatkozott
+  helyre; a Gatterka nem módosít külső gépmappát.
 
-Az adatok tartalmazzák a tábla méretét, fűrészrést, szélezést, alkatrészlistát, a gépi csíkok és visszaadások eseményláncát. **Még nem gépfüggetlen, teljesen ellenőrzött szabásprogram** – a geometria és a vezérlő parancsainak koordinátái közti kapcsolatot tesztelni kell.
+A projekt dátuma, anyagkódja, anyagszíne és az xPrg fájlok száma az XML-ben
+is szerepelnek. Az `Materials` listában egyedi táblánkénti anyagszínek
+jelennek meg, a gépi kód pedig a felületen megadott érték.
 
-## A natív gépi programhoz tisztázandó
+## Mit NEM jelent az XML-es xMix?
 
-1. A pontos `.xPrg` szintaxis, fájlverzió és esetleges kódolás, ellenőrzőösszeg.
-2. Ütközők és fűrészpozíciók koordinátarendszere, élezővágás és fűrészrés elszámolása.
-3. A csíkok visszaadása és a kész alkatrészek kitolása gépi műveletként.
-4. Rögzítési, minimális megfogási és szálirányos forgatási szabályok.
-5. Táblánkénti programszámozás és a `Rep`, `Pacco`, `CambioMateriale` tényleges jelentése.
-6. A vezérlés fogadja-e a legyártott manifest XML változatát, és milyen `.xPrg` mellékleteket vár el.
+A Gatterka által generált xPrg-ben a vágások továbbra is `P`, `RY`, `Y`,
+`RX`, `X`, `U`, `F` utasítások. A próbafájl a gépen importálható volt,
+de egy **valós, többparancsos** Gatterka-programot az XML-es xMix megnyitásakor
+a következő ellenőrzési hibával utasított el:
 
-Az export éles engedélyezése csak ezen ellenőrzések után történhet meg.
+```text
+%%ValidateKO%%: 1,1,1,Err. 6:
+%%SpessoreLamaNonValido%%
+1 P 1983.000 1
+```
+
+
+A hiba a fűrészlapvastagságra utal, de a pontos kiváltó feltétel
+nincs bizonyítva: nem feltétlenül a beírt 5 mm érték a hibás. Az
+xMix-export felépítésének javítása **nem helyettesíti** az xPrg
+vágási utasításainak és a gépen beállított fűrészlap/adatbázis
+összefüggésének ellenőrzését.
+
+A Gatterka **nem változtatja meg találomra** a kezdő `P` parancsot,
+a `SpessoreLama` méretét, a vágások számát és sorrendjét.
+Éles gépi végrehajtás előtt külön próba, a tényleges anyagtörzs-kód és
+gépi paraméterek ellenőrzése szükséges. A kísérleti xPrg export
+nem tekinthető hitelesített gyártási programnak.

@@ -10,25 +10,28 @@ const b=html.indexOf('\n  function downloadCutList(',a);
 assert.ok(a>0&&b>a,'Hiányzik a letöltés-generáló funkció');
 const code='('+html.slice(a,b).trim()+')';
 
-function harness({failed=false,hasBins=true,materialCode='BLAP003'}={}){
+function harness({failed=false,hasBins=true,materialCode='BLAP003',folder='.\\xPrg\\'}={}){
  const calls={downloads:[],alerts:[],zipInputs:[],usedCode:null};
  const bundle={
   cabinetFolder:'Konyha',
   names:['tabla_01.xPrg','tabla_02.xPrg'],
   files:[
-   ['Konyha/konyha.xMix','[Intestazione]\r\n'],
-   ['Konyha/tabla_01.xPrg','<SchemaDoc>1</SchemaDoc>'],
-   ['Konyha/tabla_02.xPrg','<SchemaDoc>2</SchemaDoc>']
+   ['Konyha/konyha.xMix','<xMix>\r\n'],
+   ['Konyha/xPrg/tabla_01.xPrg','<SchemaDoc>1</SchemaDoc>'],
+   ['Konyha/xPrg/tabla_02.xPrg','<SchemaDoc>2</SchemaDoc>']
   ]
  };
  const sandbox={
-  state:{layoutMode:'machine',projectName:'Konyha',kerf:5,xprgMaterialCode:materialCode},
+  state:{layoutMode:'machine',projectName:'Konyha',kerf:5,xprgMaterialCode:materialCode,xprgFolder:folder},
   result:{machineReady:true,bins:hasBins?[{machine:{strips:[{}]}}]:[],failed:failed?[{}]:[]},
   getFurniture:()=>({name:'Konyha'}),
   prompt:()=>{throw Error('A letöltés NEM kérhet anyagkódot felugró ablakban');},
   confirm:()=>{throw Error('A letöltés NEM kérhet megerősítést');},
-  buildOfflineXprgProject:(bins,project,code)=>{
+  buildOfflineXprgProject:(bins,project,code,kerf,date,path)=>{
    assert.equal(project,'Konyha');
+   assert.equal(kerf,5);
+   assert.match(date,/^\d{2}\/\d{2}\/\d{4}$/);
+   calls.folder=path;
    calls.usedCode=code;return bundle;
   },
   xlsxZip:(files,mime)=>{
@@ -71,4 +74,11 @@ test('a közvetlen ZIP mentés nem használ mappaválasztást',()=>{
  assert.doesNotMatch(html,/showDirectoryPicker/);
  assert.match(html,/downloadBlob\(zip,name\)/);
  assert.match(html,/data-key="xprgMaterialCode"/);
+});
+
+test('a Mixben megadott XPrg elérési utat továbbadjuk a letöltéshez',async()=>{
+  const {fn,calls}=harness({folder:'D:\\Gyartas\\Prg\\'});
+  await fn();
+  assert.equal(calls.folder,'D:\\Gyartas\\Prg\\');
+  assert.equal(calls.downloads.length,1);
 });

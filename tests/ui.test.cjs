@@ -90,3 +90,11 @@ test('nincs újraszámolás gomb; a nesting és az élő képletszámítás auto
  assert.match(html,/scheduleLiveNesting\(\)/);
  assert.match(html,/result=hadNesting\|\|state\.active==='nesting'\?computeNesting\(\):null/);
 });
+
+test('az XML xMix-ben az xPrg mappa beállítható és a régi bútorprojektek is működnek',()=>{
+  assert.match(html,/data-key="xprgFolder"/);
+  assert.match(html,/xprgFolder:'\.\\xPrg\\'/);
+  assert.match(html,/XPrg fájlok helye az XMix-ben/);
+  assert.match(html,/key==='xprgMaterialCode'\|\|key==='xprgFolder'/);
+  assert.match(html,/state\.xprgFolder\?\?/);
+});

@@ -27,13 +27,16 @@ function zipEntries(buffer){
   assert.equal(buffer.readUInt32LE(i),0x02014B50,'Hiányzik a ZIP central directory');
   return files;
 }
-test('a Letöltésekbe kerülő ZIP egyetlen bútormappájában csak xMix és xPrg van',async()=>{
+test('egy XML xMix és két xPrg a ZIP helyes mappájában szerepel',async()=>{
   const contents=[
-    ['Konyha/Konyha_OFFLINE.xMix','[Intestazione]\r\nDescrizione=\r\n\r\n[Righe]\r\nNumeroRighe=2\r\n'+
-      '1=X:\\JANI\\szabas_programmal\\Konyha\\elso.xPrg\r\n'+
-      '2=X:\\JANI\\szabas_programmal\\Konyha\\masodik.xPrg\r\n'],
-    ['Konyha/elso.xPrg','<SchemaDoc>\r\n\t<Pattern></Pattern>\r\n</SchemaDoc>'],
-    ['Konyha/masodik.xPrg','<SchemaDoc>\r\n\t<Pattern></Pattern>\r\n</SchemaDoc>']
+    ['Konyha/Konyha_OFFLINE.xMix','<xMix>\r\n\t<Header Descrizione="" Import="" Date="30/10/2026" />\r\n'+
+      '\t<Materials>\r\n\t\t<Material Tipologia="Freya" Codice="BLAP003" Quantita="999" />\r\n\t</Materials>\r\n'+
+      '\t<RigheMix>\r\n'+
+      '\t\t<RigaMix File=".\\xPrg\\elso.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />\r\n'+
+      '\t\t<RigaMix File=".\\xPrg\\masodik.xPrg" Rep="1" Pacco="1" CambioMateriale="0" />\r\n'+
+      '\t</RigheMix>\r\n</xMix>\r\n'],
+    ['Konyha/xPrg/elso.xPrg','<SchemaDoc>\r\n\t<Pattern></Pattern>\r\n</SchemaDoc>'],
+    ['Konyha/xPrg/masodik.xPrg','<SchemaDoc>\r\n\t<Pattern></Pattern>\r\n</SchemaDoc>']
   ];
   const blob=zip(contents,'application/zip');
   assert.equal(blob.type,'application/zip');
@@ -42,8 +45,11 @@ test('a Letöltésekbe kerülő ZIP egyetlen bútormappájában csak xMix és xP
   assert.equal(files.size,3);
   for(const [name,body] of files){
     assert.equal(body,contents.find(x=>x[0]===name)[1]);
-    if(!name.endsWith('.xMix'))
-      assert.doesNotMatch(body,/X:\\JANI\\szabas_programmal\\/);
+    if(!name.endsWith('.xMix'))assert.doesNotMatch(body,/X:\\JANI\\szabas_programmal\\/);
   }
-  assert.match(files.get('Konyha/Konyha_OFFLINE.xMix'),/NumeroRighe=2/);
+  assert.match(files.get('Konyha/Konyha_OFFLINE.xMix'),/<RigheMix>/);
+  for(const file of ['elso.xPrg','masodik.xPrg']){
+    assert.ok(files.has('Konyha/xPrg/'+file));
+    assert.ok(files.get('Konyha/Konyha_OFFLINE.xMix').includes('File=".\\xPrg\\'+file+'"'));
+  }
 });
