@@ -110,12 +110,8 @@ type openFileNameW struct {
 func chooseWindowsSaveFile(initialDirectory,defaultFileName string)(string,error){
  runtime.LockOSThread()
  defer runtime.UnlockOSThread()
- // A modern Explorer stílushoz az OS natív közös fájldialógusa szükséges.
- ole:=syscall.NewLazyDLL("ole32.dll")
- init:=ole.NewProc("CoInitializeEx")
- hr,_,_:=init.Call(0,2)
- if hr!=0&&hr!=1 {return "",fmt.Errorf("Windows Mentés másként inicializálási hiba: 0x%X",uint32(hr))}
- defer ole.NewProc("CoUninitialize").Call()
+ // A GetSaveFileNameW közös fájldialógus nem igényel COM inicializálást.
+ // Így egy háttér HTTP kéréshez kiosztott Windows-szálon is működik.
  fileBuffer:=make([]uint16,8192)
  fileName:=utf16.Encode([]rune(defaultFileName))
  if len(fileName)>=len(fileBuffer)-1{return "",errors.New("Túl hosszú XMIX fájlnév.")}
