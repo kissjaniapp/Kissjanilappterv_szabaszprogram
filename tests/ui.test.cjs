@@ -62,7 +62,9 @@ test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
  assert.ok(start>=0&&end>start);
  const panel=html.slice(start,end);
  assert.match(panel,/data-action="save-xprg-folder"/);
- assert.match(panel,/data-key="xmixMachineRoot"/);
+ assert.match(panel,/<output id="xmix-machine-root"/);
+ assert.match(panel,/csak tájékoztatás/);
+ assert.doesNotMatch(panel,/data-key="xmixMachineRoot"/);
  assert.match(panel,/Gépi gyökérmappa/);
  assert.match(panel,/data-action="download-xprg-project"/);
  assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
@@ -150,18 +152,18 @@ test('a régi Feya beállítás kizárólag Freyára javul, az egyéb anyagok é
 test('a WinCut Mix a megadott teljes X: gépi utat menti, nem csak a relatív xPrg nevet',()=>{
  assert.match(html,/const defaultXmixMachineRoot='X:\\\\JANI\\\\szabas_programmal\\\\Legujabb_mentessel'/);
  assert.match(html,/xmixMachineRoot:savedMachineRoot/);
- assert.match(html,/data-key="xmixMachineRoot"/);
+ assert.doesNotMatch(html,/data-key="xmixMachineRoot"/);
  assert.match(html,/function machineRootPath\(\)/);
  assert.match(html,/machineRootPath\(\)\+'\\\\'\+cabinet\+'\\\\xPrg\\\\'/);
  assert.match(html,/String\(parent.name\)\.toLocaleLowerCase/);
  assert.match(html,/machineExportBundle\(\{cabinetFolder:folderName\}\)/);
- assert.match(html,/key==='xmixMachineRoot'/);
+ assert.doesNotMatch(html,/key==='xmixMachineRoot'/);
 });
 
-test('a gépi gyökérmappát gépelés közben menti és natív ablakból módosítja',()=>{
+test('a célmappát kizárólag natív kiválasztás módosítja',()=>{
  assert.match(html,/function rememberMachineRoot\(value\)/);
  assert.match(html,/localStorage\.setItem\('gatterka-machine-root-v1'/);
- assert.match(html,/rememberMachineRoot\(el\.value\)/);
+ assert.doesNotMatch(html,/rememberMachineRoot\(el\.value\)/);
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
  assert.match(html,/const selected=await requestNativeMachine\('choose'/);
  assert.match(html,/rememberMachineRoot\(selected\.path\)/);
