@@ -16,7 +16,7 @@ class FixedDate extends Date {
 }
 function harness({selected=String.raw`X:\Munka\Megosztas`,cancelled=false,saveError='',missingBridge=false}={}){
  const calls={requests:[],notices:[],settings:[],saved:0};
- const input={value:''};
+ const input={textContent:''};
  const state={active:'nesting',layoutMode:'machine',projectName:'Teszt',
   kerf:5,furnitures:[],xmixMachineRoot:root};
  const bridge=missingBridge?null:{url:'http://127.0.0.1:31825',token:'A'.repeat(43)};
@@ -63,7 +63,7 @@ test('a natív Windows mappaválasztó tényleges X: elérési útját beírja �
  const {out,calls,input,state}=harness();
  await out.saveXprgToSelectedFolder();
  assert.equal(state.xmixMachineRoot,String.raw`X:\Munka\Megosztas`);
- assert.equal(input.value,String.raw`X:\Munka\Megosztas`);
+ assert.equal(input.textContent,String.raw`X:\Munka\Megosztas`);
  assert.ok(calls.settings.some(s=>s.key==='gatterka-machine-root-v1'));
  assert.equal(calls.saved,1);
  assert.equal(calls.requests.length,2);
@@ -89,18 +89,11 @@ test('a mappaválasztó megszakítása nem változtatja meg a korábban megadott
  assert.equal(calls.requests.length,1);
  assert.equal(calls.saved,0);
 });
-test('a gépi útvonal élő input kezelője gépelés közben is ment, újrarajzolás nélkül',()=>{
- const from=html.indexOf("document.addEventListener('input',e=>{");
- const to=html.indexOf("document.addEventListener('change',e=>{",from);
- assert.ok(from>=0&&to>from);
- let inputHandler;
- const entries=[];
- vm.runInNewContext(html.slice(from,to),{
-   document:{addEventListener:(name,fn)=>{assert.equal(name,'input');inputHandler=fn}},
-   rememberMachineRoot:v=>entries.push(v),
-   state:{furnitures:[]}
- });
- inputHandler({target:{dataset:{scope:'settings',key:'xmixMachineRoot'},
-    value:String.raw`X:\JANI\Frissitett`}});
- assert.deepEqual(entries,[String.raw`X:\JANI\Frissitett`]);
+test('a célmappa kizárólag kijelzés; nincs szerkeszthető bemeneti mező',()=>{
+ const start=html.indexOf('const machinePanel=');
+ const end=html.indexOf('// A gépi csíkok és vágási műveletek',start);
+ const panel=html.slice(start,end);
+ assert.match(panel,/<output id="xmix-machine-root"/);
+ assert.doesNotMatch(panel,/<input[^>]+id="xmix-machine-root"/);
+ assert.doesNotMatch(html,/data-key="xmixMachineRoot"/);
 });
