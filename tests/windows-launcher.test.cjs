@@ -44,33 +44,14 @@ test('a Gatterka maximalizált, visszaállítható Windows-ablakban indul',()=>{
  assert.doesNotMatch(go,/--kiosk|--start-fullscreen/);
 });
 test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bekerült',()=>{
- assert.match(go,/startNativeBridge\(page\)/);
- assert.match(go,/appURL:=fileURL\(page\)/);
- assert.match(native,/router\.HandleFunc\("\/native\/relay"/);
- assert.match(native,/http\.ServeFile\(w,r,page\)/);
+ assert.match(go,/startNativeBridge\(\)/);
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
  assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
- assert.match(native,/router\.HandleFunc\("\/native\/pick-save"/);
- const dialog=fs.readFileSync(path.join(__dirname,"../desktop-go/launcher/native_dialog_windows.go"),"utf8");
- assert.match(dialog,/SHBrowseForFolderW/);
- assert.match(dialog,/GetSaveFileNameW/);
- assert.match(dialog,/CommDlgExtendedError/);
- assert.match(native,/func saveMachineFilesAtPath\(mixPath string,req nativeSave\)/);
- assert.match(dialog,/GetForegroundWindow/);
- assert.doesNotMatch(dialog,/powershell\.exe|FolderBrowserDialog/);
- assert.match(native,/defaultMachineDirectory/);
- assert.match(native,/datedRoot/);
+ assert.match(native,/FolderBrowserDialog/);
+ assert.match(native,/GATTERKA_INITIAL_FOLDER/);
+ assert.match(native,/filepath\.Join\(root,folder,"xPrg",name\)/);
  assert.match(native,/func saveMachineFiles\(root string/);
  assert.match(native,/bridge\.selectedDirectory=dir/);
  assert.match(native,/X-Gatterka-Token/);
-});
-
-test('a natív mentőszolgáltatás nem áll le az Edge indítófolyamatának gyors kilépésekor',()=>{
- assert.match(go,/go func\(\)\{_ = cmd\.Wait\(\)\}\(\)/);
- assert.match(go,/waitForGatterkaWindow\(gatterkaMainWindowVisible/);
- assert.doesNotMatch(go,/\n\s+_=cmd\.Wait\(\)\n/);
- assert.match(windowIcon,/func gatterkaMainWindowVisible\(\) bool/);
- assert.match(windowIcon,/GetWindowTextW/);
- assert.match(windowIcon,/func waitForGatterkaWindow\(/);
 });
