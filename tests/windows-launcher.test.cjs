@@ -50,7 +50,7 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
  assert.match(native,/FolderBrowserDialog/);
  assert.match(native,/GATTERKA_INITIAL_FOLDER/);
- assert.match(native,/filepath\.Join\(root,folder,"xPrg",name\)/);
+ assert.match(native,/datedRoot/);
  assert.match(native,/func saveMachineFiles\(root string/);
  assert.match(native,/bridge\.selectedDirectory=dir/);
  assert.match(native,/X-Gatterka-Token/);
