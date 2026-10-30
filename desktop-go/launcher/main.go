@@ -119,9 +119,10 @@ func main(){
     } else {defer stopBridge()}
     appURL:=fileURL(page)
     if bridgeErr==nil {
-        // Ugyanazon helyi HTTP cím szolgálja ki a felületet és a natív mentést.
-        // Ez megszünteti a file:// -> localhost böngészős tiltást.
-        appURL="http://127.0.0.1:"+strconv.Itoa(port)+"/#gatterka-native="+strconv.Itoa(port)+"."+token
+        // A file://-eredet megőrzése elengedhetetlen a korábban helyben
+        // mentett bútorprojektek megtartásához. A natív mentéshez a
+        // felület rejtett helyi relay-iframe-et használ.
+        appURL+="#gatterka-native="+strconv.Itoa(port)+"."+token
     }
     if path,found:=firstBrowser();found {
         local := os.Getenv("LOCALAPPDATA")
