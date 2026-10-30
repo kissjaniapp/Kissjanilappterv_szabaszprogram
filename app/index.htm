@@ -168,7 +168,7 @@
   normalizeFurnitureMeta(state.furnitures,state);
   normalizeFurnitureSizes(state.furnitures);
   normalizeLabelSettings(state);
-  if(!['machine','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
+  if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
   if (!paneNames[state.active]) state.active = 'furniture';
   if (!state.selectedFurniture || !state.furnitures.some(f=>f.id===state.selectedFurniture)) state.selectedFurniture=state.furnitures[0]?.id || null;
   let result=null;
@@ -202,7 +202,7 @@
     normalizeFurnitureMeta(state.furnitures,state);
     normalizeFurnitureSizes(state.furnitures);
     normalizeLabelSettings(state);
-    if(!['machine','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
+    if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='machine';
     state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
     state.active='furniture';currentProjectId=entry.id;projectScreen='editor';
     result=null;notice='';render();
@@ -538,8 +538,8 @@
             // A legjobb tervet minden próbálkozás végén tényleges táblaarea alapján
             // választjuk: egy lokálisan több hulladékot hagyó döntés is spórolhat táblát.
             const ripLoss=gap*len;
-            const gapWeight=[.05,.08,.025,.12,.035,.075,.015,.16][strategy]??.05;
-            const endWeight=[.005,.002,.008,.001,.012,.006,.002,.003][strategy]??.005;
+            const gapWeight=[.05,.08,.025,.12,.035,.075,.015,.16,.20,.015,.25,.008,.12,.003,.10,.30][strategy]??.05;
+            const endWeight=[.005,.002,.008,.001,.012,.006,.002,.003,.02,.0005,.03,.001,.015,.0002,.008,.05][strategy]??.005;
             const score=bin.a*bin.b*1e5+ripLoss*gapWeight+left*endWeight;
             if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len};
           }
@@ -554,10 +554,10 @@
             // esetleges utólagos szélességre vágásánál.
             // Változatos súlyokkal keresünk, mert a teljes lapkihasználás
             // a hátralévő alkatrészek alakjától is függ.
-            const openStripPenalty=[3000,12000,24000,42000,65000,9500,80000,30000][strategy]??3000;
-            const firstStripPenalty=[10000,12000,16000,20000,24000,11000,20000,17000][strategy]??10000;
+            const openStripPenalty=[3000,12000,24000,42000,65000,9500,80000,30000,2000,140000,500,210000,75000,300000,18000,400000][strategy]??3000;
+            const firstStripPenalty=[10000,12000,16000,20000,24000,11000,20000,17000,3000,1000,50000,1500,60000,2500,90000,600][strategy]??10000;
             const feedAreaPenalty=(m.strips.length?
-              [0,.004,.009,.016,.025,.002,.03,.012][strategy]:0)*bw*m.crossSize;
+              [0,.004,.009,.016,.025,.002,.03,.012,.05,.001,.09,.002,.12,.0002,.06,.15][strategy]:0)*bw*m.crossSize;
             const score=bin.a*bin.b*1e5+
               (m.strips.length?openStripPenalty:firstStripPenalty)+
               feedAreaPenalty+remaining*.01;
@@ -789,17 +789,19 @@
   }
   function computeNesting(){
     const parts=getParts();
-    if(state.layoutMode==='machine'&&Number(state.trim)>0&&Number(state.trim)<Number(state.kerf))
+    if(['machine','economy'].includes(state.layoutMode)&&Number(state.trim)>0&&Number(state.trim)<Number(state.kerf))
       return {error:'A gépi szélezési ráhagyás nem lehet kisebb a vágásrésnél.'};
     if(parts.errors.length)return {error:'Előbb javítsd a képlethibákat. '+parts.errors[0]};
     if(parts.total>700)return {error:'A program egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
     let best=null;
     const axes=state.cutDirection==='x'||state.cutDirection==='y'?[state.cutDirection]:['x','y'];
-    const machineMode=state.layoutMode==='machine';
+    const economyMode=state.layoutMode==='economy';
+    const machineMode=state.layoutMode==='machine'||economyMode;
     // Gépi csíkos tervnél az eddigi 6 helyett 48 különböző sorrend/
     // újracsíkozási súlyozás közül választunk. Nagy feladatnál 24 próba.
-    const effort=machineMode?(parts.total<=150?48:24):
+    const effort=economyMode?(parts.total<=150?96:48):
+      machineMode?(parts.total<=150?48:24):
       parts.total<=80?96:parts.total<=200?48:24;
     const modes=Array.from({length:effort},(_,i)=>i)
       .filter(i=>state.layoutMode!=='rows'||Math.floor(i/6)%4===0)
@@ -812,10 +814,28 @@
       const machineStripArea=machineMode?trial.bins.reduce((sum,bin)=>
         sum+(bin.machine?.strips||[]).reduce((area,strip)=>
           area+strip.width*bin.machine.crossSize,0),0):0;
+      // A teljes átvágásos, egymás után sávozó megoldásokból a
+      // gazdaságos mód a legnagyobb egybefüggő maradékot jutalmazza.
+      // Csak keresési heurisztika: nem bizonyított globális optimum.
+      const remnants=machineMode?trial.bins.flatMap(bin=>{
+        const m=bin.machine;
+        if(!m)return [];
+        const freeWidth=Math.max(0,m.feedSize-m.feedUsed);
+        const freeArea=freeWidth*m.crossSize;
+        return [freeArea,...m.strips.map(strip=>
+          Math.max(0,m.crossSize-strip.usedLength)*strip.width)]
+          .filter(a=>a>=100*100);
+      }):[];
+      const largestReusable=remnants.length?Math.max(...remnants):0;
+      const reuseConcentration=remnants.reduce((sum,area)=>sum+Math.pow(area/1e6,2),0);
       const score=trial.failed.length*1e18+trial.sheetArea*1e5+
         trial.bins.length*1e7+machineStripArea*.025+
-        cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01;
-      if(!best||score<best.score){best={...trial,score,cutAxis:axis};}
+        cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01+
+        (economyMode? -largestReusable*.06-reuseConcentration*8000:0);
+      if(!best||score<best.score){best={...trial,score,cutAxis:axis,
+        layoutDescription:economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
+          machineMode?'Gépi csíkos':'Szabad nesting',
+        largestReusableArea:largestReusable};}
     }
     if(machineMode&&best&&!best.error)best.production=buildProductionSequence(best.bins);
     return best;
@@ -974,14 +994,15 @@
   function nestingView(){
     const summary=getParts();
     const run=`<button class="btn primary" data-action="run-nesting">⟳ ${result && !result.error?'Újraszámolás':'Nesting indítása'}</button>`;
-    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">Kezdővágás iránya</div><div class="panel-sub">X gépállás: a 2070 mm-es oldalt húzza be a gép, és a 2800 mm-es hossz mentén szab csíkokat. Y gépállás: a 2800 mm-es oldalt húzza be, és a 2070 mm-es hossz mentén szab. Más táblánál ugyanez az első/második méret szerint érvényes.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Válaszd ki az első vágások tengelyét</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Automatikus · mindkét gépállás kipróbálása</option><option value="x" ${state.cutDirection==='x'?'selected':''}>X gépállás · behúzás 2070 oldalról</option><option value="y" ${state.cutDirection==='y'?'selected':''}>Y gépállás · behúzás 2800 oldalról</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="machine" ${(!state.layoutMode||state.layoutMode==='machine')?'selected':''}>Gépi csíkos · csíkok, majd visszaadás</option><option value="auto" ${state.layoutMode==='auto'?'selected':''}>Szabad nesting · polcos + mozaikos</option><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos · vegyes vágásirányok</option><option value="rows" ${state.layoutMode==='rows'?'selected':''}>Polcos · egyféle kezdőirány</option></select></div></div></div></div>`;
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">Kezdővágás iránya</div><div class="panel-sub">X gépállás: a 2070 mm-es oldalt húzza be a gép, és a 2800 mm-es hossz mentén szab csíkokat. Y gépállás: a 2800 mm-es oldalt húzza be, és a 2070 mm-es hossz mentén szab. Más táblánál ugyanez az első/második méret szerint érvényes.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Válaszd ki az első vágások tengelyét</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Automatikus · mindkét gépállás kipróbálása</option><option value="x" ${state.cutDirection==='x'?'selected':''}>X gépállás · behúzás 2070 oldalról</option><option value="y" ${state.cutDirection==='y'?'selected':''}>Y gépállás · behúzás 2800 oldalról</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="machine" ${(!state.layoutMode||state.layoutMode==='machine')?'selected':''}>Gépi csíkos · csíkok, majd visszaadás</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagy maradékok megőrzése</option><option value="auto" ${state.layoutMode==='auto'?'selected':''}>Szabad nesting · polcos + mozaikos</option><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos · vegyes vágásirányok</option><option value="rows" ${state.layoutMode==='rows'?'selected':''}>Polcos · egyféle kezdőirány</option></select></div></div></div></div>`;
     let body='';
     if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><button class="btn orange" data-action="run-nesting">✂ Nesting kiszámítása</button><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}
     else if(result.error){body=`<div class="notice error">${h(result.error)}</div><div class="section-bottom"><button class="btn" data-action="page" data-page="furniture">Alkatrészek ellenőrzése</button><button class="btn" data-action="page" data-page="stock">Anyagok ellenőrzése</button></div>`;}
     else{
       const b=result.bins[Math.max(0,Math.min(result.bins.length-1,state.selectedBoard))];
       const util=result.sheetArea?result.usedArea/result.sheetArea*100:0;
-      const stats=`<div class="statrow">
+      const ecoInfo=state.layoutMode==='economy'?`<div class="notice" style="margin-bottom:16px"><strong>Anyagtakarékos csíkterv</strong> · teljes sáv- és csíkvágásokkal. Legnagyobb egybefüggő becsült maradék: <strong>${nfmt((result.largestReusableArea||0)/1e6)} m²</strong>. Hasonlítsd össze a „Gépi csíkos” móddal is; nem garantált optimum.</div>`:'';
+      const stats=`${ecoInfo}<div class="statrow">
         <div class="stat"><div class="label">Elhelyezett alkatrész</div><div class="value">${result.items.length-result.failed.length}<span class="small muted"> / ${result.items.length}</span></div><div class="detail">${result.failed.length?'Nem fér el minden elem':'Minden elem elhelyezve'}</div></div>
         <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">maradék és szükség esetén automatikus alaptábla</div></div>
         <div class="stat"><div class="label">Kihozatal</div><div class="value">${nfmt(util)}<span class="small muted">%</span></div><div class="detail">nettó alkatrész / teljes felhasznált tábla</div></div>
