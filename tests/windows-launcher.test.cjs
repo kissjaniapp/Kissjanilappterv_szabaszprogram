@@ -34,3 +34,24 @@ test('mindhárom EXE saját, modern Windows-kompatibilitási manifestet kap',()=
   assert.match(checker,/def pe_manifest\(/);
   assert.match(checker,/MANIFEST MISMATCH/);
 });
+
+const windowIcon=fs.readFileSync(path.join(__dirname,'../desktop-go/launcher/windowicon_windows.go'),'utf8');
+const native=fs.readFileSync(path.join(__dirname,'../desktop-go/launcher/native_bridge.go'),'utf8');
+test('a Gatterka maximalizált, visszaállítható Windows-ablakban indul',()=>{
+ assert.match(go,/--start-maximized/);
+ assert.doesNotMatch(go,/--window-size=1440,900/);
+ assert.match(windowIcon,/showWindow\.Call\(hwnd,3\)/);
+ assert.doesNotMatch(go,/--kiosk|--start-fullscreen/);
+});
+test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bekerült',()=>{
+ assert.match(go,/startNativeBridge\(\)/);
+ assert.match(go,/#gatterka-native=/);
+ assert.match(go,/--app="\+appURL/);
+ assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
+ assert.match(native,/FolderBrowserDialog/);
+ assert.match(native,/GATTERKA_INITIAL_FOLDER/);
+ assert.match(native,/filepath\.Join\(root,folder,"xPrg",name\)/);
+ assert.match(native,/func saveMachineFiles\(root string/);
+ assert.match(native,/bridge\.selectedDirectory=dir/);
+ assert.match(native,/X-Gatterka-Token/);
+});

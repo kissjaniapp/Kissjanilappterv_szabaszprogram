@@ -19,6 +19,7 @@ func setRunningWindowIcon(browserPID int) {
     isVisible := user32.NewProc("IsWindowVisible")
     enumWindows := user32.NewProc("EnumWindows")
     setClassLongPtr := user32.NewProc("SetClassLongPtrW")
+    showWindow := user32.NewProc("ShowWindow")
     module,_,_ := kernel.NewProc("GetModuleHandleW").Call(0)
     if module==0 {return}
     const imageIcon=1
@@ -39,6 +40,8 @@ func setRunningWindowIcon(browserPID int) {
         if v==0 {return 1}
         sendMessage.Call(hwnd,wmSetIcon,0,small)
         sendMessage.Call(hwnd,wmSetIcon,1,icon)
+        // SW_MAXIMIZE=3: a címsor és a Visszaállítás gomb megmarad.
+        showWindow.Call(hwnd,3)
         // A Windows alkalmazásikonját az osztályhoz is beállítjuk.
         // -14 = GCLP_HICON, -34 = GCLP_HICONSM
         setClassLongPtr.Call(hwnd,^uintptr(13),icon)

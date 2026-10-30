@@ -9,6 +9,7 @@ import (
     "os/exec"
     "path/filepath"
     "regexp"
+    "strconv"
     "strings"
     "syscall"
     "unsafe"
@@ -109,6 +110,17 @@ func main(){
     page := filepath.Join(root,"app","index.htm")
     if _,err := os.Stat(page); err != nil {message("Hiányzik az alkalmazás fájlja:\n"+page+"\nTelepítsd újra a Gatterkaet.");return}
     page, _ = filepath.Abs(page)
+    // Saját helyi Windows-mappaválasztó és projektmentés: a Chromium
+    // file:// környezet önmagában nem tud teljes X:\\... útvonalat lekérni.
+    port,token,stopBridge,bridgeErr:=startNativeBridge()
+    if bridgeErr!=nil {
+        message("A gépi programok Windows mappaválasztója nem érhető el:\n"+bridgeErr.Error()+
+            "\nA ZIP letöltése ettől még használható.")
+    } else {defer stopBridge()}
+    appURL:=fileURL(page)
+    if bridgeErr==nil {
+        appURL+="#gatterka-native="+strconv.Itoa(port)+"."+token
+    }
     if path,found:=firstBrowser();found {
         local := os.Getenv("LOCALAPPDATA")
         if local == "" {local = os.TempDir()}
@@ -120,7 +132,9 @@ func main(){
             message("A Letöltések mappa beállítása sikertelen:\n"+err.Error()+
                 "\nEllenőrizd a böngésző mentési beállítását.")
         }
-        cmd:=exec.Command(path,"--app="+fileURL(page),"--user-data-dir="+userDataDir,"--no-first-run","--window-size=1440,900")
+        // A Windows saját maximalizált ablaka, nem F11/kioszk:
+        // az ablak jobb felső gombjával normál méretre visszaállítható.
+        cmd:=exec.Command(path,"--app="+appURL,"--user-data-dir="+userDataDir,"--no-first-run","--start-maximized")
         if err=cmd.Start();err==nil {
             // Az alkalmazásablak ikonja is Gatterka legyen, ne Edge/Chrome.
             setRunningWindowIcon(cmd.Process.Pid)

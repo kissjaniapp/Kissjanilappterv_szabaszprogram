@@ -33,6 +33,14 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Natív Windows mappaválasztó és gépi mentés ellenőrzése
+        shell: pwsh
+        run: |
+          Push-Location desktop-go
+          try { go test ./launcher }
+          finally { Pop-Location }
+          if ($LASTEXITCODE -ne 0) { throw 'Gatterka Windows gépi mentés teszt hiba' }
+
       - name: Gatterka ellenorzesek
         run: node --test
 

@@ -135,3 +135,40 @@ A **ZIP letöltése** is teljes X: meghajtós Mix útvonalat ír, ezért
 a kibontott projektmappát **a megadott gépi gyökérmappába** kell másolni;
 más helyre kibontva a gép nem fogja megtalálni az xPrg-ket.
 Az .xPrg fájlok vágási parancsait, anyagait és fejléceit ez a javítás nem módosítja.
+
+
+## 2026-10-30 – valódi Windows mappaválasztás és maximalizált Gatterka
+
+A korábbi HTML5 showDirectoryPicker a beágyazott böngésző számára csak mappa-engedélyt
+és mappanevet adott, a teljes Windows meghajtóutat nem. Ezért a gépi gyökérmappa
+mező nem frissült, a Mix nem mindig a tényleges mappára mutatott, és a mentés
+hibásan leállhatott.
+
+**Új Windows Gatterka.exe változat:** a telepített program saját, a
+127.0.0.1 loopback címen elérhető, munkamenet-tokenhez kötött helyi mentőn
+keresztül **valódi Windows mappaválasztót** nyit (PowerShell / Windows Forms).
+A kiválasztott mappa teljes útja automatikusan bekerül a
+**Gépi gyökérmappa – teljes Windows-útvonal** mezőbe, és mentődik a
+projektben és a felhasználó gépiútvonal-beállításában. A mező kézzel is
+szerkeszthető, és már gépelés közben elmenti az értéket.
+
+Az EXE maga hozza létre a dátum + célhely névre képzett projektmappát,
+azon belül a közös XML .xMix fájlt és az xPrg mappát. Az .xMix RigaMix File
+hivatkozásait **közvetlenül a ténylegesen létrehozott Windows mappára** írja,
+nem egy vélelmezett X: meghajtóra. Azonos nevű mentéskor a ténylegesen
+képzett _2, _3 stb. mappanevet is átvezeti a Mix sorain. Érvénytelen
+fájlneveket, útvonalbejárást és hivatkozáshiányt visszautasít; az .xPrg
+vágási tartalma érintetlen.
+
+A **ZIP letöltése** a kézzel beállított X: gyökérmappa szerinti teljes
+útvonalat használja; kézi kibontáskor ezt a gyökérmappát kell használni.
+A külön megnyitott index.htm (Windows EXE nélkül) nem fér hozzá a natív
+mappaválasztóhoz; ott a ZIP letöltés működik.
+
+A Windows indító **maximalizált, de normál visszaállítható ablakot**
+nyit (`--start-maximized` és SW_MAXIMIZE). A cím- és bezárógomb
+megmarad. Nem F11-es teljes képernyő és nem kioszk mód.
+
+A módosítás automatikus Windows/JavaScript tesztjei a mentési útvonalakra
+és projekt-ütközésekre vonatkoznak. A tényleges gépi vezérlőn történő
+vágást továbbra is külön ellenőrizni kell.
