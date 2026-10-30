@@ -33,7 +33,7 @@ test('a telepítő a dedikált Gatterka böngészőprofilt ismeri fel, nem törl
 test('a Gatterka névvel települ, de felismeri az előző Lapterv.exe fájlt',()=>{
  assert.match(go,/"Gatterka.exe"/);
  assert.match(go,/"Lapterv.exe"/);
- assert.match(go,/"Gatterka.lnk"/);
+ assert.match(go,/Gatterka\.lnk/);
  assert.match(go,/"DisplayName","Gatterka"/);
  assert.match(go,/func cleanupLegacyIdentity\(\)/);
 });
