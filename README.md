@@ -1,12 +1,19 @@
-# Gatterka 1.0.9 – Windowsos szabásztervező
+# Gatterka 1.0.10 – Windowsos szabásztervező
 
 Ez a **működő Gatterka program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 
+### Aktuális tudnivalók – 1.0.10
+
+A Windowsos Gatterka natív mappaválasztójával közvetlenül menti az xPrg/xMix projektet: a kiválasztott célmappában dátumos projektmappát és xPrg almappát hoz létre, az xMix a tényleges Windows-útvonalat tartalmazza. A célmappa elérési útja a felületen **csak kijelzés**, nem szerkeszthető. Az Alkatrészek oldalon egyetlen „Anyagkészlet →” gomb van. A ZIP továbbra is választható alternatíva.
+
+**Digitális aláírás:** amíg nincs hiteles kiadói tanúsítványod, a GitHubon felépülő EXE-k nem lesznek megbízható kiadó által aláírva. A telepítőcsomag ALAIRAS_STATUSZ.txt fájlja ezt egyértelműen jelzi. A tanúsítvány későbbi bekötéséhez az alábbi szakaszban van útmutató; az aláírás önmagában nem garantálja a SmartScreen-figyelmeztetések azonnali eltűnését.
+
+
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Gatterka.exe` indítóval és
-`Gatterka_Telepito_1.0.9_x64.exe` telepítővel. Offline fut. A teljes
+`Gatterka_Telepito_1.0.10_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -14,7 +21,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Gatterka - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Gatterka-Windows-Telepito-1.0.9` nevű **Artifacts** csomagban.
+a `Gatterka-Windows-Telepito-1.0.10` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Gatterka.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
 A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Gatterka ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
@@ -395,3 +402,22 @@ megmarad. Nem F11-es teljes képernyő és nem kioszk mód.
 A módosítás automatikus Windows/JavaScript tesztjei a mentési útvonalakra
 és projekt-ütközésekre vonatkoznak. A tényleges gépi vezérlőn történő
 vágást továbbra is külön ellenőrizni kell.
+
+
+## 1.0.10 – közvetlen mentés és hiteles digitális aláírás előkészítése
+
+A Gatterka.exe indítóból megnyitott **📁 Mappa kiválasztása és mentés** gomb a Windows natív mappaválasztóját használja. A jóváhagyáskor a Go segédszolgáltatás azonnal menti a fájlokat a kiválasztott gyökérkönyvtár alatt létrehozott dátumos projektmappába, azon belül külön xPrg mappába. A közös xMix mindegyik táblához abszolút, a valós mentési útvonallal egyező hivatkozást kap. A felületen látható célmappa immár csak olvasható; nem kézzel megadható. Ez megőrzi az xMix-projektfájlok jelenlegi, a gép által már kipróbált szerkezetét. A ZIP továbbra is választható.
+
+### Authenticode kiadói aláírás – melyik lehetőség használható?
+
+**Saját Windows-gépen, magyarországi egyéni fejlesztőként:** szerezz be nyilvánosan megbízható CA-tól (pl. Sectigo/DigiCert/GlobalSign) egy **Code Signing** célra kiadott, hitelesített kódaláíró tanúsítványt és annak felhős vagy hardveres privátkulcs-hozzáférését. Az érvényes tanúsítványt a Windows tanúsítványtárában a privátkulcs-providerrel elérhetővé téve az alábbi lépésekkel írhatsz alá:
+
+1. Windows alatt fordítsd le a programot a `desktop-go\\Build-Windows.cmd` fájllal; telepítsd a Windows SDK SignTool segédprogramját.
+2. A tanúsítvány pontos SHA-1 ujjlenyomatával futtasd a `powershell -ExecutionPolicy Bypass -File .\\tools\\Sign-Gatterka.ps1 -Thumbprint <TANUSITVANY_UJJLENYOMAT>` parancsot. A szkript először aláírja a `Gatterka.exe` és `Gatterka_Eltavolitas.exe` fájlokat, majd **újrafordítja a telepítőt a már aláírt belső programokkal**, végül a telepítőt is aláírja és ellenőrzi.
+3. Ellenőrizd a `Gatterka_Telepito_1.0.10_x64.exe` Digitális aláírások fülét, illetve a `signtool verify /pa /v` kimenetét.
+
+**Azure Artifact Signing a GitHub Actionsben:** jogszerűen jogosult, Microsoftnál hitelesített szervezeti Azure-fiók esetén állítsd `GATTERKA_SIGNING_ENABLED=true` repository Variable értékre, és GitHub Secrets-ben add meg a `GATTERKA_AZURE_TENANT_ID`, `GATTERKA_AZURE_CLIENT_ID`, `GATTERKA_AZURE_CLIENT_SECRET`, `GATTERKA_SIGN_ENDPOINT`, `GATTERKA_SIGN_ACCOUNT`, `GATTERKA_SIGN_PROFILE` értékeket. Ekkor a workflow az Authenticode aláírásokat ellenőrizve készíti el az EXE-ket. **A nyilvánosan megbízható Azure egyéni tanúsítványhoz 2026-ban USA-/kanadai lakóhely szükséges, magyarországi egyéni fejlesztő erre nem jogosult**; magyarországi szervezet más feltételekkel lehet jogosult. Más esetekben a helyi SignTool-módszer használható.
+
+Sose másold be a privátkulcsot, tanúsítvány-jelszót vagy titkos Azure hitelesítő adatokat a repóba, a chatbe vagy a programkódba. Saját aláírású (self-signed) tanúsítvány nem váltja ki a Windows kiadói bizalmát. A SmartScreen új, érvényesen aláírt program esetén is kérhet további megerősítést, amíg nem épül ki a kiadó és a fájl reputációja.
+
+Microsoft források: https://learn.microsoft.com/en-us/azure/artifact-signing/quickstart és https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/smartscreen-reputation
