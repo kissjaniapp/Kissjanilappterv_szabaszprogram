@@ -13,14 +13,11 @@ import (
  "net"
  "net/http"
  "os"
- "os/exec"
  "path/filepath"
  "regexp"
  "strings"
  "sync"
- "syscall"
  "time"
- "unicode/utf16"
 )
 
 type nativeBridge struct {
@@ -105,6 +102,7 @@ func startNativeBridge(page string)(int,string,func(),error){
  router:=http.NewServeMux()
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
+ router.HandleFunc("/native/pick-save",bridge.pickAndSave)
  router.HandleFunc("/native/relay",func(w http.ResponseWriter,r *http.Request){
   if r.Method!=http.MethodGet{http.Error(w,"Method not allowed",http.StatusMethodNotAllowed);return}
   w.Header().Set("Content-Type","text/html; charset=utf-8")
@@ -128,53 +126,6 @@ func startNativeBridge(page string)(int,string,func(),error){
  },nil
 }
 
-// Valódi Windows mappaválasztó: a PowerShell a kiválasztott mappa abszolút
-// meghajtóútvonalát adja át a Go alkalmazásnak. Nem csupán a mappa nevét.
-func chooseWindowsFolder(initial string)(string,error){
- script:=`$ErrorActionPreference='Stop'
-Add-Type -AssemblyName System.Windows.Forms
-[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
-$picker=New-Object System.Windows.Forms.FolderBrowserDialog
-$picker.Description='Gatterka - valaszd ki a gepi projektfajlok szulomappajat'
-$picker.ShowNewFolderButton=$true
-$start=$env:GATTERKA_INITIAL_FOLDER
-if($start -and [System.IO.Directory]::Exists($start)){$picker.SelectedPath=$start}
-$owner=New-Object System.Windows.Forms.Form
-$owner.TopMost=$true
-$owner.ShowInTaskbar=$false
-$owner.FormBorderStyle='None'
-$owner.Size=[System.Drawing.Size]::new(1,1)
-$owner.Opacity=0
-try {
-  $owner.Show()
-  $owner.Activate()
-  $result=$picker.ShowDialog($owner)
-  if($result -eq [System.Windows.Forms.DialogResult]::OK){
-    [Console]::WriteLine($picker.SelectedPath)
-  } else {
-    [Console]::WriteLine('GATTERKA_CANCELLED')
-  }
-} finally {
-  $picker.Dispose()
-  $owner.Close()
-  $owner.Dispose()
-}`
- chars:=utf16.Encode([]rune(script))
- bytes:=make([]byte,2*len(chars))
- for i,c:=range chars {bytes[2*i]=byte(c);bytes[2*i+1]=byte(c>>8)}
- cmd:=exec.Command("powershell.exe","-NoProfile","-STA","-EncodedCommand",base64.StdEncoding.EncodeToString(bytes))
- cmd.Env=append(os.Environ(),"GATTERKA_INITIAL_FOLDER="+initial)
- cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
- output,err:=cmd.CombinedOutput()
- if err!=nil{return "",fmt.Errorf("A Windows mappaválasztó nem indult: %w: %s",err,strings.TrimSpace(string(output)))}
- dir:=strings.TrimSpace(string(output))
- if dir==""||dir=="GATTERKA_CANCELLED"{return "",nil}
- dir=filepath.Clean(dir)
- if !filepath.IsAbs(dir){return "",errors.New("A mappaválasztó nem teljes Windows-útvonalat adott.")}
- st,err:=os.Stat(dir)
- if err!=nil||!st.IsDir(){return "",fmt.Errorf("A kiválasztott mappa nem érhető el: %s",dir)}
- return dir,nil
-}
 func (bridge *nativeBridge) choose(w http.ResponseWriter,r *http.Request){
  if !bridge.allow(w,r){return}
  bridge.mu.Lock()
@@ -323,4 +274,57 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
    "path":full,"cabinetFolder":filepath.Base(full),
    "programs":len(request.Files)-1,
  })
+}
+
+ 
+// Egyetlen böngészős űrlap-POST. Nem igényel file:// -> localhost fetch/CORS-t,
+// ezért a natív mentés olyan Edge/Chrome verzión is működik, amely tiltja a cross-origin fetch-et.
+func nativeFormResult(w http.ResponseWriter,id string,success bool,data interface{},err error){
+ w.Header().Set("Content-Type","text/html; charset=utf-8")
+ w.Header().Set("Cache-Control","no-store")
+ w.Header().Set("X-Content-Type-Options","nosniff")
+ w.Header().Set("Content-Security-Policy","default-src 'none'; script-src 'unsafe-inline'")
+ message:=map[string]interface{}{"type":"gatterka-form-result","id":id,"ok":success,"value":data}
+ if err!=nil{message["error"]=err.Error()}
+ jsonMessage,_:=json.Marshal(message) // Az encoding/json kódolja a <, > és & karaktereket.
+ _,_=fmt.Fprintf(w,"<!doctype html><html><head><meta charset='utf-8'></head><body><script>window.parent.postMessage(%s, '*')</script></body></html>",jsonMessage)
+}
+func (bridge *nativeBridge) pickAndSave(w http.ResponseWriter,r *http.Request){
+ if r.Method!=http.MethodPost {
+  nativeFormResult(w,"",false,nil,errors.New("Csak POST engedélyezett."));return
+ }
+ if origin:=r.Header.Get("Origin");origin!=""&&origin!="null"&&origin!="http://"+r.Host {
+  nativeFormResult(w,"",false,nil,errors.New("Idegen weboldalról nem lehet gépi mentést indítani."));return
+ }
+ r.Body=http.MaxBytesReader(w,r.Body,32<<20)
+ if err:=r.ParseForm();err!=nil {
+  nativeFormResult(w,"",false,nil,fmt.Errorf("Nem olvasható a mentési kérelem: %w",err));return
+ }
+ id:=r.PostForm.Get("id")
+ if r.PostForm.Get("token")!=bridge.token {
+  nativeFormResult(w,id,false,nil,errors.New("Érvénytelen Gatterka munkamenet."));return
+ }
+ var req nativeSave
+ if err:=json.Unmarshal([]byte(r.PostForm.Get("request")),&req);err!=nil{
+  nativeFormResult(w,id,false,nil,fmt.Errorf("Hibás gépi mentési adatok: %w",err));return
+ }
+ if _,_,err:=safeNativeProgramFiles(req);err!=nil{
+  nativeFormResult(w,id,false,nil,err);return
+ }
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ initial:=defaultMachineDirectory
+ if err:=os.MkdirAll(initial,0700);err!=nil{
+  initial=filepath.VolumeName(defaultMachineDirectory)+string(filepath.Separator)
+ }
+ dir,err:=chooseWindowsFolder(initial)
+ if err!=nil{nativeFormResult(w,id,false,nil,err);return}
+ if dir==""{
+  nativeFormResult(w,id,true,map[string]interface{}{"cancelled":true},nil);return
+ }
+ full,err:=saveMachineFiles(dir,req)
+ if err!=nil{nativeFormResult(w,id,false,nil,err);return}
+ nativeFormResult(w,id,true,map[string]interface{}{
+  "cancelled":false,"path":full,"programs":len(req.Files)-1,
+ },nil)
 }
