@@ -93,7 +93,7 @@ func gatterkaMainWindowVisible() bool {
 // indítófolyamata véget ért. A főablak bezárását figyeljük.
 // A hosszú indulási türelmi idő megőrzi a mentést akkor is,
 // ha a böngésző az ablak címét eltérően jeleníti meg.
-func waitForGatterkaWindow(probe func() bool,poll,initialGrace time.Duration) {
+func waitForGatterkaWindow(probe func() bool,poll,initialGrace,closeGrace time.Duration) {
     seen:=false
     started:=time.Now()
     var absentSince time.Time
