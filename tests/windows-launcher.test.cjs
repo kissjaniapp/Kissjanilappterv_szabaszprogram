@@ -45,7 +45,8 @@ test('a Gatterka maximalizált, visszaállítható Windows-ablakban indul',()=>{
 });
 test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bekerült',()=>{
  assert.match(go,/startNativeBridge\(page\)/);
- assert.match(go,/http:\/\/127\.0\.0\.1:/);
+ assert.match(go,/appURL:=fileURL\(page\)/);
+ assert.match(native,/router\.HandleFunc\("\/native\/relay"/);
  assert.match(native,/http\.ServeFile\(w,r,page\)/);
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
