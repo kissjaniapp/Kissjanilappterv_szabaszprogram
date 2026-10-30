@@ -1,4 +1,4 @@
-# Gatterka 1.0.9 – Windowsos szabásztervező
+# Gatterka 1.0.16 – 14:05-ös szabási alap + állítható előmarás
 
 Ez a **működő Gatterka program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
@@ -6,7 +6,7 @@ https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 ## Windows alkalmazás és telepítő
 
 A program Windows 10/11-re készül, saját `Gatterka.exe` indítóval és
-`Gatterka_Telepito_1.0.9_x64.exe` telepítővel. Offline fut. A teljes
+`Gatterka_Telepito_1.0.16_x64.exe` telepítővel. Offline fut. A teljes
 bútor- és nestingfelület **helyi HTML/JavaScript alapú**, amelyet a
 telepített **Microsoft Edge vagy Chrome böngészőmotorja külön alkalmazásablakban**
 nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
@@ -14,7 +14,7 @@ nyit meg. Ez teljes funkcionalitású Windowsos asztali csomagolás,
 
 Az automatikus telepítő a GitHub **Actions** oldalon, a
 `Gatterka - Windows telepito automatikus epites` folyamatból tölthető le,
-a `Gatterka-Windows-Telepito-1.0.9` nevű **Artifacts** csomagban.
+a `Gatterka-Windows-Telepito-1.0.16` nevű **Artifacts** csomagban.
 Az egyedi program-, telepítő- és eltávolítóikon a gyökérben található `Gatterka.ico` fájlból készül. Mindhárom EXE beágyazott ikonját a GitHub Actions külön ellenőrzi.
 A futó Edge/Chrome alapú alkalmazásablak fejlécikonját a Windows indító állítja be, a beágyazott HTML pedig a Gatterka ikonját használja faviconként. A Windows feladatütemező/tálca megjelenése a böngészőmotor és a helyi Windows-beállítások függvénye lehet.
 
