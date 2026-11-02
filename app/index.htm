@@ -1327,6 +1327,9 @@
     const used=[...bins,...standardBins].filter(b=>b.placements.length);
     return {bins:used,failed,items,usedArea:used.reduce((s,b)=>s+b.used,0),sheetArea:used.reduce((s,b)=>s+b.a*b.b,0)};
   }
+  // A biztonságos parancslimit fizikai táblánként (nem munkánként) értendő.
+  // A vágási sorrendet és a védett xMix/xPrg exportőrt nem változtatjuk.
+  const MAX_SAFE_XPRG_COMMANDS=99;
   // A szabászgép kétütemű programja: előbb MINDEN csíkot leválaszt,
   // majd a csíkokat visszakéri, és egyenként hosszra/keresztbe vágja őket.
   // X gépállás: 2070-es oldal a behúzás; Y: 2800-as oldal a behúzás.
@@ -1392,6 +1395,10 @@
             const addition=(strip.usedLength?kerf:0)+len;
             const left=m.crossSize-strip.usedLength-addition;
             if(gap<-eps||!isValidRemainder(gap)||!isValidRemainder(left))continue;
+            // A meglévő xPrg export X, szükség esetén U, majd F
+            // parancsot készít alkatrészenként. Megelőzzük a 100. parancsot.
+            const extraCommands=2+(gap>0.001&&gap+0.001>=kerf?1:0);
+            if((m.commandCount??2)+extraCommands>MAX_SAFE_XPRG_COMMANDS)continue;
             // Egy szélesebb csíkban a darabot utólagos rip vágással
             // kiszabhatjuk; a maradékba NEM kell új teljes hosszú csíkot nyitni.
             // A legjobb tervet minden próbálkozás végén tényleges táblaarea alapján
@@ -1405,7 +1412,9 @@
           const separator=m.strips.length?kerf:0;
           const remaining=m.feedSize-m.feedUsed-separator-bw;
           const longRemaining=m.crossSize-len;
-          if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)){
+          if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)&&
+             (m.commandCount??2)+4<=MAX_SAFE_XPRG_COMMANDS){
+            // Új csík: Y, RX, X, F, plusz a táblánkénti P, RY.
             // Már megkezdett tábla új csíkja előzze meg egy azonos méretű,
             // bontatlan tábla felhasználását.
             // Új csík a tábla teljes keresztméretét lefoglalja. Ennek
@@ -1441,6 +1450,9 @@
       }
       if(!choice){failed.push(item);continue;}
       const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
+      const addedCommands=choice.strip?
+        2+(choice.strip.width-bw>0.001&&choice.strip.width-bw+0.001>=kerf?1:0):4;
+      m.commandCount=(m.commandCount??2)+addedCommands;
       if(!bin.materialColor)bin.materialColor=String(item.materialColor||'').trim();
       let strip=choice.strip;
       if(!strip){
