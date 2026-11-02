@@ -71,6 +71,7 @@ func (bridge *nativeBridge) allow(w http.ResponseWriter,r *http.Request) bool {
  if r.Header.Get("X-Gatterka-Token")!=bridge.token {
    machineError(w,403,errors.New("Érvénytelen Gatterka munkamenet."));return false
  }
+ nativeActivity.touch()
  if origin:=r.Header.Get("Origin");origin!=""&&origin!="null" {
    machineError(w,403,errors.New("A kérés nem a helyi Gatterka ablakból érkezett."));return false
  }
@@ -85,6 +86,7 @@ func startNativeBridge()(int,string,func(),error){
  if err!=nil{return 0,"",nil,err}
  bridge:=&nativeBridge{token:token}
  router:=http.NewServeMux()
+ router.HandleFunc("/native/ping",bridge.ping)
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)
@@ -405,4 +407,10 @@ func (bridge *nativeBridge) writeFiles(w http.ResponseWriter,r *http.Request){
  if err!=nil{machineError(w,500,err);return}
  bridge.lastDirectory=saved.Folder
  machineJSON(w,200,saved)
+}
+
+// ping: az oldal rendszeresen jelez, hogy a launcher ne álljon le (lásd bridge_keepalive.go).
+func (bridge *nativeBridge) ping(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ machineJSON(w,200,map[string]bool{"ok":true})
 }

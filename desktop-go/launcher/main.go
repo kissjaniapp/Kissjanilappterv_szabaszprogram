@@ -12,6 +12,7 @@ import (
     "strconv"
     "strings"
     "syscall"
+    "time"
     "unsafe"
 )
 
@@ -115,7 +116,7 @@ func main(){
     port,token,stopBridge,bridgeErr:=startNativeBridge()
     if bridgeErr!=nil {
         message("A gépi programok Windows mappaválasztója nem érhető el:\n"+bridgeErr.Error()+
-            "\nA ZIP letöltése ettől még használható.")
+            "\nA Mentés másként ezért nem fog működni.")
     } else {defer stopBridge()}
     appURL:=fileURL(page)
     if bridgeErr==nil {
@@ -142,13 +143,19 @@ func main(){
             // A Windows kompatibilitási asszisztense a rendkívül gyors
             // kilépést hibásan megszakadt alkalmazásnak vélheti.
             _=cmd.Wait()
+            // Ha a böngésző indítója azonnal kilépett (az ablakot egy háttérben futó,
+            // már meglévő folyamat nyitotta), a mentőnek tovább kell élnie, amíg az
+            // oldal jelez. Különben a Mentés másként "Failed to fetch" hibát adna.
+            if bridgeErr==nil {nativeActivity.waitIdle(30*time.Second,time.Second)}
             return
         }
     }
     // Fallback: any registered system browser, retains normal browser UI.
-    cmd:=exec.Command("rundll32.exe","url.dll,FileProtocolHandler",fileURL(page))
+    cmd:=exec.Command("rundll32.exe","url.dll,FileProtocolHandler",appURL)
     if err=cmd.Start();err!=nil {
         message("Nem tudtam elindítani a Gatterkaet.\n"+err.Error()+"\nNyisd meg közvetlenül ezt a fájlt:\n"+page)
+    } else if bridgeErr==nil {
+        nativeActivity.waitIdle(30*time.Second,time.Second)
     }
     _=fmt.Sprint(strings.TrimSpace(version)) // reserved version marker
 }
