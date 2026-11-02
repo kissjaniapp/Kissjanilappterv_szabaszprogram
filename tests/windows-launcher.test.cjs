@@ -55,3 +55,10 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(native,/bridge\.selectedDirectory=dir/);
  assert.match(native,/X-Gatterka-Token/);
 });
+
+test('a Windows 10/11 modern mappaválasztója látható tulajdonosi ablakot kap',()=>{
+ assert.match(native,/AutoUpgradeEnabled=\$true/);
+ assert.match(native,/\$owner\.Show\(\)/);
+ assert.match(native,/\$picker\.ShowDialog\(\$owner\)/);
+ assert.match(native,/patchNativeMix\(content,root,folder\)/);
+});

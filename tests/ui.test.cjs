@@ -168,3 +168,18 @@ test('a gépi gyökérmappát gépelés közben menti és natív ablakból módo
  assert.match(html,/document\.getElementById\('xmix-machine-root'\)/);
  assert.match(html,/const saved=await requestNativeMachine\('save'/);
 });
+
+test('az Alkatrészek oldalon csak egy Anyagkészlet továbbgomb van',()=>{
+  const first=html.indexOf('function furnitureView(');
+  const end=html.indexOf('\n  function stockView()',first);
+  assert.ok(first>=0&&end>first);
+  const view=html.slice(first,end);
+  assert.equal((view.match(/Anyagkészlet →/g)||[]).length,1);
+});
+test('a Windowsos mentésnél nem kézi mintaútvonalat használunk, hanem a választott mappát',()=>{
+  const panel=html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek'));
+  assert.match(panel,/nativeBridge\?'readonly':''/);
+  assert.match(panel,/Mentési hely kiválasztása és mentés/);
+  assert.match(html,/rememberMachineRoot\(selected\.path\)/);
+  assert.match(html,/const saved=await requestNativeMachine\('save'/);
+});

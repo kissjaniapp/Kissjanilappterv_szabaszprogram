@@ -100,12 +100,19 @@ Add-Type -AssemblyName System.Windows.Forms
 $picker=New-Object System.Windows.Forms.FolderBrowserDialog
 $picker.Description='Gatterka - valaszd ki a gepi projektfajlok szulomappajat'
 $picker.ShowNewFolderButton=$true
+$picker.AutoUpgradeEnabled=$true
 $start=$env:GATTERKA_INITIAL_FOLDER
 if($start -and [System.IO.Directory]::Exists($start)){$picker.SelectedPath=$start}
 $owner=New-Object System.Windows.Forms.Form
 $owner.TopMost=$true
 $owner.ShowInTaskbar=$false
+$owner.Opacity=0
+$owner.Width=1
+$owner.Height=1
+$owner.StartPosition=[System.Windows.Forms.FormStartPosition]::CenterScreen
 try {
+  $owner.Show()
+  $owner.Activate()
   $result=$picker.ShowDialog($owner)
   if($result -eq [System.Windows.Forms.DialogResult]::OK){
     [Console]::WriteLine($picker.SelectedPath)
