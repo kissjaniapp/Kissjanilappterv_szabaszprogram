@@ -573,6 +573,12 @@
       if(label)label.textContent=customRuleStatus(f,rule);
     }
   }
+  // Az első alkatrész neve – ha nincs külön megadva – a paraméter neve.
+  // A további alkatrészeknél külön nevet várunk, hogy ne legyen duplikáció.
+  function customPartName(rule,spec){
+    return String(spec.name||'').trim()||
+      ((rule.parts||[])[0]===spec?String(rule.name||'').trim():'');
+  }
   function syncCustomParameterParts(f){
     if(!Array.isArray(f.customParameters))f.customParameters=[];
     const definitions=new Map();
@@ -584,7 +590,10 @@
       if(!part.customParameterId)continue;
       const def=definitions.get(part.customParameterId+':'+part.customPartId);
       if(def&&!customConditionState(f,def.rule).active)
-        for(const key of ['name','a','b','q'])def.spec[key]=part[key];
+        for(const key of ['name','a','b','q']){
+          if(key==='name'&&part.customNameInherited)continue;
+          def.spec[key]=part[key];
+        }
     }
     f.parts=(f.parts||[]).filter(part=>{
       if(!part.customParameterId)return true;
@@ -594,9 +603,20 @@
     for(const rule of f.customParameters){
       if(!customConditionState(f,rule).active)continue;
       for(const spec of rule.parts||[]){
-        if(f.parts.some(p=>p.customParameterId===rule.id&&p.customPartId===spec.id))continue;
+        const exists=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
+        if(exists){
+          // Régebbi mentésben még nem volt öröklésjelző. Csak az üres
+          // alkatrészneveket kapcsoljuk át, a kézzel megadottakat nem.
+          if(!exists.customNameInherited&&!String(exists.name||'').trim()&&
+             !String(spec.name||'').trim()&&(rule.parts||[])[0]===spec)
+            exists.customNameInherited=true;
+          if(exists.customNameInherited)exists.name=customPartName(rule,spec);
+          continue;
+        }
         f.parts.push({id:uuid(),customParameterId:rule.id,customPartId:spec.id,
-          name:spec.name,a:spec.a,b:spec.b,q:spec.q,
+          name:customPartName(rule,spec),
+          customNameInherited:!String(spec.name||'').trim()&&(rule.parts||[])[0]===spec,
+          a:spec.a,b:spec.b,q:spec.q,
           edge:'0-0',edgeSides:sidesFromCode('0-0'),
           edgeThickness:2,mill:true,millDepth:1,
           grainRequired:true,rot:false,materialId:'',materialColor:''});
@@ -630,14 +650,16 @@
           ${[['name','Alkatrész neve'],['a','Első méret · szál'],['b','Második méret'],['q','Darabszám']].map(([key,label])=>`
             <div style="flex:${key==='name'?2:1};min-width:${key==='name'?'150':'110'}px">
               <label>${label}</label><div class="${key==='name'?'':'expr-cell'}"><input data-scope="custom-part" data-id="${h(rule.id)}"
-                data-part-id="${h(spec.id)}" data-key="${key}" autocomplete="off" spellcheck="false" value="${h(spec[key]??'')}"></div>
+                data-part-id="${h(spec.id)}" data-key="${key}" autocomplete="off" spellcheck="false"
+                ${key==='name'&&(rule.parts||[])[0]===spec?'placeholder="Üresen = paraméter neve"':''}
+                value="${h(spec[key]??'')}"></div>
             </div>`).join('')}
           <button class="btn sm ghost danger" data-action="delete-custom-part"
             data-id="${h(rule.id)}" data-part-id="${h(spec.id)}">✕</button>
         </div>`).join('')}
         <div class="toolbar"><button class="btn sm" data-action="add-custom-part"
           data-id="${h(rule.id)}">＋ Alkatrész ehhez a paraméterhez</button>
-          <span class="muted small">A képletekben csak az adott bútor alkatrészei használhatók.</span>
+          <span class="muted small">Az első alkatrész neve üresen maradhat: ekkor a paraméter nevét kapja. A képletek csak az adott bútor alkatrészeit használhatják.</span>
         </div>
       </div>`).join('');
     return `<div class="panel top-gap" style="padding:14px">
@@ -1327,6 +1349,9 @@
     const used=[...bins,...standardBins].filter(b=>b.placements.length);
     return {bins:used,failed,items,usedArea:used.reduce((s,b)=>s+b.used,0),sheetArea:used.reduce((s,b)=>s+b.a*b.b,0)};
   }
+  // A biztonságos parancslimit fizikai táblánként (nem munkánként) értendő.
+  // A vágási sorrendet és a védett xMix/xPrg exportőrt nem változtatjuk.
+  const MAX_SAFE_XPRG_COMMANDS=99;
   // A szabászgép kétütemű programja: előbb MINDEN csíkot leválaszt,
   // majd a csíkokat visszakéri, és egyenként hosszra/keresztbe vágja őket.
   // X gépállás: 2070-es oldal a behúzás; Y: 2800-as oldal a behúzás.
@@ -1392,6 +1417,10 @@
             const addition=(strip.usedLength?kerf:0)+len;
             const left=m.crossSize-strip.usedLength-addition;
             if(gap<-eps||!isValidRemainder(gap)||!isValidRemainder(left))continue;
+            // A meglévő xPrg export X, szükség esetén U, majd F
+            // parancsot készít alkatrészenként. Megelőzzük a 100. parancsot.
+            const extraCommands=2+(gap>0.001&&gap+0.001>=kerf?1:0);
+            if((m.commandCount??2)+extraCommands>MAX_SAFE_XPRG_COMMANDS)continue;
             // Egy szélesebb csíkban a darabot utólagos rip vágással
             // kiszabhatjuk; a maradékba NEM kell új teljes hosszú csíkot nyitni.
             // A legjobb tervet minden próbálkozás végén tényleges táblaarea alapján
@@ -1405,7 +1434,9 @@
           const separator=m.strips.length?kerf:0;
           const remaining=m.feedSize-m.feedUsed-separator-bw;
           const longRemaining=m.crossSize-len;
-          if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)){
+          if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)&&
+             (m.commandCount??2)+4<=MAX_SAFE_XPRG_COMMANDS){
+            // Új csík: Y, RX, X, F, plusz a táblánkénti P, RY.
             // Már megkezdett tábla új csíkja előzze meg egy azonos méretű,
             // bontatlan tábla felhasználását.
             // Új csík a tábla teljes keresztméretét lefoglalja. Ennek
@@ -1441,6 +1472,9 @@
       }
       if(!choice){failed.push(item);continue;}
       const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
+      const addedCommands=choice.strip?
+        2+(choice.strip.width-bw>0.001&&choice.strip.width-bw+0.001>=kerf?1:0):4;
+      m.commandCount=(m.commandCount??2)+addedCommands;
       if(!bin.materialColor)bin.materialColor=String(item.materialColor||'').trim();
       let strip=choice.strip;
       if(!strip){
@@ -3112,7 +3146,11 @@
       if(!spec)return;
       spec[key]=el.value;
       const active=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
-      if(active)active[key]=el.value;
+      if(active){
+        active[key]=key==='name'?customPartName(rule,spec):el.value;
+        if(key==='name')
+          active.customNameInherited=!String(spec.name||'').trim()&&(rule.parts||[])[0]===spec;
+      }
       if(['a','b','q'].includes(key))partReferenceSuggestions(el);
       refreshLiveFormulaValues();result=null;save();return;
     }
@@ -3120,6 +3158,14 @@
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
       part[key]=el.value;
+      if(key==='name'&&part.customParameterId){
+        // A közös alkatrészlistában kézzel átírt név saját megnevezés.
+        const owner=state.furnitures.find(f=>f.parts.some(p=>p.id===part.id));
+        const rule=owner?.customParameters?.find(x=>x.id===part.customParameterId);
+        const spec=rule?.parts?.find(x=>x.id===part.customPartId);
+        if(spec)spec.name=el.value;
+        part.customNameInherited=false;
+      }
       if(['a','b','q','name'].includes(key))refreshLiveFormulaValues();
       if(['a','b','q'].includes(key))partReferenceSuggestions(el);
       scheduleLiveNesting();
