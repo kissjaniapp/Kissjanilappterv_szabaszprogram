@@ -44,7 +44,7 @@ test('az alkatrészeknél alul egy nagy új alkatrész gomb van, Tab sorrend ter
 });
 test('a szokli egy, kettő vagy három alkatrészből generálható és később átírható',()=>{
  const a=html.indexOf('function rebuildPlinthParts(f){');
- const b=html.indexOf('\n  function startSeriesEditor(',a);
+ const b=html.indexOf('\n  function makeCustomPartDefinition()',a);
  assert.ok(a>0&&b>a);
  let n=0;
  const rebuild=vm.runInNewContext('('+html.slice(a,b).trim()+')',{

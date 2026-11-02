@@ -72,7 +72,7 @@ test('a másolat új mappába kerül új azonosítóval, az eredeti széria és 
  const env={
   uuid:()=>String(++next),Date,
   copyFurniture:x=>({...JSON.parse(JSON.stringify(x)),id:'new'+ ++next,parts:[]}),
-  seriesCatalog:series,library,storeCatalog:()=>{},libraryKey:'test',localStorage:{setItem:()=>{}},
+  seriesCatalog:series,library,storeCatalog:()=>{},seriesKey:'series-test',libraryKey:'test',localStorage:{setItem:()=>{}},
   confirm:()=>true,render:()=>{},result:null,state:{},currentProjectId:'',projectScreen:'library',
   defaultState:()=>({})
  };
