@@ -41,17 +41,17 @@ test('W-18 képlet fölül marad, alatta 982 mm szám látszik',()=>{
  assert.match(htmlInput,/data-key="a" value="W-18"/);
  assert.match(htmlInput,/>982<\/output>/);
 });
-test('az élzárás és az 1 mm előmarás utáni szabásméret jelenik meg',()=>{
+test('az alkatrészek oldalán mindig a készméret jelenik meg, függetlenül az ABS-től',()=>{
  const p=part();
- // A két X él a D=600 mm-es keresztméretből összesen 2 mm-t vesz le.
- assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'598');
+ // A D=600 a készméret. A szabáshoz a getParts később számol levonást.
+ assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'600');
  const input=formulaEngine.partDimensionInput(p,furniture,'b','Második méret');
  assert.match(input,/class="expr-cell has-formula"/);
- assert.match(input,/>598<\/output>/);
+ assert.match(input,/>600<\/output>/);
  p.mill=false;
- assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'596');
+ assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'600');
  p.edgeThickness=0.4;
- assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'599,2');
+ assert.equal(formulaEngine.partDimensionPreview(p,furniture,'b'),'600');
 });
 test('a változó átírásakor változik az eredmény, a tárolt képlet nem',()=>{
  const p=part();
