@@ -14,10 +14,13 @@ const compute=vm.runInNewContext('('+html.slice(begin,end).trim()+')',{
 });
 test('a gazdaságos üzemmód külön szerepel, a korábbi megmarad',()=>{
   assert.match(html,/value="economy"/);
-  assert.match(html,/value="machine"/);
   assert.match(html,/value="auto"/);
-  assert.match(html,/value="rows"/);
   assert.match(html,/value="mosaic"/);
+  assert.doesNotMatch(html,/<option value="machine"/);
+  assert.doesNotMatch(html,/<option value="rows"/);
+  // A korábbi gépi és polcos keresési változatok adatai betölthetők,
+  // de a felületen csak Szabad, Mozaikos és Anyagtakarékos választható.
+  assert.match(html,/const machineMode=true;/);
   assert.match(html,/largestReusableArea/);
 });
 test('a nagy összefüggő maradékot megőrző változatot választja a gazdaságos keresés',()=>{

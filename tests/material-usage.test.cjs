@@ -6,7 +6,7 @@ const path=require('node:path');
 const vm=require('node:vm');
 const html=readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
 const begin=html.indexOf('function suggestedBoardSize(');
-const end=html.indexOf('\n  function nestingView()',begin);
+const end=html.indexOf('\n  let savedMachinePanel=',begin);
 assert.ok(begin>0&&end>begin,'Hiányzik az anyagszükséglet-számítás');
 const state={trim:10,kerf:5};
 const calculate=vm.runInNewContext('('+html.slice(begin,end).trim()+')',{state,Number,Math});
