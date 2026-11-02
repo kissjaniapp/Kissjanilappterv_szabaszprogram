@@ -62,3 +62,15 @@ test('a Windows 10/11 modern mappaválasztója látható tulajdonosi ablakot kap
  assert.match(native,/\$picker\.ShowDialog\(\$owner\)/);
  assert.match(native,/patchNativeMix\(content,root,folder\)/);
 });
+
+test('ZIP-csomagolás Windows Mentés másként után: külön projektmappa nélkül',()=>{
+ assert.match(native,/SaveFileDialog/);
+ assert.match(native,/router.HandleFunc\("\/native\/choose-save-as"/);
+ assert.match(native,/router.HandleFunc\("\/native\/write-zip"/);
+ assert.match(native,/func writeMachineArchive\(zipPath string,req nativeSave\)error/);
+ assert.match(native,/patchNativeMix\(content,root,req.CabinetFolder\)/);
+ const from=native.indexOf('func saveMachineZipAt(');
+ const to=native.indexOf('func (bridge *nativeBridge) chooseSaveAs(',from);
+ assert.ok(from>=0&&to>from);
+ assert.doesNotMatch(native.slice(from,to),/saveMachineFiles\(/);
+});

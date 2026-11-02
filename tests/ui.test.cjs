@@ -164,10 +164,10 @@ test('a gépi gyökérmappát gépelés közben menti és natív ablakból módo
  assert.match(html,/localStorage\.setItem\('gatterka-machine-root-v1'/);
  assert.match(html,/rememberMachineRoot\(el\.value\)/);
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
- assert.match(html,/const saved=await requestNativeMachine\('save-as'/);
+ assert.match(html,/const saved=await requestNativeMachine\('write-zip'/);
  assert.match(html,/if\(options\.relative\)return preview/);
  assert.doesNotMatch(html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek')),/xmix-machine-root/);
- assert.match(html,/const saved=await requestNativeMachine\('save-as'/);
+ assert.match(html,/const saved=await requestNativeMachine\('write-zip'/);
 });
 
 test('az Alkatrészek oldalon csak egy Anyagkészlet továbbgomb van',()=>{
@@ -183,6 +183,9 @@ test('a Windows mentési panelen egyetlen Mentés másként gomb van, útvonal n
   assert.doesNotMatch(panel,/xmix-machine-root/);
   assert.doesNotMatch(panel,/ZIP letöltése/);
   assert.match(panel,/Mentés másként/);
-  assert.match(html,/requestNativeMachine\('save-as'/);
+  assert.match(html,/requestNativeMachine\('choose-save-as'/);
+  assert.match(html,/requestNativeMachine\('write-zip'/);
   assert.match(html,/machineExportBundle\(\{relative:true\}\)/);
+  const flow=html.slice(html.indexOf('async function saveXprgToSelectedFolder()'),html.indexOf('function downloadCutList(',html.indexOf('async function saveXprgToSelectedFolder()')));
+  assert.ok(flow.indexOf("requestNativeMachine('choose-save-as'")<flow.indexOf('machineExportBundle({relative:true})'));
 });

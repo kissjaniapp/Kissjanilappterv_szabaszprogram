@@ -29,6 +29,7 @@ type nativeBridge struct {
  token string
  mu sync.Mutex
  selectedDirectory string
+ selectedArchivePath string
 }
 type nativeFile struct {
  Path string `json:"path"`
@@ -85,7 +86,8 @@ func startNativeBridge()(int,string,func(),error){
  router:=http.NewServeMux()
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
- router.HandleFunc("/native/save-as",bridge.saveAs)
+ router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)
+ router.HandleFunc("/native/write-zip",bridge.writeZip)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -333,68 +335,76 @@ try {
  return path,nil
 }
 
-// A ZIP a mentett, kicsomagolt projekt pontos másolata.
-// Az xMix már a valóban létező projektmappára mutat, nem a ZIP belsejére.
-func writeMachineArchive(zipPath string,projectDir string)error{
- parent:=filepath.Dir(zipPath)
- tmp,err:=os.CreateTemp(parent,".gatterka-*.zip")
+// Kizárólag egy ZIP mentődik. A Mix elérési útjai a célmappába történő
+// "Kibontás ide" után létező <projekt>/xPrg fájlokat nevezik meg.
+func writeMachineArchive(zipPath string,req nativeSave)error{
+ _,files,err:=safeNativeProgramFiles(req)
+ if err!=nil{return err}
+ root:=filepath.Dir(zipPath)
+ // Előbb a Windows ideiglenes könyvtárában készítjük el a ZIP-et.
+ tmp,err:=os.CreateTemp("","gatterka-*.zip")
  if err!=nil{return err}
  defer os.Remove(tmp.Name())
  writer:=zip.NewWriter(tmp)
- err=filepath.WalkDir(projectDir,func(path string,entry os.DirEntry,walkErr error)error{
-   if walkErr!=nil{return walkErr}
-   if entry.IsDir(){return nil}
-   if !entry.Type().IsRegular(){return errors.New("A projektben nem szabályos fájl található.")}
-   relative,err:=filepath.Rel(parent,path)
-   if err!=nil{return err}
-   dest,err:=writer.Create(filepath.ToSlash(relative))
-   if err!=nil{return err}
-   source,err:=os.Open(path)
-   if err!=nil{return err}
-   _,copyErr:=io.Copy(dest,source)
-   closeErr:=source.Close()
-   if copyErr!=nil{return copyErr}
-   return closeErr
- })
- zipErr:=writer.Close()
- closeErr:=tmp.Close()
+ for _,file:=range files{
+  content:=file.Content
+  if strings.HasSuffix(file.Path,".xMix"){
+   content,err=patchNativeMix(content,root,req.CabinetFolder)
+   if err!=nil{_ = writer.Close();_ = tmp.Close();return err}
+  }
+  entry,e:=writer.Create(file.Path)
+  if e!=nil{_ = writer.Close();_ = tmp.Close();return e}
+  if _,e=entry.Write([]byte(content));e!=nil{_ = writer.Close();_ = tmp.Close();return e}
+ }
+ if err=writer.Close();err!=nil{_ = tmp.Close();return err}
+ if err=tmp.Close();err!=nil{return err}
+ // Csak az elkészült ZIP-et másoljuk a kijelölt mappába.
+ source,err:=os.Open(tmp.Name())
  if err!=nil{return err}
- if zipErr!=nil{return zipErr}
- if closeErr!=nil{return closeErr}
- return os.Rename(tmp.Name(),zipPath)
+ defer source.Close()
+ target,err:=os.CreateTemp(root,".gatterka-*.zip")
+ if err!=nil{return err}
+ defer os.Remove(target.Name())
+ if _,err=io.Copy(target,source);err!=nil{_ = target.Close();return err}
+ if err=target.Sync();err!=nil{_ = target.Close();return err}
+ if err=target.Close();err!=nil{return err}
+ return os.Rename(target.Name(),zipPath)
 }
-
 func saveMachineZipAt(zipPath string,req nativeSave)(string,error){
  if _,_,err:=safeNativeProgramFiles(req);err!=nil{return "",err}
  if !filepath.IsAbs(zipPath)||!strings.EqualFold(filepath.Ext(zipPath),".zip"){
-   return "",errors.New("A célfájlnak teljes Windows-útvonalú .zip fájlnak kell lennie.")
+  return "",errors.New("A célfájlnak teljes Windows-útvonalú .zip fájlnak kell lennie.")
  }
  parent:=filepath.Dir(zipPath)
  st,err:=os.Stat(parent)
- if err!=nil||!st.IsDir(){return "",errors.New("A ZIP célmappája nem érhető el.")}
- project,err:=saveMachineFiles(parent,req)
- if err!=nil{return "",err}
- if err=writeMachineArchive(zipPath,project);err!=nil{
-   _=os.RemoveAll(project)
-   return "",err
- }
- return project,nil
+ if err!=nil||!st.IsDir(){return "",errors.New("A célmappa nem érhető el.")}
+ if err=writeMachineArchive(zipPath,req);err!=nil{return "",err}
+ return zipPath,nil
 }
-func (bridge *nativeBridge) saveAs(w http.ResponseWriter,r *http.Request){
+func (bridge *nativeBridge) chooseSaveAs(w http.ResponseWriter,r *http.Request){
  if !bridge.allow(w,r){return}
  bridge.mu.Lock()
  defer bridge.mu.Unlock()
+ bridge.selectedArchivePath=""
+ r.Body=http.MaxBytesReader(w,r.Body,4096)
+ var input map[string]interface{}
+ if err:=json.NewDecoder(r.Body).Decode(&input);err!=nil{machineError(w,400,err);return}
+ path,err:=chooseWindowsZipFile("Gatterka_XPrg_XMix.zip")
+ if err!=nil{machineError(w,500,err);return}
+ if path==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
+ bridge.selectedArchivePath=path
+ machineJSON(w,200,map[string]bool{"cancelled":false})
+}
+func (bridge *nativeBridge) writeZip(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ path:=bridge.selectedArchivePath
+ bridge.selectedArchivePath=""
+ if path==""{machineError(w,400,errors.New("Először válassz célmappát a Mentés másként ablakban."));return}
  r.Body=http.MaxBytesReader(w,r.Body,maxNativeBody)
  var request nativeSave
  if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
- if _,_,err:=safeNativeProgramFiles(request);err!=nil{machineError(w,400,err);return}
- zipPath,err:=chooseWindowsZipFile(request.CabinetFolder+"_XPrg_XMix.zip")
- if err!=nil{machineError(w,500,err);return}
- if zipPath==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
- project,err:=saveMachineZipAt(zipPath,request)
- if err!=nil{machineError(w,500,err);return}
- machineJSON(w,200,map[string]interface{}{
-   "cancelled":false,"zipPath":zipPath,"projectPath":project,
-   "cabinetFolder":filepath.Base(project),"programs":len(request.Files)-1,
- })
+ if _,err:=saveMachineZipAt(path,request);err!=nil{machineError(w,500,err);return}
+ machineJSON(w,200,map[string]interface{}{"zipPath":path,"programs":len(request.Files)-1})
 }
