@@ -160,6 +160,13 @@
     url:'http://127.0.0.1:'+nativeLaunch[1],
     token:nativeLaunch[2]
   }:null;
+  // Jelzés a Windows indítónak, hogy az ablak még él: addig marad futva a helyi mentő.
+  if(nativeBridge){
+    const pingBridge=()=>fetch(nativeBridge.url+'/native/ping',{method:'POST',
+      headers:{'Content-Type':'application/json','X-Gatterka-Token':nativeBridge.token},
+      body:'{}',mode:'cors',cache:'no-store'}).catch(()=>{});
+    pingBridge();setInterval(pingBridge,5000);
+  }
   // A választott gépi gyökérmappát új bútoroknál is megjegyezzük.
   const savedMachineRoot=(()=>{
     try{return localStorage.getItem('gatterka-machine-root-v1')||defaultXmixMachineRoot;}
@@ -1723,7 +1730,7 @@
         cache:'no-store'
       });
     }catch(err){
-      throw Error('Nem érhető el a Windowsos mappamentő. Indítsd újra a telepített Gatterka alkalmazást. ('+(err?.message||'kapcsolati hiba')+')');
+      throw Error('Nem érhető el a Windowsos mappamentő. Zárd be teljesen a Gatterkát (minden ablakát), majd indítsd újra a Start menüből vagy az asztali ikonról. Ha így is marad, ellenőrizd, hogy a legújabb telepítőt futtattad-e. ('+(err?.message||'kapcsolati hiba')+')');
     }
     let value;
     try{value=await response.json();}
