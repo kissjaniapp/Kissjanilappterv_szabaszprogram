@@ -28,10 +28,10 @@ const xmix=out=>out.files.find(([name])=>name.endsWith('.xMix'))[1];
 test('a működő mintakód vágássorrendje, fejlécmérete és fűrészrés megmarad',()=>{
  const xml=xprgs(exportBundle([base('Feya')]))[0][1];
  const expected='<SchemaDoc>\r\n'+
-  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00" Swap="0" />\r\n'+
+  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00" Swap="0" />\r\n'+
   '\t<Material Tipologia="" Codice="Feya" />\r\n'+
   '\t<Pattern>\r\n'+
-  '\t\t<Cut T="P" Dim="2070.00" Rip="1" ID="0" />\r\n'+
+  '\t\t<Cut T="P" Dim="2800.00" Rip="1" ID="0" />\r\n'+
   '\t\t<Cut T="RY" Dim="12.00" Rip="1" ID="1" />\r\n'+
   '\t\t<Cut T="Y" Dim="200.00" Rip="1" ID="2" />\r\n'+
   '\t\t<Cut T="RX" Dim="12.00" Rip="1" ID="3" />\r\n'+
@@ -86,12 +86,12 @@ test('a kipróbált gépi szabály P = Lunghezza; Larghezza a másik táblamére
  for(const [a,b] of [[2800,2070],[1620,785],[753,1983]]){
   for(const feed of ['x','y']){
    const xml=xprgs(exportBundle([base('Feya',feed,{a,b})]))[0][1];
-   const p=(feed==='x'?b:a).toFixed(2),other=(feed==='x'?a:b).toFixed(2);
+   const p=(feed==='x'?a:b).toFixed(2),other=(feed==='x'?b:a).toFixed(2);
    assert.ok(xml.includes('Lunghezza="'+p+'" Larghezza="'+other+'"'));
    assert.ok(xml.includes('<Cut T="P" Dim="'+p+'" Rip="1" ID="0" />'));
   }
  }
- const shortFeed=xprgs(exportBundle([base('Feya','x',{a:1620,b:785})]))[0][1];
+ const shortFeed=xprgs(exportBundle([base('Feya','y',{a:1620,b:785})]))[0][1];
  assert.match(shortFeed,/Lunghezza="785.00" Larghezza="1620.00"/);
 });
 test('összetett alkatrésznél az U visszaadás és F zárás megmarad',()=>{
@@ -182,8 +182,8 @@ test('négy különböző nesting tábla négy különböző xPrg fájlt kap egy
  assert.equal((out.files.filter(([name])=>name.endsWith('.xMix'))).length,1);
  for(let i=0;i<boards.length;i++){
    const b=boards[i], xml=programs[i][1];
-   const feedLength=b.machine.feed==='x'?b.b:b.a;
-   const otherLength=b.machine.feed==='x'?b.a:b.b;
+   const feedLength=b.machine.feed==='x'?b.a:b.b;
+   const otherLength=b.machine.feed==='x'?b.b:b.a;
    assert.ok(xml.includes('Lunghezza="'+feedLength.toFixed(2)+'" Larghezza="'+otherLength.toFixed(2)+'"'));
    assert.ok(xml.includes('<Cut T="P" Dim="'+feedLength.toFixed(2)+'" Rip="1" ID="0" />'));
    assert.ok(xml.includes('<Cut T="Y" Dim="'+b.machine.strips[0].width.toFixed(2)+'"'));
@@ -198,4 +198,26 @@ test('négy különböző nesting tábla négy különböző xPrg fájlt kap egy
  assert.notEqual(programs[2][1],programs[3][1]);
  // A széles csíkból keskenyebb alkatrészhez továbbra is U alábontás szükséges.
  assert.match(programs[2][1],/<Cut T="U" Dim="250.00" Rip="1"/);
+});
+
+test('xPrg vízszintes felfekvési méret független a száliránytól és a hosszabbik éltől',()=>{
+ const boards=[[2800,2070],[964,400],[400,964],[700,1200],[1200,700]];
+ for(const [a,b] of boards){
+  for(const [machine,expected] of [['x',a],['y',b]]){
+   const out=exportBundle([base('Freya',machine,{a,b})]);
+   const xml=xprgs(out)[0][1];
+   assert.match(xml,new RegExp('Lunghezza="'+expected.toFixed(2)+'"'));
+   assert.match(xml,new RegExp('<Cut T="P" Dim="'+expected.toFixed(2).replace('.','\\.')+'" Rip="1" ID="0"'));
+   assert.match(xml,new RegExp('Larghezza="'+(machine==='x'?b:a).toFixed(2)+'"'));
+  }
+ }
+});
+test('xMix neve szekrénynévvel és az elkészült táblák darabszámával készül, OFFLINE nélkül',()=>{
+ for(const count of [1,2,4,7]){
+  const out=exportBundle(Array.from({length:count},()=>base()),'Polcos szekrény');
+  assert.equal(out.mixName,'2026_10_30_Szekreny_'+count+'_tablas.xMix');
+  assert.ok(!out.mixName.includes('OFFLINE'));
+  assert.ok(out.files.some(([name])=>name===out.cabinetFolder+'/'+out.mixName));
+  assert.equal((xmix(out).match(/<RigaMix File=/g)||[]).length,count);
+ }
 });

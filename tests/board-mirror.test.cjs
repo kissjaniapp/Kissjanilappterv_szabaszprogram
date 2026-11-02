@@ -55,3 +55,24 @@ test('a tükrözés csak az SVG-t érinti, a szabásméret adatot nem módosítj
  drawing('y').svgBoard(b);
  assert.equal(JSON.stringify(b),original);
 });
+
+test('a tábla gépállása szerint a teljes átvágás a képernyőn mindig vízszintes',()=>{
+ for(const [machine,horizontal,vertical] of [['x',1000,600],['y',600,1000]]){
+  const b=board();
+  b.machine={feed:machine};
+  // X gépállásban a belső x tengelyű, Y állásban a belső y tengelyű
+  // teljes vágás képez vízszintes vonalat a gépnél elforgatott ábrán.
+  b.cuts=machine==='x'
+    ?[{x1:0,y1:100,x2:1000,y2:100,axis:'x',length:1000}]
+    :[{x1:200,y1:0,x2:200,y2:600,axis:'y',length:600}];
+  const result=drawing('x');
+  const dim=result.svgBoardSize(b);
+  assert.equal(dim.boardWidth,horizontal);
+  assert.equal(dim.boardHeight,vertical);
+  const svg=result.svgBoard(b);
+  assert.match(svg,new RegExp('width="'+(horizontal+160)+'"'));
+  assert.match(svg,new RegExp('height="'+(vertical+(machine==='y'?140:80)+80+35)+'"'));
+  if(machine==='x')assert.match(svg,/M1080 180L80 180/);
+  else assert.match(svg,/M80 340L680 340/);
+ }
+});

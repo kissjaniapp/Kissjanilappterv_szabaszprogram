@@ -76,3 +76,30 @@ test('egyező szélesség és alkatrész: két csík egymásra helyezhető, nem 
  assert.equal(refeed[1].stackCount,1);
  assert.equal(p.pairedGroups,1);
 });
+
+test('első méret = szálirány akkor is, ha rövidebb a keresztirányú méretnél',()=>{
+ const b=stock('Rövid-szál',500,1000);
+ const part=makePart('Rövid szálú alkatrész',350,800);
+ part.rot=false; // bejelölt szálirány
+ const p=doPlan('x',[b],[part]);
+ assert.equal(p.failed.length,0);
+ const piece=p.bins[0].machine.strips[0].items[0];
+ assert.equal(piece.turned,false);
+ assert.equal(piece.realW,350);
+ assert.equal(piece.realH,800);
+ assert.equal(p.bins[0].a,500);
+ assert.equal(p.bins[0].b,1000);
+});
+test('kötelező szálirány miatt tilos az alkatrészt 90 fokkal elfordítani; kikapcsolva szabad',()=>{
+ const b=stock('Keskeny',700,400);
+ b.thickness=25; // ne válasszon automatikus 18 mm-es alaptáblát
+ const constrained=makePart('Kényszerített szálirány',350,650);
+ constrained.thickness=25;constrained.rot=false;
+ const noFit=doPlan('long',[b],[constrained]);
+ assert.equal(noFit.failed.length,1);
+ const free=makePart('Szabad forgatás',350,650);
+ free.thickness=25;free.rot=true;
+ const fit=doPlan('long',[b],[free]);
+ assert.equal(fit.failed.length,0);
+ assert.equal(fit.bins[0].machine.strips[0].items[0].turned,true);
+});

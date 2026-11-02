@@ -1630,15 +1630,17 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      // A gépen sikeresen lefutott referencia: P = Lunghezza.
-      // A meglévő P parancsot NEM változtatjuk, csak a fejléc méreteit
-      // rendeljük a P szerinti gépi beadáshoz. A rajzi nestinget nem forgatjuk
-      // és a vágási parancsok teljes sorrendje változatlan.
+      // KÖTELEZŐ GÉPI SZABÁLY: csak vízszintesen vágunk.
+      // A P és Lunghezza a géphez vízszintesen felfekvő TELJES táblaél.
+      // x gépállás: a (szálirányú) él vízszintes; y gépállás: b
+      // (keresztirányú) él vízszintes, a táblát 90°-kal fordítjuk.
+      // Az a mindig a szálirányú, b a keresztirányú méret, függetlenül
+      // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      const feedLength=m.feed==='x'?bin.b:bin.a;
+      const feedLength=m.feed==='x'?bin.a:bin.b;
       const headerLength=feedLength;
-      const headerWidth=m.feed==='x'?bin.a:bin.b;
+      const headerWidth=m.feed==='x'?bin.b:bin.a;
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
@@ -1725,7 +1727,7 @@
       names.map(file=>'\t\t<RigaMix File="'+esc(xprgLocation.directory+file)+
         '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\r\n')+
       '\r\n\t</RigheMix>\r\n</xMix>\r\n';
-    const mixName=root+'_OFFLINE.xMix';
+    const mixName=root+'_'+bins.length+'_tablas.xMix';
     files.unshift([cabinet+'/'+mixName,mix]);
     return {files,mixName,names,cabinetFolder:cabinet,
       xprgDirectory:xprgLocation.directory,relativeXprgDirectory:xprgLocation.relative,
