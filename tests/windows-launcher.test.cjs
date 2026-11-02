@@ -44,7 +44,7 @@ test('a Gatterka maximalizált, visszaállítható Windows-ablakban indul',()=>{
  assert.doesNotMatch(go,/--kiosk|--start-fullscreen/);
 });
 test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bekerült',()=>{
- assert.match(go,/startNativeBridge\(\)/);
+ assert.match(go,/startNativeBridge\(page\)/);
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
  assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
@@ -76,4 +76,13 @@ test('ZIP-csomagolás Windows Mentés másként után: külön projektmappa nél
  const to=native.indexOf('func (bridge *nativeBridge) chooseSaveAs(',from);
  assert.ok(from>=0&&to>from);
  assert.doesNotMatch(native.slice(from,to),/saveMachineFiles\(/);
+});
+
+test('a Gatterka HTML a helyi mentéssel azonos eredetű HTTP-oldalként indul',()=>{
+ assert.match(go,/appURL:="http:\/\/127\.0\.0\.1:"\+strconv\.Itoa\(port\)/);
+ assert.doesNotMatch(go,/appURL:=fileURL\(page\)/);
+ assert.match(native,/const nativeAppPort="18737"/);
+ assert.match(native,/router\.HandleFunc\("\/",func\(w http\.ResponseWriter,r \*http\.Request\)/);
+ assert.match(native,/http\.ServeFile\(w,r,page\)/);
+ assert.match(native,/origin!="http:\/\/"\+r\.Host/);
 });

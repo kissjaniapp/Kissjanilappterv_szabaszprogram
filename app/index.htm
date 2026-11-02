@@ -1719,11 +1719,11 @@
         method:'POST',
         headers:{'Content-Type':'application/json','X-Gatterka-Token':nativeBridge.token},
         body:JSON.stringify(payload),
-        mode:'cors',
+        mode:'same-origin',
         cache:'no-store'
       });
     }catch(err){
-      throw Error('Nem érhető el a Windowsos mappamentő. Indítsd újra a telepített Gatterka alkalmazást. ('+(err?.message||'kapcsolati hiba')+')');
+      throw Error('Nem érhető el a Gatterka helyi mentési szolgáltatása. Zárd be a régi Gatterka-ablakokat, és indítsd újra a legfrissebb EXE-t. ('+(err?.message||'kapcsolati hiba')+')');
     }
     let value;
     try{value=await response.json();}
