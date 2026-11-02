@@ -1091,7 +1091,9 @@
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
         <div class="furniture-next"><span class="muted small">Minden bútor külön testreszabható.</span>
           ${state.furnitures.findIndex(x=>x.id===f.id)>0?'<button class="btn" data-action="previous-selected-furniture">← Előző bútor</button>':''}
-          <button class="btn primary" data-action="next-selected-furniture">${state.furnitures.findIndex(x=>x.id===f.id)<state.furnitures.length-1?'Következő bútor →':'Alkatrészek megadása →'}</button></div>
+          ${state.furnitures.findIndex(x=>x.id===f.id)<state.furnitures.length-1?
+            '<button class="btn primary" data-action="next-selected-furniture">Következő bútor →</button>':
+            '<button class="btn primary" data-action="open-parts" data-id="'+h(f.id)+'">Alkatrészek megadása →</button>'}</div>
       </div>
     </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
     const partEntries=stage==='parts'&&projectScreen!=='series-edit'
