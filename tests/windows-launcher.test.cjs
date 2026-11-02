@@ -47,7 +47,7 @@ test('a natív mappaválasztó és a teljes útvonalon mentő szolgáltatás bek
  assert.match(go,/startNativeBridge\(page\)/);
  assert.match(go,/#gatterka-native=/);
  assert.match(go,/--app="\+appURL/);
- assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:0"\)/);
+ assert.match(native,/net\.Listen\("tcp","127\.0\.0\.1:"\+nativeAppPort\)/);
  assert.match(native,/FolderBrowserDialog/);
  assert.match(native,/GATTERKA_INITIAL_FOLDER/);
  assert.match(native,/filepath\.Join\(root,folder,"xPrg",name\)/);
