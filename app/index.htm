@@ -1302,7 +1302,7 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Windows Mentés másként: egyetlen ZIP-fájl készül.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:center;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>💾 Mentés másként</button></div><div id="machine-save-status" role="status" aria-live="polite" class="muted small" style="margin-top:9px;min-height:19px"></div><div class="muted tiny" style="margin-top:9px">A <strong>Mentés másként</strong> ablakban válaszd ki a ZIP nevét és célmappáját. Ezután a program elkészíti az xPrg fájlokat, az xMix-be beírja a célmappába történő kibontás utáni teljes xPrg útvonalakat, majd ZIP-be csomagol. <strong>Csak a ZIP mentődik</strong>, külön projektmappa nem készül. A használathoz a ZIP-et a kiválasztott mappába bontsd ki (Kibontás ide).</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Windows Mentés másként: az .xMix és a táblánkénti .xPrg fájlok a kiválasztott mappába kerülnek.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:center;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>💾 Mentés másként</button></div><div id="machine-save-status" role="status" aria-live="polite" class="muted small" style="margin-top:9px;min-height:19px"></div><div class="muted tiny" style="margin-top:9px">A <strong>Mentés másként</strong> ablakban válaszd ki a célmappát és az .xMix fájl nevét. A program ugyanebbe a mappába menti a táblánkénti .xPrg fájlokat is, az .xMix pedig minden .xPrg fájl <strong>teljes elérési útját</strong> tartalmazza. Meglévő .xPrg fájlt a program nem ír felül, hanem új sorszámot ad neki (pl. <em>_2</em>), és az .xMix ezt az új nevet hivatkozza.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1795,17 +1795,24 @@
     if(button){button.disabled=true;button.textContent='Mentés másként ablak megnyitása…';}
     report('A Windows Mentés másként ablak megnyitása…');
     try{
-      const chosen=await requestNativeMachine('choose-save-as',{});
-      if(chosen.cancelled){report('A mentést megszakítottad.');return;}
-      report('Gépi programok előállítása…');
+      // Előbb elkészül a teljes csomag, így a hiányzó anyagszín vagy hibás nesting
+      // még az ablak megnyitása előtt hibaüzenetet ad.
       const bundle=machineExportBundle({relative:true});
-      report('xMix útvonalak és ZIP összeállítása…');
-      const saved=await requestNativeMachine('write-zip',{
-        cabinetFolder:bundle.cabinetFolder,
-        files:bundle.files.map(([path,content])=>({path,content}))
-      });
-      if(!saved.zipPath)throw Error('A ZIP mentése nem igazolható.');
-      report('A ZIP sikeresen elmentve ('+saved.programs+' xPrg és 1 xMix). A fájlokat a kiválasztott mappába bontsd ki („Kibontás ide”).');
+      const mixEntry=bundle.files.find(([path])=>/\.xMix$/i.test(path));
+      const programs=bundle.files.filter(([path])=>/\.xPrg$/i.test(path))
+        .map(([path,content])=>({name:path.slice(path.lastIndexOf('/')+1),content}));
+      if(!mixEntry||!programs.length)throw Error('Hiányzik az xMix vagy az xPrg tartalom.');
+      // A Windows Mentés másként ablakban a felhasználó mappát és xMix nevet választ.
+      const chosen=await requestNativeMachine('choose-save-as',{defaultName:bundle.mixName});
+      if(chosen.cancelled){report('A mentést megszakítottad.');return;}
+      report('xMix és xPrg fájlok mentése a kiválasztott mappába…');
+      // A Go a kiválasztott mappába írja az xMix-et és az xPrg fájlokat, az xMix sorait
+      // pedig a ténylegesen elmentett xPrg fájlok teljes útvonalára írja át.
+      const saved=await requestNativeMachine('write-files',{mix:mixEntry[1],programs});
+      if(!saved.mixPath||!Array.isArray(saved.programs))throw Error('A mentés nem igazolható.');
+      report('Elmentve a következő mappába: '+saved.folder+' · 1 xMix ('+
+        saved.mixPath.slice(saved.mixPath.lastIndexOf('\\')+1)+') és '+saved.programs.length+
+        ' xPrg. Az xMix az xPrg fájlok teljes útvonalát tartalmazza.');
     }catch(err){
       report('A Mentés másként nem sikerült: '+(err?.message||'ismeretlen hiba'),true);
     }finally{
