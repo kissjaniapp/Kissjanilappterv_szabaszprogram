@@ -28,7 +28,7 @@ const xmix=out=>out.files.find(([name])=>name.endsWith('.xMix'))[1];
 test('a működő mintakód vágássorrendje, fejlécmérete és fűrészrés megmarad',()=>{
  const xml=xprgs(exportBundle([base('Feya')]))[0][1];
  const expected='<SchemaDoc>\r\n'+
-  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00" />\r\n'+
+  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00" />\r\n'+
   '\t<Material Tipologia="" Codice="Feya" />\r\n'+
   '\t<Pattern>\r\n'+
   '\t\t<Cut T="P" Dim="2070.00" Rip="1" ID="0" />\r\n'+
@@ -82,14 +82,13 @@ test('a dátum és a Hová készül mező adja a projektmappa nevét',()=>{
  assert.equal(out.cabinetFolder,'2026_10_30_Kiss_Janos_konyha');
  assert.ok(out.files.every(([name])=>name.startsWith(out.cabinetFolder+'/')));
 });
-test('a kezdő P mérete minden gépállásban egyezik a fejléccel',()=>{
- for(const [a,b] of [[2800,2070],[753,1983],[2070,2800]]){
+test('a fejléc a rajz szerinti: Lunghezza = vízszintes (a), Larghezza = függőleges (b); P a beadási méret',()=>{
+ for(const [a,b] of [[2800,2070],[1620,785],[753,1983]]){
   for(const feed of ['x','y']){
    const xml=xprgs(exportBundle([base('Feya',feed,{a,b})]))[0][1];
+   assert.ok(xml.includes('Lunghezza="'+a.toFixed(2)+'" Larghezza="'+b.toFixed(2)+'"'));
    const actual=xml.match(/<Cut T="P" Dim="([0-9.]+)"/)[1];
-   const expected=(feed==='x'?b:a).toFixed(2);
-   assert.equal(actual,expected);
-   assert.ok(xml.includes('Lunghezza="'+expected+'"'));
+   assert.equal(actual,(feed==='x'?b:a).toFixed(2));
   }
  }
 });

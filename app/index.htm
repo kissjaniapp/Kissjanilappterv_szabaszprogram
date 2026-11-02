@@ -782,8 +782,19 @@
         edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,thickness:r.thickness,
         rot:r.rot,number:i+1,uid:r.part.id});
     }
-    const breadth=p=>feed==='x'?p.b:p.a;
-    const along=p=>feed==='x'?p.a:p.b;
+    // Régi x/y gépállások és új, táblánként értelmezett hosszú/rövid él.
+    // auto esetén a gépállás táblánként külön választódik ki,
+    // nem egyetlen globális beállítás mindegyik táblára.
+    const sortingFeed=['auto','long','short'].includes(feed)?(mode%2?'x':'y'):feed;
+    const breadth=(p,axis=sortingFeed)=>axis==='x'?p.b:p.a;
+    const along=(p,axis=sortingFeed)=>axis==='x'?p.a:p.b;
+    const feedCandidates=bin=>{
+      if(bin.machine)return [bin.machine.feed];
+      if(feed==='auto')return ['x','y'];
+      if(feed==='long')return [bin.a>=bin.b?'y':'x'];
+      if(feed==='short')return [bin.a>=bin.b?'x':'y'];
+      return [feed]; // régi mentett projektek x/y beállítása
+    };
     const sorters=[
       (a,b)=>breadth(b)-breadth(a)||along(b)-along(a),
       (a,b)=>b.a*b.b-a.a*a.b||breadth(b)-breadth(a),
@@ -798,17 +809,18 @@
       let best=null;
       for(const bin of pool){
         if(Math.abs(bin.thickness-item.thickness)>.001)continue;
-        if(!bin.machine)bin.machine={feed,feedUsed:0,strips:[],
-          // A gép a táblavég - szélezés pozíciónál kezd. A vágásrés fele
-          // a megmaradó lapon marad, majd a csíkok a beadás ellenében fogyasztanak.
-          feedSize:(feed==='x'?bin.b:bin.a)-2*bin.trim-(bin.trim?kerf/2:0),
-          crossSize:(feed==='x'?bin.a:bin.b)-2*bin.trim-(bin.trim?kerf/2:0)};
-        const m=bin.machine;
+        // A táblát az első alkatrész elhelyezése rögzíti az adott
+        // gépállásban; a próbaként vizsgált, de nem használt táblák
+        // gépállását nem rögzítjük idő előtt.
+        for(const localFeed of feedCandidates(bin)){
+        const m=bin.machine||{feed:localFeed,feedUsed:0,strips:[],
+          feedSize:(localFeed==='x'?bin.b:bin.a)-2*bin.trim-(bin.trim?kerf/2:0),
+          crossSize:(localFeed==='x'?bin.a:bin.b)-2*bin.trim-(bin.trim?kerf/2:0)};
         const orientations=[{a:item.a,b:item.b,turned:false}];
         if(item.rot&&item.a!==item.b)orientations.push({a:item.b,b:item.a,turned:true});
         for(const o of orientations){
           if(bin.a+eps<o.a+MIN_BOARD_EXTRA||bin.b+eps<o.b+MIN_BOARD_EXTRA)continue;
-          const bw=breadth(o),len=along(o);
+          const bw=breadth(o,localFeed),len=along(o,localFeed);
           if(bw>m.feedSize+eps||len>m.crossSize+eps)continue;
           for(const strip of m.strips){
             const gap=strip.width-bw;
@@ -823,7 +835,7 @@
             const gapWeight=[.05,.08,.025,.12,.035,.075,.015,.16,.20,.015,.25,.008,.12,.003,.10,.30][strategy]??.05;
             const endWeight=[.005,.002,.008,.001,.012,.006,.002,.003,.02,.0005,.03,.001,.015,.0002,.008,.05][strategy]??.005;
             const score=bin.a*bin.b*1e5+ripLoss*gapWeight+left*endWeight;
-            if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len};
+            if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len,machine:m};
           }
           const separator=m.strips.length?kerf:0;
           const remaining=m.feedSize-m.feedUsed-separator-bw;
@@ -843,9 +855,10 @@
             const score=bin.a*bin.b*1e5+
               (m.strips.length?openStripPenalty:firstStripPenalty)+
               feedAreaPenalty+remaining*.01;
-            if(!best||score<best.score)best={bin,strip:null,score,orientation:o,bw,len};
+            if(!best||score<best.score)best={bin,strip:null,score,orientation:o,bw,len,machine:m};
           }
         }
+        } // következő lehetséges gépállás
       }
       return best;
     }
@@ -861,7 +874,7 @@
         }
       }
       if(!choice){failed.push(item);continue;}
-      const {bin,orientation,bw,len}=choice,m=bin.machine;
+      const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
       let strip=choice.strip;
       if(!strip){
         if(m.strips.length)m.feedUsed+=kerf;
@@ -876,7 +889,9 @@
     function finalize(bin){
       const m=bin.machine;
       if(!m?.strips.length)return;
-      const stripAxis=feed==='x'?'x':'y',crossAxis=feed==='x'?'y':'x';
+      // A két menet táblánként az adott ütköztetési élt használja.
+      const boardFeed=m.feed;
+      const stripAxis=boardFeed==='x'?'x':'y',crossAxis=boardFeed==='x'?'y':'x';
       const dimension=(rect,axis)=>axis==='y'?rect.w:rect.h;
       // Az első vágás a TELJES tábla beadási mérete - szélezés:
       // pl. Y gépállásban 2800 - 10 = 2790 mm a fűrész középvonala.
@@ -985,15 +1000,19 @@
       return JSON.stringify([round(bin.thickness),round(bin.trim),round(strip.width),
         round(bin.machine.crossSize),bin.machine.feed,
         [...new Set(strip.items.map(p=>String(p.item.materialColor||'').trim().toLowerCase()))].sort(),
-        strip.items.map(p=>[round(p.along),round(p.breadth),p.turned]),
+        strip.items.map(p=>[round(p.along),round(p.breadth),p.turned,
+          String(p.item.uid||p.item.name||''),String(p.item.edge||''),
+          round(p.item.edgeThickness||0),Boolean(p.item.mill),round(p.item.millDepth||0)]),
         cuts.map(cutSignature)]);
     };
     // A gép először a teljes táblát sávozza fel. A visszaadott csík
     // összes vágását az eredeti, a csík végétől a nullpont felé haladó
     // geometriai sorrendben hajtjuk végre; a rajz X-koordinátája szerinti
     // újrarendezés az ellenkező irányt eredményezheti.
-    const cutsInNumberOrder=job=>job.cuts.slice()
-      .sort((a,b)=>(a.order||0)-(b.order||0));
+    const stagePriority={'cross-head-trim':0,'cross-trim':1,cross:2,rip:3};
+    const cutsInNumberOrder=job=>job.cuts.slice().sort((a,b)=>
+      (stagePriority[a.stage]??4)-(stagePriority[b.stage]??4)||
+      (a.order||0)-(b.order||0));
     for(let boardIndex=0;boardIndex<bins.length;boardIndex++){
       const bin=bins[boardIndex],board=boardIndex+1;
       let order=0,boardPairs=0;
@@ -1071,9 +1090,12 @@
     if(parts.total>700)return {error:'A program egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
     let best=null;
-    const axes=state.cutDirection==='x'||state.cutDirection==='y'?[state.cutDirection]:['x','y'];
     const economyMode=state.layoutMode==='economy';
     const machineMode=state.layoutMode==='machine'||economyMode;
+    const selectedFeed=state.cutDirection||'auto';
+    const axes=machineMode?
+      (['long','short','x','y'].includes(selectedFeed)?[selectedFeed]:['auto']):
+      (selectedFeed==='x'||selectedFeed==='y'?[selectedFeed]:['x','y']);
     // Gépi csíkos tervnél az eddigi 6 helyett 48 különböző sorrend/
     // újracsíkozási súlyozás közül választunk. Nagy feladatnál 24 próba.
     const effort=economyMode?(parts.total<=150?96:48):
@@ -1118,7 +1140,7 @@
   }
   const colors=['#dcebdd','#e4ece2','#d8e8de','#e9e8d7','#d8e4ea','#eadfda','#dde6d3','#e9e1ea'];
   function svgBoardSize(bin,compact=false){
-    const rotated=(result?.cutAxis||state.cutDirection)==='y';
+    const rotated=(bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
     const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
     const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
     return {rotated,pad,top,boardWidth,boardHeight,width:boardWidth+2*pad,height:boardHeight+top+pad+extra};
@@ -1230,7 +1252,7 @@
     const cuts=allCuttingSteps(bin);
     if(!cuts)return '<div class="notice error top-gap">A megadott szélezés kisebb a vágásrésnél. Gépi vágássorrendhez növeld a szélezést legalább a vágásrés értékére.</div>';
     const rows=cuts.map(c=>{
-      const rotated=(result?.cutAxis||state.cutDirection)==='y';
+      const rotated=(bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
       const direction=c.axis==='y'?('Y · rajzon '+(rotated?'↔':'↕')):('X · rajzon '+(rotated?'↕':'↔'));
       const reference=c.axis==='y'?'bal szélétől':'felső szélétől';
       return `<tr><td><span class="pill ${c.kind==='trim'?'warn':''}">${c.order}.</span><div class="tiny muted">${c.stage==='head-trim'?'1. táblavég':c.stage==='cross-head-trim'?'2. menet · '+c.stripIndex+'. csík végszélezés':c.stage==='cross-trim'?'2. menet · csík '+c.stripIndex+' szélezése':c.kind==='trim'?'Szélezés':c.stage==='strip'?'1. menet · csík '+c.stripIndex:c.stage==='cross'?'2. menet · csík '+c.stripIndex:c.stage==='rip'?'Szélességre vágás':'Nesting '+(c.order-cuts.length+bin.cuts.length)+'.'}</div></td><td><strong>${h(c.section)}</strong><div class="tiny muted">${nfmt(c.sectionW)} × ${nfmt(c.sectionH)} mm</div></td><td>${direction}</td><td><strong class="num">${nfmt(c.pieceSize)} mm</strong><div class="tiny muted">${c.kind==='trim'?c.edge+' él · ráhagyás':(c.partSide==='start'?'bal / felső':'jobb / alsó')+' oldal'}</div></td><td class="num">${nfmt(c.offset)} mm<div class="tiny muted">${reference}</div></td><td class="num">${nfmt(c.length)} mm</td><td><span class="small">${h(c.beforeSection)} / ${h(c.afterSection)}</span><div class="tiny muted">${nfmt(c.beforeSize)} / ${nfmt(c.afterSize)} mm</div></td></tr>`;
@@ -1277,7 +1299,7 @@
     // a szabásterv automatikusan elkészül. Kézi újraszámolás nem szükséges.
     if(!result)result=computeNesting();
     const run='';
-    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">Kezdővágás iránya</div><div class="panel-sub">X gépállás: a 2070 mm-es oldalt húzza be a gép, és a 2800 mm-es hossz mentén szab csíkokat. Y gépállás: a 2800 mm-es oldalt húzza be, és a 2070 mm-es hossz mentén szab. Más táblánál ugyanez az első/második méret szerint érvényes.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Válaszd ki az első vágások tengelyét</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Automatikus · mindkét gépállás kipróbálása</option><option value="x" ${state.cutDirection==='x'?'selected':''}>X gépállás · behúzás 2070 oldalról</option><option value="y" ${state.cutDirection==='y'?'selected':''}>Y gépállás · behúzás 2800 oldalról</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="machine" ${(!state.layoutMode||state.layoutMode==='machine')?'selected':''}>Gépi csíkos · csíkok, majd visszaadás</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagy maradékok megőrzése</option><option value="auto" ${state.layoutMode==='auto'?'selected':''}>Szabad nesting · polcos + mozaikos</option><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos · vegyes vágásirányok</option><option value="rows" ${state.layoutMode==='rows'?'selected':''}>Polcos · egyféle kezdőirány</option></select></div></div></div></div>`;
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="machine" ${(!state.layoutMode||state.layoutMode==='machine')?'selected':''}>Gépi csíkos · csíkok, majd visszaadás</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagy maradékok megőrzése</option><option value="auto" ${state.layoutMode==='auto'?'selected':''}>Szabad nesting · polcos + mozaikos</option><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos · vegyes vágásirányok</option><option value="rows" ${state.layoutMode==='rows'?'selected':''}>Polcos · egyféle kezdőirány</option></select></div></div></div></div>`;
     let body='';
     if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><span class="muted small">A terv az adatok megadásakor automatikusan elkészül.</span><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}
     else if(result.error){body=`<div class="notice error">${h(result.error)}</div><div class="section-bottom"><button class="btn" data-action="page" data-page="furniture">Alkatrészek ellenőrzése</button><button class="btn" data-action="page" data-page="stock">Anyagok ellenőrzése</button></div>`;}
@@ -1297,7 +1319,7 @@
         <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
         <div class="panel-body"><div class="board-tabs">${result.bins.map((bin,i)=>`<button class="board-tab ${i===state.selectedBoard?'active':''}" data-action="select-board" data-index="${i}">Tábla ${i+1} <span style="opacity:.7">· ${nfmt(bin.a)}×${nfmt(bin.b)}×${nfmt(bin.thickness)}</span></button>`).join('')}</div>
           <div class="display-board" style="margin-top:17px"><div><div class="drawing-area">${svgBoard(b)}</div>
-            <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${result.cutAxis==='y'?'Elfordított nézet: X ↕ szálirány · Y ↔ keresztirány · első vágás felülről':'X ↔ szálirány · Y ↕ keresztirány'} · szaggatott: szélezési határ</span></div></div>
+            <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${(b.machine?.feed||result.cutAxis)==='y'?'Elfordított nézet: X ↕ szálirány · Y ↔ keresztirány · első vágás felülről':'X ↔ szálirány · Y ↕ keresztirány'} · szaggatott: szélezési határ</span></div></div>
             <div class="board-meta"><h3>Tábla összesítő</h3><p class="muted small">${h(b.name)}</p>
               <div class="rowmeta"><span>Anyagméret</span><b>${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)}</b></div>
               <div class="rowmeta"><span>Elhelyezett alkatrész</span><b>${b.placements.length} db</b></div>
@@ -1606,17 +1628,17 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      // A gépen láthatóvá vált eredeti SCM-minta és a működő próbafájl:
-      // <Header Lunghezza="2070.00" Larghezza="2800.00" ...>
-      // <Cut T="P" Dim="2070.00" ...> – azaz P = Lunghezza.
-      // A korábbi Gatterka hibás esetben Lunghezza=753, P=1983 volt.
-      // A gépi fejléc a *beadási irányhoz* igazodik, nem a megjelenített
-      // szabásrajz tájolásához: a rajzon a felül látható méret változatlan.
+      // A fejléc a szabásrajz tájolását követi (a felhasználó gépi észrevétele alapján):
+      // Lunghezza = a rajzon VÍZSZINTES táblaméret (X: szálirány, bin.a),
+      // Larghezza = a rajzon FÜGGŐLEGES táblaméret (Y: kereszt, bin.b).
+      // A kezdő P parancs továbbra is a beadási irány szerinti méretet kapja.
+      // FIGYELEM: a korábbi, gépen elutasított esetben (Lunghezza=753, P=1983)
+      // a fejléc szintén a rajz szerinti, a P pedig a beadási méret volt.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
       const feedLength=m.feed==='x'?bin.b:bin.a;
-      const headerLength=feedLength;
-      const headerWidth=m.feed==='x'?bin.a:bin.b;
+      const headerLength=bin.a;
+      const headerWidth=bin.b;
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
