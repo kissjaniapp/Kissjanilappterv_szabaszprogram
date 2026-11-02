@@ -487,7 +487,20 @@
   }
   function copyFurniture(template){
     const f=JSON.parse(JSON.stringify(template));
-    f.id=uuid();f.parts=(f.parts||[]).map(p=>({...p,id:uuid()}));
+    f.id=uuid();
+    // A külön bútorok saját kapcsoló- és alkatrészazonosítókat kapnak.
+    const ruleIds=new Map(),specIds=new Map();
+    f.customParameters=(f.customParameters||[]).map(rule=>{
+      const id=uuid();ruleIds.set(rule.id,id);
+      return {...rule,id,parts:(rule.parts||[]).map(spec=>{
+        const newId=uuid();specIds.set(rule.id+':'+spec.id,newId);
+        return {...spec,id:newId};
+      })};
+    });
+    f.parts=(f.parts||[]).map(p=>({...p,id:uuid(),
+      ...(p.customParameterId?{customParameterId:ruleIds.get(p.customParameterId)||p.customParameterId,
+        customPartId:specIds.get(p.customParameterId+':'+p.customPartId)||p.customPartId}:{})
+    }));
     f.sourceSeriesId=template.sourceSeriesId||null;
     return f;
   }
@@ -517,6 +530,49 @@
   function makeCustomPartDefinition(){
     return {id:uuid(),name:'',a:'',b:'',q:''};
   }
+  // A feltétel kizárólag az aktuális bútor W/H/D/T/S/O változóival számolható.
+  // Példák: H>=1200, W>600 && D>=400, H<900 || W>1000.
+  function customConditionState(f,rule){
+    if(!rule.enabled)return {active:false,error:''};
+    const condition=String(rule.condition||'').trim();
+    if(!condition)return {active:true,error:''};
+    try{
+      const vars={W:Number(f.w),H:Number(f.ht),D:Number(f.d),T:Number(f.t)||18,
+        S:effectiveShelves(f),O:effectiveDivider(f)};
+      if(Object.values(vars).some(v=>!Number.isFinite(v)))throw Error('Hibás bútoradat');
+      const active=condition.split(/\s*\|\|\s*/).some(group=>
+        group.split(/\s*&&\s*/).every(test=>{
+          const m=test.match(/^(.+?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/);
+          if(!m)throw Error('Használj összehasonlítást, pl. H>=1200');
+          const a=calc(m[1],vars),b=calc(m[3],vars);
+          switch(m[2]){
+            case '>=':return a>=b;
+            case '<=':return a<=b;
+            case '>':return a>b;
+            case '<':return a<b;
+            case '==':return a===b;
+            case '!=':return a!==b;
+          }
+          return false;
+        }));
+      return {active,error:''};
+    }catch(e){return {active:false,error:e.message||'Hibás feltétel'};}
+  }
+  function customRuleStatus(f,rule){
+    const r=customConditionState(f,rule);
+    return r.error?'Hibás feltétel: '+r.error:
+      !rule.enabled?'Kikapcsolva: nem kerül a szabásba':
+      r.active?'Feltétel teljesül: bekerül az alkatrészlistába':
+        'Feltétel nem teljesül: nem kerül a szabásba';
+  }
+  function refreshCustomRuleStatuses(f){
+    for(const rule of f.customParameters||[]){
+      const wrapper=[...document.querySelectorAll('[data-custom-parameter]')]
+        .find(el=>el.dataset.customParameter===rule.id);
+      const label=wrapper?.querySelector('[data-custom-status]');
+      if(label)label.textContent=customRuleStatus(f,rule);
+    }
+  }
   function syncCustomParameterParts(f){
     if(!Array.isArray(f.customParameters))f.customParameters=[];
     const definitions=new Map();
@@ -527,16 +583,16 @@
     for(const part of f.parts||[]){
       if(!part.customParameterId)continue;
       const def=definitions.get(part.customParameterId+':'+part.customPartId);
-      if(def&&!def.rule.enabled)
+      if(def&&!customConditionState(f,def.rule).active)
         for(const key of ['name','a','b','q'])def.spec[key]=part[key];
     }
     f.parts=(f.parts||[]).filter(part=>{
       if(!part.customParameterId)return true;
       const def=definitions.get(part.customParameterId+':'+part.customPartId);
-      return !!(def&&def.rule.enabled);
+      return !!(def&&customConditionState(f,def.rule).active);
     });
     for(const rule of f.customParameters){
-      if(!rule.enabled)continue;
+      if(!customConditionState(f,rule).active)continue;
       for(const spec of rule.parts||[]){
         if(f.parts.some(p=>p.customParameterId===rule.id&&p.customPartId===spec.id))continue;
         f.parts.push({id:uuid(),customParameterId:rule.id,customPartId:spec.id,
