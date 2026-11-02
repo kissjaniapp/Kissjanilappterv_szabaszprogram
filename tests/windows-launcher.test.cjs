@@ -63,17 +63,18 @@ test('a Windows 10/11 modern mappaválasztója látható tulajdonosi ablakot kap
  assert.match(native,/patchNativeMix\(content,root,folder\)/);
 });
 
-test('ZIP-csomagolás Windows Mentés másként után: külön projektmappa nélkül',()=>{
+test('Windows Mentés másként után az xMix és az xPrg fájlok közvetlenül a kiválasztott mappába kerülnek',()=>{
+ const save=fs.readFileSync(path.join(__dirname,'../desktop-go/launcher/machine_save.go'),'utf8');
  assert.match(native,/GetSaveFileNameW/);
  assert.match(native,/GetForegroundWindow/);
  assert.match(native,/windowsSaveFileName/);
- assert.doesNotMatch(native.slice(native.indexOf("func chooseWindowsZipFile("),native.indexOf("// Kizárólag egy ZIP mentődik.")),/exec\.Command\("powershell\.exe"/);
+ assert.match(native,/func chooseWindowsSaveXmix\(defaultName string,initialDir string\)/);
+ assert.doesNotMatch(native.slice(native.indexOf('func chooseWindowsSaveXmix('),native.indexOf('func (bridge *nativeBridge) chooseSaveAs(')),/exec\.Command\("powershell\.exe"/);
  assert.match(native,/router.HandleFunc\("\/native\/choose-save-as"/);
- assert.match(native,/router.HandleFunc\("\/native\/write-zip"/);
- assert.match(native,/func writeMachineArchive\(zipPath string,req nativeSave\)error/);
- assert.match(native,/patchNativeMix\(content,root,req.CabinetFolder\)/);
- const from=native.indexOf('func saveMachineZipAt(');
- const to=native.indexOf('func (bridge *nativeBridge) chooseSaveAs(',from);
- assert.ok(from>=0&&to>from);
- assert.doesNotMatch(native.slice(from,to),/saveMachineFiles\(/);
+ assert.match(native,/router.HandleFunc\("\/native\/write-files"/);
+ assert.doesNotMatch(native,/write-zip|archive\/zip|saveMachineZipAt|writeMachineArchive/);
+ assert.match(native,/saveMixAndPrograms\(path,request\)/);
+ assert.match(save,/func saveMixAndPrograms\(mixPath string,\s*req nativeMixSave\)/);
+ assert.match(save,/patchMixWithSavedPaths\(/);
+ assert.match(save,/os\.O_EXCL/);
 });
