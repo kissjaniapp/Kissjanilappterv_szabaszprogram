@@ -574,7 +574,7 @@
         </div>`).join('')}
         <div class="toolbar"><button class="btn sm" data-action="add-custom-part"
           data-id="${h(rule.id)}">＋ Alkatrész ehhez a paraméterhez</button>
-          <span class="muted small">${rule.enabled?'Bekapcsolva: az Alkatrészek lapon is megjelenik':'Kikapcsolva: nem kerül a szabásba'}</span>
+          <span class="muted small" data-custom-status>${rule.enabled?'Bekapcsolva: az Alkatrészek lapon is megjelenik':'Kikapcsolva: nem kerül a szabásba'}</span>
         </div>
       </div>`).join('');
     return `<div class="panel top-gap" style="padding:14px">
@@ -997,7 +997,7 @@
         ${state.furnitures.length>1?`<div class="furniture-select"><select aria-label="Bútor kiválasztása" data-scope="ui" data-key="selectedFurniture">${state.furnitures.map(x=>`<option value="${h(x.id)}" ${x.id===f.id?'selected':''}>${h(x.name||'Új bútor')}</option>`).join('')}</select></div>`:''}
         <div class="furniture-name"><label>Bútor megnevezése</label><input data-scope="furniture" data-key="name" data-id="${f.id}" value="${h(f.name)}"></div>
         <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
-          <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
+          <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
         </div>
         ${customParametersPanel(f)}
         <div class="job-info">
@@ -3044,10 +3044,14 @@
         if(active)active[key]=spec[key];
       }
       syncCustomParameterParts(f);result=null;
-      if(el.tagName==='INPUT'){
-        save();return; // A Tab a következő képletmezőre lép, nem újrarajzolunk.
+      if(scope==='custom-param'&&key==='enabled'){
+        const message=el.closest('[data-custom-parameter]')?.querySelector('[data-custom-status]');
+        if(message)message.textContent=rule.enabled?
+          'Bekapcsolva: az Alkatrészek lapon is megjelenik':
+          'Kikapcsolva: nem kerül a szabásba';
       }
-      render();return;
+      save();return; // A Tab minden képletmezőn és legördülőn továbblép.
+    
     }
     if(scope==='remnant-selection'){
       const selected=new Set(state.selectedRemnantIds||[]);
@@ -3062,7 +3066,7 @@
       item[key]=value;
       storeCatalog(scope==='material'?materialKey:remnantKey,scope==='material'?materialCatalog:remnantCatalog);
       result=null;
-      if(el.tagName==='INPUT')return; // Anyagnév és táblaméret: Tab-sorrend megőrzése.
+      if(el.tagName==='INPUT'||el.tagName==='SELECT')return; // Az anyagszín és vastagság Tab-sorrendje megmarad.
       render();return;
     }
     const hadNesting=!!result;
@@ -3113,9 +3117,25 @@
       result=hadNesting||state.active==='nesting'?computeNesting():null;
       if((scope==='part'&&['a','b','q','name','materialColor'].includes(key))||
          (scope==='furniture'&&['w','ht','d','t','qty','s','dividerThreshold'].includes(key))||
-         (el.tagName==='INPUT'&&el.type!=='checkbox')){
-        // A blur által kiváltott change esemény ne rombolja le a DOM-ot,
-        // különben a Tab-gombbal nem lehetne mezőről mezőre haladni.
+         (el.tagName==='INPUT'&&el.type!=='checkbox')||
+         (el.tagName==='SELECT'&&scope!=='ui')){
+        // A blur/change esemény ne bontsa le a táblázatot. Így a Tab
+        // a színek, vastagságok és számmezők között is végigmegy.
+        if(scope==='part'&&key==='materialId'){
+          const owner=state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===target.id));
+          const small=el.closest('td')?.querySelector('.tiny');
+          if(owner&&small)small.textContent=nfmt(materialForPart(target,owner).thickness)+' mm';
+        }
+        if(scope==='part'&&key==='edgeThickness'){
+          const row=el.closest('tr'),mill=row?.querySelector('[data-key="mill"]'),
+                depth=row?.querySelector('[data-key="millDepth"]');
+          if(mill){mill.disabled=Number(target.edgeThickness)===0.4;mill.checked=!!target.mill&&Number(target.edgeThickness)!==0.4;}
+          if(depth)depth.disabled=Number(target.edgeThickness)===0.4||!target.mill;
+        }
+        if(scope==='furniture'&&key==='materialId'){
+          const label=document.querySelector('[data-material-thickness-view="'+target.id+'"]');
+          if(label)label.textContent=nfmt(materialCatalog.find(m=>m.id===target.materialId)?.thickness??target.t??18)+' mm';
+        }
         refreshLiveFormulaValues();save();return;
       }
     }

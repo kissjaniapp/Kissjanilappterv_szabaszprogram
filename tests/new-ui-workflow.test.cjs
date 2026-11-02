@@ -42,7 +42,7 @@ test('az alkatrészeknél alul egy nagy új alkatrész gomb van, Tab sorrend ter
  assert.match(html,/ABS vastagság/);
  assert.match(html,/getElementById|querySelector/);
 });
-test('a szokli egy, kettő vagy három alkatrészből generálható és később átírható',()=>{
+test('régi szokli-képletek kompatibilisek, az új bútorban nincs előre kitöltött paraméter',()=>{
  const a=html.indexOf('function rebuildPlinthParts(f){');
  const b=html.indexOf('\n  // Saját igen/nem kapcsolók',a);
  assert.ok(a>0&&b>a);
@@ -63,8 +63,9 @@ test('a szokli egy, kettő vagy három alkatrészből generálható és később
    assert.equal(generated[1].q,mode==='two'?'1':'2');
   }
  }
- assert.match(html,/data-key="plinthMode"/);
- assert.match(html,/data-action="rebuild-plinth"/);
+ assert.doesNotMatch(html,/data-key="plinthMode"/);
+ assert.doesNotMatch(html,/data-action="rebuild-plinth"/);
+ assert.match(html,/customParameters:\[\]/);
 });
 test('a három keresés ugyanahhoz a fizikai, kétmenetes csíkvágáshoz kötődik',()=>{
  const start=html.indexOf('const directionControl='),end=html.indexOf('\n    let body=',start);
