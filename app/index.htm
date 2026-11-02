@@ -2968,6 +2968,14 @@
       state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='new-furniture'){const f=createBaseFurniture();state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
+    else if(action==='previous-selected-furniture'||action==='next-selected-furniture'){
+      const index=state.furnitures.findIndex(f=>f.id===state.selectedFurniture);
+      const next=index+(action==='previous-selected-furniture'?-1:1);
+      if(next>=0&&next<state.furnitures.length){
+        state.selectedFurniture=state.furnitures[next].id;state.active='furniture';
+      }else if(action==='next-selected-furniture')state.active='parts';
+      notice='';result=null;render();window.scrollTo({top:0,behavior:'smooth'});
+    }
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
       if(!f)return;
@@ -3025,8 +3033,11 @@
   }
   function partReferenceSuggestions(el){
     closePartSuggestions();
-    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"]'))return;
-    const selected=state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===el.dataset.id));
+    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"],[data-scope="custom-part"][data-key="a"],[data-scope="custom-part"][data-key="b"],[data-scope="custom-part"][data-key="q"]'))return;
+    const custom=el.dataset.scope==='custom-part';
+    // Kizárólag az aktuális bútor alkatrészeit ajánlhatja fel.
+    const selected=custom?getFurniture():
+      state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===el.dataset.id));
     if(!selected)return;
     const position=el.selectionStart??String(el.value).length;
     const before=String(el.value).slice(0,position);
@@ -3034,7 +3045,8 @@
     if(!found||found[1].length<2)return;
     const token=found[1],offset=position-token.length;
     const matches=(selected.parts||[]).filter(p=>
-      p.id!==el.dataset.id&&String(p.name||'').toLocaleLowerCase('hu-HU')
+      (custom?p.customPartId!==el.dataset.partId:p.id!==el.dataset.id)&&
+      String(p.name||'').toLocaleLowerCase('hu-HU')
        .startsWith(token.toLocaleLowerCase('hu-HU'))&&
       !String(p.name||'').startsWith('=')&&!String(p.name||'').includes('{')).slice(0,8);
     if(!matches.length)return;
@@ -3085,6 +3097,23 @@
       rememberMachineRoot(el.value);
       return; // Gépelés közben nem bontjuk le az inputot és a gombokat.
     }
+    if(scope==='custom-param'&&key==='condition'){
+      const f=getFurniture(),rule=f?.customParameters?.find(x=>x.id===el.dataset.id);
+      if(!rule)return;
+      rule.condition=el.value;
+      syncCustomParameterParts(f);refreshCustomRuleStatuses(f);
+      refreshLiveFormulaValues();result=null;save();return;
+    }
+    if(scope==='custom-part'&&['name','a','b','q'].includes(key)){
+      const f=getFurniture(),rule=f?.customParameters?.find(x=>x.id===el.dataset.id);
+      const spec=rule?.parts?.find(x=>x.id===el.dataset.partId);
+      if(!spec)return;
+      spec[key]=el.value;
+      const active=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
+      if(active)active[key]=el.value;
+      if(['a','b','q'].includes(key))partReferenceSuggestions(el);
+      refreshLiveFormulaValues();result=null;save();return;
+    }
     if(scope==='part'&&['a','b','q','name','materialColor'].includes(key)){
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
@@ -3098,6 +3127,7 @@
       const value=pnum(el.value);
       if(!el.value.trim()||!Number.isFinite(value)||value<0)return;
       furniture[key]=value;
+      syncCustomParameterParts(furniture);refreshCustomRuleStatuses(furniture);
       refreshLiveFormulaValues();
       scheduleLiveNesting();
     }
@@ -3120,6 +3150,7 @@
       if(scope==='custom-param'){
         if(key==='enabled')rule.enabled=el.value==='true';
         else if(key==='name')rule.name=el.value;
+        else if(key==='condition')rule.condition=el.value;
       }else{
         const spec=(rule.parts||[]).find(x=>x.id===el.dataset.partId);
         if(!spec||!['name','a','b','q'].includes(key))return;
@@ -3128,12 +3159,7 @@
         if(active)active[key]=spec[key];
       }
       syncCustomParameterParts(f);result=null;
-      if(scope==='custom-param'&&key==='enabled'){
-        const message=el.closest('[data-custom-parameter]')?.querySelector('[data-custom-status]');
-        if(message)message.textContent=rule.enabled?
-          'Bekapcsolva: az Alkatrészek lapon is megjelenik':
-          'Kikapcsolva: nem kerül a szabásba';
-      }
+      refreshCustomRuleStatuses(f);refreshLiveFormulaValues();
       save();return; // A Tab minden képletmezőn és legördülőn továbblép.
     
     }
