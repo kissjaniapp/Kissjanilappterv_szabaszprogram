@@ -18,7 +18,7 @@ test('a kezdőoldal a helyben elmentett bútorok listája',()=>{
   assert.match(html,/data-action="create-project"/);
 });
 test('a PNG alkatrészlista és az XPrg/XMix export látható, Excel már nincs',()=>{
-  assert.match(html,/data-action="download-xprg-project"/);
+  assert.match(html,/data-action="save-xprg-folder"/);
   assert.match(html,/data-action="download-png"/);
   assert.match(html,/data-action="download-parts-png"/);
   assert.doesNotMatch(html,/data-action="download-parts-xlsx"/);
@@ -48,7 +48,7 @@ test('a Szálirány kötelező megnevezés szerepel az alkatrészeknél',()=>{
 test('az xPrg ZIP letöltés panelje nem nyit anyagkód- vagy jóváhagyó ablakot',()=>{
  assert.doesNotMatch(html,/data-key="xprgMaterialCode"/);
  assert.match(html,/xprgMaterialCode:'BLAP003'/);
- assert.match(html,/data-action="download-xprg-project"/);
+ assert.match(html,/data-action="save-xprg-folder"/);
  const first=html.indexOf('async function downloadXprgProject()');
  const last=html.indexOf('\n  function downloadCutList(',first);
  const source=html.slice(first,last);
@@ -62,9 +62,10 @@ test('a szabásterv panelen csak mappaválasztás és ZIP letöltés van',()=>{
  assert.ok(start>=0&&end>start);
  const panel=html.slice(start,end);
  assert.match(panel,/data-action="save-xprg-folder"/);
- assert.match(panel,/data-key="xmixMachineRoot"/);
- assert.match(panel,/Gépi gyökérmappa/);
- assert.match(panel,/data-action="download-xprg-project"/);
+ assert.doesNotMatch(panel,/data-key="xmixMachineRoot"/);
+ assert.doesNotMatch(panel,/Gépi gyökérmappa/);
+ assert.doesNotMatch(panel,/data-action="download-xprg-project"/);
+ assert.match(panel,/Mentés másként/);
  assert.doesNotMatch(panel,/data-key="xprgMaterialCode"/);
  assert.doesNotMatch(panel,/data-key="xprgFolder"/);
  assert.doesNotMatch(panel,/data-key="xprgHeaderMode"/);
@@ -150,7 +151,7 @@ test('a régi Feya beállítás kizárólag Freyára javul, az egyéb anyagok é
 test('a WinCut Mix a megadott teljes X: gépi utat menti, nem csak a relatív xPrg nevet',()=>{
  assert.match(html,/const defaultXmixMachineRoot='X:\\\\JANI\\\\szabas_programmal\\\\Legujabb_mentessel'/);
  assert.match(html,/xmixMachineRoot:savedMachineRoot/);
- assert.match(html,/data-key="xmixMachineRoot"/);
+ assert.doesNotMatch(html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek')),/data-key="xmixMachineRoot"/);
  assert.match(html,/function machineRootPath\(\)/);
  assert.match(html,/machineRootPath\(\)\+'\\\\'\+cabinet\+'\\\\xPrg\\\\'/);
  assert.match(html,/String\(parent.name\)\.toLocaleLowerCase/);
@@ -163,10 +164,10 @@ test('a gépi gyökérmappát gépelés közben menti és natív ablakból módo
  assert.match(html,/localStorage\.setItem\('gatterka-machine-root-v1'/);
  assert.match(html,/rememberMachineRoot\(el\.value\)/);
  assert.match(html,/async function requestNativeMachine\(action,payload\)/);
- assert.match(html,/const selected=await requestNativeMachine\('choose'/);
- assert.match(html,/rememberMachineRoot\(selected\.path\)/);
- assert.match(html,/document\.getElementById\('xmix-machine-root'\)/);
- assert.match(html,/const saved=await requestNativeMachine\('save'/);
+ assert.match(html,/const saved=await requestNativeMachine\('save-as'/);
+ assert.match(html,/if\(options\.relative\)return preview/);
+ assert.doesNotMatch(html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek')),/xmix-machine-root/);
+ assert.match(html,/const saved=await requestNativeMachine\('save-as'/);
 });
 
 test('az Alkatrészek oldalon csak egy Anyagkészlet továbbgomb van',()=>{
@@ -176,10 +177,12 @@ test('az Alkatrészek oldalon csak egy Anyagkészlet továbbgomb van',()=>{
   const view=html.slice(first,end);
   assert.equal((view.match(/Anyagkészlet →/g)||[]).length,1);
 });
-test('a Windowsos mentésnél nem kézi mintaútvonalat használunk, hanem a választott mappát',()=>{
+test('a Windows mentési panelen egyetlen Mentés másként gomb van, útvonal nélkül',()=>{
   const panel=html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek'));
-  assert.match(panel,/nativeBridge\?'readonly':''/);
-  assert.match(panel,/Mentési hely kiválasztása és mentés/);
-  assert.match(html,/rememberMachineRoot\(selected\.path\)/);
-  assert.match(html,/const saved=await requestNativeMachine\('save'/);
+  assert.equal((panel.match(/data-action="save-xprg-folder"/g)||[]).length,1);
+  assert.doesNotMatch(panel,/xmix-machine-root/);
+  assert.doesNotMatch(panel,/ZIP letöltése/);
+  assert.match(panel,/Mentés másként/);
+  assert.match(html,/requestNativeMachine\('save-as'/);
+  assert.match(html,/machineExportBundle\(\{relative:true\}\)/);
 });

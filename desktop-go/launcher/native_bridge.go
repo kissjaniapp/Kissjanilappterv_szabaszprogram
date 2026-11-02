@@ -4,12 +4,14 @@
 package main
 
 import (
+ "archive/zip"
  "crypto/rand"
  "encoding/base64"
  "encoding/json"
  "errors"
  "fmt"
  "html"
+ "io"
  "net"
  "net/http"
  "os"
@@ -83,6 +85,7 @@ func startNativeBridge()(int,string,func(),error){
  router:=http.NewServeMux()
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
+ router.HandleFunc("/native/save-as",bridge.saveAs)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -274,5 +277,124 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
  machineJSON(w,200,map[string]interface{}{
    "path":full,"cabinetFolder":filepath.Base(full),
    "programs":len(request.Files)-1,
+ })
+}
+
+
+// A felhasználó a valódi Windows "Mentés másként" ablakban választja ki a ZIP nevét és helyét.
+// A PowerShell csak a Windows SaveFileDialog megjelenítését végzi; a fájlokat Go menti.
+func chooseWindowsZipFile(defaultName string)(string,error){
+ script:=`$ErrorActionPreference='Stop'
+Add-Type -AssemblyName System.Windows.Forms
+[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
+$dialog=New-Object System.Windows.Forms.SaveFileDialog
+$dialog.Title='Gatterka - Mentés másként'
+$dialog.Filter='ZIP fájl (*.zip)|*.zip'
+$dialog.DefaultExt='zip'
+$dialog.AddExtension=$true
+$dialog.OverwritePrompt=$true
+$dialog.FileName=$env:GATTERKA_ZIP_FILENAME
+$owner=New-Object System.Windows.Forms.Form
+$owner.TopMost=$true
+$owner.ShowInTaskbar=$false
+$owner.Opacity=0
+$owner.Width=1
+$owner.Height=1
+try {
+  $owner.Show()
+  $owner.Activate()
+  if($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK){
+    [Console]::WriteLine($dialog.FileName)
+  } else {
+    [Console]::WriteLine('GATTERKA_CANCELLED')
+  }
+} finally {
+  $dialog.Dispose()
+  $owner.Close()
+  $owner.Dispose()
+}`
+ chars:=utf16.Encode([]rune(script))
+ bytes:=make([]byte,2*len(chars))
+ for i,c:=range chars {bytes[2*i]=byte(c);bytes[2*i+1]=byte(c>>8)}
+ cmd:=exec.Command("powershell.exe","-NoProfile","-STA","-EncodedCommand",base64.StdEncoding.EncodeToString(bytes))
+ cmd.Env=append(os.Environ(),"GATTERKA_ZIP_FILENAME="+defaultName)
+ cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
+ output,err:=cmd.CombinedOutput()
+ if err!=nil{return "",fmt.Errorf("Nem sikerült a Windows Mentés másként ablakot megnyitni: %w: %s",err,strings.TrimSpace(string(output)))}
+ path:=strings.TrimSpace(string(output))
+ if path==""||path=="GATTERKA_CANCELLED"{return "",nil}
+ path=filepath.Clean(path)
+ if !filepath.IsAbs(path)||!strings.EqualFold(filepath.Ext(path),".zip"){
+   return "",errors.New("A mentéshez teljes Windows-útvonalú .zip fájlt kell kiválasztani.")
+ }
+ dir:=filepath.Dir(path)
+ info,err:=os.Stat(dir)
+ if err!=nil||!info.IsDir(){return "",errors.New("A ZIP célmappája nem érhető el.")}
+ return path,nil
+}
+
+// A ZIP a mentett, kicsomagolt projekt pontos másolata.
+// Az xMix már a valóban létező projektmappára mutat, nem a ZIP belsejére.
+func writeMachineArchive(zipPath string,projectDir string)error{
+ parent:=filepath.Dir(zipPath)
+ tmp,err:=os.CreateTemp(parent,".gatterka-*.zip")
+ if err!=nil{return err}
+ defer os.Remove(tmp.Name())
+ writer:=zip.NewWriter(tmp)
+ err=filepath.WalkDir(projectDir,func(path string,entry os.DirEntry,walkErr error)error{
+   if walkErr!=nil{return walkErr}
+   if entry.IsDir(){return nil}
+   if !entry.Type().IsRegular(){return errors.New("A projektben nem szabályos fájl található.")}
+   relative,err:=filepath.Rel(parent,path)
+   if err!=nil{return err}
+   dest,err:=writer.Create(filepath.ToSlash(relative))
+   if err!=nil{return err}
+   source,err:=os.Open(path)
+   if err!=nil{return err}
+   _,copyErr:=io.Copy(dest,source)
+   closeErr:=source.Close()
+   if copyErr!=nil{return copyErr}
+   return closeErr
+ })
+ zipErr:=writer.Close()
+ closeErr:=tmp.Close()
+ if err!=nil{return err}
+ if zipErr!=nil{return zipErr}
+ if closeErr!=nil{return closeErr}
+ return os.Rename(tmp.Name(),zipPath)
+}
+
+func saveMachineZipAt(zipPath string,req nativeSave)(string,error){
+ if _,_,err:=safeNativeProgramFiles(req);err!=nil{return "",err}
+ if !filepath.IsAbs(zipPath)||!strings.EqualFold(filepath.Ext(zipPath),".zip"){
+   return "",errors.New("A célfájlnak teljes Windows-útvonalú .zip fájlnak kell lennie.")
+ }
+ parent:=filepath.Dir(zipPath)
+ st,err:=os.Stat(parent)
+ if err!=nil||!st.IsDir(){return "",errors.New("A ZIP célmappája nem érhető el.")}
+ project,err:=saveMachineFiles(parent,req)
+ if err!=nil{return "",err}
+ if err=writeMachineArchive(zipPath,project);err!=nil{
+   _=os.RemoveAll(project)
+   return "",err
+ }
+ return project,nil
+}
+func (bridge *nativeBridge) saveAs(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ r.Body=http.MaxBytesReader(w,r.Body,maxNativeBody)
+ var request nativeSave
+ if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
+ if _,_,err:=safeNativeProgramFiles(request);err!=nil{machineError(w,400,err);return}
+ zipPath,err:=chooseWindowsZipFile(request.CabinetFolder+"_XPrg_XMix.zip")
+ if err!=nil{machineError(w,500,err);return}
+ if zipPath==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
+ project,err:=saveMachineZipAt(zipPath,request)
+ if err!=nil{machineError(w,500,err);return}
+ machineJSON(w,200,map[string]interface{}{
+   "cancelled":false,"zipPath":zipPath,"projectPath":project,
+   "cabinetFolder":filepath.Base(project),"programs":len(request.Files)-1,
  })
 }

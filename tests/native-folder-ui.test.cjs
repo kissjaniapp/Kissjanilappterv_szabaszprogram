@@ -24,13 +24,12 @@ function harness({selected=String.raw`X:\Munka\Megosztas`,cancelled=false,saveEr
   const payload=JSON.parse(args.body);
   calls.requests.push({url,args,payload});
   assert.equal(args.headers['X-Gatterka-Token'],'A'.repeat(43));
-  if(url.endsWith('/native/choose')){
-   return {ok:true,json:async()=>cancelled?{cancelled:true}:{cancelled:false,path:selected}};
-  }
-  if(url.endsWith('/native/save')){
+  if(url.endsWith('/native/save-as')){
    if(saveError)return {ok:false,status:403,json:async()=>({error:saveError})};
-   return {ok:true,json:async()=>({path:selected+'\\2026_10_30_Teszt',
-      programs:2,cabinetFolder:'2026_10_30_Teszt'})};
+   return {ok:true,json:async()=>cancelled?{cancelled:true}:{
+      cancelled:false,zipPath:selected+'\\\\program.zip',
+      projectPath:selected+'\\\\2026_10_30_Teszt',
+      programs:2,cabinetFolder:'2026_10_30_Teszt'}};
   }
   throw Error('Unexpected url '+url);
  };
@@ -59,48 +58,35 @@ function harness({selected=String.raw`X:\Munka\Megosztas`,cancelled=false,saveEr
     'machineExportBundle,saveXprgToSelectedFolder};})()',sandbox);
  return {out,calls,input,state};
 }
-test('a natív Windows mappaválasztó tényleges X: elérési útját beírja és elmenti',async()=>{
- const {out,calls,input,state}=harness();
+test('a Windows Mentés másként egyetlen natív kérést küld, relatív forrás xMix-szel',async()=>{
+ const {out,calls,state}=harness();
  await out.saveXprgToSelectedFolder();
- assert.equal(state.xmixMachineRoot,String.raw`X:\Munka\Megosztas`);
- assert.equal(input.value,String.raw`X:\Munka\Megosztas`);
- assert.ok(calls.settings.some(s=>s.key==='gatterka-machine-root-v1'));
- assert.equal(calls.saved,1);
- assert.equal(calls.requests.length,2);
- assert.ok(calls.requests[0].url.endsWith('/native/choose'));
- assert.ok(calls.requests[1].url.endsWith('/native/save'));
- assert.ok(calls.notices.at(-1).includes('Sikeres gépi mentés'));
- const payload=calls.requests[1].payload;
+ assert.equal(state.xmixMachineRoot,root);
+ assert.equal(calls.requests.length,1);
+ assert.ok(calls.requests[0].url.endsWith('/native/save-as'));
+ assert.ok(calls.notices.at(-1).includes('Sikeres mentés'));
+ const payload=calls.requests[0].payload;
  assert.equal(payload.cabinetFolder,'2026_10_30_Teszt');
- assert.ok(payload.files[0].content.includes(
-    String.raw`X:\Munka\Megosztas\2026_10_30_Teszt\xPrg\a.xPrg`));
+ assert.ok(payload.files[0].content.includes('.\\\\xPrg\\\\a.xPrg'));
  assert.equal(payload.files.length,3);
 });
-test('a Gatterka a natív hibát is kiírja, nem jelzi tévesen sikeresnek a mentést',async()=>{
+test('mentési hiba esetén nincs hamis sikeres visszajelzés',async()=>{
  const {out,calls}=harness({saveError:'A célmappa írásvédett'});
  await out.saveXprgToSelectedFolder();
  assert.ok(calls.notices.at(-1).includes('A célmappa írásvédett'));
  assert.ok(!calls.notices.at(-1).includes('Sikeres'));
 });
-test('a mappaválasztó megszakítása nem változtatja meg a korábban megadott útvonalat',async()=>{
+test('a Windows Mentés másként megszakítása nem módosítja az adatokat',async()=>{
  const {out,calls,state}=harness({cancelled:true});
  await out.saveXprgToSelectedFolder();
  assert.equal(state.xmixMachineRoot,root);
  assert.equal(calls.requests.length,1);
  assert.equal(calls.saved,0);
+ assert.equal(calls.notices.length,0);
 });
-test('a gépi útvonal élő input kezelője gépelés közben is ment, újrarajzolás nélkül',()=>{
- const from=html.indexOf("document.addEventListener('input',e=>{");
- const to=html.indexOf("document.addEventListener('change',e=>{",from);
- assert.ok(from>=0&&to>from);
- let inputHandler;
- const entries=[];
- vm.runInNewContext(html.slice(from,to),{
-   document:{addEventListener:(name,fn)=>{assert.equal(name,'input');inputHandler=fn}},
-   rememberMachineRoot:v=>entries.push(v),
-   state:{furnitures:[]}
- });
- inputHandler({target:{dataset:{scope:'settings',key:'xmixMachineRoot'},
-    value:String.raw`X:\JANI\Frissitett`}});
- assert.deepEqual(entries,[String.raw`X:\JANI\Frissitett`]);
+test('Windows nélkül nincs félrevezető, elérési utat kitaláló mentés',async()=>{
+ const {out,calls}=harness({missingBridge:true});
+ await out.saveXprgToSelectedFolder();
+ assert.equal(calls.requests.length,0);
+ assert.ok(calls.notices.at(-1).includes('Gatterka.exe'));
 });

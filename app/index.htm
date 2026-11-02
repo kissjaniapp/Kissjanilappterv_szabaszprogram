@@ -1302,7 +1302,7 @@
         </div>
       </div>`:'';
       // A vágássorrend a háttérben készül, de a Nesting oldalon nem jelenítünk meg külön listát.
-      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">A közös XML-es .xMix minden táblaprogram teljes Windows-útvonalát tartalmazza.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:end;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><div style="flex:2;min-width:290px"><label for="xmix-machine-root">Mentési célmappa – a Windows kiválasztása után automatikusan kitöltve</label><input type="text" id="xmix-machine-root" data-scope="settings" data-key="xmixMachineRoot" value="${h(state.xmixMachineRoot??defaultXmixMachineRoot)}" ${nativeBridge?'readonly':''} autocomplete="off" spellcheck="false" aria-label="Gépi gyökérmappa teljes elérési útja" style="font-family:Consolas,monospace"></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>📁 Mentési hely kiválasztása és mentés</button><button class="btn" data-action="download-xprg-project" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>↓ ZIP letöltése</button></div><div class="muted tiny" style="margin-top:9px">A <strong>Mentési hely kiválasztása és mentés</strong> gombbal megnyílik a Windows mappaválasztója. Válaszd ki a meghajtót és a célmappát: az alkalmazás ott készíti el a projektmappát, benne a közös <strong>.xMix</strong> fájllal és az <strong>xPrg</strong> almappába mentett táblaprogramokkal. A Mix minden xPrg fájlhoz a <strong>tényleges, teljes Windows-elérési utat</strong> rögzíti (a kiválasztott meghajtóval, nem előre beírt mintaútvonallal). A fenti mező a Windowsos programban csak tájékoztatásul szolgál. A ZIP külön, opcionális letöltés.</div></div></div>`;
+      const machinePanel=`<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">XPrg + XMix projektcsomag</div><div class="panel-sub">Windows Mentés másként: ZIP + azonnal használható gépi projekt.</div></div></div><div class="panel-body"><div class="toolbar" style="align-items:center;gap:14px;flex-wrap:wrap"><div style="flex:1;min-width:210px"><span class="muted small">Anyag színe / gépi anyagkód: <strong>${h(getFurniture()?.materialColor||'—')}</strong></span></div><button class="btn primary" data-action="save-xprg-folder" ${!result.machineReady||result.failed.length?'disabled title="Teljes, végigvágásos gépi nesting szükséges"':''}>💾 Mentés másként</button></div><div class="muted tiny" style="margin-top:9px">A Windows <strong>Mentés másként</strong> ablakában válaszd ki a ZIP fájl nevét és helyét. Ugyanabba a mappába automatikusan elkészül a gépen közvetlenül használható projektmappa is: benne a közös <strong>.xMix</strong> és az <strong>xPrg</strong> almappa. A ZIP ugyanennek a projektnek a másolata; az xMix az xPrg fájlok tényleges Windows-útvonalát tartalmazza.</div></div></div>`;
       // A gépi csíkok és vágási műveletek a számításban maradnak, de itt nem jelennek meg.
       body=stats+unfitted+boardPanel+labelPanelView()+machinePanel+`<div class="section-bottom"><div class="muted small">A rajzok mm-ben méretezettek. A képet az eszközödre töltheted.</div><div class="actions"><button class="btn" data-action="download-parts-png">↓ Alkatrészlista PNG</button></div></div>`;
     }
@@ -1761,6 +1761,7 @@
     if(!color)throw Error('Az anyag színét a Bútor adatai oldalon add meg.');
     const preview=buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
       date,'.\\xPrg\\','color',destination);
+    if(options.relative)return preview;
     const cabinet=String(options.cabinetFolder||preview.cabinetFolder);
     const directory=machineRootPath()+'\\'+cabinet+'\\xPrg\\';
     return buildOfflineXprgProject(result.bins,project,color,Number(state.kerf),
@@ -1777,76 +1778,25 @@
     }catch(err){showNotice('Gépi projekt letöltése: '+(err?.message||'nem sikerült'));}
   }
   async function saveXprgToSelectedFolder(){
-    if(nativeBridge){
-      try{
-        // A valódi Windows könyvtárválasztó tényleges X:\... útvonalat
-        // küld vissza, amit azonnal eltárolunk és a képernyőn is frissítünk.
-        const selected=await requestNativeMachine('choose',{
-          initial:state.xmixMachineRoot||savedMachineRoot
-        });
-        if(selected.cancelled)return;
-        if(!selected.path)throw Error('A Windows nem adta vissza a kijelölt mappa útvonalát.');
-        rememberMachineRoot(selected.path);
-        const input=document.getElementById('xmix-machine-root');
-        if(input)input.value=selected.path;
-        const bundle=machineExportBundle();
-        const saved=await requestNativeMachine('save',{
-          cabinetFolder:bundle.cabinetFolder,
-          files:bundle.files.map(([path,content])=>({path,content}))
-        });
-        showNotice('Sikeres gépi mentés: '+saved.path+
-          ' · '+saved.programs+' xPrg és 1 közös xMix. A Mixben a tényleges Windows-meghajtóútvonal szerepel.');
-      }catch(err){
-        showNotice('Windows gépi projekt mentése: '+(err?.message||'nem sikerült'));
-      }
+    if(!nativeBridge){
+      showNotice('A Windows Mentés másként ablak a telepített Gatterka.exe alkalmazásból használható.');
       return;
     }
-    let parent;
     try{
-      const root=machineRootPath();
-      if(typeof window.showDirectoryPicker!=='function')
-        throw Error('A mappaválasztás nem érhető el. Használd a ZIP letöltését.');
-      parent=await window.showDirectoryPicker({mode:'readwrite'});
-      const expected=root.split('\\').filter(Boolean).at(-1);
-      if(String(parent.name).toLocaleLowerCase('hu-HU')!==expected.toLocaleLowerCase('hu-HU'))
-        throw Error('A kijelölt mappa ('+parent.name+') eltér a megadott X: útvonal végétől ('+expected+'). Válaszd ki a helyes gyökérmappát vagy javítsd az útvonalat.');
+      // A Windows natív SaveFileDialog választja ki a ZIP tényleges teljes útvonalát.
+      // A gépi XML-t és az xPrg fájlokat a Go mentője írja: nem a régi X: mintaútvonalat használjuk.
+      const bundle=machineExportBundle({relative:true});
+      const saved=await requestNativeMachine('save-as',{
+        cabinetFolder:bundle.cabinetFolder,
+        files:bundle.files.map(([path,content])=>({path,content}))
+      });
+      if(saved.cancelled)return;
+      if(!saved.zipPath||!saved.projectPath)
+        throw Error('A Windowsos mentés nem adott vissza teljes fájleredményt.');
+      showNotice('Sikeres mentés: a ZIP és a gépi projektmappa is elkészült. '+saved.programs+' xPrg és 1 közös xMix; az xMix a tényleges Windowsos xPrg-fájlokra hivatkozik.');
     }catch(err){
-      if(err?.name==='AbortError')return;
-      showNotice('Mappaválasztás: '+(err?.message||'nem sikerült'));return;
+      showNotice('Windows Mentés másként: '+(err?.message||'a mentés nem sikerült'));
     }
-    try{
-      const initial=machineExportBundle();
-      let folderName=initial.cabinetFolder;
-      let nameNumber=1;
-      while(nameNumber<100){
-        try{
-          await parent.getDirectoryHandle(folderName,{create:false});
-          folderName=initial.cabinetFolder+'_'+(++nameNumber);
-        }catch(err){
-          if(err?.name==='NotFoundError')break;
-          throw err;
-        }
-      }
-      if(nameNumber>=100)throw Error('Túl sok azonos nevű projektmappa.');
-      const bundle=folderName===initial.cabinetFolder?initial:
-        machineExportBundle({cabinetFolder:folderName});
-      const folder=await parent.getDirectoryHandle(folderName,{create:true});
-      for(const [archivePath,contents] of bundle.files){
-        const relative=archivePath.slice(bundle.cabinetFolder.length+1);
-        if(!archivePath.startsWith(bundle.cabinetFolder+'/')||!relative)
-          throw Error('A projekt fájlszerkezete hibás.');
-        const segments=relative.split('/');
-        const filename=segments.pop();
-        let directory=folder;
-        for(const segment of segments)
-          directory=await directory.getDirectoryHandle(segment,{create:true});
-        const file=await directory.getFileHandle(filename,{create:true});
-        const writable=await file.createWritable();
-        try{await writable.write(contents);}finally{await writable.close();}
-      }
-      showNotice('Gépi projekt elmentve: '+machineRootPath()+'\\'+folderName+
-        ' · '+bundle.names.length+' xPrg és 1 xMix; a Mix a teljes X: útvonalra mutat.');
-    }catch(err){showNotice('Gépi projekt mentése: '+(err?.message||'nem sikerült'));}
   }
   function downloadCutList(format){
     const bin=selectedBin();if(!bin)return;

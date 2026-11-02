@@ -57,7 +57,7 @@ test('a teljes xPrg + XML xMix csomag minden táblát külön kezel',()=>{
   assert.match(html,/function downloadXprgProject\(/);
   assert.match(html,/data-action="download-xprg-project"/);
   assert.match(html,/data-action="save-xprg-folder"/);
-  assert.match(html,/showDirectoryPicker/);
+  assert.match(html,/requestNativeMachine\('save-as'/);
   assert.doesNotMatch(html,/data-key="xprgFolder"/);
   assert.match(html,/<xMix>/);
   assert.match(html,/<Materials>/);
