@@ -791,8 +791,10 @@
     const feedCandidates=bin=>{
       if(bin.machine)return [bin.machine.feed];
       if(feed==='auto')return ['x','y'];
-      if(feed==='long')return [bin.a>=bin.b?'y':'x'];
-      if(feed==='short')return [bin.a>=bin.b?'x':'y'];
+      // Az ütköztetett ÉL hosszát választjuk, NEM a beadott méretet.
+      // x = bin.a él a gépnél; y = bin.b él a gépnél.
+      if(feed==='long')return [bin.a>=bin.b?'x':'y'];
+      if(feed==='short')return [bin.a>=bin.b?'y':'x'];
       return [feed]; // régi mentett projektek x/y beállítása
     };
     const sorters=[
@@ -1628,17 +1630,14 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      // A fejléc a szabásrajz tájolását követi (a felhasználó gépi észrevétele alapján):
-      // Lunghezza = a rajzon VÍZSZINTES táblaméret (X: szálirány, bin.a),
-      // Larghezza = a rajzon FÜGGŐLEGES táblaméret (Y: kereszt, bin.b).
-      // A kezdő P parancs továbbra is a beadási irány szerinti méretet kapja.
-      // FIGYELEM: a korábbi, gépen elutasított esetben (Lunghezza=753, P=1983)
-      // a fejléc szintén a rajz szerinti, a P pedig a beadási méret volt.
+      // Az xPrg fejléc a képen látható rajzi tájolást követi.
+      // Y gépállás: 90°-os rajzi elfordítás, a két fejlécméret felcserélődik.
+      // A P parancs és a teljes vágási sorrend változatlan marad.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
       const feedLength=m.feed==='x'?bin.b:bin.a;
-      const headerLength=bin.a;
-      const headerWidth=bin.b;
+      const headerLength=m.feed==='y'?bin.b:bin.a;
+      const headerWidth=m.feed==='y'?bin.a:bin.b;
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.

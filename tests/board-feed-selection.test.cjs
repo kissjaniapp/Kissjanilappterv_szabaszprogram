@@ -14,24 +14,24 @@ const makePart=(name,a,b)=>({part:{id:name,name},furniture:{name:'Konyha',materi
 const doPlan=(feed,boards,rows)=>{state.boards=boards;return create.makeStripPlan(0,{rows,errors:[],total:rows.reduce((sum,r)=>sum+r.qty,0)},feed);};
 const stock=(id,a,b)=>({id,name:id,a,b,thickness:18,qty:1});
 const firstCutAt=(cut)=>cut.axis==='y'?cut.x1:cut.y1;
-test('hosszú ütközőél 2800-as és megfordított maradéktáblán is tényleg a hosszú oldal',()=>{
- for(const [a,b,feed] of [[2800,2070,'y'],[2070,2800,'x']]){
+test('hosszú ütközőél a gépnél és a rövidebb irányú behúzás',()=>{
+ for(const [a,b,feed] of [[2800,2070,'x'],[2070,2800,'y']]){
   const p=doPlan('long',[stock('t',a,b)],[makePart('teteje',200,200)]);
   assert.equal(p.failed.length,0);
   assert.equal(p.bins[0].machine.feed,feed);
   const first=p.bins[0].cuts[0];
   assert.equal(first.stage,'head-trim');
-  assert.equal(firstCutAt(first),Math.max(a,b)-state.trim);
-  assert.equal(first.length,Math.min(a,b)); // első, teljes szélességű vágás
+  assert.equal(firstCutAt(first),Math.min(a,b)-state.trim);
+  assert.equal(first.length,Math.max(a,b)); // első, teljes szélességű vágás
  }
 });
-test('rövid ütközőél, első vágás a rövidebb oldal mínusz szélezés',()=>{
- for(const [a,b,feed] of [[2800,2070,'x'],[2070,2800,'y']]){
+test('rövid ütközőél a gépnél és a hosszabb irányú behúzás',()=>{
+ for(const [a,b,feed] of [[2800,2070,'y'],[2070,2800,'x']]){
   const p=doPlan('short',[stock('t',a,b)],[makePart('teteje',200,200)]);
   assert.equal(p.bins[0].machine.feed,feed);
   const first=p.bins[0].cuts[0];
-  assert.equal(firstCutAt(first),Math.min(a,b)-state.trim);
-  assert.equal(first.length,Math.max(a,b));
+  assert.equal(firstCutAt(first),Math.max(a,b)-state.trim);
+  assert.equal(first.length,Math.min(a,b));
  }
 });
 test('vegyes állásban valóban különböző táblák eltérő éllel is ütközhetnek',()=>{

@@ -82,15 +82,18 @@ test('a dátum és a Hová készül mező adja a projektmappa nevét',()=>{
  assert.equal(out.cabinetFolder,'2026_10_30_Kiss_Janos_konyha');
  assert.ok(out.files.every(([name])=>name.startsWith(out.cabinetFolder+'/')));
 });
-test('a fejléc a rajz szerinti: Lunghezza = vízszintes (a), Larghezza = függőleges (b); P a beadási méret',()=>{
+test('az xPrg fejléce az SVG rajz tájolását követi, miközben a P kezdővágás változatlan',()=>{
  for(const [a,b] of [[2800,2070],[1620,785],[753,1983]]){
   for(const feed of ['x','y']){
    const xml=xprgs(exportBundle([base('Feya',feed,{a,b})]))[0][1];
-   assert.ok(xml.includes('Lunghezza="'+a.toFixed(2)+'" Larghezza="'+b.toFixed(2)+'"'));
+   const horizontal=feed==='y'?b:a,vertical=feed==='y'?a:b;
+   assert.ok(xml.includes('Lunghezza="'+horizontal.toFixed(2)+'" Larghezza="'+vertical.toFixed(2)+'"'));
    const actual=xml.match(/<Cut T="P" Dim="([0-9.]+)"/)[1];
    assert.equal(actual,(feed==='x'?b:a).toFixed(2));
   }
  }
+ const rotated=xprgs(exportBundle([base('Feya','y',{a:1620,b:785})]))[0][1];
+ assert.match(rotated,/Lunghezza="785.00" Larghezza="1620.00"/);
 });
 test('összetett alkatrésznél az U visszaadás és F zárás megmarad',()=>{
  const xml=xprgs(exportBundle([base('Feya','x',{width:400,breadth:300})]))[0][1];
