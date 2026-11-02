@@ -42,6 +42,7 @@ function harness({failed=false,hasBins=true,color='Freya',destination='Teszt',
  const calls={exports:[],downloads:[],notices:[],pickerCount:0,zipInputs:[]};
  const chosen=parent||makeDirectory();
  const sandbox={
+  document:{querySelector:()=>null,getElementById:()=>null},
   nativeBridge:null,
   state:{layoutMode:'machine',projectName:'Éles vágás',kerf:5,
          furnitures:[],xmixMachineRoot:root},
