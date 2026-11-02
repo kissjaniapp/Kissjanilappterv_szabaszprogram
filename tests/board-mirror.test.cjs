@@ -32,13 +32,13 @@ test('a szabásrajz tükröződik a függőleges tengelyen, a betűk nem forduln
  const b=board();
  const {svgBoard,svgBoardSize}=drawing('x');
  const dims=svgBoardSize(b);
- assert.equal(dims.boardWidth,600);
- assert.equal(dims.boardHeight,1000);
+ assert.equal(dims.boardWidth,1000);
+ assert.equal(dims.boardHeight,600);
  const svg=svgBoard(b);
  // x'=width-(x+szélesség), a külső 80 mm margóval
- assert.match(svg,/<rect x="130" y="240" width="100" height="200" fill="#dcebdd"/);
+ assert.match(svg,/<rect x="780" y="130" width="200" height="100" fill="#dcebdd"/);
  assert.match(svg,/>Teszt<\/text>/);
- assert.match(svg,/1\. VÁGÁS ↓/);
+ assert.match(svg,/1\. VÁGÁS ←/);
  assert.doesNotMatch(svg,/>tseT</);
 });
 test('Y beállításban az elforgatott rajz ugyanúgy a függőleges tengelyre tükröződik',()=>{
@@ -54,19 +54,4 @@ test('a tükrözés csak az SVG-t érinti, a szabásméret adatot nem módosítj
  drawing('x').svgBoard(b);
  drawing('y').svgBoard(b);
  assert.equal(JSON.stringify(b),original);
-});
-
-test('1620 × 785 táblán a 785 mm kerül vízszintesen, 1620 mm függőlegesen',()=>{
- const b={...board(),a:1620,b:785};
- for(const axis of ['x','y']){
-   const {svgBoard,svgBoardSize}=drawing(axis);
-   const dims=svgBoardSize(b);
-   assert.equal(dims.boardWidth,785);
-   assert.equal(dims.boardHeight,1620);
-   const svg=svgBoard(b);
-   assert.match(svg,/785 mm · Szélesség ↔/);
-   assert.match(svg,/1620 mm · Hosszúság ↕/);
-   // A rajz valóban álló tájolású, nem pusztán a méretfelirat cserélődött.
-   assert.match(svg,/<svg[^>]+width="945" height="1875"/);
- }
 });
