@@ -189,3 +189,12 @@ test('a Windows mentési panelen egyetlen Mentés másként gomb van, útvonal n
   const flow=html.slice(html.indexOf('async function saveXprgToSelectedFolder()'),html.indexOf('function downloadCutList(',html.indexOf('async function saveXprgToSelectedFolder()')));
   assert.ok(flow.indexOf("requestNativeMachine('choose-save-as'")<flow.indexOf('machineExportBundle({relative:true})'));
 });
+
+test('a Mentés másként gomb közvetlenül mellette állapot- és hibajelzést mutat',()=>{
+ const panel=html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek'));
+ assert.match(panel,/id="machine-save-status"/);
+ assert.match(panel,/aria-live="polite"/);
+ assert.match(html,/status\.textContent=message/);
+ assert.match(html,/if\(button\)\{button\.disabled=true/);
+ assert.match(html,/finally\{/);
+});

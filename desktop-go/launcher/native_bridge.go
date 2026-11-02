@@ -12,6 +12,7 @@ import (
  "fmt"
  "html"
  "io"
+ "runtime"
  "net"
  "net/http"
  "os"
@@ -23,6 +24,7 @@ import (
  "syscall"
  "time"
  "unicode/utf16"
+ "unsafe"
 )
 
 type nativeBridge struct {
@@ -285,54 +287,84 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
 
 // A felhasználó a valódi Windows "Mentés másként" ablakban választja ki a ZIP nevét és helyét.
 // A PowerShell csak a Windows SaveFileDialog megjelenítését végzi; a fájlokat Go menti.
+// Natív Win32 Mentés másként párbeszédablak közvetlenül a Go indítóból.
+// Nem használ rejtett PowerShell-ablakot, és a Gatterka ablakát teszi tulajdonossá.
+type windowsSaveFileName struct {
+ StructureSize uint32
+ Owner uintptr
+ Instance uintptr
+ Filter uintptr
+ CustomFilter uintptr
+ MaxCustomFilter uint32
+ FilterIndex uint32
+ File uintptr
+ MaxFile uint32
+ FileTitle uintptr
+ MaxFileTitle uint32
+ InitialDir uintptr
+ Title uintptr
+ Flags uint32
+ FileOffset uint16
+ FileExtension uint16
+ DefaultExt uintptr
+ CustomData uintptr
+ Hook uintptr
+ TemplateName uintptr
+ Reserved uintptr
+ ReservedDword uint32
+ FlagsEx uint32
+}
 func chooseWindowsZipFile(defaultName string)(string,error){
- script:=`$ErrorActionPreference='Stop'
-Add-Type -AssemblyName System.Windows.Forms
-[Console]::OutputEncoding=New-Object System.Text.UTF8Encoding($false)
-$dialog=New-Object System.Windows.Forms.SaveFileDialog
-$dialog.Title='Gatterka - Mentés másként'
-$dialog.Filter='ZIP fájl (*.zip)|*.zip'
-$dialog.DefaultExt='zip'
-$dialog.AddExtension=$true
-$dialog.OverwritePrompt=$true
-$dialog.FileName=$env:GATTERKA_ZIP_FILENAME
-$owner=New-Object System.Windows.Forms.Form
-$owner.TopMost=$true
-$owner.ShowInTaskbar=$false
-$owner.Opacity=0
-$owner.Width=1
-$owner.Height=1
-try {
-  $owner.Show()
-  $owner.Activate()
-  if($dialog.ShowDialog($owner) -eq [System.Windows.Forms.DialogResult]::OK){
-    [Console]::WriteLine($dialog.FileName)
-  } else {
-    [Console]::WriteLine('GATTERKA_CANCELLED')
+  runtime.LockOSThread()
+  defer runtime.UnlockOSThread()
+  // A közös Windows Mentés másként ablak követi a Gatterka előtérben lévő ablakát.
+  const ofnOverwritePrompt=0x00000002
+  const ofnHideReadOnly=0x00000004
+  const ofnNoChangeDir=0x00000008
+  const ofnPathMustExist=0x00000800
+  const ofnExplorer=0x00080000
+  const ofnEnableSizing=0x00800000
+  file:=make([]uint16,32768)
+  name:=utf16.Encode([]rune(defaultName))
+  if len(name)+1>=len(file){return "",errors.New("Túl hosszú ZIP fájlnév.")}
+  copy(file,name)
+  filter:=utf16.Encode([]rune("ZIP fájlok (*.zip)\x00*.zip\x00"))
+  filter=append(filter,0)
+  title,_:=syscall.UTF16PtrFromString("Gatterka – Mentés másként")
+  extension,_:=syscall.UTF16PtrFromString("zip")
+  user32:=syscall.NewLazyDLL("user32.dll")
+  foreground:=user32.NewProc("GetForegroundWindow")
+  hwnd,_,_:=foreground.Call()
+  if hwnd==0{return "",errors.New("Nincs előtérben aktív Windows-ablak a Mentés másként megnyitásához.")}
+  params:=windowsSaveFileName{
+   Owner:hwnd,
+   Filter:uintptr(unsafe.Pointer(&filter[0])),
+   FilterIndex:1,
+   File:uintptr(unsafe.Pointer(&file[0])),
+   MaxFile:uint32(len(file)),
+   Title:uintptr(unsafe.Pointer(title)),
+   DefaultExt:uintptr(unsafe.Pointer(extension)),
+   Flags:ofnOverwritePrompt|ofnHideReadOnly|ofnNoChangeDir|ofnPathMustExist|ofnExplorer|ofnEnableSizing,
   }
-} finally {
-  $dialog.Dispose()
-  $owner.Close()
-  $owner.Dispose()
-}`
- chars:=utf16.Encode([]rune(script))
- bytes:=make([]byte,2*len(chars))
- for i,c:=range chars {bytes[2*i]=byte(c);bytes[2*i+1]=byte(c>>8)}
- cmd:=exec.Command("powershell.exe","-NoProfile","-STA","-EncodedCommand",base64.StdEncoding.EncodeToString(bytes))
- cmd.Env=append(os.Environ(),"GATTERKA_ZIP_FILENAME="+defaultName)
- cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
- output,err:=cmd.CombinedOutput()
- if err!=nil{return "",fmt.Errorf("Nem sikerült a Windows Mentés másként ablakot megnyitni: %w: %s",err,strings.TrimSpace(string(output)))}
- path:=strings.TrimSpace(string(output))
- if path==""||path=="GATTERKA_CANCELLED"{return "",nil}
- path=filepath.Clean(path)
- if !filepath.IsAbs(path)||!strings.EqualFold(filepath.Ext(path),".zip"){
-   return "",errors.New("A mentéshez teljes Windows-útvonalú .zip fájlt kell kiválasztani.")
- }
- dir:=filepath.Dir(path)
- info,err:=os.Stat(dir)
- if err!=nil||!info.IsDir(){return "",errors.New("A ZIP célmappája nem érhető el.")}
- return path,nil
+  params.StructureSize=uint32(unsafe.Sizeof(params))
+  dialog:=syscall.NewLazyDLL("comdlg32.dll").NewProc("GetSaveFileNameW")
+  success,_,_:=dialog.Call(uintptr(unsafe.Pointer(&params)))
+  runtime.KeepAlive(file)
+  runtime.KeepAlive(filter)
+  runtime.KeepAlive(title)
+  runtime.KeepAlive(extension)
+  if success==0{
+    extended,_,_:=syscall.NewLazyDLL("comdlg32.dll").NewProc("CommDlgExtendedError").Call()
+    if extended==0{return "",nil} // A felhasználó megszakította az ablakot.
+    return "",fmt.Errorf("A Windows Mentés másként ablak nem nyitható meg (kód: 0x%X).",extended)
+  }
+  chosen:=filepath.Clean(syscall.UTF16ToString(file))
+  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),".zip"){
+    return "",errors.New("A Mentés másként ablakból nem teljes ZIP-fájlútvonal érkezett.")
+  }
+  info,err:=os.Stat(filepath.Dir(chosen))
+  if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott ZIP-célmappa nem érhető el.")}
+  return chosen,nil
 }
 
 // Kizárólag egy ZIP mentődik. A Mix elérési útjai a célmappába történő

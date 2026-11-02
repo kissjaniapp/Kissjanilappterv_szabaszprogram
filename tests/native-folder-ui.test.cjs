@@ -12,8 +12,11 @@ const code=html.slice(start,end);
 class FixedDate extends Date{constructor(...args){super(...(args.length?args:[2026,9,30]));}}
 function harness({cancelled=false,writeError='',missingBridge=false}={}){
  const calls={requests:[],notices:[],events:[]};
+ const status={textContent:'',style:{}};
+ const button={disabled:false,textContent:'💾 Mentés másként'};
  let chosen=false;
  const sandbox={
+  document:{getElementById:id=>id==='machine-save-status'?status:null,querySelector:selector=>selector==='[data-action="save-xprg-folder"]'?button:null},
   nativeBridge:missingBridge?null:{url:'http://127.0.0.1:31825',token:'A'.repeat(43)},
   state:{layoutMode:'machine',projectName:'Teszt',kerf:5,furnitures:[],xmixMachineRoot:'X:\\old'},
   defaultXmixMachineRoot:'X:\\old',
@@ -51,10 +54,10 @@ function harness({cancelled=false,writeError='',missingBridge=false}={}){
   Date:FixedDate
  };
  const f=vm.runInNewContext('(function(){'+code+';return {saveXprgToSelectedFolder};})()',sandbox);
- return {f,calls};
+ return {f,calls,status,button};
 }
 test('Windows Mentés másként -> programok -> ZIP, külön projektmappa nélkül',async()=>{
- const {f,calls}=harness();
+ const {f,calls,status,button}=harness();
  await f.saveXprgToSelectedFolder();
  assert.deepEqual(calls.events,['choose','generate','write']);
  assert.equal(calls.requests.length,2);
@@ -62,23 +65,32 @@ test('Windows Mentés másként -> programok -> ZIP, külön projektmappa nélk�
  assert.ok(calls.requests[1].url.endsWith('/native/write-zip'));
  assert.equal(calls.requests[1].payload.files.length,3);
  assert.ok(calls.requests[1].payload.files[0].content.includes('xPrg'));
- assert.ok(calls.notices.at(-1).includes('ZIP sikeresen'));
+ assert.ok(status.textContent.includes('ZIP sikeresen'));
+ assert.equal(button.disabled,false);
 });
 test('a Mentés másként megszakítása nem generál programot',async()=>{
- const {f,calls}=harness({cancelled:true});
+ const {f,calls,status}=harness({cancelled:true});
  await f.saveXprgToSelectedFolder();
  assert.deepEqual(calls.events,['choose']);
- assert.equal(calls.notices.length,0);
+ assert.ok(status.textContent.includes('megszakítottad'));
 });
 test('a ZIP írási hibája nem hoz hamis sikerjelzést',async()=>{
- const {f,calls}=harness({writeError:'A célmappa írásvédett'});
+ const {f,calls,status}=harness({writeError:'A célmappa írásvédett'});
  await f.saveXprgToSelectedFolder();
- assert.ok(calls.notices.at(-1).includes('A célmappa írásvédett'));
- assert.ok(!calls.notices.at(-1).includes('sikeresen'));
+ assert.ok(status.textContent.includes('A célmappa írásvédett'));
+ assert.ok(!status.textContent.includes('sikeresen'));
 });
 test('Windows EXE nélkül nincs félrevezető böngészős mentés',async()=>{
- const {f,calls}=harness({missingBridge:true});
+ const {f,calls,status}=harness({missingBridge:true});
  await f.saveXprgToSelectedFolder();
  assert.deepEqual(calls.events,[]);
- assert.ok(calls.notices.at(-1).includes('Gatterka.exe'));
+ assert.ok(status.textContent.includes('Gatterka.exe'));
+});
+test('a mentés gombja rögtön állapotot mutat és nem indít párhuzamos mentést',async()=>{
+ const {f,status,button}=harness();
+ const promise=f.saveXprgToSelectedFolder();
+ assert.equal(button.disabled,true);
+ assert.match(status.textContent,/Mentés másként ablak megnyitása/);
+ await promise;
+ assert.equal(button.disabled,false);
 });

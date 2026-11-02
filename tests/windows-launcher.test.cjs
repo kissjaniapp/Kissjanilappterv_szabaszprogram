@@ -64,7 +64,10 @@ test('a Windows 10/11 modern mappaválasztója látható tulajdonosi ablakot kap
 });
 
 test('ZIP-csomagolás Windows Mentés másként után: külön projektmappa nélkül',()=>{
- assert.match(native,/SaveFileDialog/);
+ assert.match(native,/GetSaveFileNameW/);
+ assert.match(native,/GetForegroundWindow/);
+ assert.match(native,/windowsSaveFileName/);
+ assert.doesNotMatch(native.slice(native.indexOf("func chooseWindowsZipFile("),native.indexOf("// Kizárólag egy ZIP mentődik.")),/exec\.Command\("powershell\.exe"/);
  assert.match(native,/router.HandleFunc\("\/native\/choose-save-as"/);
  assert.match(native,/router.HandleFunc\("\/native\/write-zip"/);
  assert.match(native,/func writeMachineArchive\(zipPath string,req nativeSave\)error/);
