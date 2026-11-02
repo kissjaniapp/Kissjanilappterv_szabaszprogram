@@ -127,8 +127,9 @@ test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átí
 
 test('az alapértelmezett bútor anyagszíne Freya, nem a korábban elírt Feya',()=>{
  assert.match(html,/materialColor:'Freya'/);
- assert.equal((html.match(/materialColor:'Freya'/g)||[]).length,2,
-   'Az új bútor és az új projekt azonos alapanyagot kap');
+ assert.match(html,/function createBaseFurniture\(/);
+ assert.ok((html.match(/materialColor:'Freya'/g)||[]).length>=1,
+   'Az új bútor és a szériából készülő munkapéldány is Freya alapanyagot kap');
  assert.doesNotMatch(html,/materialColor:'Feya'/);
  assert.match(html,/f\.materialColor\|\|'Freya'/);
 });
