@@ -154,8 +154,8 @@ test('a WinCut Mix a megadott teljes X: gépi utat menti, nem csak a relatív xP
  assert.doesNotMatch(html.slice(html.indexOf('const machinePanel='),html.indexOf('// A gépi csíkok és vágási műveletek')),/data-key="xmixMachineRoot"/);
  assert.match(html,/function machineRootPath\(\)/);
  assert.match(html,/machineRootPath\(\)\+'\\\\'\+cabinet\+'\\\\xPrg\\\\'/);
- assert.match(html,/String\(parent.name\)\.toLocaleLowerCase/);
- assert.match(html,/machineExportBundle\(\{cabinetFolder:folderName\}\)/);
+ assert.match(html,/if\(options\.relative\)return preview/);
+ assert.match(html,/machineExportBundle\(\{relative:true\}\)/);
  assert.match(html,/key==='xmixMachineRoot'/);
 });
 

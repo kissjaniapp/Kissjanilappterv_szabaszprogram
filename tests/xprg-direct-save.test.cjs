@@ -105,33 +105,6 @@ test('a ZIP is teljes gépi hivatkozást tartalmaz, de a fájlokat xPrg almappá
  assert.ok(files[1][0].startsWith('2026_10_30_Teszt/xPrg/'));
  assert.ok(calls.notices.at(-1).includes('bontsd ki'));
 });
-test('mappaválasztó a megadott X: mappába ment, a Mixben is a teljes út szerepel',async()=>{
- const {f,calls,parent}=harness();
- await f.saveXprgToSelectedFolder();
- assert.equal(calls.pickerCount,1);
- assert.equal(parent.files.size,3);
- const mix=parent.files.get('2026_10_30_Teszt/Eles_vagas_OFFLINE.xMix');
- assert.ok(mix.includes(ROOT+'\\2026_10_30_Teszt\\xPrg\\tabla_01.xPrg'));
- assert.equal(parent.files.get('2026_10_30_Teszt/xPrg/tabla_02.xPrg'),'<SchemaDoc>02</SchemaDoc>');
- assert.ok(calls.notices.at(-1).includes(ROOT+'\\2026_10_30_Teszt'));
-});
-test('mappaütközésnél az új _2 könyvtár szerepel a Mix abszolút hivatkozásában',async()=>{
- const parent=makeDirectory();
- await parent.getDirectoryHandle('2026_10_30_Teszt',{create:true});
- const {f}=harness({parent});
- await f.saveXprgToSelectedFolder();
- const mix=parent.files.get('2026_10_30_Teszt_2/Eles_vagas_OFFLINE.xMix');
- assert.ok(mix);
- assert.ok(mix.includes(ROOT+'\\2026_10_30_Teszt_2\\xPrg\\tabla_01.xPrg'));
- assert.ok(!mix.includes('2026_10_30_Teszt\\xPrg\\'));
-});
-test('rossz mappaválasztáskor nem írhatunk a másik könyvtárba félrevezető Mix fájlt',async()=>{
- const parent=makeDirectory('MasikMappa');
- const {f,calls}=harness({parent});
- await f.saveXprgToSelectedFolder();
- assert.equal(parent.files.size,0);
- assert.ok(calls.notices.at(-1).includes('eltér'));
-});
 test('hibás/relatív gyökérútvonal nem eredményez gépi projektet',async()=>{
  for(const root of ['.\\xPrg\\','X:\\JANI\\..\\Masik','C:/hely?/bad','Z:relativ','']){
   const {f,calls}=harness({root});
@@ -148,9 +121,10 @@ test('hiányos nesting vagy hiányzó anyagszín nem készít gépi fájlt',asyn
   assert.ok(calls.notices.length>0);
  }
 });
-test('mappaválasztó nélkül a ZIP marad elérhető',async()=>{
+test('Windows EXE nélkül a Mentés másként nem ígér hamis fájlmentést',async()=>{
  const {f,calls}=harness({folderPicker:false});
  await f.saveXprgToSelectedFolder();
- assert.ok(calls.notices.at(-1).includes('ZIP'));
+ assert.ok(calls.notices.at(-1).includes('Gatterka.exe'));
  assert.equal(calls.downloads.length,0);
+ assert.equal(calls.pickerCount,0);
 });

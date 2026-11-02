@@ -67,7 +67,7 @@ test('a Windows Mentés másként egyetlen natív kérést küld, relatív forr�
  assert.ok(calls.notices.at(-1).includes('Sikeres mentés'));
  const payload=calls.requests[0].payload;
  assert.equal(payload.cabinetFolder,'2026_10_30_Teszt');
- assert.ok(payload.files[0].content.includes('.\\\\xPrg\\\\a.xPrg'));
+ assert.ok(payload.files[0].content.includes(String.raw`.\xPrg\a.xPrg`));
  assert.equal(payload.files.length,3);
 });
 test('mentési hiba esetén nincs hamis sikeres visszajelzés',async()=>{
