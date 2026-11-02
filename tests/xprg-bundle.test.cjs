@@ -28,7 +28,7 @@ const xmix=out=>out.files.find(([name])=>name.endsWith('.xMix'))[1];
 test('a működő mintakód vágássorrendje, fejlécmérete és fűrészrés megmarad',()=>{
  const xml=xprgs(exportBundle([base('Feya')]))[0][1];
  const expected='<SchemaDoc>\r\n'+
-  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2800.00" Larghezza="2070.00" SpessoreLama="5.00" />\r\n'+
+  '\t<Header NumFogliPacco="1.00" Descrizione="Feya" Spessore="18.00" Date="30/10/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00" Swap="0" />\r\n'+
   '\t<Material Tipologia="" Codice="Feya" />\r\n'+
   '\t<Pattern>\r\n'+
   '\t\t<Cut T="P" Dim="2070.00" Rip="1" ID="0" />\r\n'+
@@ -82,18 +82,17 @@ test('a dátum és a Hová készül mező adja a projektmappa nevét',()=>{
  assert.equal(out.cabinetFolder,'2026_10_30_Kiss_Janos_konyha');
  assert.ok(out.files.every(([name])=>name.startsWith(out.cabinetFolder+'/')));
 });
-test('az xPrg fejléce az SVG rajz tájolását követi, miközben a P kezdővágás változatlan',()=>{
+test('a kipróbált gépi szabály P = Lunghezza; Larghezza a másik táblaméret',()=>{
  for(const [a,b] of [[2800,2070],[1620,785],[753,1983]]){
   for(const feed of ['x','y']){
    const xml=xprgs(exportBundle([base('Feya',feed,{a,b})]))[0][1];
-   const horizontal=feed==='y'?b:a,vertical=feed==='y'?a:b;
-   assert.ok(xml.includes('Lunghezza="'+horizontal.toFixed(2)+'" Larghezza="'+vertical.toFixed(2)+'"'));
-   const actual=xml.match(/<Cut T="P" Dim="([0-9.]+)"/)[1];
-   assert.equal(actual,(feed==='x'?b:a).toFixed(2));
+   const p=(feed==='x'?b:a).toFixed(2),other=(feed==='x'?a:b).toFixed(2);
+   assert.ok(xml.includes('Lunghezza="'+p+'" Larghezza="'+other+'"'));
+   assert.ok(xml.includes('<Cut T="P" Dim="'+p+'" Rip="1" ID="0" />'));
   }
  }
- const rotated=xprgs(exportBundle([base('Feya','y',{a:1620,b:785})]))[0][1];
- assert.match(rotated,/Lunghezza="785.00" Larghezza="1620.00"/);
+ const shortFeed=xprgs(exportBundle([base('Feya','x',{a:1620,b:785})]))[0][1];
+ assert.match(shortFeed,/Lunghezza="785.00" Larghezza="1620.00"/);
 });
 test('összetett alkatrésznél az U visszaadás és F zárás megmarad',()=>{
  const xml=xprgs(exportBundle([base('Feya','x',{width:400,breadth:300})]))[0][1];
@@ -158,4 +157,45 @@ test('egyedi _2 mentési mappánál ugyanaz a tényleges út szerepel a Mixben',
  assert.equal(out.cabinetFolder,folder);
  assert.match(xmix(out),/File="X:\\JANI\\szabas_programmal\\Legujabb_mentessel\\2026_10_30_Teszt_2\\xPrg\\/);
  assert.ok(out.files[0][0].startsWith(folder+'/'));
+});
+
+
+test('a gépen elfogadott fejléc tartalmazza a Swap=0 jelölést; az xMix leírása a projektből jön',()=>{
+ const out=exportBundle([base('Feya')]);
+ assert.match(xprgs(out)[0][1], /SpessoreLama="5.00" Swap="0"/);
+ assert.match(xmix(out), /<Header Descrizione="Szekrény" Import="" Date="30\/10\/2026"/);
+});
+
+test('négy különböző nesting tábla négy különböző xPrg fájlt kap egyetlen xMix alatt',()=>{
+ const boards=[
+  base('Freya','x',{name:'Lap_01',a:2800,b:2070,width:200,along:964,breadth:200}),
+  base('Freya','y',{name:'Lap_02',a:1620,b:785,width:204,along:480,breadth:204}),
+  base('Freya','x',{name:'Lap_03',a:1400,b:900,width:300,along:500,breadth:250}),
+  base('Freya','y',{name:'Lap_04',a:1800,b:1000,width:320,along:600,breadth:320})
+ ];
+ const out=exportBundle(boards,'Konyha');
+ const programs=xprgs(out);
+ assert.equal(out.names.length,4);
+ assert.equal(programs.length,4);
+ assert.equal(new Set(out.names).size,4);
+ assert.equal((xmix(out).match(/<RigaMix File=/g)||[]).length,4);
+ assert.equal((out.files.filter(([name])=>name.endsWith('.xMix'))).length,1);
+ for(let i=0;i<boards.length;i++){
+   const b=boards[i], xml=programs[i][1];
+   const feedLength=b.machine.feed==='x'?b.b:b.a;
+   const otherLength=b.machine.feed==='x'?b.a:b.b;
+   assert.ok(xml.includes('Lunghezza="'+feedLength.toFixed(2)+'" Larghezza="'+otherLength.toFixed(2)+'"'));
+   assert.ok(xml.includes('<Cut T="P" Dim="'+feedLength.toFixed(2)+'" Rip="1" ID="0" />'));
+   assert.ok(xml.includes('<Cut T="Y" Dim="'+b.machine.strips[0].width.toFixed(2)+'"'));
+   assert.ok(xml.includes('<Cut T="X" Dim="'+b.machine.strips[0].items[0].along.toFixed(2)+'"'));
+   assert.ok(xmix(out).includes('File=".\\xPrg\\'+out.names[i]+'"'));
+   assert.equal(programs[i][0],out.cabinetFolder+'/xPrg/'+out.names[i]);
+   const cutIds=[...xml.matchAll(/<Cut T="[^"]+" Dim="[^"]+" Rip="1" ID="(\d+)" \/>/g)].map(x=>+x[1]);
+   assert.deepEqual(cutIds,Array.from({length:cutIds.length},(_,j)=>j));
+ }
+ assert.notEqual(programs[0][1],programs[1][1]);
+ assert.notEqual(programs[1][1],programs[2][1]);
+ assert.notEqual(programs[2][1],programs[3][1]);
+ // A széles csíkból keskenyebb alkatrészhez továbbra is U alábontás szükséges.
+ assert.match(programs[2][1],/<Cut T="U" Dim="250.00" Rip="1"/);
 });

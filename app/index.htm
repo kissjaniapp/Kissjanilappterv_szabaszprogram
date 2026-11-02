@@ -1630,14 +1630,15 @@
     bins.forEach((bin,i)=>{
       const m=bin.machine;
       if(!m?.strips?.length)throw Error((i+1)+'. tábla: nincs gépi csíkterv.');
-      // Az xPrg fejléc a képen látható rajzi tájolást követi.
-      // Y gépállás: 90°-os rajzi elfordítás, a két fejlécméret felcserélődik.
-      // A P parancs és a teljes vágási sorrend változatlan marad.
+      // A gépen sikeresen lefutott referencia: P = Lunghezza.
+      // A meglévő P parancsot NEM változtatjuk, csak a fejléc méreteit
+      // rendeljük a P szerinti gépi beadáshoz. A rajzi nestinget nem forgatjuk
+      // és a vágási parancsok teljes sorrendje változatlan.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
       const feedLength=m.feed==='x'?bin.b:bin.a;
-      const headerLength=m.feed==='y'?bin.b:bin.a;
-      const headerWidth=m.feed==='y'?bin.a:bin.b;
+      const headerLength=feedLength;
+      const headerWidth=m.feed==='x'?bin.a:bin.b;
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
@@ -1703,7 +1704,7 @@
         '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(headerDescription)+
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
         '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
-        '" SpessoreLama="'+num(kerf)+'" />\r\n'+
+        '" SpessoreLama="'+num(kerf)+'" Swap="0" />\r\n'+
         '\t<Material Tipologia="" Codice="'+esc(materialDescription)+'" />\r\n'+
         '\t<Pattern>\r\n'+cuts.join('\r\n')+
         '\r\n\t</Pattern>\r\n</SchemaDoc>\r\n';
@@ -1715,7 +1716,7 @@
     // A gépen működő XML-es xMix minta: Header, Materials, RigheMix.
     // A Relatív .\xPrg\ hivatkozás mellé ugyanilyen ZIP-almappát készítünk.
     const mix='<xMix>\r\n'+
-      '\t<Header Descrizione="" Import="" Date="'+esc(date)+'" />\r\n'+
+      '\t<Header Descrizione="'+esc(project)+'" Import="" Date="'+esc(date)+'" />\r\n'+
       '\t<Materials>\r\n'+
       materials.map(color=>'\t\t<Material Tipologia="'+esc(color)+
         '" Codice="'+esc(color)+'" Quantita="999" />').join('\r\n')+
