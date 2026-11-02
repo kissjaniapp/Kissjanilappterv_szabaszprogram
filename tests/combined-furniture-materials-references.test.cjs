@@ -61,7 +61,7 @@ test('több bútor kijelölése: eltérő bútorok közös listában, darabszám
  assert.equal(state.furnitures[1].qty,2);
  assert.equal(original1.qty,1);
  assert.equal(original2.qty,1);
- assert.equal(state.active,'parts');
+ assert.equal(state.active,'furniture','a közös szabás nem hagyhatja ki a Bútor adatai oldalt');
  assert.equal(saved,1);
  assert.equal(rendered,1);
  assert.equal(selection.size,0);

@@ -487,7 +487,20 @@
   }
   function copyFurniture(template){
     const f=JSON.parse(JSON.stringify(template));
-    f.id=uuid();f.parts=(f.parts||[]).map(p=>({...p,id:uuid()}));
+    f.id=uuid();
+    // A külön bútorok saját kapcsoló- és alkatrészazonosítókat kapnak.
+    const ruleIds=new Map(),specIds=new Map();
+    f.customParameters=(f.customParameters||[]).map(rule=>{
+      const id=uuid();ruleIds.set(rule.id,id);
+      return {...rule,id,parts:(rule.parts||[]).map(spec=>{
+        const newId=uuid();specIds.set(rule.id+':'+spec.id,newId);
+        return {...spec,id:newId};
+      })};
+    });
+    f.parts=(f.parts||[]).map(p=>({...p,id:uuid(),
+      ...(p.customParameterId?{customParameterId:ruleIds.get(p.customParameterId)||p.customParameterId,
+        customPartId:specIds.get(p.customParameterId+':'+p.customPartId)||p.customPartId}:{})
+    }));
     f.sourceSeriesId=template.sourceSeriesId||null;
     return f;
   }
@@ -517,6 +530,49 @@
   function makeCustomPartDefinition(){
     return {id:uuid(),name:'',a:'',b:'',q:''};
   }
+  // A feltétel kizárólag az aktuális bútor W/H/D/T/S/O változóival számolható.
+  // Példák: H>=1200, W>600 && D>=400, H<900 || W>1000.
+  function customConditionState(f,rule){
+    if(!rule.enabled)return {active:false,error:''};
+    const condition=String(rule.condition||'').trim();
+    if(!condition)return {active:true,error:''};
+    try{
+      const vars={W:Number(f.w),H:Number(f.ht),D:Number(f.d),T:Number(f.t)||18,
+        S:effectiveShelves(f),O:effectiveDivider(f)};
+      if(Object.values(vars).some(v=>!Number.isFinite(v)))throw Error('Hibás bútoradat');
+      const active=condition.split(/\s*\|\|\s*/).some(group=>
+        group.split(/\s*&&\s*/).every(test=>{
+          const m=test.match(/^(.+?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/);
+          if(!m)throw Error('Használj összehasonlítást, pl. H>=1200');
+          const a=calc(m[1],vars),b=calc(m[3],vars);
+          switch(m[2]){
+            case '>=':return a>=b;
+            case '<=':return a<=b;
+            case '>':return a>b;
+            case '<':return a<b;
+            case '==':return a===b;
+            case '!=':return a!==b;
+          }
+          return false;
+        }));
+      return {active,error:''};
+    }catch(e){return {active:false,error:e.message||'Hibás feltétel'};}
+  }
+  function customRuleStatus(f,rule){
+    const r=customConditionState(f,rule);
+    return r.error?'Hibás feltétel: '+r.error:
+      !rule.enabled?'Kikapcsolva: nem kerül a szabásba':
+      r.active?'Feltétel teljesül: bekerül az alkatrészlistába':
+        'Feltétel nem teljesül: nem kerül a szabásba';
+  }
+  function refreshCustomRuleStatuses(f){
+    for(const rule of f.customParameters||[]){
+      const wrapper=[...document.querySelectorAll('[data-custom-parameter]')]
+        .find(el=>el.dataset.customParameter===rule.id);
+      const label=wrapper?.querySelector('[data-custom-status]');
+      if(label)label.textContent=customRuleStatus(f,rule);
+    }
+  }
   function syncCustomParameterParts(f){
     if(!Array.isArray(f.customParameters))f.customParameters=[];
     const definitions=new Map();
@@ -527,16 +583,16 @@
     for(const part of f.parts||[]){
       if(!part.customParameterId)continue;
       const def=definitions.get(part.customParameterId+':'+part.customPartId);
-      if(def&&!def.rule.enabled)
+      if(def&&!customConditionState(f,def.rule).active)
         for(const key of ['name','a','b','q'])def.spec[key]=part[key];
     }
     f.parts=(f.parts||[]).filter(part=>{
       if(!part.customParameterId)return true;
       const def=definitions.get(part.customParameterId+':'+part.customPartId);
-      return !!(def&&def.rule.enabled);
+      return !!(def&&customConditionState(f,def.rule).active);
     });
     for(const rule of f.customParameters){
-      if(!rule.enabled)continue;
+      if(!customConditionState(f,rule).active)continue;
       for(const spec of rule.parts||[]){
         if(f.parts.some(p=>p.customParameterId===rule.id&&p.customPartId===spec.id))continue;
         f.parts.push({id:uuid(),customParameterId:rule.id,customPartId:spec.id,
@@ -561,20 +617,27 @@
             </select></div>
           <button class="btn sm ghost danger" data-action="delete-custom-param" data-id="${h(rule.id)}">Paraméter törlése</button>
         </div>
+        <div class="toolbar" style="gap:10px;margin:9px 0;align-items:flex-end">
+          <div style="flex:1;min-width:210px"><label>Feltétel – mikor kerüljön bele?</label>
+            <input data-scope="custom-param" data-id="${h(rule.id)}" data-key="condition"
+              autocomplete="off" spellcheck="false" placeholder="Mindig, vagy pl. H>=1200" value="${h(rule.condition||'')}">
+            <div class="tiny muted">Üres = mindig. Példák: H>=1200 · W>600 && D>=400 · H<900 || W>1000</div>
+          </div><span class="muted small" data-custom-status>${h(customRuleStatus(f,rule))}</span>
+        </div>
         <div class="muted small" style="margin:8px 0">Ehhez a kapcsolóhoz tartozó alkatrészek és képleteik:</div>
         ${(rule.parts||[]).map(spec=>`
         <div class="toolbar" style="gap:7px;align-items:flex-end;margin:8px 0">
           ${[['name','Alkatrész neve'],['a','Első méret · szál'],['b','Második méret'],['q','Darabszám']].map(([key,label])=>`
             <div style="flex:${key==='name'?2:1};min-width:${key==='name'?'150':'110'}px">
-              <label>${label}</label><input data-scope="custom-part" data-id="${h(rule.id)}"
-                data-part-id="${h(spec.id)}" data-key="${key}" value="${h(spec[key]??'')}">
+              <label>${label}</label><div class="${key==='name'?'':'expr-cell'}"><input data-scope="custom-part" data-id="${h(rule.id)}"
+                data-part-id="${h(spec.id)}" data-key="${key}" autocomplete="off" spellcheck="false" value="${h(spec[key]??'')}"></div>
             </div>`).join('')}
           <button class="btn sm ghost danger" data-action="delete-custom-part"
             data-id="${h(rule.id)}" data-part-id="${h(spec.id)}">✕</button>
         </div>`).join('')}
         <div class="toolbar"><button class="btn sm" data-action="add-custom-part"
           data-id="${h(rule.id)}">＋ Alkatrész ehhez a paraméterhez</button>
-          <span class="muted small" data-custom-status>${rule.enabled?'Bekapcsolva: az Alkatrészek lapon is megjelenik':'Kikapcsolva: nem kerül a szabásba'}</span>
+          <span class="muted small">A képletekben csak az adott bútor alkatrészei használhatók.</span>
         </div>
       </div>`).join('');
     return `<div class="panel top-gap" style="padding:14px">
@@ -582,7 +645,7 @@
         <button class="btn sm primary" data-action="add-custom-param">＋ Saját paraméter</button></div>
       <div class="muted small">Bármilyen elnevezett igen/nem paramétert létrehozhatsz.
         Egy paraméter 1, 2 vagy több alkatrészt tartalmazhat, W/H/D/T/S/O képletekkel.
-        Ha Igen, az alkatrészek automatikusan bekerülnek; ha Nem, kikerülnek.
+        Ha Igen, az alkatrészek csak a megadott feltétel teljesülésekor kerülnek be; üres feltételnél mindig.
         A munkában szabadon módosíthatod őket, a mentett Széria változatlan marad.</div>
       ${rows||'<div class="muted small" style="margin:12px 0">Még nincs saját paraméter.</div>'}
     </div>`;
@@ -710,12 +773,27 @@
     state.furnitures=chosen;
     state.selectedFurniture=chosen[0].id;
     state.projectName='Közös szabás · '+chosen.map(x=>x.name||'Bútor').join(' + ');
-    state.active='parts';result=null;furnitureCutSelection.clear();
+    state.active='furniture';result=null;furnitureCutSelection.clear();
+    // A kiválasztott bútorok közös szabása külön munkaként tárolódik.
+    if(typeof currentProjectId!=='undefined'){
+      const job=library.find(e=>e.id===currentProjectId);
+      if(job)job.selectionWorkspace=true;
+    }
     save();render();
+  }
+  function isCombinedSelectionWorkspace(entry){
+    return entry.selectionWorkspace===true||
+      String(entry.data?.projectName||'').startsWith('Közös szabás · ');
   }
   function folderLibraryView(){
     const all=[...furnitureFolders,{id:'unfiled',name:'Még nincs mappában',virtual:true}];
-    const projectItems=library.flatMap(entry=>(entry.data.furnitures||[]).map(f=>({entry,f})));
+    const projectItems=library.filter(entry=>!isCombinedSelectionWorkspace(entry))
+      .flatMap(entry=>(entry.data.furnitures||[]).map(f=>({entry,f})));
+    const jobs=library.filter(isCombinedSelectionWorkspace);
+    const jobPanel=jobs.length?'<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Mentett közös szabások</div><div class="panel-sub">A kiválasztott bútorok munkapéldányai, nem második bútorsablonok.</div></div></div><div class="panel-body">'+
+      jobs.map(job=>'<div class="library-row"><div class="library-info"><strong>'+h(job.data.projectName||'Közös szabás')+'</strong><div class="tiny muted">'+(job.data.furnitures||[]).length+' bútortípus</div></div>'+
+        '<button class="btn primary" data-action="open-saved-project" data-project="'+h(job.id)+'">Megnyitás</button>'+
+        '<button class="btn sm ghost danger" data-action="delete-saved-project" data-project="'+h(job.id)+'">Törlés</button></div>').join('')+'</div></div>':'';
     const cardsFor=folderId=>{
       const series=seriesCatalog.filter(x=>(x.folderId||'series')===folderId);
       const projects=projectItems.filter(({entry,f})=>
@@ -741,12 +819,12 @@
       '<button class="btn" data-action="create-folder">＋ Mappa</button>'+
       '<button class="btn" data-action="create-series">＋ Új széria</button></div></div>'+
       '<div class="panel-body"><div class="toolbar" style="margin-bottom:15px"><button class="btn primary" data-action="start-selected-furnitures">✓ Kijelölt bútorok közös szabása →</button>'+
-      '<span class="muted small">A kijelölt bútorok alkatrészei egy listába kerülnek. Minden darabszámot ezen az oldalon adj meg.</span></div></div>'+
+      '<span class="muted small">Először minden kijelölt bútor adatait külön testreszabhatod, utána következik a közös alkatrészlista.</span></div></div>'+
       '<div class="panel-body folder-columns">'+all.map(folder=>'<section class="folder-box" data-folder-drop="'+h(folder.id)+'">'+
         '<div class="folder-heading"><strong>📁 '+h(folder.name)+'</strong>'+
         (!folder.virtual&&folder.id!=='series'?'<button class="btn sm ghost" data-action="rename-folder" data-id="'+h(folder.id)+'">Átnevezés</button>'+
         '<button class="btn sm ghost danger" data-action="delete-folder" data-id="'+h(folder.id)+'">✕</button>':'')+'</div>'+
-        cardsFor(folder.id)+'</section>').join('')+'</div></div>';
+        cardsFor(folder.id)+'</section>').join('')+'</div></div>'+jobPanel;
   }
   function seriesLibraryPanel(){
     return '<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Szériakönyvtár · csak itt módosítható</div>'+
@@ -995,6 +1073,7 @@
       <div class="panel-sub">Külméretek, rendeltetési hely és anyagszín minden bútornál külön. A széria másolata itt szabadon alakítható.</div></div><div class="export-box"><span class="tag">mm</span><button class="btn icon ghost danger" title="Bútor törlése" data-action="remove-furniture" data-id="${f.id}">✕</button></div></div>
       <div class="panel-body">
         ${state.furnitures.length>1?`<div class="furniture-select"><select aria-label="Bútor kiválasztása" data-scope="ui" data-key="selectedFurniture">${state.furnitures.map(x=>`<option value="${h(x.id)}" ${x.id===f.id?'selected':''}>${h(x.name||'Új bútor')}</option>`).join('')}</select></div>`:''}
+        ${state.furnitures.length>1?'<div class="mini-info"><strong>'+(state.furnitures.findIndex(x=>x.id===f.id)+1)+' / '+state.furnitures.length+' bútor testreszabása</strong> · Minden bútornak külön méretei, anyaga és paraméterei vannak.</div>':''}
         <div class="furniture-name"><label>Bútor megnevezése</label><input data-scope="furniture" data-key="name" data-id="${f.id}" value="${h(f.name)}"></div>
         <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
           <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
@@ -1010,7 +1089,11 @@
         </div>
         <div data-live-cabinet>${cabinet(f)}</div>
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
-        <div class="furniture-next"><span class="muted small">A bútor neve és célhelye később is megadható. A méretek és az anyagszín bármikor módosítható.</span><button class="btn primary" data-action="open-parts" data-id="${f.id}">Alkatrészek megadása →</button></div>
+        <div class="furniture-next"><span class="muted small">Minden bútor külön testreszabható.</span>
+          ${state.furnitures.findIndex(x=>x.id===f.id)>0?'<button class="btn" data-action="previous-selected-furniture">← Előző bútor</button>':''}
+          ${state.furnitures.findIndex(x=>x.id===f.id)<state.furnitures.length-1?
+            '<button class="btn primary" data-action="next-selected-furniture">Következő bútor →</button>':
+            '<button class="btn primary" data-action="open-parts" data-id="'+h(f.id)+'">Alkatrészek megadása →</button>'}</div>
       </div>
     </div>`:`<div class="panel empty"><div class="empty-icon">▤</div><h3>Még nincs bútorod</h3><p>Adj hozzá egy szériát, és kezdheted a méretezést.</p><button class="btn primary" data-action="new-furniture">＋ Új bútor</button></div>`;
     const partEntries=stage==='parts'&&projectScreen!=='series-edit'
@@ -1683,11 +1766,14 @@
     const entryX=tx+boardWidth-Math.min(145,Math.max(45,boardWidth*.12));
     const startingArrow=rotated?`<g><title>Kezdővágás felülről lefelé</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#a84a27">KEZDŐVÁGÁS FELÜLRŐL ↓</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
     const name=h(bin.name),allUsed=bin.used/(bin.a*bin.b)*100;
+    const boardMaterial=h(String(bin.materialColor||
+      bin.placements?.find(p=>p.part?.materialColor)?.part?.materialColor||'Nincs megadva').trim());
+    const boardMaterialLabel=boardMaterial+' · '+nfmt(bin.thickness)+' mm';
     const horizontalLabel=rotated?`${nfmt(bin.b)} mm · Y: keresztirány ↔`:`${nfmt(bin.a)} mm · X: szálirány ↔`;
     const verticalLabel=rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
     const dimensionTop=`<path d="M${tx} ${ty-27}H${tx+boardWidth} M${tx} ${ty-37}V${ty-17} M${tx+boardWidth} ${ty-37}V${ty-17}" stroke="#728478" fill="none" stroke-width="2"/><text x="${tx+boardWidth/2}" y="${ty-34}" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${horizontalLabel}</text>`;
     const dimensionSide=`<path d="M${tx-28} ${ty}V${ty+boardHeight} M${tx-37} ${ty}H${tx-18} M${tx-37} ${ty+boardHeight}H${tx-18}" fill="none" stroke="#728478" stroke-width="2"/><text x="${tx-36}" y="${ty+boardHeight/2}" transform="rotate(-90 ${tx-36} ${ty+boardHeight/2})" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${verticalLabel}</text>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}<text x="${w/2}" y="${hgt-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}<text x="${w/2}" y="${hgt-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text><text x="${w/2}" y="${hgt-40}" font-family="Arial,sans-serif" text-anchor="middle" font-size="23" font-weight="700" fill="#234335">Tábla anyaga: ${boardMaterialLabel}</text></svg>`;
   }
   function trimmingSteps(bin){
     const trim=Number(bin.trim)||0,kerf=Math.max(0,Number(state.kerf)||0);
@@ -2884,6 +2970,14 @@
       state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='new-furniture'){const f=createBaseFurniture();state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
+    else if(action==='previous-selected-furniture'||action==='next-selected-furniture'){
+      const index=state.furnitures.findIndex(f=>f.id===state.selectedFurniture);
+      const next=index+(action==='previous-selected-furniture'?-1:1);
+      if(next>=0&&next<state.furnitures.length){
+        state.selectedFurniture=state.furnitures[next].id;state.active='furniture';
+      }else if(action==='next-selected-furniture')state.active='parts';
+      notice='';result=null;render();window.scrollTo({top:0,behavior:'smooth'});
+    }
     else if(action==='open-parts'){
       const f=state.furnitures.find(x=>x.id===el.dataset.id);
       if(!f)return;
@@ -2941,8 +3035,11 @@
   }
   function partReferenceSuggestions(el){
     closePartSuggestions();
-    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"]'))return;
-    const selected=state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===el.dataset.id));
+    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"],[data-scope="custom-part"][data-key="a"],[data-scope="custom-part"][data-key="b"],[data-scope="custom-part"][data-key="q"]'))return;
+    const custom=el.dataset.scope==='custom-part';
+    // Kizárólag az aktuális bútor alkatrészeit ajánlhatja fel.
+    const selected=custom?getFurniture():
+      state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===el.dataset.id));
     if(!selected)return;
     const position=el.selectionStart??String(el.value).length;
     const before=String(el.value).slice(0,position);
@@ -2950,7 +3047,8 @@
     if(!found||found[1].length<2)return;
     const token=found[1],offset=position-token.length;
     const matches=(selected.parts||[]).filter(p=>
-      p.id!==el.dataset.id&&String(p.name||'').toLocaleLowerCase('hu-HU')
+      (custom?p.customPartId!==el.dataset.partId:p.id!==el.dataset.id)&&
+      String(p.name||'').toLocaleLowerCase('hu-HU')
        .startsWith(token.toLocaleLowerCase('hu-HU'))&&
       !String(p.name||'').startsWith('=')&&!String(p.name||'').includes('{')).slice(0,8);
     if(!matches.length)return;
@@ -3001,6 +3099,23 @@
       rememberMachineRoot(el.value);
       return; // Gépelés közben nem bontjuk le az inputot és a gombokat.
     }
+    if(scope==='custom-param'&&key==='condition'){
+      const f=getFurniture(),rule=f?.customParameters?.find(x=>x.id===el.dataset.id);
+      if(!rule)return;
+      rule.condition=el.value;
+      syncCustomParameterParts(f);refreshCustomRuleStatuses(f);
+      refreshLiveFormulaValues();result=null;save();return;
+    }
+    if(scope==='custom-part'&&['name','a','b','q'].includes(key)){
+      const f=getFurniture(),rule=f?.customParameters?.find(x=>x.id===el.dataset.id);
+      const spec=rule?.parts?.find(x=>x.id===el.dataset.partId);
+      if(!spec)return;
+      spec[key]=el.value;
+      const active=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
+      if(active)active[key]=el.value;
+      if(['a','b','q'].includes(key))partReferenceSuggestions(el);
+      refreshLiveFormulaValues();result=null;save();return;
+    }
     if(scope==='part'&&['a','b','q','name','materialColor'].includes(key)){
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
@@ -3014,6 +3129,7 @@
       const value=pnum(el.value);
       if(!el.value.trim()||!Number.isFinite(value)||value<0)return;
       furniture[key]=value;
+      syncCustomParameterParts(furniture);refreshCustomRuleStatuses(furniture);
       refreshLiveFormulaValues();
       scheduleLiveNesting();
     }
@@ -3036,6 +3152,7 @@
       if(scope==='custom-param'){
         if(key==='enabled')rule.enabled=el.value==='true';
         else if(key==='name')rule.name=el.value;
+        else if(key==='condition')rule.condition=el.value;
       }else{
         const spec=(rule.parts||[]).find(x=>x.id===el.dataset.partId);
         if(!spec||!['name','a','b','q'].includes(key))return;
@@ -3044,12 +3161,7 @@
         if(active)active[key]=spec[key];
       }
       syncCustomParameterParts(f);result=null;
-      if(scope==='custom-param'&&key==='enabled'){
-        const message=el.closest('[data-custom-parameter]')?.querySelector('[data-custom-status]');
-        if(message)message.textContent=rule.enabled?
-          'Bekapcsolva: az Alkatrészek lapon is megjelenik':
-          'Kikapcsolva: nem kerül a szabásba';
-      }
+      refreshCustomRuleStatuses(f);refreshLiveFormulaValues();
       save();return; // A Tab minden képletmezőn és legördülőn továbblép.
     
     }
