@@ -57,7 +57,7 @@ test('az anyagok, szériák és maradékok külön katalógusban maradnak',()=>{
  assert.match(html,/function copyFurniture\(template\)/);
  assert.match(html,/function saveSeriesTemplate\(\)/);
  assert.match(html,/function materialForPart\(part,f\)/);
- assert.match(html,/function materialsAndRemnantsView\(\)/);
+ assert.match(html,/function materialsAndRemnantsView\(onlyMaterials=false\)/);
  assert.match(html,/data-key="materialId"/);
  assert.match(html,/data-key="materialColor"/);
 });
