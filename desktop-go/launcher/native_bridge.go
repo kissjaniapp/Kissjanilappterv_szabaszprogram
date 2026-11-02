@@ -72,33 +72,20 @@ func (bridge *nativeBridge) allow(w http.ResponseWriter,r *http.Request) bool {
  if r.Header.Get("X-Gatterka-Token")!=bridge.token {
    machineError(w,403,errors.New("Érvénytelen Gatterka munkamenet."));return false
  }
- if origin:=r.Header.Get("Origin");origin!=""&&origin!="null"&&origin!="http://"+r.Host {
+ if origin:=r.Header.Get("Origin");origin!=""&&origin!="null" {
    machineError(w,403,errors.New("A kérés nem a helyi Gatterka ablakból érkezett."));return false
  }
  return true
 }
 
-const nativeAppPort="18737" // állandó helyi port: a mentett projektek böngészőtárhelye megmarad az újraindítások között
-
-func startNativeBridge(page string)(int,string,func(),error){
+func startNativeBridge()(int,string,func(),error){
  secret:=make([]byte,32)
  if _,err:=rand.Read(secret);err!=nil{return 0,"",nil,err}
  token:=base64.RawURLEncoding.EncodeToString(secret)
- listener,err:=net.Listen("tcp","127.0.0.1:"+nativeAppPort)
+ listener,err:=net.Listen("tcp","127.0.0.1:0")
  if err!=nil{return 0,"",nil,err}
  bridge:=&nativeBridge{token:token}
  router:=http.NewServeMux()
- // A Gatterka HTML és a mentési API ugyanazon a 127.0.0.1 eredeten fut.
- // A Chromium így nem blokkolhatja a file:// -> http:// helyi hálózati kéréseket.
- router.HandleFunc("/",func(w http.ResponseWriter,r *http.Request){
-   if r.Method!=http.MethodGet || r.URL.Path!="/" || r.Host!="127.0.0.1:"+nativeAppPort {
-      http.NotFound(w,r);return
-   }
-   w.Header().Set("Cache-Control","no-store")
-   w.Header().Set("Referrer-Policy","no-referrer")
-   w.Header().Set("X-Content-Type-Options","nosniff")
-   http.ServeFile(w,r,page)
- })
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)

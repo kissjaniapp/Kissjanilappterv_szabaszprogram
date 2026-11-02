@@ -110,17 +110,17 @@ func main(){
     page := filepath.Join(root,"app","index.htm")
     if _,err := os.Stat(page); err != nil {message("Hiányzik az alkalmazás fájlja:\n"+page+"\nTelepítsd újra a Gatterkaet.");return}
     page, _ = filepath.Abs(page)
-    // A HTML és a natív mentési végpont egyetlen, kizárólag ezen a gépen
-    // hallgató HTTP-szolgáltatáson keresztül érhető el. Így nincs
-    // böngésző által tiltott file:// -> 127.0.0.1 kommunikáció.
-    port,token,stopBridge,bridgeErr:=startNativeBridge(page)
+    // Saját helyi Windows-mappaválasztó és projektmentés: a Chromium
+    // file:// környezet önmagában nem tud teljes X:\\... útvonalat lekérni.
+    port,token,stopBridge,bridgeErr:=startNativeBridge()
     if bridgeErr!=nil {
-        message("Nem indítható a Gatterka helyi szolgáltatása:\n"+bridgeErr.Error()+
-            "\nZárd be a többi Gatterka ablakot, majd indítsd újra a programot.")
-        return
+        message("A gépi programok Windows mappaválasztója nem érhető el:\n"+bridgeErr.Error()+
+            "\nA ZIP letöltése ettől még használható.")
+    } else {defer stopBridge()}
+    appURL:=fileURL(page)
+    if bridgeErr==nil {
+        appURL+="#gatterka-native="+strconv.Itoa(port)+"."+token
     }
-    defer stopBridge()
-    appURL:="http://127.0.0.1:"+strconv.Itoa(port)+"/#gatterka-native="+strconv.Itoa(port)+"."+token
     if path,found:=firstBrowser();found {
         local := os.Getenv("LOCALAPPDATA")
         if local == "" {local = os.TempDir()}
@@ -145,9 +145,10 @@ func main(){
             return
         }
     }
-    // Nem térünk vissza file:// módba: onnan a Windowsos mentési API-t
-    // a Chromium helyi hálózati védelme blokkolhatja.
-    message("A Gatterka megnyitásához Microsoft Edge vagy Google Chrome szükséges.\n"+
-        "Ellenőrizd a böngésző telepítését, majd indítsd újra a Gatterkát.")
-    _=fmt.Sprint(strings.TrimSpace(version))
+    // Fallback: any registered system browser, retains normal browser UI.
+    cmd:=exec.Command("rundll32.exe","url.dll,FileProtocolHandler",fileURL(page))
+    if err=cmd.Start();err!=nil {
+        message("Nem tudtam elindítani a Gatterkaet.\n"+err.Error()+"\nNyisd meg közvetlenül ezt a fájlt:\n"+page)
+    }
+    _=fmt.Sprint(strings.TrimSpace(version)) // reserved version marker
 }

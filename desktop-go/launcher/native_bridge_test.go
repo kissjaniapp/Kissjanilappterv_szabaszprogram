@@ -3,7 +3,6 @@ package main
 import (
  "archive/zip"
  "encoding/json"
- "fmt"
  "io"
  "net/http"
  "net/http/httptest"
@@ -163,45 +162,4 @@ func TestWriteZipRequiresSelectedTargetAndSessionToken(t *testing.T){
  if r:=send("secret");r.Code!=http.StatusOK{t.Fatal("Save failed:",r.Body.String())}
  if r:=send("secret");r.Code!=http.StatusBadRequest{t.Fatal("Target reused")}
  if _,err:=os.Stat(filepath.Join(root,"secure.zip"));err!=nil{t.Fatal(err)}
-}
-
-
-func TestNativeSameOriginHtmlAndAuthenticatedSaveEndpoint(t *testing.T){
- page:=filepath.Join(t.TempDir(),"index.htm")
- if err:=os.WriteFile(page,[]byte("<html><title>Gatterka localhost</title></html>"),0600);err!=nil{t.Fatal(err)}
- port,token,stop,err:=startNativeBridge(page)
- if err!=nil{t.Fatal("Could not bind loopback service:",err)}
- defer stop()
- url:=fmt.Sprintf("http://127.0.0.1:%d",port)
- response,err:=http.Get(url+"/")
- if err!=nil{t.Fatal(err)}
- body,readErr:=io.ReadAll(response.Body)
- _=response.Body.Close()
- if readErr!=nil{t.Fatal(readErr)}
- if response.StatusCode!=http.StatusOK || !strings.Contains(string(body),"Gatterka localhost"){
-   t.Fatalf("Native app not served at the same origin: %d %s",response.StatusCode,string(body))
- }
- if response.Header.Get("Cache-Control")!="no-store"{t.Fatal("App shell is cached")}
- request,err:=http.NewRequest(http.MethodPost,url+"/native/write-zip",strings.NewReader("{}"))
- if err!=nil{t.Fatal(err)}
- request.Header.Set("Origin",url)
- request.Header.Set("X-Gatterka-Token",token)
- response,err=http.DefaultClient.Do(request)
- if err!=nil{t.Fatal(err)}
- _=response.Body.Close()
- if response.StatusCode!=http.StatusBadRequest{
-   t.Fatalf("Same-origin token was rejected (expected 400 for missing Save As target, got %d)",response.StatusCode)
- }
- badRequest,err:=http.NewRequest(http.MethodPost,url+"/native/write-zip",strings.NewReader("{}"))
- if err!=nil{t.Fatal(err)}
- badRequest.Header.Set("Origin","https://idegen.example")
- badRequest.Header.Set("X-Gatterka-Token",token)
- denied,err:=http.DefaultClient.Do(badRequest)
- if err!=nil{t.Fatal(err)}
- _=denied.Body.Close()
- if denied.StatusCode!=http.StatusForbidden{t.Fatalf("Foreign origin accepted: %d",denied.StatusCode)}
- notFound,err:=http.Get(url+"/untrusted-file")
- if err!=nil{t.Fatal(err)}
- _=notFound.Body.Close()
- if notFound.StatusCode!=http.StatusNotFound{t.Fatalf("Unexpected static file path available: %d",notFound.StatusCode)}
 }

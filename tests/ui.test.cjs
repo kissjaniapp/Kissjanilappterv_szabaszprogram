@@ -198,8 +198,3 @@ test('a Mentés másként gomb közvetlenül mellette állapot- és hibajelzést
  assert.match(html,/if\(button\)\{button\.disabled=true/);
  assert.match(html,/finally\{/);
 });
-
-test('a mentés csak az azonos localhost eredetű szolgáltatást hívja',()=>{
- assert.match(html,/mode:'same-origin'/);
- assert.match(html,/nativeBridge\.url\+'\/native\/'\+action/);
-});
