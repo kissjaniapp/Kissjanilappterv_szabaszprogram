@@ -1,9 +1,7 @@
 package main
 
 import (
- "archive/zip"
  "encoding/json"
- "io"
  "net/http"
  "net/http/httptest"
  "os"
@@ -90,76 +88,25 @@ func TestNativeMachineSaveRequiresSessionToken(t *testing.T){
 
 
 
-func TestSaveAsOnlyOneZipWithCorrectMixLinks(t *testing.T){
- root:=t.TempDir()
- zipPath:=filepath.Join(root,"programok.zip")
- result,err:=saveMachineZipAt(zipPath,nativeTestBundle())
- if err!=nil{t.Fatal(err)}
- if result!=zipPath{t.Fatalf("ZIP saved elsewhere: %s",result)}
- entries,err:=os.ReadDir(root)
- if err!=nil{t.Fatal(err)}
- if len(entries)!=1||entries[0].Name()!="programok.zip"{
-   t.Fatalf("Only one ZIP file allowed: %v",entries)
- }
- reader,err:=zip.OpenReader(zipPath)
- if err!=nil{t.Fatal(err)}
- defer reader.Close()
- if len(reader.File)!=3{t.Fatalf("Expected 3 files in ZIP: %d",len(reader.File))}
- files:=map[string]string{}
- for _,f:=range reader.File{
-   stream,err:=f.Open()
-   if err!=nil{t.Fatal(err)}
-   data,err:=io.ReadAll(stream)
-   _=stream.Close()
-   if err!=nil{t.Fatal(err)}
-   files[f.Name]=string(data)
- }
- cabinet:="2026_10_30_Teszt"
- mix:=files[cabinet+"/proba.xMix"]
- if mix==""{t.Fatal("Missing xMix")}
- for _,name:=range []string{"01.xPrg","02.xPrg"}{
-   expected:=filepath.Join(root,cabinet,"xPrg",name)
-   if !strings.Contains(mix,"File=\""+expected+"\""){t.Errorf("Wrong future xPrg path: %s",mix)}
-   if files[cabinet+"/xPrg/"+name]==""{t.Errorf("Missing ZIP xPrg: %s",name)}
- }
- if _,err=os.Stat(filepath.Join(root,cabinet));!os.IsNotExist(err){
-   t.Fatal("Program incorrectly created an extracted project folder")
- }
-}
-func TestSaveAsTwoZipsNeverCreateFolders(t *testing.T){
- root:=t.TempDir()
- for _,name:=range []string{"first.zip","second.zip"}{
-  if _,err:=saveMachineZipAt(filepath.Join(root,name),nativeTestBundle());err!=nil{t.Fatal(err)}
- }
- files,err:=os.ReadDir(root)
- if err!=nil{t.Fatal(err)}
- if len(files)!=2{t.Fatalf("Expected two ZIP files, got %d",len(files))}
- for _,f:=range files{if f.IsDir(){t.Fatal("Unexpected extracted folder",f.Name())}}
-}
-func TestSaveAsDoesNotWriteInvalidProject(t *testing.T){
- root:=t.TempDir()
- bad:=nativeTestBundle()
- bad.Files[1].Path=bad.CabinetFolder+"/../outside.xPrg"
- target:=filepath.Join(root,"bad.zip")
- if _,err:=saveMachineZipAt(target,bad);err==nil{t.Fatal("Traversal accepted")}
- if _,err:=os.Stat(target);!os.IsNotExist(err){t.Fatal("Invalid ZIP was written")}
-}
-func TestWriteZipRequiresSelectedTargetAndSessionToken(t *testing.T){
+func TestWriteFilesRequiresSelectedTargetAndSessionToken(t *testing.T){
  root:=t.TempDir()
  bridge:=&nativeBridge{token:"secret"}
- data,_:=json.Marshal(nativeTestBundle())
+ data,_:=json.Marshal(nativeMixTestRequest())
  send:=func(token string)*httptest.ResponseRecorder{
-  req:=httptest.NewRequest(http.MethodPost,"/native/write-zip",strings.NewReader(string(data)))
+  req:=httptest.NewRequest(http.MethodPost,"/native/write-files",strings.NewReader(string(data)))
   req.Header.Set("Origin","null")
   req.Header.Set("X-Gatterka-Token",token)
   res:=httptest.NewRecorder()
-  bridge.writeZip(res,req)
+  bridge.writeFiles(res,req)
   return res
  }
  if r:=send("secret");r.Code!=http.StatusBadRequest{t.Fatal("Saved without selected path")}
- bridge.selectedArchivePath=filepath.Join(root,"secure.zip")
+ bridge.selectedMixPath=filepath.Join(root,"projekt.xMix")
  if r:=send("incorrect");r.Code!=http.StatusForbidden{t.Fatal("Wrong session token accepted")}
  if r:=send("secret");r.Code!=http.StatusOK{t.Fatal("Save failed:",r.Body.String())}
  if r:=send("secret");r.Code!=http.StatusBadRequest{t.Fatal("Target reused")}
- if _,err:=os.Stat(filepath.Join(root,"secure.zip"));err!=nil{t.Fatal(err)}
+ for _,name:=range []string{"projekt.xMix","01.xPrg","02.xPrg"}{
+  if _,err:=os.Stat(filepath.Join(root,name));err!=nil{t.Fatal(err)}
+ }
+ if bridge.lastDirectory!=root{t.Fatal("A következő Mentés másként nem a legutóbbi mappából indul")}
 }

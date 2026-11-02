@@ -4,14 +4,12 @@
 package main
 
 import (
- "archive/zip"
  "crypto/rand"
  "encoding/base64"
  "encoding/json"
  "errors"
  "fmt"
  "html"
- "io"
  "runtime"
  "net"
  "net/http"
@@ -31,7 +29,8 @@ type nativeBridge struct {
  token string
  mu sync.Mutex
  selectedDirectory string
- selectedArchivePath string
+ selectedMixPath string
+ lastDirectory string
 }
 type nativeFile struct {
  Path string `json:"path"`
@@ -89,7 +88,7 @@ func startNativeBridge()(int,string,func(),error){
  router.HandleFunc("/native/choose",bridge.choose)
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)
- router.HandleFunc("/native/write-zip",bridge.writeZip)
+ router.HandleFunc("/native/write-files",bridge.writeFiles)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -285,8 +284,9 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
 }
 
 
-// A felhasználó a valódi Windows "Mentés másként" ablakban választja ki a ZIP nevét és helyét.
-// A PowerShell csak a Windows SaveFileDialog megjelenítését végzi; a fájlokat Go menti.
+// A felhasználó a valódi Windows "Mentés másként" ablakban választja ki a mappát
+// és a közös .xMix fájl nevét. A Go ezután ugyanebbe a mappába menti a .xMix-et
+// és az összes táblánkénti .xPrg fájlt; a .xMix az .xPrg fájlok teljes útvonalát tartalmazza.
 // Natív Win32 Mentés másként párbeszédablak közvetlenül a Go indítóból.
 // Nem használ rejtett PowerShell-ablakot, és a Gatterka ablakát teszi tulajdonossá.
 type windowsSaveFileName struct {
@@ -314,7 +314,7 @@ type windowsSaveFileName struct {
  ReservedDword uint32
  FlagsEx uint32
 }
-func chooseWindowsZipFile(defaultName string)(string,error){
+func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
   runtime.LockOSThread()
   defer runtime.UnlockOSThread()
   // A közös Windows Mentés másként ablak követi a Gatterka előtérben lévő ablakát.
@@ -326,12 +326,18 @@ func chooseWindowsZipFile(defaultName string)(string,error){
   const ofnEnableSizing=0x00800000
   file:=make([]uint16,32768)
   name:=utf16.Encode([]rune(defaultName))
-  if len(name)+1>=len(file){return "",errors.New("Túl hosszú ZIP fájlnév.")}
+  if len(name)+1>=len(file){return "",errors.New("Túl hosszú xMix fájlnév.")}
   copy(file,name)
-  filter:=utf16.Encode([]rune("ZIP fájlok (*.zip)\x00*.zip\x00"))
+  filter:=utf16.Encode([]rune("xMix fájlok (*.xMix)\x00*.xMix\x00"))
   filter=append(filter,0)
-  title,_:=syscall.UTF16PtrFromString("Gatterka – Mentés másként")
-  extension,_:=syscall.UTF16PtrFromString("zip")
+  title,_:=syscall.UTF16PtrFromString("Gatterka – Mentés másként (xMix + xPrg)")
+  extension,_:=syscall.UTF16PtrFromString("xMix")
+  var initial *uint16
+  if initialDir!=""{
+    if st,err:=os.Stat(initialDir);err==nil&&st.IsDir(){
+      initial,_=syscall.UTF16PtrFromString(initialDir)
+    }
+  }
   user32:=syscall.NewLazyDLL("user32.dll")
   foreground:=user32.NewProc("GetForegroundWindow")
   hwnd,_,_:=foreground.Call()
@@ -342,6 +348,7 @@ func chooseWindowsZipFile(defaultName string)(string,error){
    FilterIndex:1,
    File:uintptr(unsafe.Pointer(&file[0])),
    MaxFile:uint32(len(file)),
+   InitialDir:uintptr(unsafe.Pointer(initial)),
    Title:uintptr(unsafe.Pointer(title)),
    DefaultExt:uintptr(unsafe.Pointer(extension)),
    Flags:ofnOverwritePrompt|ofnHideReadOnly|ofnNoChangeDir|ofnPathMustExist|ofnExplorer|ofnEnableSizing,
@@ -353,90 +360,49 @@ func chooseWindowsZipFile(defaultName string)(string,error){
   runtime.KeepAlive(filter)
   runtime.KeepAlive(title)
   runtime.KeepAlive(extension)
+  runtime.KeepAlive(initial)
   if success==0{
     extended,_,_:=syscall.NewLazyDLL("comdlg32.dll").NewProc("CommDlgExtendedError").Call()
     if extended==0{return "",nil} // A felhasználó megszakította az ablakot.
     return "",fmt.Errorf("A Windows Mentés másként ablak nem nyitható meg (kód: 0x%X).",extended)
   }
   chosen:=filepath.Clean(syscall.UTF16ToString(file))
-  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),".zip"){
-    return "",errors.New("A Mentés másként ablakból nem teljes ZIP-fájlútvonal érkezett.")
+  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),".xMix"){
+    return "",errors.New("A Mentés másként ablakból nem teljes .xMix fájlútvonal érkezett.")
   }
   info,err:=os.Stat(filepath.Dir(chosen))
-  if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott ZIP-célmappa nem érhető el.")}
+  if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott célmappa nem érhető el.")}
   return chosen,nil
 }
 
-// Kizárólag egy ZIP mentődik. A Mix elérési útjai a célmappába történő
-// "Kibontás ide" után létező <projekt>/xPrg fájlokat nevezik meg.
-func writeMachineArchive(zipPath string,req nativeSave)error{
- _,files,err:=safeNativeProgramFiles(req)
- if err!=nil{return err}
- root:=filepath.Dir(zipPath)
- // Előbb a Windows ideiglenes könyvtárában készítjük el a ZIP-et.
- tmp,err:=os.CreateTemp("","gatterka-*.zip")
- if err!=nil{return err}
- defer os.Remove(tmp.Name())
- writer:=zip.NewWriter(tmp)
- for _,file:=range files{
-  content:=file.Content
-  if strings.HasSuffix(file.Path,".xMix"){
-   content,err=patchNativeMix(content,root,req.CabinetFolder)
-   if err!=nil{_ = writer.Close();_ = tmp.Close();return err}
-  }
-  entry,e:=writer.Create(file.Path)
-  if e!=nil{_ = writer.Close();_ = tmp.Close();return e}
-  if _,e=entry.Write([]byte(content));e!=nil{_ = writer.Close();_ = tmp.Close();return e}
- }
- if err=writer.Close();err!=nil{_ = tmp.Close();return err}
- if err=tmp.Close();err!=nil{return err}
- // Csak az elkészült ZIP-et másoljuk a kijelölt mappába.
- source,err:=os.Open(tmp.Name())
- if err!=nil{return err}
- defer source.Close()
- target,err:=os.CreateTemp(root,".gatterka-*.zip")
- if err!=nil{return err}
- defer os.Remove(target.Name())
- if _,err=io.Copy(target,source);err!=nil{_ = target.Close();return err}
- if err=target.Sync();err!=nil{_ = target.Close();return err}
- if err=target.Close();err!=nil{return err}
- return os.Rename(target.Name(),zipPath)
-}
-func saveMachineZipAt(zipPath string,req nativeSave)(string,error){
- if _,_,err:=safeNativeProgramFiles(req);err!=nil{return "",err}
- if !filepath.IsAbs(zipPath)||!strings.EqualFold(filepath.Ext(zipPath),".zip"){
-  return "",errors.New("A célfájlnak teljes Windows-útvonalú .zip fájlnak kell lennie.")
- }
- parent:=filepath.Dir(zipPath)
- st,err:=os.Stat(parent)
- if err!=nil||!st.IsDir(){return "",errors.New("A célmappa nem érhető el.")}
- if err=writeMachineArchive(zipPath,req);err!=nil{return "",err}
- return zipPath,nil
-}
 func (bridge *nativeBridge) chooseSaveAs(w http.ResponseWriter,r *http.Request){
  if !bridge.allow(w,r){return}
  bridge.mu.Lock()
  defer bridge.mu.Unlock()
- bridge.selectedArchivePath=""
+ bridge.selectedMixPath=""
  r.Body=http.MaxBytesReader(w,r.Body,4096)
- var input map[string]interface{}
+ var input struct{DefaultName string `json:"defaultName"`}
  if err:=json.NewDecoder(r.Body).Decode(&input);err!=nil{machineError(w,400,err);return}
- path,err:=chooseWindowsZipFile("Gatterka_XPrg_XMix.zip")
+ defaultName:=strings.TrimSpace(input.DefaultName)
+ if !machineXmixName.MatchString(defaultName){defaultName="Gatterka_projekt.xMix"}
+ path,err:=chooseWindowsSaveXmix(defaultName,bridge.lastDirectory)
  if err!=nil{machineError(w,500,err);return}
  if path==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
- bridge.selectedArchivePath=path
- machineJSON(w,200,map[string]bool{"cancelled":false})
+ bridge.selectedMixPath=path
+ machineJSON(w,200,map[string]interface{}{"cancelled":false,"mixPath":path})
 }
-func (bridge *nativeBridge) writeZip(w http.ResponseWriter,r *http.Request){
+func (bridge *nativeBridge) writeFiles(w http.ResponseWriter,r *http.Request){
  if !bridge.allow(w,r){return}
  bridge.mu.Lock()
  defer bridge.mu.Unlock()
- path:=bridge.selectedArchivePath
- bridge.selectedArchivePath=""
- if path==""{machineError(w,400,errors.New("Először válassz célmappát a Mentés másként ablakban."));return}
+ path:=bridge.selectedMixPath
+ bridge.selectedMixPath=""
+ if path==""{machineError(w,400,errors.New("Először válassz mappát és fájlnevet a Mentés másként ablakban."));return}
  r.Body=http.MaxBytesReader(w,r.Body,maxNativeBody)
- var request nativeSave
+ var request nativeMixSave
  if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
- if _,err:=saveMachineZipAt(path,request);err!=nil{machineError(w,500,err);return}
- machineJSON(w,200,map[string]interface{}{"zipPath":path,"programs":len(request.Files)-1})
+ saved,err:=saveMixAndPrograms(path,request)
+ if err!=nil{machineError(w,500,err);return}
+ bridge.lastDirectory=saved.Folder
+ machineJSON(w,200,saved)
 }
