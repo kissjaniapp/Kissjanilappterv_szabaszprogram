@@ -605,6 +605,11 @@
       for(const spec of rule.parts||[]){
         const exists=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
         if(exists){
+          // Régebbi mentésben még nem volt öröklésjelző. Csak az üres
+          // alkatrészneveket kapcsoljuk át, a kézzel megadottakat nem.
+          if(!exists.customNameInherited&&!String(exists.name||'').trim()&&
+             !String(spec.name||'').trim()&&(rule.parts||[])[0]===spec)
+            exists.customNameInherited=true;
           if(exists.customNameInherited)exists.name=customPartName(rule,spec);
           continue;
         }
