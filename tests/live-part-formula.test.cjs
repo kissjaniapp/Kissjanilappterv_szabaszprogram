@@ -10,8 +10,19 @@ const calcB=html.indexOf('\n  function getParts(){',calcA);
 const helperA=html.indexOf('function isFormulaText(');
 const helperB=html.indexOf('\n  // Gépeléskor nem rajzoljuk újra',helperA);
 assert.ok(calcA>=0&&calcB>calcA&&helperA>0&&helperB>helperA,'Képletkezelő vagy élő megjelenítő hiányzik');
-const formulaEngine=vm.runInNewContext('(function(){\n'+html.slice(calcA,calcB)+'\n'+
-  html.slice(helperA,helperB)+'\nreturn {calc,isFormulaText,partDimensionPreview,partDimensionInput};\n})()',{
+const matA=html.indexOf('function materialForPart(part,f){');
+const matB=html.indexOf('\n  function materialOptions(',matA);
+const shelfA=html.indexOf('function effectiveShelves(f){');
+const shelfB=html.indexOf('\n  function effectiveDivider(f){',shelfA);
+const dividerA=html.indexOf('function effectiveDivider(f){');
+const dividerB=html.indexOf('\n  // A régi adatokat',dividerA);
+assert.ok(matA>0&&matB>matA&&shelfA>0&&shelfB>shelfA&&dividerA>0&&dividerB>dividerA);
+const formulaEngine=vm.runInNewContext('(function(){\n'+
+  'const materialCatalog=[];\n'+
+  html.slice(matA,matB)+'\n'+html.slice(shelfA,shelfB)+'\n'+
+  html.slice(dividerA,dividerB)+'\n'+
+  html.slice(calcA,calcB)+'\n'+html.slice(helperA,helperB)+
+  '\nreturn {calc,isFormulaText,partDimensionPreview,partDimensionInput};\n})()',{
     h:x=>String(x??'').replace(/"/g,'&quot;'),
     nfmt:x=>Number(x).toLocaleString('hu-HU',{maximumFractionDigits:1}),
     pnum:x=>Number(String(x).replace(',','.'))
