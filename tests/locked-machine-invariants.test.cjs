@@ -7,7 +7,7 @@ const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const path=require('node:path');
-const source=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+const source=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8').replace(/\r\n/g,'\n');
 function fingerprint(text){
  let hash=0x811c9dc5;
  for(let i=0;i<text.length;i++){
