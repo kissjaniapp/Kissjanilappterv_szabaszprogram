@@ -116,7 +116,7 @@ test('az alkatrészméret gépelésekor Oldal X és Oldal Y külön ajánlat, Ta
  assert.match(code,/selected\.parts/);
  assert.match(code,/btn\.addEventListener\('click',insert\)/);
  assert.match(html,/if\(e\.key==='Tab'\|\|e\.key==='Escape'\)closePartSuggestions\(\)/);
- assert.match(html,/if\(el\.tagName==='INPUT'\)/);
+ assert.match(html,/if\(el\.tagName==='INPUT'\|\|el\.tagName==='SELECT'\)/);
 });
 test('felesleges maradék kivezetőgomb hiányzik, de a készletadat megmarad',()=>{
  assert.doesNotMatch(html,/data-action="complete-remnant-job"/);
