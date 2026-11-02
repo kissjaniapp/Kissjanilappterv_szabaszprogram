@@ -102,5 +102,5 @@ test('a régi táblák nem vesznek el; az új maradékkészlet a fő készletold
  assert.match(html,/function stockView\(\)/);
  assert.match(html,/id="legacy-boards"/);
  assert.match(html,/materialsAndRemnantsView\(false\)/);
- assert.match(html,/data-action="complete-remnant-job"/);
+ assert.doesNotMatch(html,/data-action="complete-remnant-job"/);
 });
