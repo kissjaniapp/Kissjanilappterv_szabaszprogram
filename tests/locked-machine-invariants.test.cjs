@@ -26,7 +26,9 @@ const locked=[
  ['xMix/xPrg fájlformátum és parancssor',
   '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','c393cfd9'],
  ['Mentés másként – Windows helyi mentés',
-  '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5']
+  '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
+ ['Kötelező kétmenetes vízszintes szabásrajz és 90°-os csíkforgatás',
+  '  function svgBoardSize(bin,compact=false){','\n  function trimmingSteps(','368a35f0']
 ];
 for(const [name,begin,end,expected] of locked){
  test(name+' változatlan',()=>{
