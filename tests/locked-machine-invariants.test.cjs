@@ -36,6 +36,13 @@
 // X-sorozat szükséges, kezdeti P/Y vagy RX második menet nélkül.
 // A bútorlapok teljes eredeti XPRG kódja és a fizikai vágás FIX.
 // Visszaállítás: archive/before-worktop-x-only-error402-fix-20261103
+// 2026-11-03 – TULAJDONOS ÁLTAL ENGEDÉLYEZETT MUNKALAP EXPORT:
+// 2×964 mm darab, 4100×600×38 tábla, 12 mm szélezés:
+// P=600, RY=2147.50, Y=964, F=0, Y=964, F=0.
+// Fejléc Lunghezza=600, Larghezza=4100, Swap=1 (gépen nem hitelesített).
+// Egyedi munkalap X/Y méret az anyagadatbázisból; csak a 38 mm-re.
+// A vágási fizika/finalize, termelés, bútorlap XML, natív mentés, SVG FIX.
+// Visszaállítás: archive/before-validated-p-ry-y-f-worktop-and-catalog-stock-20261103
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
@@ -57,7 +64,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','390467c6'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','659fdd7e'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
