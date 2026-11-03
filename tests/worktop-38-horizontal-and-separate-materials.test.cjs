@@ -71,9 +71,9 @@ test('38 mm-es munkalap kizárólag 4100×600 vagy 4100×900, eredeti szélessé
       'a keresztvágások a teljes 600/900 mm szélességben haladjanak');
     assert.ok(bin.placements.every(p=>!p.turned));
     const layout=draw(bin);
-    assert.equal(layout.rotated,false,'a rajzon is vízszintes munkalap legyen');
-    assert.equal(layout.boardWidth,4100);
-    assert.equal(layout.boardHeight,bin.b);
+    assert.equal(layout.rotated,true,'a 38 mm munkalap rajza 90°-kal elfordul');
+    assert.equal(layout.boardWidth,bin.b,'a 600/900 mm-es szélesség vízszintes');
+    assert.equal(layout.boardHeight,4100,'a 4100 mm-es hossz függőleges');
   }
 });
 test('250 darab 38 mm-es munkalaprész sem hoz létre hosszanti vágást',()=>{

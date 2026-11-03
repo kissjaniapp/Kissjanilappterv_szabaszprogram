@@ -32,7 +32,7 @@ test('az alkatrészek külön IF fülön kapnak feltételt, a paraméter csak n�
   const markup=view(furniture);
   assert.match(markup,/class="custom-parameter-head"/);
   assert.match(markup,/class="custom-parameter-condition"/);
-  assert.match(markup,/data-key="condition"/);
+  assert.match(markup,/data-key="value"/);
   assert.match(markup,/data-action="delete-custom-param"/);
   assert.doesNotMatch(markup,/data-key="enabled"/);
   assert.doesNotMatch(markup,/data-scope="custom-part"/);
@@ -54,12 +54,12 @@ test('mobilon a paraméter és IF szerkesztő átrendeződik',()=>{
   assert.match(css,/@media\(max-width:560px\)\{[\s\S]*?\.custom-parameter-head\{grid-template-columns:minmax\(0,1fr\)\}/);
   assert.match(css,/\.part-if-content\{padding:9px/);
 });
-test('a paraméter neve és feltétele szerkeszthető, alkatrészt nem hoz létre ezen az oldalon',()=>{
+test('a paraméter neve és számértéke szerkeszthető, alkatrészt nem hoz létre ezen az oldalon',()=>{
   const markup=view(furniture);
   assert.match(markup,/data-custom-parameter="param1"/);
   assert.match(markup,/data-scope="custom-param"/);
   assert.match(markup,/data-key="name"/);
-  assert.match(markup,/data-key="condition"/);
-  assert.match(markup,/value="W>=1100"/);
+  assert.match(markup,/data-key="value"/);
+  assert.match(markup,/type="number"/);
   assert.doesNotMatch(markup,/data-part-id=/);
 });
