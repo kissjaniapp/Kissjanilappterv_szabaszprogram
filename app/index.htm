@@ -690,6 +690,73 @@
       }
     }
   }
+  // A bútornak vannak önálló, névvel hivatkozható IF-paraméterei.
+  // [paraméter neve] minden méret-/darabszámképletben 1 vagy 0 értéket ad.
+  // A hivatkozás csak az AKTUÁLIS bútor saját paramétereit keresheti.
+  function namedFurnitureParameter(name,vars,f,visited=[]){
+    const needle=String(name||'').trim().toLocaleLowerCase('hu-HU');
+    const matches=(f?.customParameters||[]).filter(p=>
+      String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle&&needle);
+    if(!matches.length)throw Error('Ismeretlen bútorparaméter: '+name);
+    if(matches.length>1)throw Error('Nem egyértelmű bútorparaméter: '+name);
+    const rule=matches[0],id='parameter:'+rule.id;
+    if(visited.includes(id))throw Error('Körkörös bútorparaméter-hivatkozás: '+name);
+    // Régi igen/nem szériákból betöltött kapcsolók állapotát megőrizzük,
+    // de új paramétereknél nincs külön kapcsoló.
+    if(rule.enabled===false&&(rule.parts||[]).length)return 0;
+    return evaluateFurnitureIf(rule.condition,vars,f,null,[...visited,id])?1:0;
+  }
+  function expandFurnitureParameters(formula,vars,f,visited=[]){
+    return String(formula??'').replace(/\[([^\[\]]+)\]/g,(_,name)=>
+      '('+namedFurnitureParameter(name,vars,f,visited)+')');
+  }
+  function evaluateFurnitureIf(formula,vars,f,part=null,visited=[]){
+    const condition=String(formula??'').trim();
+    if(!condition)return true; // A feltétel nélküli alkatrész mindig szerepel.
+    const exact=(f?.customParameters||[]).filter(p=>
+      String(p.name||'').trim().toLocaleLowerCase('hu-HU')===
+        condition.toLocaleLowerCase('hu-HU'));
+    if(exact.length)return namedFurnitureParameter(condition,vars,f,visited)!==0;
+    return condition.split(/\s*\|\|\s*/).some(group=>
+      group.split(/\s*&&\s*/).every(original=>{
+        let expression=original.trim(),negated=false;
+        while(expression.startsWith('!')){negated=!negated;expression=expression.slice(1).trim();}
+        if(!expression)throw Error('Üres IF feltétel');
+        const m=expression.match(/^(.+?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/);
+        const numeric=value=>calcPartFormula(value,vars,f,
+          part||{id:'parameter-definition',name:'Paraméter'},'if',visited);
+        let active;
+        if(m){
+          const a=numeric(m[1]),b=numeric(m[3]);
+          switch(m[2]){
+            case '>=':active=a>=b;break;
+            case '<=':active=a<=b;break;
+            case '>':active=a>b;break;
+            case '<':active=a<b;break;
+            case '==':active=a===b;break;
+            case '!=':active=a!==b;break;
+          }
+        }else{
+          // IF=1 vagy IF=[paraméter] is működik, puszta szöveg nem.
+          active=numeric(expression)!==0;
+        }
+        return negated?!active:active;
+      }));
+  }
+  function partIfState(part,f,thickness){
+    try{
+      const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,
+        S:effectiveShelves(f),O:effectiveDivider(f)};
+      return {active:evaluateFurnitureIf(part.ifCondition,vars,f,part),error:''};
+    }catch(e){return {active:false,error:e.message||'Érvénytelen IF képlet'};}
+  }
+  function partIfText(part,f){
+    const condition=String(part.ifCondition||'').trim();
+    if(!condition)return 'IF nélkül: mindig bekerül';
+    const state=partIfState(part,f,materialForPart(part,f).thickness);
+    return state.error?'IF hiba: '+state.error:
+      state.active?'IF igaz: bekerül a szabásba':'IF hamis: most kimarad';
+  }
   function customParametersPanel(f){
     const rules=f.customParameters||[];
     const rows=rules.map(rule=>`
@@ -1026,7 +1093,7 @@
         dir.toLowerCase(),chain);
       return '('+value+')';
     });
-    return calc(expression,vars);
+    return calc(expandFurnitureParameters(expression,vars,f,chain),vars);
   }
   function getParts(){
     let rows=[],errors=[];
@@ -1041,6 +1108,12 @@
           continue;
         }
         try{
+          const ifState=partIfState(part,f,thickness);
+          if(ifState.error)throw Error('IF: '+ifState.error);
+          if(!ifState.active){
+            rows.push({furniture:f,part,skipped:true,ifSkipped:true,qty:0});
+            continue;
+          }
           const originalA=calcPartFormula(part.a,vars,f,part,'x'),
                 originalB=calcPartFormula(part.b,vars,f,part,'y'),
                 q=calcPartFormula(part.q,vars,f,part,'q'),qty=q*Number(f.qty);
@@ -1129,6 +1202,11 @@
       }
     }
     const summary=getParts();
+    for(const hint of document.querySelectorAll('[data-part-if-status]')){
+      const f=state.furnitures.find(item=>(item.parts||[]).some(p=>p.id===hint.dataset.partIfStatus));
+      const part=f?.parts.find(p=>p.id===hint.dataset.partIfStatus);
+      if(part)hint.textContent=partIfText(part,f);
+    }
     for(const output of document.querySelectorAll('[data-name-preview]')){
       const r=summary.rows.find(row=>row.part?.id===output.dataset.namePreview);
       output.textContent=r?.resolvedName&&r.resolvedName!==r.part.name?r.resolvedName:'';
@@ -1191,7 +1269,7 @@
     const rows=partEntries.map(({part,owner},rowIndex)=>{
       const f=owner;
       const r=summary.rows.find(r=>r.part===part);
-      const computed=r.skipped?`<span class="pill gray">Hiányos · kimarad</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.originalA)} × ${nfmt(r.originalB)}</span><div class="tiny muted">${nfmt(r.qty)} db · kész méret</div>`;
+      const computed=r.skipped?`<span class="pill gray">${r.ifSkipped?'IF hamis · kimarad':'Hiányos · kimarad'}</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.originalA)} × ${nfmt(r.originalB)}</span><div class="tiny muted">${nfmt(r.qty)} db · kész méret</div>`;
       const heading=rowIndex===0||partEntries[rowIndex-1].owner.id!==owner.id?`<tr class="furniture-part-group"><td colspan="10"><strong>${h(owner.name||'Új bútor')}</strong> · ${nfmt(owner.qty||1)} db bútor</td></tr>`:'';
       return heading+`<tr><td><input class="part-name" aria-label="Alkatrész neve (képlet is lehet)" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"><div class="tiny muted" data-name-preview="${h(part.id)}">${h(r?.resolvedName&&r.resolvedName!==part.name?r.resolvedName:'')}</div></td><td>${partDimensionInput(part,f,'a','Első méret szálirányban')}</td><td>${partDimensionInput(part,f,'b','Második méret keresztirányban')}</td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td><div class="part-materials-compact"><select aria-label="Alkatrész színe és lapvastagsága" data-scope="part" data-id="${part.id}" data-key="materialId" style="min-width:155px">${materialOptions(part,f)}</select>
        <div class="tiny muted">${nfmt(materialForPart(part,f).thickness)} mm</div></div></td><td><div class="edge-grid" role="group" aria-label="Élzárandó élek: két X és két Y">${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label class="edge-tick" title="${label}: ${({x1:'felső, szálirányú',x2:'alsó, szálirányú',y1:'bal oldali, keresztirányú',y2:'jobb oldali, keresztirányú'})[side]} él"><input type="checkbox" aria-label="${label} élzárás" data-scope="part" data-id="${part.id}" data-key="edgeSide" data-side="${side}" ${(part.edgeSides||sidesFromCode(part.edge))[side]?'checked':''}>${label}</label>`).join('')}</div><div class="edge-count">${h(part.edge||'0-0')}</div></td><td><select class="edge-thickness" aria-label="ABS vastagságának kiválasztása" data-scope="part" data-id="${part.id}" data-key="edgeThickness"><option value="2" ${Number(part.edgeThickness??2)===2?'selected':''}>2 mm</option><option value="0.4" ${Number(part.edgeThickness??2)===0.4?'selected':''}>0,4 mm</option></select></td><td class="check-cell"><input type="checkbox" title="${Number(part.edgeThickness)===0.4?'0,4 mm-es élzárónál nincs marás':'Élmarás be- és kikapcsolása'}" aria-label="Élmarás be- és kikapcsolása" data-scope="part" data-id="${part.id}" data-key="mill" ${Number(part.edgeThickness)===0.4?'disabled':''} ${part.mill&&Number(part.edgeThickness)!==0.4?'checked':''}><input type="number" min="0" max="2" step="0.1" style="width:62px;margin-left:5px" title="Előmarás mélysége milliméterben (0–2 mm)" aria-label="Marás mélysége (mm)" data-scope="part" data-id="${part.id}" data-key="millDepth" value="${h(part.millDepth??1)}" ${Number(part.edgeThickness)===0.4||!part.mill?'disabled':''}> mm</td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
