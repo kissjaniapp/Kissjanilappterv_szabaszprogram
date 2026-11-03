@@ -80,21 +80,25 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.equal(bin.a,4100);assert.equal(bin.b,600);
  assert.equal(bin.machine.topAligned,true);
  assert.equal(bin.machine.feed,'x');
- assert.equal(strip.firstCutRule,'worktop-first-part-plus-one-trim');
- assert.ok(near(strip.firstCutPosition,1012.5),
-   'az első RY vágás az első 1000 mm-es darab + 10 mm szélezés');
+ assert.equal(strip.firstCutRule,'top-aligned-bottom');
+ assert.ok(near(strip.firstCutPosition,3027.5),
+   'együttes alkatrészhossz + 1x végszélezés + fűrészrések az első alsó vágásnál');
  assert.ok(bin.placements.some(p=>near(p.x,0)),'darab a csík tetején');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
  assert.match(xml,/Lunghezza="600[.]00"/);
  assert.match(xml,/Larghezza="4100[.]00"/);
  assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
- assert.match(xml,/Cut T="RY" Dim="1010[.]00"/);
- assert.match(xml,/Cut T="Y" Dim="1000[.]00"/);
- assert.doesNotMatch(xml,/Cut T="RX"/,'egymenetes munkalapnál nincs második menet');
- assert.equal((xml.match(/<Cut T="Y"/g)||[]).length,
-   bin.cuts.filter(c=>c.stage==='cross').length,
-   'csak a rajzon szereplő keresztvágásokhoz tartozik Y parancs');
+ assert.match(xml,/Cut T="RY" Dim="0[.]00"/);
+ assert.match(xml,/Cut T="Y" Dim="600[.]00"/);
+ assert.match(xml,/Cut T="RX" Dim="1072[.]50"/);
+ assert.equal((xml.match(/<Cut T="X" Dim="1000[.]00"/g)||[]).length,3);
+ assert.equal((xml.match(/<Cut T="Y"/g)||[]).length,1,
+   'az első menetben egy teljes szélességű csík');
+ assert.equal((xml.match(/<Cut T="RX"/g)||[]).length,1,
+   'a csík a bútorlapokkal egyezően visszaforgatva készül');
+ assert.equal((xml.match(/<Cut T="X"/g)||[]).length,3,
+   'a kész alkatrészek a második menet X parancsaival készülnek');
 });
 test('a szabásztérképen csak a fő tábla marad, második menetes miniábra és alsó anyagfelirat nélkül',()=>{
  const data=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,
