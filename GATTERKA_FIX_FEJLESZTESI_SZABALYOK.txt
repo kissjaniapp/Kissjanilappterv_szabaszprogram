@@ -299,3 +299,29 @@ FIGYELEM: az X-only XML program a kézikönyvi kódolásra és a
 helyes fizikai geometriára épül; saját SCM WinCut gépi elfogadása
 és szabásiránya a HELYSZÍNI ELŐNÉZET/SZÁRAZPRÓBA előtt nem bizonyított.
 Az ellenőrzésig ÉLES ANYAGOT NEM SZABHAT.
+
+2026-11-03 – ANYAGADATBÁZIS: TÁBLAMÉRETEK A SZÍN MELLÉ (GÉPI KÓD FIX)
+--------------------------------------------------------------------
+A felhasználó kérésére az Anyagadatbázis minden egyes szín/dekor
+és lapvastagság sora két ÚJ, opcionális, mm-es adatmezőt kap:
+  - Tábla hosszúsága, X (boardA)
+  - Tábla szélessége, Y (boardB)
+Mindkét méret az eddigi gatterka-anyagkatalogus-v1 kulcs alatt,
+ugyanabban az anyagrekordban tartósan tárolódik. Az eddig mentett
+katalógusrekordok változatlanul elérhetők; üres méretek megengedettek,
+a hibás 0/negatív/nem szám értékek nem kerülnek mentésre.
+A bútor- és alkatrészanyag-választó az új, teljes tábla X × Y méretet
+megjeleníti, amennyiben mindkét dimenzió meg van adva.
+NEM módosul automatikusan az anyagkészlet, a szabásterv geometriai
+alapanyaga vagy a gépi kimenet. A katalógusméret információs adat,
+így az előzőleg JÓVÁHAGYOTT vágási sorrend és minden korábbi
+automatikus alapanyagméret változatlan marad.
+Az aktuálisan védett fizikailag releváns kódujjlenyomatok:
+finalize 1e0ac4b9; gyártási sorrend afa801b9;
+xPrg-export 390467c6; natív mentés f49fe3b5; SVG 86d21042.
+Visszaállítás: archive/before-material-catalog-board-dimensions-20261103.
+A 38 mm munkalap gépi XPRG-továbbfejlesztése csak tényleges WinCut
+által elfogadott, 4100×600/900 munkalapos referencia alapján történhet.
+A felhasználó által feltöltött elfogadott 2800×2070×18 XPRG BÚTORLAP-
+minta igazolja az ismert P→RY→Y→RX→X→F szerkezetet, de önmagában
+nem igazolja az ugyanolyan 38 mm-es munkalap gépi viselkedését.
