@@ -41,12 +41,12 @@ test('saját paraméter törlése csak a hozzá tartozó alkatrészeket távolí
  params.syncCustomParameterParts(f);
  assert.deepEqual(Array.from(f.parts.map(x=>x.id)),['manual']);
 });
-test('új saját paraméterhez csak név és IF-képlet tartozik; az alkatrészt külön vesszük fel',()=>{
+test('új saját paraméterhez csak név és számérték tartozik; az alkatrészt külön vesszük fel',()=>{
  const f={customParameters:[{id:'p1',name:'Merevítés',enabled:true,condition:'W>=1100',parts:[]}]};
  const markup=params.customParametersPanel(f);
  assert.match(markup,/data-scope="custom-param"/);
  assert.match(markup,/data-key="name"/);
- assert.match(markup,/data-key="condition"/);
+ assert.match(markup,/data-key="value"/);
  assert.match(markup,/data-action="add-custom-param"/);
  assert.doesNotMatch(markup,/data-key="enabled"/);
  assert.doesNotMatch(markup,/data-scope="custom-part"/);
