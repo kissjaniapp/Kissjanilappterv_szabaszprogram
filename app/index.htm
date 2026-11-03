@@ -2206,7 +2206,15 @@
       (bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
     const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
     const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
-    return {rotated,pad,top,boardWidth,boardHeight,width:boardWidth+2*pad,height:boardHeight+top+pad+extra};
+    const baseHeight=boardHeight+top+pad+extra;
+    // Minden VALÓDI gépi vágásnak vízszintesnek kell látszania.
+    // 1. menet: tábla csíkozása; 2. menet: 90°-kal elfordított csíkok
+    // külön vízszintes darabolási rajzai ugyanebben az SVG/PNG fájlban.
+    const secondPass=Array.isArray(bin.machine?.strips)?bin.machine.strips.length:0;
+    const rowHeight=compact?260:330;
+    const passHeight=secondPass?60+secondPass*rowHeight:0;
+    return {rotated,pad,top,boardWidth,boardHeight,baseHeight,rowHeight,passHeight,
+      width:boardWidth+2*pad,height:baseHeight+passHeight};
   }
   function svgBoard(bin,compact=false){
     const size=svgBoardSize(bin,compact),{rotated,boardWidth,boardHeight,width:w,height:hgt}=size;
@@ -2231,7 +2239,13 @@
       const desc= `${r.part.name} · szabás: ${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm · kész: ${nfmt(r.part.originalA)} × ${nfmt(r.part.originalB)} mm · él: ${r.part.edge||'0-0'} / ${nfmt(r.part.edgeThickness)} mm${r.part.mill?' / marás '+nfmt(r.part.millDepth??1)+' mm':''}${r.turned?' (forgatva)':''}`;
       return `<g><title>${h(desc)}</title><rect x="${x}" y="${y}" width="${a}" height="${b}" fill="${colors[i%colors.length]}" stroke="#4b6e5a" stroke-width="2"/><text x="${x+a/2}" y="${y+b/2-(canShow?fsize*.35:0)}" fill="#253c31" font-size="${fsize}" text-anchor="middle" font-weight="700">${h(r.part.name.length>Math.max(10,a/22)?r.part.name.slice(0,Math.max(7,Math.floor(a/22)))+'…':r.part.name)}</text>${canShow?`<text x="${x+a/2}" y="${y+b/2+fsize*1.05}" text-anchor="middle" fill="#3b5f4e" font-size="${Math.min(lineSize,fsize*.82)}">${nfmt(r.part.a)} × ${nfmt(r.part.b)} mm</text><path d="${grainPath}" fill="none" stroke="#779c86" stroke-width="3"/>`:''}</g>`;
     }).join('');
-    const cutLines=bin.cuts.map((cut,i)=>{
+    // A táblán csak az 1. menet (csíkozás) vágásait rajzoljuk:
+    // a második menetnél a csíkot 90°-kal elforgatva KÜLÖN,
+    // kizárólag vízszintes vágásokkal ábrázoljuk.
+    const hasTwoPass=!!bin.machine?.strips?.length;
+    const visibleCuts=hasTwoPass?bin.cuts.filter(c=>
+      c.stage==='head-trim'||c.stage==='strip'):bin.cuts;
+    const cutLines=visibleCuts.map((cut,i)=>{
       const cutNum=bin.machine?(cut.boardOrder||cut.globalOrder||i+1):i+1;
       const start=point(cut.x1,cut.y1),end=point(cut.x2,cut.y2);
       const x=start.x,y=start.y,x2=end.x,y2=end.y,dx=x2-x,dy=y2-y;
@@ -2267,7 +2281,33 @@
       rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
     const dimensionTop=`<path d="M${tx} ${ty-27}H${tx+boardWidth} M${tx} ${ty-37}V${ty-17} M${tx+boardWidth} ${ty-37}V${ty-17}" stroke="#728478" fill="none" stroke-width="2"/><text x="${tx+boardWidth/2}" y="${ty-34}" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${horizontalLabel}</text>`;
     const dimensionSide=`<path d="M${tx-28} ${ty}V${ty+boardHeight} M${tx-37} ${ty}H${tx-18} M${tx-37} ${ty+boardHeight}H${tx-18}" fill="none" stroke="#728478" stroke-width="2"/><text x="${tx-36}" y="${ty+boardHeight/2}" transform="rotate(-90 ${tx-36} ${ty+boardHeight/2})" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${verticalLabel}</text>`;
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}<text x="${w/2}" y="${hgt-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text><text x="${w/2}" y="${hgt-40}" font-family="Arial,sans-serif" text-anchor="middle" font-size="23" font-weight="700" fill="#234335">Tábla anyaga: ${boardMaterialLabel}</text></svg>`;
+    // Külön 90°-kal elforgatott csíkrajz: az alsó első vágás után
+    // alulról felfelé haladó, HORIZONTÁLIS méretre vágások.
+    // Az egyes csíkokat a felső részhez igazítva rajzoljuk.
+    const secondPass=hasTwoPass?bin.machine.strips.map((strip,idx)=>{
+      const lineY=size.baseHeight+60+idx*size.rowHeight;
+      const frameX=tx+24,frameW=Math.max(145,Math.min(boardWidth-48,strip.width));
+      const frameY=lineY+36,frameH=size.rowHeight-78;
+      const realLength=bin.machine.feed==='x'?bin.a:bin.b;
+      const mapPos=p=>frameY+p/realLength*frameH;
+      const pts=bin.placements.filter(p=>p.stripIndex===strip.index);
+      const items=pts.map(p=>{
+        const longitudinal=bin.machine.feed==='x'?p.x:p.y;
+        const partCross=bin.machine.feed==='x'?p.realH:p.realW;
+        const partAlong=bin.machine.feed==='x'?p.realW:p.realH;
+        const y=mapPos(longitudinal),height=partAlong/realLength*frameH;
+        return `<g><rect x="${frameX+1}" y="${y}" width="${Math.max(1,partCross/strip.width*(frameW-2))}" height="${Math.max(1,height)}" fill="#cde6d1" stroke="#59876b" stroke-width="1"/><title>${h(p.part.name)} · ${nfmt(p.part.a)} × ${nfmt(p.part.b)} mm</title><text x="${frameX+7}" y="${y+Math.min(19,Math.max(11,height*.68))}" fill="#204a31" font-size="12">${h(p.part.name)}</text></g>`;
+      }).join('');
+      const cuts=bin.cuts.filter(c=>c.stripIndex===strip.index&&
+        (c.stage==='cross-head-trim'||c.stage==='cross')).map(c=>{
+        const at=c.axis==='y'?c.x1:c.y1;
+        const y=mapPos(at),n=c.boardOrder||c.globalOrder||c.order;
+        return `<g><path d="M${frameX} ${y}L${frameX+frameW} ${y}" stroke="#c45b34" stroke-width="3" stroke-dasharray="9 6" fill="none"/><text x="${frameX+frameW+7}" y="${y-2}" fill="#a04628" font-size="13" font-weight="bold">${n}.</text></g>`;
+      }).join('');
+      const rip=bin.cuts.some(c=>c.stage==='rip'&&c.stripIndex===strip.index);
+      return `<g><text x="${frameX}" y="${lineY+19}" fill="#244f42" font-size="17" font-weight="bold">2. menet · ${strip.index}. csík · 90° forgatás → vízszintes méretre vágás</text><rect x="${frameX}" y="${frameY}" width="${frameW}" height="${frameH}" fill="#eee3ce" stroke="#777b65" stroke-width="2"/>${items}${cuts}<text x="${frameX+frameW+6}" y="${frameY+frameH-2}" font-size="12" fill="#687d6d">${nfmt(realLength)} mm hossz</text>${rip?`<text x="${frameX}" y="${frameY+frameH+16}" fill="#9b582e" font-size="12">U alábontás: külön 90°-os visszafordítással, nem függőleges vágással</text>`:''}</g>`;
+    }).join(''):'';
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}${secondPass}<text x="${w/2}" y="${size.baseHeight-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text><text x="${w/2}" y="${hgt-40}" font-family="Arial,sans-serif" text-anchor="middle" font-size="23" font-weight="700" fill="#234335">Tábla anyaga: ${boardMaterialLabel}</text></svg>`;
   }
   function trimmingSteps(bin){
     const trim=Number(bin.trim)||0,kerf=Math.max(0,Number(state.kerf)||0);
