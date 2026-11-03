@@ -3272,16 +3272,20 @@
     const position=el.selectionStart??String(el.value).length;
     const before=String(el.value).slice(0,position);
     const found=before.match(/(?:^|[^\p{L}\p{N}_"])([\p{L}][\p{L}\p{N}_]*)$/u);
-    if(!found||found[1].length<2)return;
-    const token=found[1],offset=position-token.length;
-    const matches=(selected.parts||[]).filter(p=>
+    const paramFound=before.match(/(?:^|[^\p{L}\p{N}_-])([\p{L}][\p{L}\p{N}_-]*)$/u);
+    const token=found?.[1]||'',offset=position-token.length;
+    const paramToken=paramFound?.[1]||'';
+    let paramOffset=position-paramToken.length;
+    if(before[paramOffset-1]==='[')paramOffset--;
+    if(token.length<2&&paramToken.length<2)return;
+    const matches=token.length>=2?(selected.parts||[]).filter(p=>
       (custom?p.customPartId!==el.dataset.partId:p.id!==el.dataset.id)&&
       String(p.name||'').toLocaleLowerCase('hu-HU')
        .startsWith(token.toLocaleLowerCase('hu-HU'))&&
-      !String(p.name||'').startsWith('=')&&!String(p.name||'').includes('{')).slice(0,8);
-    const parameterMatches=(selected.customParameters||[]).filter(param=>
+      !String(p.name||'').startsWith('=')&&!String(p.name||'').includes('{')).slice(0,8):[];
+    const parameterMatches=paramToken.length>=2?(selected.customParameters||[]).filter(param=>
       String(param.name||'').toLocaleLowerCase('hu-HU')
-        .startsWith(token.toLocaleLowerCase('hu-HU'))).slice(0,8);
+        .startsWith(paramToken.toLocaleLowerCase('hu-HU'))).slice(0,8):[];
     if(!matches.length&&!parameterMatches.length)return;
     const container=el.closest('.expr-cell');if(!container)return;
     const pop=document.createElement('div');
@@ -3316,8 +3320,8 @@
       const insert=()=>{
         const code='['+param.name+']';
         const value=String(el.value);
-        el.value=value.slice(0,offset)+code+value.slice(position);
-        el.setSelectionRange(offset+code.length,offset+code.length);
+        el.value=value.slice(0,paramOffset)+code+value.slice(position);
+        el.setSelectionRange(paramOffset+code.length,paramOffset+code.length);
         el.dispatchEvent(new Event('input',{bubbles:true}));
         el.focus();closePartSuggestions();
       };
