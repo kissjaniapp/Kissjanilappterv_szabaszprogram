@@ -10,6 +10,9 @@
 // xPrg-fejléce a tényleges 600/900 mm keresztvágási hosszhoz igazodik.
 // Visszaállítás: archive/before-full-sheet-top-align-and-cut-numbers-20261103
 // A régi ujjelnyomatok az archivált szöveges tesztfájlban megmaradtak.
+// 2026-11-03: a tulajdonos új utasítására a 38 mm-es munkalap XPRG parancsait
+// a fő szabástérképen ténylegesen szereplő keresztvágásokhoz igazítottuk.
+// A normál bútorlapok exportja, a fizikai geometria és a Windows mentés FIX.
 // További módosítás csak tulajdonosi engedéllyel.
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
@@ -32,7 +35,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','2dd57d75'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','73337891'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
