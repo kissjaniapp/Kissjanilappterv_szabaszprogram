@@ -1,8 +1,10 @@
 'use strict';
-// Az elfogadott gépi és mentési kódrészletekhez NE nyúlj!
-// Ha később célzottan, felhasználói kérésre mégis módosítani kellene,
-// előbb új gépi próba és jóváhagyás szükséges. Ez a teszt nem helyettesíti
-// a gépi biztonsági ellenőrzést, de védi a megőrzött megvalósítást.
+// A 2026-11-03-án engedélyezett ÚJ gépi szabály rögzített ujjlenyomatai.
+// Az EREDETI teszt és régi kód archiválva: docs/archivum/2026-11-03-regi-vagasi-logika/
+// A korábbi négy ujjlenyomat közül a két engedélyezetten módosított blokk új értéket kapott.
+// További módosítás csak tulajdonosi engedéllyel.
+// A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
+// próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
@@ -18,11 +20,11 @@ function fingerprint(text){
 }
 const locked=[
  ['Fizikai csíkvágás (első vágás és 90° visszaadás)',
-  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','dbb716b6'],
+  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','99575204'],
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','73d8a27d'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','c393cfd9'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5']
 ];
