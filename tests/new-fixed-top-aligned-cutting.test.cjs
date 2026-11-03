@@ -80,7 +80,7 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.equal(bin.a,4100);assert.equal(bin.b,600);
  assert.equal(bin.machine.topAligned,true);
  assert.equal(bin.machine.feed,'x');
- assert.equal(strip.firstCutRule,'top-aligned-bottom');
+ assert.equal(strip.firstCutRule,'worktop-first-part-plus-one-trim');
  assert.ok(near(strip.firstCutPosition,1012.5),
    'az első RY vágás az első 1000 mm-es darab + 10 mm szélezés');
  assert.ok(bin.placements.some(p=>near(p.x,0)),'darab a csík tetején');
