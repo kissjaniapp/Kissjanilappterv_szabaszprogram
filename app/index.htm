@@ -2802,18 +2802,24 @@
       // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      // A munkalap valós keresztvágása teljes 600/900 mm széles,
-      // ezért Lunghezza és P = 600/900 mm, Larghezza = 4100 mm.
-      // A normál bútorlapok igazolt x/y gépállás szerinti értelmezése
-      // és a gépi parancsok sorrendje változatlan marad.
+      // A MUNKALAP XPRG FEJLÉCÉRE pontosan ugyanaz a gépállás-logika
+      // érvényes, mint a bútorlapéra: x → a/b, y → b/a.
+      // Korábban csak a 38 mm munkalapnál cseréltük fel tévesen
+      // Lunghezza/Larghezza és P méretét, holott a gépi feed továbbra
+      // is 'x'. Az engedélyezett javítás KIZÁRÓLAG ezt az exportot
+      // érinti; a fizikai vágás, bin.cuts és a gyártási sorrend FIX.
       const worktop=Math.abs(Number(bin.thickness)-38)<.001;
       if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
         throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
-      const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
+      const feedLength=m.feed==='x'?bin.a:bin.b;
       const headerLength=feedLength;
-      const headerWidth=worktop?bin.a:(m.feed==='x'?bin.b:bin.a);
-      if(worktop&&bin.cuts.some(c=>c.length>0&&Math.abs(c.length-feedLength)>.001))
-        throw Error((i+1)+'. tábla: a munkalap vágáshossza eltér az xPrg fejlécétől.');
+      const headerWidth=m.feed==='x'?bin.b:bin.a;
+      // A munkalap valós fizikai keresztvágásai a 600/900 mm-es,
+      // teljes, változatlan táblaszélességen futnak. Ez a rajzi
+      // ellenőrzés NEM keverhető a 4100 mm-es XPRG Lunghezzával.
+      if(worktop&&(m.feed!=='x'||bin.cuts.some(c=>c.length>0&&
+           Math.abs(c.length-headerWidth)>.001)))
+        throw Error((i+1)+'. tábla: a munkalap fizikai keresztvágásai eltérnek a teljes szélességtől.');
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
