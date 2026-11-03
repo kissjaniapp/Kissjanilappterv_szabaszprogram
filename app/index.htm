@@ -426,11 +426,23 @@
   function storedArray(key,fallback=[]){
     try{const x=JSON.parse(localStorage.getItem(key));return Array.isArray(x)?x:fallback;}catch{return fallback;}
   }
-  // Régi anyagadatbázisokkal kompatibilis: a felhasználó mostantól
-  // csak egy szín/dekor nevet és hozzá egy vastagságot kezel.
-  // A régi "name" mező nem jelenik meg, de a szín hiányában migrálható.
+  // A régi adatbázis összes színét, vastagságát és azonosítóját
+  // változatlanul megőrizzük. Új, opcionális tábla X/Y méret (mm)
+  // csak a katalógushoz tartozik: a rögzített szabási algoritmust
+  // és a gépi xPrg-beadási irányt nem módosíthatja.
+  function catalogSheetDimension(value){
+    if(value==null||String(value).trim()==='')return '';
+    const n=Number(value);
+    return Number.isFinite(n)&&n>0&&n<=10000?n:'';
+  }
+  function materialBoardSizeSuffix(material){
+    const a=catalogSheetDimension(material?.boardA);
+    const b=catalogSheetDimension(material?.boardB);
+    return a!==''&&b!==''?' · '+a+' × '+b+' mm':'';
+  }
   let materialCatalog=storedArray(materialKey,defaults.map(m=>({...m}))).map(m=>({
-    ...m,color:String(m.color||m.name||'').trim(),thickness:Number(m.thickness)||18
+    ...m,color:String(m.color||m.name||'').trim(),thickness:Number(m.thickness)||18,
+    boardA:catalogSheetDimension(m.boardA),boardB:catalogSheetDimension(m.boardB)
   }));
   const materialThicknesses=[12,15,18,36,38];
   let seriesCatalog=storedArray(seriesKey);
@@ -455,7 +467,7 @@
     return '<option value="" '+(!current?'selected':'')+'>Bútor alapanyaga · '+h(materialForPart({},f).color)+
       ' · '+h(materialForPart({},f).thickness)+' mm</option>'+
       materialCatalog.map(m=>'<option value="'+h(m.id)+'" '+(m.id===current?'selected':'')+'>'+
-        h(m.color)+' · '+h(m.thickness)+' mm</option>').join('');
+        h(m.color)+' · '+h(m.thickness)+' mm'+h(materialBoardSizeSuffix(m))+'</option>').join('');
   }
   function effectiveShelves(f){
     if(f.shelfMode!=='auto')return Math.max(0,Math.round(Number(f.s)||0));
@@ -1393,7 +1405,7 @@
           <div><label>Hová készül? / Megrendelő</label><input aria-label="Hová készül" data-scope="furniture" data-id="${f.id}" data-key="destination" value="${h(f.destination||'')}"><div class="field-hint">A matrica legfelső sorába kerül.</div></div>
           <div><label>Alapanyag az anyagadatbázisból</label><select aria-label="Bútor alapanyaga" data-scope="furniture" data-id="${f.id}" data-key="materialId">
           <option value="" ${!f.materialId?'selected':''}>Korábbi mentett anyag · ${h(f.materialColor||'Freya')} · ${h(f.t)} mm</option>
-          ${materialCatalog.map(m=>`<option value="${h(m.id)}" ${f.materialId===m.id?'selected':''}>${h(m.color)} · ${h(m.thickness)} mm</option>`).join('')}</select>
+          ${materialCatalog.map(m=>`<option value="${h(m.id)}" ${f.materialId===m.id?'selected':''}>${h(m.color)} · ${h(m.thickness)} mm${h(materialBoardSizeSuffix(m))}</option>`).join('')}</select>
           <div class="field-hint">Az alapanyag színét és vastagságát is kitölti. Alkatrészenként eltérhet.</div>
           <button class="btn sm" style="margin-top:9px" data-action="materials-page">⚙ Anyagadatbázis szerkesztése</button></div>
         </div>
@@ -1509,8 +1521,11 @@
       '<label>Lapvastagság <select data-scope="material" data-id="'+h(m.id)+'" data-key="thickness">'+
       (materialThicknesses.includes(Number(m.thickness))?'':'<option value="'+h(m.thickness)+'" selected>Korábbi: '+h(m.thickness)+' mm</option>')+
       materialThicknesses.map(t=>'<option value="'+t+'" '+(Number(m.thickness)===t?'selected':'')+'>'+t+' mm</option>').join('')+
-      '</select></label><button class="btn sm ghost danger" data-action="remove-material" data-id="'+h(m.id)+'">✕</button></div>').join('')+
-      '<div class="muted small">Különböző anyagszínű és eltérő vastagságú alkatrészek nem kerülhetnek ugyanarra a táblára. A nem 18 mm-es anyagokhoz adj meg megfelelő készlettáblát.</div></div></div>';
+      '</select></label>'+
+      '<label>Tábla hosszúsága · X (mm) <input type="number" min="1" max="10000" step="0.1" data-scope="material" data-id="'+h(m.id)+'" data-key="boardA" value="'+h(m.boardA??'')+'" placeholder="Pl. 2800" style="width:104px"></label>'+
+      '<label>Tábla szélessége · Y (mm) <input type="number" min="1" max="10000" step="0.1" data-scope="material" data-id="'+h(m.id)+'" data-key="boardB" value="'+h(m.boardB??'')+'" placeholder="Pl. 2070" style="width:104px"></label>'+
+      '<button class="btn sm ghost danger" data-action="remove-material" data-id="'+h(m.id)+'">✕</button></div>').join('')+
+      '<div class="muted small">A tábla X (szálirányú hosszúság) és Y (keresztirányú szélesség) mérete mm-ben, színenként menthető; a régi anyagoknál üresen hagyható. A katalogizált méret tájékoztató adat: a már rögzített gépi szabási sorrendet és a készletbe felvett táblákat nem írja át. A különböző anyagszínű és vastagságú alkatrészek nem kerülhetnek ugyanarra a táblára.</div></div></div>';
     const ids=state.selectedRemnantIds||[];
     const rem='<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Maradéktábla-készlet</div><div class="panel-sub">Csak a bepipált maradék kerül a szabástervbe. Az elérhető készletet itt szerkesztheted.</div></div><button class="btn sm" data-action="add-remnant">＋ Maradéktábla</button></div>'+
       '<div class="panel-body">'+(remnantCatalog.length?remnantCatalog.map(r=>'<div class="toolbar" style="margin:8px 0"><label title="A szabásba bevonni"><input type="checkbox" data-scope="remnant-selection" data-id="'+h(r.id)+'" '+(ids.includes(r.id)?'checked':'')+'> Bevonni</label>'+
@@ -3468,13 +3483,13 @@
     const el=e.target.closest('[data-action]');if(!el)return;
     const action=el.dataset.action;
     if(action==='add-material'){
-      materialCatalog.push({id:uuid(),color:'',thickness:18});
+      materialCatalog.push({id:uuid(),color:'',thickness:18,boardA:'',boardB:''});
       storeCatalog(materialKey,materialCatalog);render();
       document.querySelector('[data-scope="material"][data-id="'+materialCatalog[materialCatalog.length-1].id+'"][data-key="color"]')?.focus();
       return;
     }
     if(action==='remove-material'){
-      if(!confirm('Biztosan törlöd ezt a színt és vastagságot az anyagadatbázisból?'))return;
+      if(!confirm('Biztosan törlöd ezt a színt, vastagságot és a hozzá mentett táblaméreteket az anyagadatbázisból?'))return;
       materialCatalog=materialCatalog.filter(x=>x.id!==el.dataset.id);
       storeCatalog(materialKey,materialCatalog);render();return;
     }
@@ -3881,8 +3896,13 @@
     if(scope==='material'||scope==='remnant'){
       const item=(scope==='material'?materialCatalog:remnantCatalog).find(x=>x.id===el.dataset.id);
       if(!item)return;
-      const value=el.type==='number'?Number(el.value):el.value;
-      if(el.type==='number'&&(!Number.isFinite(value)||value<=0)){showNotice('Hibás készletméret.');return;}
+      const boardDimension=scope==='material'&&(key==='boardA'||key==='boardB');
+      const emptyDimension=boardDimension&&String(el.value).trim()==='';
+      const value=emptyDimension?'':el.type==='number'?Number(el.value):el.value;
+      if(el.type==='number'&&!emptyDimension&&
+         (!Number.isFinite(value)||value<=0||(boardDimension&&value>10000))){
+        showNotice('Érvénytelen táblaméret. Adj meg 1–10000 mm közötti méretet, vagy hagyd üresen.');return;
+      }
       item[key]=value;
       storeCatalog(scope==='material'?materialKey:remnantKey,scope==='material'?materialCatalog:remnantCatalog);
       result=null;
