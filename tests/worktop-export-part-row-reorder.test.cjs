@@ -47,77 +47,73 @@ function generated(row,feed='auto',trim=10){
   return {bin,xml,commands};
 }
 for(const width of [600,900]){
-  test('38 mm munkalap '+width+': a jó szabástérkép keresztvágásai mennek RY/Y-ként a gépre',()=>{
+  test('38 mm munkalap '+width+': teljes 4100 mm hossz és csak X keresztvágások',()=>{
     const {bin,xml,commands}=generated(part(1000,width));
     const physical=bin.cuts.slice().sort((a,b)=>a.order-b.order);
-    assert.equal(bin.machine.feed,'x','a jóváhagyott fizikai vágási irány FIX');
+    assert.equal(bin.machine.feed,'x','a jóváhagyott fizikai gépállás FIX');
     assert.equal(bin.machine.topAligned,true);
     assert.equal(bin.machine.strips.length,1);
     assert.equal(bin.machine.strips[0].width,width);
     assert.equal(bin.worktopEdgeTrim,10);
-    assert.match(xml,new RegExp('Lunghezza="'+width+'[.]00" Larghezza="4100[.]00"'));
+    assert.match(xml,new RegExp('Lunghezza="4100[.]00" Larghezza="'+width+'[.]00"'));
     assert.deepEqual(Array.from(commands,c=>c.type),
-      ['P','RY','Y','F','Y','F','Y','F'],
-      'nincs gépi elforgatást okozó második RX/X/U menet');
-    assert.equal(commands[0].dim,width);
-    assert.equal(commands[1].dim,Number((4100-physical[0].x1).toFixed(2)));
-    assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),
-      [1000,1000,1000]);
+      ['X','X','F','X','F','X','F'],
+      'X-only program: sem szélesség=4100, sem Y csík, sem elforgatás');
+    assert.equal(commands[0].dim,Number((4100-physical[0].x1).toFixed(2)));
+    assert.deepEqual(Array.from(commands.filter(c=>c.type==='X').slice(1),c=>c.dim),[1000,1000,1000]);
     assert.equal(commands.filter(c=>c.type==='F').length,3);
-    assert.equal(commands.length,2+2*bin.machine.strips[0].items.length);
+    assert.equal(commands.length,1+2*bin.machine.strips[0].items.length);
     assert.ok(physical.every(c=>
       (c.stage==='cross'||c.stage==='cross-head-trim')&&
       c.axis==='y'&&c.length===width));
-    assert.equal(physical.length,4,'az első vágás és három készrevágás fizikailag is létezik');
-    assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/);
+    assert.equal(physical.length,4);
+    assert.doesNotMatch(xml,/<Cut T="(?:P|RY|Y|RX|U)"/);
+    assert.match(xml,/Swap="0"/);
   });
 }
-test('a feltöltött hibás 4100×600 munkalapos XPRG reprodukciója: 999 mm, 12 mm szélezés',()=>{
+test('a korábban elutasított 999 × 600 × 38, 12 mm szélezés X-only exportja',()=>{
   const {bin,xml,commands}=generated(part(999,600,1),'auto',12);
   assert.equal(bin.cuts.length,2);
   assert.equal(bin.cuts[0].x1,1018.5);
   assert.equal(bin.cuts[1].x1,14.5);
-  assert.match(xml,/Lunghezza="600[.]00" Larghezza="4100[.]00"/);
+  assert.match(xml,/Lunghezza="4100[.]00" Larghezza="600[.]00"/);
   assert.deepEqual(Array.from(commands,c=>[c.type,c.dim]),[
-    ['P',600],['RY',3081.5],['Y',999],['F',0]
+    ['X',3081.5],['X',999],['F',0]
   ]);
-  assert.doesNotMatch(xml,/Swap="1"/);
-  assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/,
-    'a hibát okozó elforgatást és függőleges vágást nem adhatjuk ki újra');
+  assert.doesNotMatch(xml,/<Cut T="(?:P|RY|Y|RX|U)"/,
+    'a 402-es szélességhibás és a gépi fordítást kérő kódolás tiltott');
 });
-test('600 vagy 900 széles munkalap egyetlen 600 mm-es alkatrésszel: P/RY/Y/F',()=>{
+test('600 vagy 900 széles munkalap egyetlen 600 mm-es alkatrésszel',()=>{
   for(const width of [600,900]){
     const {bin,commands}=generated(part(600,width,1));
-    assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','F']);
-    assert.equal(commands[0].dim,width);
-    assert.equal(commands[1].dim,3482.5);
-    assert.equal(commands[2].dim,600);
+    assert.deepEqual(Array.from(commands,c=>c.type),['X','X','F']);
+    assert.equal(commands[0].dim,3482.5);
+    assert.equal(commands[1].dim,600);
     assert.equal(bin.cuts.length,2);
     assert.equal(bin.placements[0].w,600);
     assert.equal(bin.placements[0].x,15);
   }
 });
-test('12 mm szélezésnél az RY a térkép tényleges vágásközépvonalából számol',()=>{
+test('12 mm szélezés a meglévő X-vágásközépvonalból számolt',()=>{
   const {bin,commands}=generated(part(600,600,1),'auto',12);
   assert.equal(bin.worktopEdgeTrim,12);
   assert.equal(bin.trim,0);
-  assert.equal(commands[0].dim,600);
-  assert.equal(commands[1].dim,3480.5);
-  assert.equal(commands[2].dim,600);
+  assert.equal(commands[0].dim,3480.5);
+  assert.equal(commands[1].dim,600);
   assert.equal(bin.placements[0].x,17);
 });
-test('0 mm szélezésnél sem kerül képzeletbeli munkalapfordítás az XPRG-be',()=>{
+test('0 mm szélezésnél nem kerül képzeletbeli második menet az XPRG-be',()=>{
   const {bin,commands}=generated(part(600,600,1),'auto',0);
-  assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','F']);
+  assert.deepEqual(Array.from(commands,c=>c.type),['X','X','F']);
   assert.equal(bin.worktopEdgeTrim,0);
   assert.equal(bin.placements[0].x,5);
 });
-test('három munkalap-alkatrész: mindhárom Y készméret, változatlan fizikai sorrend',()=>{
+test('három munkalap-alkatrész X készmérettel, változatlan fizikai sorrend',()=>{
   const {bin,commands}=generated(part(600,600,3));
-  assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),[600,600,600]);
+  assert.deepEqual(Array.from(commands.filter(c=>c.type==='X').slice(1),c=>c.dim),[600,600,600]);
   assert.equal(bin.cuts.length,4);
   assert.deepEqual(Array.from(bin.placements,p=>p.x),[1225,620,15]);
-  assert.doesNotMatch(commands.map(c=>c.type).join(','),/RX|X|U/);
+  assert.doesNotMatch(commands.map(c=>c.type).join(','),/P|RY|Y|RX|U/);
 });
 test('a normál 18 mm bútorlap gépi RY/Y/RX/X/F kódolása változatlan',()=>{
   const {bin,commands}=generated(part(964,200,3,18),'x');
