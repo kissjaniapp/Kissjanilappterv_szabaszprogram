@@ -1151,7 +1151,10 @@
           continue;
         }
         try{
-          const ifState=partIfState(part,f,thickness);
+          // Feltétel nélkül nincs szükség IF-kiértékelőre: a korábbi
+          // egyszerű, képletes alkatrészlista önmagában is működik.
+          const ifState=String(part.ifCondition??'').trim()?
+            partIfState(part,f,thickness):{active:true,error:''};
           if(ifState.error)throw Error('IF: '+ifState.error);
           if(!ifState.active){
             rows.push({furniture:f,part,skipped:true,ifSkipped:true,qty:0});
