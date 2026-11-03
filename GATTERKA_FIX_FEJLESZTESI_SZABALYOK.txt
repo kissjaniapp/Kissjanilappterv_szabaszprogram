@@ -15,10 +15,14 @@ kód és a régi szabályzat külön visszaállítható.
 ----------------
 1. Minden tényleges gépi vágás VÍZSZINTES a képernyőn és a külön
    menetenkénti ábrán. A tábla/csík forgatásait külön ábrázold.
-2. Teljes, nagy alaptáblán (2800×2070 mm, 18 mm standard; valamint
-   az ilyen teljes méretű kézi tábla) a régi vágásindítás és
-   a szélezési távolság számítása MARAD.
-3. KISEBB / MARADÉK TÁBLA esetén a csíkok a tábla FELSŐ részéhez
+2. A TELJES, NAGY ALAPTÁBLÁN (2800×2070 mm) IS a FELSŐ részre
+   kerülnek az alkatrészek, ha kisebb a szabás területigénye, és
+   az alsó részből egyben maradó darab választható le.
+   Ilyenkor a tábla első vágása az alsó alkatrész-/csíkmező
+   alatt van, és onnan alulról felfelé folytatódik a szabás.
+   Közel teljesen felhasznált tábla esetén a régi, szélezésből
+   induló kezdővágás marad.
+3. KISEBB / MARADÉK TÁBLA esetén is a csíkok a tábla FELSŐ részéhez
    igazodnak. A LEGELSŐ teljes vágás az alsó, utolsó csík
    alatt, a szükséges alkatrészmező határán történik.
    Az alsó maradék egyben marad; a csíkok utána alulról felfelé
@@ -39,13 +43,19 @@ kód és a régi szabályzat külön visszaállítható.
    A tábla ALATT nem lehet 2. menetes kis szemléltető ábra,
    "Tábla anyaga" sor vagy külön területkihasználtsági sor.
    Az 1. és a 90°-os 2. menet GÉPI PROGRAMLOGIKÁJA továbbra is él.
+   A FŐ szabásztérképen az adott tábla ÖSSZES gépi vágásának
+   sorszáma kötelezően szerepel (táblánként 1-től).
+   Az 1. menet vízszintes vágásvonalai a valós helyükön vannak.
+   A 90°-kal elforgatott csík 2. menetének sorszáma külön
+   90°-os számozott jelvényként látszik a fő rajzon;
+   erre NEM rajzolható a gépen nem létező függőleges vágás.
    Az alkatrészek függőleges határa nem jelölhet külön gépi vágást.
 9. A 38 mm-es munkalap FŐ térképén látszódjon a tényleges
    legelső, teljes 600/900 mm szélességű, VÍZSZINTES piros vágás,
    "1. VÁGÁS" címkével. A kiinduló anyag mérete a térkép
    FEJLÉCÉBEN szerepeljen: 4100 × 600 × 38 mm vagy
-   4100 × 900 × 38 mm. Az adott tábla színe/anyaga és a
-   gépi xMix/xPrg kód nem változik emiatt.
+   4100 × 900 × 38 mm. Az adott tábla színe/anyaga
+   a gépi exportban továbbra is megmarad.
 
 GÉPI EXPORT – FIX RENDSZER
 ------------------------
@@ -54,7 +64,17 @@ Windows natív Mentés másként megmarad.
 A már jóváhagyott változtatásban a RY és RX első vágási
 TÁVOLSÁGA kisebb táblán és visszaforgatott csíkon az új
 geometria szerint eltérhet a régi, fix szélezési mérettől.
-A teljes nagytábla RY/RX számítása változatlan.
+A kevés alkatrészes NAGYTÁBLÁN az RY/RX első vágási
+távolsága az új felső igazítást követi; közel teljes
+táblán a korábbi szélezési kezdés marad.
+A normál 18 mm-es táblák xPrg fejléce továbbra is a
+jóváhagyott x/y gépállásból számolódik.
+38 mm MUNKALAP esetén a teljes szélességű, tényleges
+keresztvágás 600 vagy 900 mm. Ennek megfelelően az xPrg
+Lunghezza és P = 600 / 900 mm, Larghezza = 4100 mm;
+a korábbi, felcserélt munkalapfejléc nem használható.
+A 38 mm munkalap hosszirányú U alábontása tilos.
+Az xMix/xPrg XML formátuma és a mentési útvonal változatlan.
 Az engedélyezett új értékeket a gépen PRÓBASZABÁSSAL kell
 ellenőrizni; a GitHub tesztek nem bizonyítják a tényleges
 SCM WinCut/xPrg futtatási viselkedését.
@@ -70,11 +90,11 @@ KÖTELEZŐ FEJLESZTÉSI MÓDSZER
   változtathatja vissza hallgatólagosan a régire.
 - A jelenlegi tesztek ujjlenyomatai:
   tests/locked-machine-invariants.test.cjs
-  finalize: 99575204
+  finalize: 4a440a8d
   gyártási sorrend: afa801b9
-  xMix/xPrg: c393cfd9
+  xMix/xPrg: 2dd57d75
   Windows Mentés másként: f49fe3b5
-- A külön kétmenetes rajz jelenlegi ujjlenyomata: bffa3920.
+- A fő szabásztérkép összes vágásszámának ujjlenyomata: 86d21042.
 - Módosítás előtt és után: oldalak/anyagszínek/méretek,
   sorrend, gépi XML és a teljes tesztcsomag ellenőrzése.
 - Újabb vágási sorrend vagy xMix/xPrg módosítás kizárólag
@@ -87,3 +107,15 @@ Korábbi, kétmenetes miniábrákat is tartalmazó főág: archive/before-board-
 Ez az archív ág nem módosítható; szükség esetén ebből visszaállítható
 az előző SVG/PNG megjelenítés. A négy FIX fizikai/gépi/mentési kódrész
 változatlan maradt.
+
+NAGYTÁBLA ÉS MUNKALAP ÚJ SZABÁLYAINAK VISSZAÁLLÍTÁSI PONTJA
+-----------------------------------------------------------
+A felhasználó kifejezetten engedélyezte a nagytábla felülre igazítását,
+a fő szabástérkép összes vágásszámát és a munkalap xPrg fejlécének
+hossz/szélesség-korrekcióját 2026-11-03-án.
+Az előző TELJES program a GitHubon változatlanul elérhető itt:
+archive/before-full-sheet-top-align-and-cut-numbers-20261103
+A korábbi szabályzat és védőteszt a következő mappában szerepel:
+docs/archivum/2026-11-03-teljes-tabla-felso-igazitasa-elott/
+Tilos módosítani a jelenlegi fizikai szabást, xPrg exportot és
+szabásztérképet kifejezett új tulajdonosi utasítás nélkül.
