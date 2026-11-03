@@ -89,20 +89,32 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.match(xml,/Cut T="RY" Dim="0[.]00"/);
  assert.match(xml,/Cut T="RX" Dim="1087[.]50"/);
 });
-test('az első és a 90° utáni második menet vágásai a rajzon vízszintesek',()=>{
+test('a szabásztérképen csak a fő tábla marad, második menetes miniábra és alsó anyagfelirat nélkül',()=>{
  const data=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,
    qty:1,materialColor:'Fehér'}],[part(700,200,2),part(690,200,3)]);
  const bin=data.bins[0],svg=draw.svgBoard(bin);
- assert.match(svg,/2[.] menet · 1[.] csík · 90° forgatás/);
- assert.ok(draw.svgBoardSize(bin).passHeight>0);
+ assert.equal(draw.svgBoardSize(bin).passHeight,0);
+ assert.doesNotMatch(svg,/2[.] menet · 1[.] csík · 90° forgatás/);
+ assert.doesNotMatch(svg,/Tábla anyaga:/);
+ assert.doesNotMatch(svg,/területi kihasználtság/);
  const cuts=[...svg.matchAll(/<path d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)" stroke="#(?:c45b34|bd805b)"/g)];
- assert.ok(cuts.length>=5,'az első és második menet vágásai megjelennek');
+ assert.ok(cuts.length>=1,'a fő rajz vágásai megmaradnak');
  for(const c of cuts)assert.ok(near(c[2],c[4]),'függőleges vágásvonal jelent meg');
- const worktop=make([],[part(1000,600,3,38,'Fa')],'auto').bins[0];
- const svg38=draw.svgBoard(worktop);
- const lines=[...svg38.matchAll(/<path d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)" stroke="#(?:c45b34|bd805b)"/g)];
- assert.ok(lines.length>=3);
- for(const c of lines)assert.ok(near(c[2],c[4]));
+});
+test('38 mm-es munkalapon első vágás és kiinduló 4100×600 mm forrásméret a fő rajzon',()=>{
+ const bin=make([],[part(1000,600,3,38,'Fa')],'auto').bins[0];
+ const svg=draw.svgBoard(bin);
+ const size=draw.svgBoardSize(bin);
+ assert.equal(size.passHeight,0);
+ assert.equal(size.rotated,true);
+ assert.match(svg,/>1[.] VÁGÁS<\/text>/);
+ assert.match(svg,/Kiinduló munkalap: 4100 × 600 × 38 mm/);
+ assert.doesNotMatch(svg,/2[.] menet/);
+ assert.doesNotMatch(svg,/Tábla anyaga:/);
+ const lines=[...svg.matchAll(/<path d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)" stroke="#(?:c45b34|bd805b)"/g)];
+ assert.equal(lines.length,3);
+ for(const c of lines)assert.ok(near(c[2],c[4]),'csak vízszintes munkalapvágás');
+ assert.ok(near(lines[0][2],bin.cuts[0].x1+140),'az első jelölt vágás a tényleges gépi helyen van');
 });
 test('az összesítőben az Élzárás és ABS vastagság külön oszlop',()=>{
  assert.match(html,/<th>Élzárás jelölése<\/th><th>ABS vastagság<\/th>/);
