@@ -104,3 +104,21 @@ test('Alkatrészek → Alkatrész-összesítő → Anyagkészlet, az xMix érint
   assert.match(html,/state.active==='parts-review'\?partsReviewView\(\)/);
   assert.match(html,/data-action="save-xprg-folder"/);
 });
+
+test('a tényleges gépi táblakiosztó sem kap hamis IF-es alkatrészt',()=>{
+  const e=makeEngine();
+  const strip=region('  const STANDARD_BOARD=','  // Gyártási sorrend:');
+  const makeStripPlan=vm.runInNewContext('(function(){'+strip+
+    ';return makeStripPlan;})()',{
+      state:e.state,remnantCatalog:[]
+    });
+  const output=makeStripPlan(0,e.getParts(),'auto');
+  assert.equal(output.failed.length,0,'minden igaz IF-es alkatrész elfér');
+  const placed=output.bins.flatMap(bin=>bin.placements.map(placement=>placement.part.name));
+  assert.equal(placed.length,3,'két oldalsó és egy fenék');
+  assert.equal(placed.filter(name=>name==='Oldalsó szokli').length,2);
+  assert.equal(placed.filter(name=>name==='Fenék').length,1);
+  assert.ok(!placed.includes('Elülső szokli'));
+  assert.ok(!placed.includes('Második oldal'));
+  assert.ok(!placed.includes('Nulla darab'));
+});
