@@ -1553,7 +1553,7 @@
   }
   function stockView(){
     const count=state.boards.reduce((s,b)=>s+(+b.qty||0),0),totalArea=state.boards.reduce((s,b)=>s+(+b.qty||0)*b.a*b.b,0);
-    return intro('05 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A különböző színű és vastagságú alapanyagokat külön szabjuk. A 38 mm-es munkalap alapmérete 4100 × 600 vagy 4100 × 900 mm; az Anyagadatbázisban rögzített egyedi teljes tábla X és Y méretet használja, végig teljes szélességű keresztvágásokkal.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A 18 mm-es táblákat 2800 × 2070 méretben, a 38 mm-es munkalapokat 4100 × 600/900 méretben automatikusan kezeli, színenként elkülönítve.</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Szabásterv készítése →</button></div></div></div>`;
+    return intro('05 / ANYAGKÉSZLET','Milyen táblákból dolgozzunk?','A különböző színű és vastagságú alapanyagokat külön szabjuk. A 38 mm-es munkalap alapmérete 4100 × 600 vagy 4100 × 900 mm; az Anyagadatbázisban rögzített egyedi teljes tábla X és Y méretet használja, végig teljes szélességű keresztvágásokkal.',`<button class="btn" data-action="add-board">＋ Új tábla</button>`)+`<div class="statrow"><div class="stat"><div class="label">Rögzített táblatípus</div><div class="value">${state.boards.length}</div><div class="detail">különböző méret</div></div><div class="stat"><div class="label">Összes tábla</div><div class="value">${nfmt(count)}</div><div class="detail">darab raktáron</div></div><div class="stat"><div class="label">Rendelkezésre álló felület</div><div class="value">${nfmt(totalArea/1e6)} <span class="small">m²</span></div><div class="detail">bruttó táblafelület</div></div><div class="stat"><div class="label">Anyagigény</div><div class="value">${nfmt(getParts().area/1e6)} <span class="small">m²</span></div><div class="detail">nettó számított felület</div></div></div><div class="panel"><div class="panel-head"><div><div class="panel-title">Készleten lévő táblák</div><div class="panel-sub">X = szálirány, Y = keresztirány. Minden méret milliméter.</div></div><span class="pill">${nfmt(count)} db</span></div><div class="panel-body"><div class="stock-list">${state.boards.map(b=>`<div class="stock-card"><div class="stock-preview"><div>→ szálirány<br><small>${nfmt(b.a)} × ${nfmt(b.b)} mm</small></div></div><div class="stock-form"><div class="unit"><label>Megnevezés</label><input data-scope="board" data-id="${b.id}" data-key="name" value="${h(b.name)}"></div><div class="unit"><label>X · szál ↔</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="a" value="${h(b.a)}"><span>mm</span></div></div><div class="unit"><label>Y · kereszt ↕</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="board" data-id="${b.id}" data-key="b" value="${h(b.b)}"><span>mm</span></div></div><div class="unit"><label>Vastagság</label><div class="input-unit"><input type="number" min="1" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="thickness" value="${h(b.thickness??18)}"><span>mm</span></div></div><div class="unit"><label>Darab</label><input type="number" min="0" max="100" step="1" data-scope="board" data-id="${b.id}" data-key="qty" value="${h(b.qty)}"></div></div><button class="btn icon ghost danger remove" title="Tábla törlése" data-action="remove-board" data-id="${b.id}">✕</button></div>`).join('')||'<div class="empty">Még nincs megadott maradék. A 18 mm-es táblák alapmérete 2800 × 2070 mm. A 38 mm-es munkalapoknál az Anyagadatbázisban megadott színhez tartozó X/Y táblaméretet használja (alapérték: 4100 × 600/900 mm).</div>'}</div><div class="section-bottom"><button class="btn sm soft" data-action="add-board">＋ További méret hozzáadása</button><span class="muted small">A táblának mindkét irányban legalább 5 mm-rel nagyobbnak kell lennie az alkatrésznél; a beállított szélezés ezen felül számít.</span></div></div></div><div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Vágási beállítások</div><div class="panel-sub">Alapérték: 5 mm vágásrés, 10 mm szélezés oldalanként; mindkettő módosítható.</div></div></div><div class="panel-body"><div class="settings"><div><label>Vágásrés</label><div class="input-unit"><input type="number" min="0" max="20" step="0.1" data-scope="settings" data-key="kerf" value="${h(state.kerf)}"><span>mm</span></div></div><div><label>Szélezés / oldal</label><div class="input-unit"><input type="number" min="0" max="100" step="1" data-scope="settings" data-key="trim" value="${h(state.trim)}"><span>mm</span></div></div><div class="callout" style="flex:1;min-width:230px"><strong>Szálirány:</strong> X = a tábla száliránya (első méret); Y = a keresztirány (második méret). A „Szálirány kötelező” jelölésből kivett darabokat a program 90°-kal is elforgathatja.</div><button class="btn primary" data-action="run-nesting">Szabásterv készítése →</button></div></div></div>`;
   }
 
   // Guillotine cutting: every cut spans the entire CURRENT separated rectangle.
@@ -2186,26 +2186,38 @@
   }
   function computeNesting(){
     const parts=getParts();
-    // Munkalap-ellenőrzés: biztonságosan tiltsuk a nem létező 38 mm-es
-    // méreteket és a hosszirányú vágást igénylő részeket.
-    // Külön tesztkörnyezetben csak a kiszámító függvény fut; ezért a
-    // validálás saját, helyben meghatározott 38 mm-es ellenőrzés.
-    const badWorktop=(parts.rows||[]).find(r=>!r.skipped&&!r.error&&
-      Math.abs(Number(r.thickness)-38)<.001&&!(
-        Number(r.a)>0&&Number(r.a)<=4100.0001&&
-        [600,900].some(w=>Math.abs(Number(r.b)-w)<.001)));
-    if(badWorktop)return {error:
-      'A 38 mm-es munkalap mindig 4100 mm hosszú és 600 vagy 900 mm széles. '+
-      'Csak teljes szélességű, keresztirányú vágás engedett; az alkatrész '+
-      'szabásmérete ('+badWorktop.a+' × '+badWorktop.b+' mm) nem megfelelő. '+
-      'Ellenőrizd az élzárás miatti méretlevonást is.'};
+    // A munkalap kizárólag teljes szélességű keresztvágásból készül.
+    // Az anyagadatbázisban megadott X/Y méret az adott 38 mm-es
+    // alapanyag egyedi teljes táblamérete, hiányában 4100×600/900.
+    // Külön tesztkörnyezetben a katalógus-segéd hiányozhat.
+    const currentWorktopSize=r=>typeof worktop38CatalogSize==='function'?
+      worktop38CatalogSize(r):null;
+    const badWorktop=(parts.rows||[]).find(r=>{
+      if(r.skipped||r.error||Math.abs(Number(r.thickness)-38)>=.001)return false;
+      const size=currentWorktopSize(r);
+      return !(Number(r.a)>0&&Number(r.a)<=(size?.a??4100)+.0001&&
+        (size?Math.abs(Number(r.b)-size.b)<.001:
+          [600,900].some(w=>Math.abs(Number(r.b)-w)<.001)));
+    });
+    if(badWorktop){
+      const size=currentWorktopSize(badWorktop);
+      return {error:
+        'A 38 mm-es munkalapot az anyagadatbázisban megadott TELJES '+
+        'táblaszélességben kell hagyni. A választott alapanyag '+
+        (size?(size.a+' × '+size.b):( '4100 × 600 vagy 4100 × 900'))+
+        ' mm, a kért alkatrész pedig '+badWorktop.a+' × '+badWorktop.b+
+        ' mm. Ellenőrizd a színt, a tábla X/Y méretét és az élzárás miatti méretlevonást.'};
+    }
     const stock38=[...(state.boards||[]),...(typeof remnantCatalog==='undefined'?[]:
       remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id)))];
     if(stock38.some(b=>Number(b.qty)>0&&Math.abs(Number(b.thickness)-38)<.001&&
-      !(Math.abs(Number(b.a)-4100)<.001&&
-        [600,900].some(w=>Math.abs(Number(b.b)-w)<.001))))
-      return {error:'A 38 mm-es munkalaptábla csak 4100 × 600 vagy 4100 × 900 mm lehet. '+
-        'Javítsd a kézzel megadott készletméretet.'};
+      !(typeof validWorktop38Stock==='function'?
+        validWorktop38Stock(b):
+        (Math.abs(Number(b.a)-4100)<.001&&
+          [600,900].some(w=>Math.abs(Number(b.b)-w)<.001)))))
+      return {error:'A 38 mm-es készlettábla mérete eltér az anyagadatbázisban megadott '+
+        'hosszúságtól/szélességtől (vagy az alapértelmezett 4100 × 600/900 mm-től). '+
+        'Javítsd a színt vagy a kézi készletméretet.'};
     // MINDEN választható elrendezés ugyanazt a gépen elfogadott
     // teljes szélességű, kétmenetes csíkos szabást alkalmazza.
     // A gépi és anyagtakarékos mód saját keresése változatlan.
@@ -2432,7 +2444,7 @@
   }
   function suggestedBoardSize(bin){
     if(!bin?.placements?.length)return null;
-    // Munkalapból nem ajánlható kisebb méret: mindig 4100×600/900×38.
+    // Munkalapnál nincs kisebb készletjavaslat: a teljes, katalógusból vett táblaszélességet megtartjuk.
     if(Math.abs(Number(bin.thickness)-38)<.001)return null;
     const trim=Math.max(0,Number(bin.trim)||0),kerf=Math.max(0,Number(state.kerf)||0);
     let neededX,neededY;
