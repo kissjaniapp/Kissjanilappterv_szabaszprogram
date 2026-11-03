@@ -86,13 +86,16 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.ok(bin.placements.some(p=>near(p.x,15)),'a kész darab a felülre igazított csík végszélezése után kezdődik');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
- assert.match(xml,/Lunghezza="4100[.]00"/);
- assert.match(xml,/Larghezza="600[.]00"/);
- assert.match(xml,/<Cut T="X" Dim="1072[.]50"/);
- assert.equal((xml.match(/<Cut T="X" Dim="1000[.]00"/g)||[]).length,3,
-   'a kész munkalapdarabok mind egyetlen gépállásban X-keresztvágással készülnek');
- assert.doesNotMatch(xml,/<Cut T="(?:P|RY|Y|RX|U)"/,
-   'a munkalapnál nem lehet Y csík és utána RX/X elfordítás');
+ assert.match(xml,/Lunghezza="600[.]00"/);
+ assert.match(xml,/Larghezza="4100[.]00"/);
+ assert.match(xml,/Swap="1"/);
+ assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
+ assert.match(xml,/<Cut T="RY" Dim="1072[.]50"/);
+ assert.equal((xml.match(/<Cut T="Y" Dim="1000[.]00"/g)||[]).length,3,
+   'a kész munkalapdarabok minden esetben teljes szélességű Y vágással készülnek');
+ assert.equal((xml.match(/<Cut T="F" Dim="0[.]00"/g)||[]).length,3);
+ assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/,
+   'a munkalapnál nincs csík-visszaforgatás és második X menet');
 });
 test('a szabásztérképen csak a fő tábla marad, második menetes miniábra és alsó anyagfelirat nélkül',()=>{
  const data=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,
