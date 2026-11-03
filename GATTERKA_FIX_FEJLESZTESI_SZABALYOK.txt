@@ -35,9 +35,17 @@ kód és a régi szabályzat külön visszaállítható.
    vízszintesek; hosszanti keskenyítés tilos.
 7. A különböző vastagságú és színű anyagok külön táblákra
    kerülnek. A gépi parancsok száma táblánként legfeljebb 99.
-8. A szabásrajzon az 1. menet és a 90° utáni 2. menet külön
-   ábrán jelenjen meg; a tényleges vágásvonalak VÍZSZINTESEK.
-   Az alkatrészek függőleges határa nem jelölhet gépi vágást.
+8. A szabástérképen kizárólag a FŐ tábla rajza látható.
+   A tábla ALATT nem lehet 2. menetes kis szemléltető ábra,
+   "Tábla anyaga" sor vagy külön területkihasználtsági sor.
+   Az 1. és a 90°-os 2. menet GÉPI PROGRAMLOGIKÁJA továbbra is él.
+   Az alkatrészek függőleges határa nem jelölhet külön gépi vágást.
+9. A 38 mm-es munkalap FŐ térképén látszódjon a tényleges
+   legelső, teljes 600/900 mm szélességű, VÍZSZINTES piros vágás,
+   "1. VÁGÁS" címkével. A kiinduló anyag mérete a térkép
+   FEJLÉCÉBEN szerepeljen: 4100 × 600 × 38 mm vagy
+   4100 × 900 × 38 mm. Az adott tábla színe/anyaga és a
+   gépi xMix/xPrg kód nem változik emiatt.
 
 GÉPI EXPORT – FIX RENDSZER
 ------------------------
@@ -66,9 +74,16 @@ KÖTELEZŐ FEJLESZTÉSI MÓDSZER
   gyártási sorrend: afa801b9
   xMix/xPrg: c393cfd9
   Windows Mentés másként: f49fe3b5
-- A külön kétmenetes rajz jelenlegi ujjlenyomata: 368a35f0.
+- A külön kétmenetes rajz jelenlegi ujjlenyomata: bffa3920.
 - Módosítás előtt és után: oldalak/anyagszínek/méretek,
   sorrend, gépi XML és a teljes tesztcsomag ellenőrzése.
 - Újabb vágási sorrend vagy xMix/xPrg módosítás kizárólag
   tulajdonosi kifejezett utasításra, előző verzió mentésével.
 - Éles üzem előtt gépi próbaszabás és ellenőrzés kötelező.
+
+RAJZI MEGJELENÍTÉS ARCHÍVUMA
+--------------------------
+Korábbi, kétmenetes miniábrákat is tartalmazó főág: archive/before-board-map-cleanup-20261103
+Ez az archív ág nem módosítható; szükség esetén ebből visszaállítható
+az előző SVG/PNG megjelenítés. A négy FIX fizikai/gépi/mentési kódrész
+változatlan maradt.

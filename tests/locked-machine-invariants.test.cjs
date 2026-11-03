@@ -2,6 +2,9 @@
 // A 2026-11-03-án engedélyezett ÚJ gépi szabály rögzített ujjlenyomatai.
 // Az EREDETI teszt és régi kód archiválva: docs/archivum/2026-11-03-regi-vagasi-logika/
 // A korábbi négy ujjlenyomat közül a két engedélyezetten módosított blokk új értéket kapott.
+// A 2026-11-03-i külön képi tisztítás is jóváhagyott:
+// archivált előző rajzi kód: archive/before-board-map-cleanup-20261103
+// Az új SVG/PNG ujjlenyomat a miniábrák nélküli FŐ szabásztérképet védi.
 // További módosítás csak tulajdonosi engedéllyel.
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
@@ -27,8 +30,8 @@ const locked=[
   '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','c393cfd9'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
- ['Kötelező kétmenetes vízszintes szabásrajz és 90°-os csíkforgatás',
-  '  function svgBoardSize(bin,compact=false){','\n  function trimmingSteps(','368a35f0']
+ ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
+  '  function svgBoardSize(bin,compact=false){','\n  function trimmingSteps(','bffa3920']
 ];
 for(const [name,begin,end,expected] of locked){
  test(name+' változatlan',()=>{
