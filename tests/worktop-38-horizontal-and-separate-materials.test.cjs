@@ -41,18 +41,17 @@ function plan(rows,boards=[]){
     const bin=result.bins[i];
     const cuts=(xprgs[i].match(/<Cut /g)||[]).length;
     assert.ok(cuts<=99,'egy xPrg sem lépheti túl a 99 gépi parancsot');
+    // MUNKALAP ÉS BÚTORLAP azonos XPRG modellje:
+    // P + RY + csíkonként Y + RX + darabonként X + F.
+    assert.equal(cuts,bin.machine.commandCount,
+      'a munkalapnak és a bútorlapnak ugyanaz a kétmenetes parancsszámlálója');
     if(bin.thickness===38){
-      const actualCrossCuts=bin.cuts.filter(c=>c.stage==='cross').length;
       const finishedParts=bin.machine.strips.reduce((sum,strip)=>sum+strip.items.length,0);
-      // A munkalap XPRG-jében nincs fiktív Y csík és RX/X második menet.
-      // P + RY + a tényleges CROSS vágások Y parancsa + darabonként F.
-      assert.equal(cuts,2+actualCrossCuts+finishedParts,
-        'a 38 mm munkalap parancsszáma a kirajzolt vágások alapján számolandó');
-      assert.ok(cuts<=bin.machine.commandCount,
-        'az optimalizálási becslés biztonságosan felső korlát marad');
-    }else{
-      assert.equal(cuts,bin.machine.commandCount,
-        'a bútorlapok megszokott kétmenetes parancsszáma változatlan');
+      assert.equal(cuts,4+2*finishedParts,
+        'a munkalap pontosan egy Y/RX csíkot és készméretes X/F darabokat kap');
+      assert.equal((xprgs[i].match(/<Cut T="RX"/g)||[]).length,1);
+      assert.equal((xprgs[i].match(/<Cut T="Y"/g)||[]).length,1);
+      assert.equal((xprgs[i].match(/<Cut T="X"/g)||[]).length,finishedParts);
     }
     for(const placed of bin.placements){
       assert.equal(placed.part.thickness,bin.thickness);
