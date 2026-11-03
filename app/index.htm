@@ -2193,7 +2193,7 @@
     const currentWorktopSize=r=>typeof worktop38CatalogSize==='function'?
       worktop38CatalogSize(r):null;
     const badWorktop=(parts.rows||[]).find(r=>{
-      if(r.skipped||r.error||Math.abs(Number(r.thickness)-38)>=.001)return false;
+      if(r.skipped||r.error||!(Math.abs(Number(r.thickness)-38)<.001))return false;
       const size=currentWorktopSize(r);
       return !(Number(r.a)>0&&Number(r.a)<=(size?.a??4100)+.0001&&
         (size?Math.abs(Number(r.b)-size.b)<.001:
