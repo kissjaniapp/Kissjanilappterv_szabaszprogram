@@ -82,3 +82,20 @@ test('a felületen is látszik a szokli=1-2-3 IF példa',()=>{
   assert.match(html,/placeholder="szokli=1-2-3 vagy \[szokli\]==2"/);
   assert.match(html,/mindhárom esetben bekerül, 0-nál nem/);
 });
+
+test('a gépi táblakiosztásban 0-nál nincs szoklis alkatrész, 3-nál van',()=>{
+  const strip=section('  const STANDARD_BOARD=','  // Gyártási sorrend:');
+  const makeStripPlan=vm.runInNewContext('(function(){'+strip+';return makeStripPlan;})()',{
+    state:{trim:10,kerf:5,boards:[]},remnantCatalog:[]
+  });
+  for(const value of [0,3]){
+    const f=furniture('f',value),parts=engine([f]).getParts();
+    const plan=makeStripPlan(0,parts,'auto');
+    assert.equal(plan.failed.length,0);
+    const placed=plan.bins.flatMap(b=>b.placements.map(p=>p.part.name));
+    assert.equal(placed.includes('Minden szoklis kialakításhoz'),value===3);
+    assert.equal(placed.includes('Mindig'),true);
+    assert.equal(placed.includes('Csak szokli 2 esetén'),false);
+    assert.equal(placed.length,value===3?2:1);
+  }
+});
