@@ -1997,7 +1997,7 @@
   const colors=['#dcebdd','#e4ece2','#d8e8de','#e9e8d7','#d8e4ea','#eadfda','#dde6d3','#e9e1ea'];
   function svgBoardSize(bin,compact=false){
     // Fizikailag és a PNG-n is fekvő helyzetű a 4100 mm-es munkalap.
-    const rotated=!isWorktop38(bin.thickness)&&
+    const rotated=Math.abs(Number(bin.thickness)-38)>=.001&&
       (bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
     const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
     const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
@@ -2123,7 +2123,7 @@
   function suggestedBoardSize(bin){
     if(!bin?.placements?.length)return null;
     // Munkalapból nem ajánlható kisebb méret: mindig 4100×600/900×38.
-    if(isWorktop38(bin.thickness))return null;
+    if(Math.abs(Number(bin.thickness)-38)<.001)return null;
     const trim=Math.max(0,Number(bin.trim)||0),kerf=Math.max(0,Number(state.kerf)||0);
     let neededX,neededY;
     if(bin.machine?.strips?.length){
