@@ -88,8 +88,11 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.match(xml,/Lunghezza="600[.]00"/);
  assert.match(xml,/Larghezza="4100[.]00"/);
  assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
- assert.match(xml,/Cut T="RY" Dim="0[.]00"/);
- assert.match(xml,/Cut T="RX" Dim="1087[.]50"/);
+ assert.match(xml,/Cut T="RY" Dim="1087[.]50"/);
+ assert.doesNotMatch(xml,/Cut T="RX"/,'egymenetes munkalapnál nincs második menet');
+ assert.equal((xml.match(/<Cut T="Y"/g)||[]).length,
+   bin.cuts.filter(c=>c.stage==='cross').length,
+   'csak a rajzon szereplő keresztvágásokhoz tartozik Y parancs');
 });
 test('a szabásztérképen csak a fő tábla marad, második menetes miniábra és alsó anyagfelirat nélkül',()=>{
  const data=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,
