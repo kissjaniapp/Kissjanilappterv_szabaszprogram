@@ -11,7 +11,7 @@ munkaképes forrásfát tartalmazza. Érintetlenül megtartandó.
 
 A mappában az eredeti
 `GATTERKA_FIX_FEJLESZTESI_SZABALYOK_EREDETI.txt` és
-`locked-machine-invariants_EREDETI.test.cjs` fájl is megvan.
+`locked-machine-invariants_EREDETI.txt` fájl is megvan.
 
 A tulajdonos kifejezett engedélyével a 2026-11-03-as új rendszerben
 megváltozhatott a kisebb/maradék tábla első vágási távolsága és a
