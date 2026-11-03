@@ -246,6 +246,9 @@
     .custom-parameter-head{grid-template-columns:minmax(260px,1fr) auto}
     @media(max-width:980px){.custom-parameter-head{grid-template-columns:minmax(0,1fr) auto}}
     @media(max-width:560px){.custom-parameter-head{grid-template-columns:minmax(0,1fr)}}
+
+    .abs-value{white-space:nowrap;font-weight:700;border-left:2px solid var(--line,#d5ddd6);
+      padding-left:14px!important}
   </style>
 </head>
 <body>
@@ -1448,20 +1451,20 @@
     const rows=included.map(r=>{
       const f=r.furniture,part=r.part;
       const header=lastFurniture!==f.id?
-        '<tr class="furniture-part-group"><td colspan="5"><strong>'+
+        '<tr class="furniture-part-group"><td colspan="6"><strong>'+
         h(f.name||'Bútor')+'</strong></td></tr>':'';
       lastFurniture=f.id;
       const sides=part.edgeSides||sidesFromCode(r.edge);
       const sidesText=['x1','x2','y1','y2'].filter(side=>sides[side])
         .map(side=>side.toUpperCase()).join(', ');
       const edge=r.edge==='0-0'?'Nincs':
-        h(r.edge)+' · '+h(sidesText||'Élzárás')+
-        ' · '+nfmt(r.edgeThickness)+' mm ABS';
+        h(r.edge)+' · '+h(sidesText||'Élzárás');
+      const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
         '<td class="num">'+nfmt(r.originalA)+' × '+nfmt(r.originalB)+' mm</td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
-        '<td>'+edge+'</td></tr>';
+        '<td>'+edge+'</td><td class="abs-value">'+abs+'</td></tr>';
     }).join('');
     const warning=summary.errors.length?
       '<div class="notice error top-gap"><strong>Hibás IF vagy alkatrészképlet:</strong> '+
@@ -1476,8 +1479,8 @@
       'A táblázat csak olvasható.</div></div></div>'+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th>'+
       '<th>Készméret (X × Y)</th><th>Szabásméret (X × Y)</th>'+
-      '<th>Darabszám</th><th>Élzárás</th></tr></thead><tbody>'+
-      (rows||'<tr><td colspan="5" class="muted">Nincs alkatrész.</td></tr>')+
+      '<th>Darabszám</th><th>Élzárás jelölése</th><th>ABS vastagság</th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="6" class="muted">Nincs alkatrész.</td></tr>')+
       '</tbody></table></div></div>';
     const enabled=!!included.length&&!summary.errors.length;
     return intro('04 / ALKATRÉSZ-ÖSSZESÍTŐ','Alkatrész-összesítő',
@@ -1885,9 +1888,18 @@
       const boardFeed=m.feed;
       const stripAxis=boardFeed==='x'?'x':'y',crossAxis=boardFeed==='x'?'y':'x';
       const dimension=(rect,axis)=>axis==='y'?rect.w:rect.h;
-      // Az első vágás a TELJES tábla beadási mérete - szélezés:
-      // pl. Y gépállásban 2800 - 10 = 2790 mm a fűrész középvonala.
-      // A gép innen visszafelé halad, a levágott csík pedig kitolható.
+      // ÚJ, JÓVÁHAGYOTT SZABÁLY (2026-11-03):
+      // Egész alaptábla: változatlan, teljes tábla mínusz szélezés.
+      // Kisebb/maradék tábla és 38 mm munkalap: a szabandó csíkok
+      // a tábla FELSŐ részén helyezkednek el. Előbb a legalsó
+      // alkatrész alatti vonalon választjuk le az alsó maradékot,
+      // azután alulról felfelé levágjuk a csíkokat. 2. menetben
+      // minden leválasztott csíkot 90°-kal elforgatunk; ott ugyanígy
+      // a csík TETEJÉRE igazítjuk a darabokat, és alulról felfelé
+      // szabjuk méretre. Az xPrg Y/RX/X művelettípusok megmaradnak.
+      const topAligned=isWorktop38(bin.thickness)||
+        (!bin.automatic&&bin.a*bin.b<STANDARD_BOARD.a*STANDARD_BOARD.b-eps);
+      m.topAligned=topAligned;
       let remaining={id:bin.trim?'R0':'S1',x:0,y:0,w:bin.a,h:bin.b};
       bin.nextSection=bin.trim?1:2;
       function splitAt(parent,axis,before,stage,stripNo,options={}){
@@ -1910,8 +1922,23 @@
         });
         return {start:first,end:second};
       }
-      if(bin.trim){
-        const fullFeed=dimension(remaining,stripAxis);
+      const fullFeed=dimension(remaining,stripAxis);
+      // A felsőre húzott csíkok teljes helyigénye, a felső ráhagyással.
+      // A leválasztott alsó rész egyben marad, nem kapunk külön
+      // szükségtelen csíkot. A kerf középvonala a szakasz határától
+      // fél vágásrésnyire esik, ezt az exportnak is átadjuk.
+      const firstStageTopCut=bin.trim+m.feedUsed;
+      const canCutBottom=topAligned&&
+        fullFeed-firstStageTopCut>=kerf+eps;
+      if(canCutBottom){
+        const cut=splitAt(remaining,stripAxis,firstStageTopCut,
+          'head-trim',0,{trim:true,size:fullFeed-firstStageTopCut-kerf,
+            side:'end',edge:'alsó egyben maradó maradék'});
+        remaining=cut.start;
+        m.firstCutPosition=firstStageTopCut+kerf/2;
+        m.firstTrimDistance=fullFeed-m.firstCutPosition;
+        m.firstCutRule='top-aligned-bottom';
+      }else if(bin.trim){
         const firstCut=splitAt(remaining,stripAxis,fullFeed-bin.trim-kerf/2,
           'head-trim',0,{trim:true,size:bin.trim,side:'end',edge:'beadási vég'});
         remaining=firstCut.start;
@@ -1936,8 +1963,23 @@
       // közeli szél hulladékát, így a maradék egyben, nagyobban megmarad.
       for(const strip of m.strips){
         let segment=strip.section;
-        if(bin.trim){
-          const fullCross=dimension(segment,crossAxis);
+        // A 90°-kal elforgatott csíkon a darabok összhosszát
+        // felülre igazítjuk. A legalsó darab alatti első vágás
+        // választja le az egyben megmaradó alsó maradékot.
+        const fullCross=dimension(segment,crossAxis);
+        const wantedCut=bin.trim+strip.usedLength;
+        const canCutBelowParts=topAligned&&
+          fullCross-wantedCut>=kerf+eps;
+        if(canCutBelowParts){
+          const first=splitAt(segment,crossAxis,wantedCut,
+            'cross-head-trim',strip.index,
+            {trim:true,size:fullCross-wantedCut-kerf,
+              side:'end',edge:'csík alsó maradéka'});
+          segment=first.start;
+          strip.firstCutPosition=wantedCut+kerf/2;
+          strip.firstTrimDistance=fullCross-strip.firstCutPosition;
+          strip.firstCutRule='top-aligned-bottom';
+        }else if(bin.trim){
           const first=splitAt(segment,crossAxis,fullCross-bin.trim-kerf/2,
             'cross-head-trim',strip.index,{trim:true,size:bin.trim,side:'end',edge:'csíkvég'});
           segment=first.start;
@@ -2738,12 +2780,17 @@
           '" Rip="1" ID="'+cuts.length+'" />');
       };
       add('P',feedLength);
-      add('RY',bin.trim);
+      // A vágástípus és XML formátum nem változik: a RY a teljes
+      // tábla beadott éle és az első vágás közepe közötti távolság.
+      // Egész táblán ez a régi szélezés, kisebb tábla/munkalap
+      // esetén a fent elhelyezett alkatrészmező alatti vágás.
+      add('RY',m.firstTrimDistance??bin.trim);
       for(const strip of m.strips){
         if(!Number.isFinite(strip.width)||strip.width<=0)
           throw Error((i+1)+'. tábla: hibás csíkszélesség.');
         add('Y',strip.width);
-        add('RX',bin.trim);
+        // A 90°-kal visszaadott csík első, alsó vágásának pozíciója.
+        add('RX',strip.firstTrimDistance??bin.trim);
         for(const part of strip.items||[]){
           if(!Number.isFinite(part.along)||part.along<=0||
              !Number.isFinite(part.breadth)||part.breadth<=0||
