@@ -86,9 +86,9 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.ok(bin.placements.some(p=>near(p.x,15)),'a kész darab a felülre igazított csík végszélezése után kezdődik');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
- assert.match(xml,/Lunghezza="600[.]00"/);
- assert.match(xml,/Larghezza="4100[.]00"/);
- assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
+ assert.match(xml,/Lunghezza="4100[.]00"/);
+ assert.match(xml,/Larghezza="600[.]00"/);
+ assert.match(xml,/<Cut T="P" Dim="4100[.]00"/);
  assert.match(xml,/Cut T="RY" Dim="0[.]00"/);
  assert.match(xml,/Cut T="Y" Dim="600[.]00"/);
  assert.match(xml,/Cut T="RX" Dim="1072[.]50"/);
