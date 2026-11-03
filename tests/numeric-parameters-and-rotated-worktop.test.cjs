@@ -112,5 +112,5 @@ test('a 38 mm munkalap minden vágásvonala vízszintes a 90°-os rajzon',()=>{
     assert.notEqual(Number(cut[1]),Number(cut[3]),'nem valós vízszintes vágás');
   }
   assert.equal(bin.machine.feed,'x','az xPrg gépi parancssora változatlan');
-  assert.ok(bin.cuts.every(c=>c.stage==='cross'),'nem keletkezhet hosszanti alábontás');
+  assert.ok(bin.cuts.every(c=>c.stage==='cross'||c.stage==='cross-head-trim'),'csak teljes szélességű keresztvágás lehet, az alsó első vágással együtt');
 });
