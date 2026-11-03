@@ -38,12 +38,13 @@ function exportXml(bins){
  return exporter(bins,'Konyha','Fehér',5,'03/11/2026')
    .files.filter(([name])=>name.endsWith('.xPrg')).map(([,xml])=>xml);
 }
-test('az előző elfogadott nagy alaptábla sorrendje és RY/RX marad',()=>{
+test('a kevés alkatrészes teljes nagytáblán is felső igazítás és alsó első vágás érvényes',()=>{
  const out=make([], [part(964,200,3)], 'y',12);
  const bin=out.bins[0];
- assert.equal(bin.machine.topAligned,false);
+ assert.equal(bin.machine.topAligned,true);
  assert.equal(bin.a,2800);assert.equal(bin.b,2070);
- assert.equal(bin.machine.firstCutPosition,2798-10); // 2800 - 12 = 2788
+ assert.equal(bin.machine.firstCutRule,'top-aligned-bottom');
+ assert.ok(near(bin.machine.firstCutPosition,bin.trim+bin.machine.feedUsed+2.5));
 });
 test('1620×785 maradékon a legalsó csík alatt az első vágás, fent a darabok',()=>{
  const out=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,qty:1,materialColor:'Fehér'}],
@@ -84,8 +85,9 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.ok(bin.placements.some(p=>near(p.x,0)),'darab a csík tetején');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
- assert.match(xml,/Lunghezza="4100[.]00"/);
- assert.match(xml,/Larghezza="600[.]00"/);
+ assert.match(xml,/Lunghezza="600[.]00"/);
+ assert.match(xml,/Larghezza="4100[.]00"/);
+ assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
  assert.match(xml,/Cut T="RY" Dim="0[.]00"/);
  assert.match(xml,/Cut T="RX" Dim="1087[.]50"/);
 });
