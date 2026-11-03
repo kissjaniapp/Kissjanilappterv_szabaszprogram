@@ -1655,6 +1655,10 @@
           const separator=m.strips.length?kerf:0;
           const remaining=m.feedSize-m.feedUsed-separator-bw;
           const longRemaining=m.crossSize-len;
+          // Az utolsó 5 mm-es rés a változatlan végigvágó modellben
+          // külön hosszanti 'rip' műveletet válthatna ki. Munkalapnál
+          // ilyenkor inkább következő táblát kell nyitni.
+          if(worktop&&remaining>eps&&remaining<=kerf+eps)continue;
           if(isValidRemainder(remaining)&&isValidRemainder(longRemaining)&&
              (m.commandCount??2)+4<=MAX_SAFE_XPRG_COMMANDS){
             // Új csík: Y, RX, X, F, plusz a táblánkénti P, RY.
