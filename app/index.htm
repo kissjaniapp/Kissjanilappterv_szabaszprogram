@@ -1137,7 +1137,10 @@
   function getParts(){
     let rows=[],errors=[];
     for(const f of state.furnitures){
-      migrateLegacyCustomParts(f);
+      // Migráció csak a régi, beágyazott paraméteres alkatrészeknél kell.
+      // Az egyszerű alkatrészlista az eddigi kiszámítóval is működőképes.
+      if(Array.isArray(f.customParameters)&&f.customParameters.some(rule=>
+        Array.isArray(rule.parts)&&rule.parts.length))migrateLegacyCustomParts(f);
       const thickness=Number(f.t)||18;
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       for(const part of f.parts){
@@ -1925,15 +1928,22 @@
     const parts=getParts();
     // Munkalap-ellenőrzés: biztonságosan tiltsuk a nem létező 38 mm-es
     // méreteket és a hosszirányú vágást igénylő részeket.
-    const badWorktop=parts.rows.find(r=>!r.skipped&&!r.error&&!validWorktop38Part(r));
+    // Külön tesztkörnyezetben csak a kiszámító függvény fut; ezért a
+    // validálás saját, helyben meghatározott 38 mm-es ellenőrzés.
+    const badWorktop=(parts.rows||[]).find(r=>!r.skipped&&!r.error&&
+      Math.abs(Number(r.thickness)-38)<.001&&!(
+        Number(r.a)>0&&Number(r.a)<=4100.0001&&
+        [600,900].some(w=>Math.abs(Number(r.b)-w)<.001)));
     if(badWorktop)return {error:
       'A 38 mm-es munkalap mindig 4100 mm hosszú és 600 vagy 900 mm széles. '+
       'Csak teljes szélességű, keresztirányú vágás engedett; az alkatrész '+
       'szabásmérete ('+badWorktop.a+' × '+badWorktop.b+' mm) nem megfelelő. '+
       'Ellenőrizd az élzárás miatti méretlevonást is.'};
-    const stock38=[...state.boards,...(typeof remnantCatalog==='undefined'?[]:
+    const stock38=[...(state.boards||[]),...(typeof remnantCatalog==='undefined'?[]:
       remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id)))];
-    if(stock38.some(b=>Number(b.qty)>0&&!validWorktop38Stock(b)))
+    if(stock38.some(b=>Number(b.qty)>0&&Math.abs(Number(b.thickness)-38)<.001&&
+      !(Math.abs(Number(b.a)-4100)<.001&&
+        [600,900].some(w=>Math.abs(Number(b.b)-w)<.001))))
       return {error:'A 38 mm-es munkalaptábla csak 4100 × 600 vagy 4100 × 900 mm lehet. '+
         'Javítsd a kézzel megadott készletméretet.'};
     // MINDEN választható elrendezés ugyanazt a gépen elfogadott
@@ -1998,7 +2008,7 @@
   const colors=['#dcebdd','#e4ece2','#d8e8de','#e9e8d7','#d8e4ea','#eadfda','#dde6d3','#e9e1ea'];
   function svgBoardSize(bin,compact=false){
     // Fizikailag és a PNG-n is fekvő helyzetű a 4100 mm-es munkalap.
-    const rotated=Math.abs(Number(bin.thickness)-38)>=.001&&
+    const rotated=Math.abs(Number(bin.thickness??0)-38)>=.001&&
       (bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
     const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
     const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
