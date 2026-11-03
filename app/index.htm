@@ -2785,7 +2785,7 @@
       // ezért Lunghezza és P = 600/900 mm, Larghezza = 4100 mm.
       // A normál bútorlapok igazolt x/y gépállás szerinti értelmezése
       // és a gépi parancsok sorrendje változatlan marad.
-      const worktop=isWorktop38(bin.thickness);
+      const worktop=Math.abs(Number(bin.thickness)-38)<.001;
       if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
         throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
       const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
