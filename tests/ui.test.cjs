@@ -100,20 +100,22 @@ test('a kezdőképernyőn Kiss János szerzői és tulajdonosi felirata jelenik 
  assert.match(html,/A program Kiss János tulajdona/);
  assert.match(html,/brand-name\{font-size:20px;font-weight:600/);
 });
-test('a bútoradatok, alkatrészek, anyagkészlet és a szabásterv külön képernyő',()=>{
+test('a bútoradatok, alkatrészek, összesítő, anyagkészlet és szabásterv külön képernyő',()=>{
  const start=html.indexOf('function steps(){');
  const end=html.indexOf('\n  function renderNav()',start);
  const nav=html.slice(start,end);
- for(const page of ["'furniture'","'parts'","'stock'","'nesting'"])
+ for(const page of ["'furniture'","'parts'","'parts-review'","'stock'","'nesting'"])
   assert.ok(nav.includes(page),page);
  assert.match(html,/state\.active==='parts'\?furnitureView\('parts'\)/);
  assert.match(html,/if\(stage==='parts'\)/);
  assert.match(html,/data-action="open-parts"/);
  assert.match(html,/state\.active='parts'/);
- assert.match(html,/return intro\('01 \/ BÚTOR ADATAI'/);
- assert.match(html,/return intro\('02 \/ ALKATRÉSZEK'/);
- assert.match(html,/intro\('03 \/ ANYAGKÉSZLET'/);
- assert.match(html,/intro\('04 \/ SZABÁSTERV'/);
+ assert.match(html,/state\.active==='parts-review'\?partsReviewView\(\)/);
+ assert.match(html,/function partsReviewView\(\)/);
+ assert.match(html,/return intro\('02 \/ BÚTOR ADATAI'/);
+ assert.match(html,/return intro\('03 \/ ALKATRÉSZEK'/);
+ assert.match(html,/intro\('05 \/ ANYAGKÉSZLET'/);
+ assert.match(html,/intro\('06 \/ SZABÁSTERV'/);
 });
 test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átírni',()=>{
  // A mentési panel az összes szabástábla anyagszínét jelzi,
