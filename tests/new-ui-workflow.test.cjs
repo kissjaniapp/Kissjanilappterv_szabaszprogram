@@ -5,15 +5,15 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const path=require('node:path');
 const html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
-test('mind a hét oldal a mindig látható lépésfejlécben szerepel',()=>{
+test('mind a nyolc oldal a mindig látható lépésfejlécben szerepel',()=>{
  const start=html.indexOf('function steps(){'),end=html.indexOf('\n  function renderNav()',start);
  assert.ok(start>0&&end>start);
  const func=vm.runInNewContext('('+html.slice(start,end).trim()+')',{
   state:{active:'parts'},projectScreen:'editor',h:s=>String(s)
  });
  const result=func();
- assert.equal((result.match(/class="step /g)||[]).length,7);
- for(const page of ['library','furniture','parts','stock','nesting','labels','save'])
+ assert.equal((result.match(/class="step /g)||[]).length,8);
+ for(const page of ['library','furniture','parts','parts-review','stock','nesting','labels','save'])
   assert.match(result,new RegExp(page));
  assert.match(html,/#top-steps\{position:sticky/);
 });
