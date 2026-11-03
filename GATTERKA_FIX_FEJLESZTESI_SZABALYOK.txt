@@ -1,65 +1,74 @@
-GATTERKA SZABÁSZPROGRAM – KÖTELEZŐ FEJLESZTÉSI SZABÁLYOK
-====================================================
+GATTERKA SZABÁSZPROGRAM – ÚJ, FIX VÁGÁSI SZABÁLYOK
+Érvényes: 2026-11-03-tól, a tulajdonos kifejezett jóváhagyásával
+========================================================
 
-Projekt: https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
+ELŐZŐ VERZIÓ – VISSZAÁLLÍTÁSI PONT
+--------------------------------
+GitHub ág: archive/legacy-cutting-logic-before-20261103
+Konkrét commit: 9c616ba1a37eba977554fd02eaebff70f11cbc3c
+Régi szabályzat: docs/archivum/2026-11-03-regi-vagasi-logika/GATTERKA_FIX_FEJLESZTESI_SZABALYOK_EREDETI.txt
+Régi ujjlenyomat-teszt: docs/archivum/2026-11-03-regi-vagasi-logika/locked-machine-invariants_EREDETI.test.cjs
+Az új szabályt ne változtasd vissza véletlenül! Az archív ágból a
+kód és a régi szabályzat külön visszaállítható.
 
-ALAPELV: A MÁR ELFOGADOTT GÉPI VÁGÁSI SORRENDHEZ ÉS AZ xMix/xPrg
-MENTÉSI RENDSZERHEZ NEM NYÚLUNK.
+ÚJ FIX VÁGÁSI ELV
+----------------
+1. Minden tényleges gépi vágás VÍZSZINTES a képernyőn és a külön
+   menetenkénti ábrán. A tábla/csík forgatásait külön ábrázold.
+2. Teljes, nagy alaptáblán (2800×2070 mm, 18 mm standard; valamint
+   az ilyen teljes méretű kézi tábla) a régi vágásindítás és
+   a szélezési távolság számítása MARAD.
+3. KISEBB / MARADÉK TÁBLA esetén a csíkok a tábla FELSŐ részéhez
+   igazodnak. A LEGELSŐ teljes vágás az alsó, utolsó csík
+   alatt, a szükséges alkatrészmező határán történik.
+   Az alsó maradék egyben marad; a csíkok utána alulról felfelé
+   kerülnek levágásra. A fűrészrés figyelembevétele kötelező.
+4. A levágott csíkokat az ELSŐ MENET végeztével mind vissza kell
+   kérni, és egyenként 90°-KAL ELFORGATNI.
+5. A 90°-kal elforgatott csíkon a készítendő alkatrészek ismét
+   a csík TETEJÉRE igazodnak. Az első vágás a legalsó
+   alkatrész alatt történik, majd alulról felfelé történik
+   a méretre szabás. A maradékot ne vágd feleslegesen.
+6. A 38 mm munkalap kizárólag 4100×600 vagy 4100×900 mm.
+   A teljes eredeti szélesség megmarad. A csík/alkatrész
+   vágási műveletek a gépi és rajzi tájolásnak megfelelően
+   vízszintesek; hosszanti keskenyítés tilos.
+7. A különböző vastagságú és színű anyagok külön táblákra
+   kerülnek. A gépi parancsok száma táblánként legfeljebb 99.
+8. A szabásrajzon az 1. menet és a 90° utáni 2. menet külön
+   ábrán jelenjen meg; a tényleges vágásvonalak VÍZSZINTESEK.
+   Az alkatrészek függőleges határa nem jelölhet gépi vágást.
 
-1. FIX: GÉPI VÁGÁSI SORREND (MÓDOSÍTÁSI TILALOM)
--------------------------------------------------
-- Az első gépi vágás helye és kiszámítása.
-- A teljes hosszban végigmenő (guillotine) vágások logikája.
-- A csíkok levágásának, visszaadásának és keresztvágásának sorrendje.
-- Az alkatrészek kivágásának és a fizikai műveleteknek a sorrendje.
-- A szálirány, a tábla orientációja és a gépi koordináták összhangja.
-- A szabásterv rajzának és a gépi vágási parancsoknak az egyezése.
-
-Tilos e működést véletlenül is megváltoztatni optimalizálás, refaktorálás,
-hibajavítás, megjelenítési módosítás vagy más fejlesztés mellékhatásaként.
-
-2. FIX: xMix/xPrg EXPORT ÉS WINDOWS MENTÉS (MÓDOSÍTÁSI TILALOM)
----------------------------------------------------------------
-- Az xMix és xPrg gépi fájlok szerkezete, adattartalma és sorrendje.
-- A gépi parancsok, méretek, koordináták és a fájlhivatkozások kezelése.
-- A Windows „Mentés másként”, célmappa-választás, fájlelnevezés.
-- Az elérési utak megadása és a véletlen felülírás elkerülése.
-- A bevált és elfogadott működés kompatibilitása a vágógéppel.
-
-Ezeket a részeket csak a tulajdonos előzetes, egyértelmű, kifejezetten
-ezekre a részekre vonatkozó engedélyével lehet módosítani.
-
-3. KÖTELEZŐ MUNKAMÓDSZER
--------------------------
-- Fejlesztés előtt ellenőrizd az aktuális GitHub-főágat és a kért feladatot.
-- Kizárólag a kért funkciókat változtasd; a működő funkciókat őrizd meg.
-- Lehetőleg külön fejlesztési ágon dolgozz, a főágat ne kockáztasd.
-- A gépi vágási és mentési programrészeket változatlanul tartsd.
-- Módosítás után futtasd a teszteket, és ellenőrizd a rögzített invariánsokat.
-- A gépi működéshez vagy mentéshez nyúló igénynél előbb kérj külön jóváhagyást.
-- Az általános „javítsd”, „fejleszd”, „folytasd”, „optimalizáld” kérések
-  nem jelentenek felhatalmazást a fix részek módosítására.
-
-4. ELLENŐRZÉS
---------------
-A következő tesztben rögzített négy kódszakasz változatlan kell maradjon:
-  tests/locked-machine-invariants.test.cjs
-
-A négy védett blokk:
-  - Fizikai csíkvágás, első vágás és visszaadás
-  - Kötelező kétmenetes gyártási sorrend
-  - xMix/xPrg fájlformátum és parancssor
-  - Mentés másként – Windows helyi mentés
-
-TILOS a védőtesztet, a korábban elfogadott ujjlenyomatokat, vagy a
-teszthatárokat pusztán azért módosítani, hogy egy véletlen eltérés átmenjen.
-Egy sikeres teszt sem helyettesíti a gép előtti ellenőrzést.
-
-5. A SZABÁLY ELSŐBBSÉGE
+GÉPI EXPORT – FIX RENDSZER
 ------------------------
-Ha egy későbbi fejlesztési kérés ütközik a fentiekkel, az ütközést
-jelezni kell. A fix szabályt csak a tulajdonos külön, kifejezett
-felhatalmazása írhatja felül.
+Az xMix/xPrg XML szerkezete, fájlelnevezése, útvonala és a
+Windows natív Mentés másként megmarad.
+A már jóváhagyott változtatásban a RY és RX első vágási
+TÁVOLSÁGA kisebb táblán és visszaforgatott csíkon az új
+geometria szerint eltérhet a régi, fix szélezési mérettől.
+A teljes nagytábla RY/RX számítása változatlan.
+Az engedélyezett új értékeket a gépen PRÓBASZABÁSSAL kell
+ellenőrizni; a GitHub tesztek nem bizonyítják a tényleges
+SCM WinCut/xPrg futtatási viselkedését.
 
-RÖVID VÁLTOZAT:
-„A rögzített vágási sorrendhez és az xMix/xPrg mentéshez nem nyúlok.”
+ALKATRÉSZ-ÖSSZESÍTŐ
+-------------------
+Az élzárás helye és kódja külön oszlopban szerepel,
+az ABS VASTAGSÁGA külön oszlopban, egyértelműen.
+
+KÖTELEZŐ FEJLESZTÉSI MÓDSZER
+---------------------------
+- Az ÚJ működés a fix; egy későbbi hibajavítás nem
+  változtathatja vissza hallgatólagosan a régire.
+- A jelenlegi tesztek ujjlenyomatai:
+  tests/locked-machine-invariants.test.cjs
+  finalize: 99575204
+  gyártási sorrend: afa801b9
+  xMix/xPrg: c393cfd9
+  Windows Mentés másként: f49fe3b5
+- A külön kétmenetes rajz jelenlegi ujjlenyomata: 368a35f0.
+- Módosítás előtt és után: oldalak/anyagszínek/méretek,
+  sorrend, gépi XML és a teljes tesztcsomag ellenőrzése.
+- Újabb vágási sorrend vagy xMix/xPrg módosítás kizárólag
+  tulajdonosi kifejezett utasításra, előző verzió mentésével.
+- Éles üzem előtt gépi próbaszabás és ellenőrzés kötelező.
