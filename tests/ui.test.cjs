@@ -116,7 +116,9 @@ test('a bútoradatok, alkatrészek, anyagkészlet és a szabásterv külön kép
  assert.match(html,/intro\('04 \/ SZABÁSTERV'/);
 });
 test('a kezdőképernyő anyagszínét a gépi export nem engedi a végén átírni',()=>{
- assert.match(html,/getFurniture\(\)\?\.materialColor/);
+ // A mentési panel az összes szabástábla anyagszínét jelzi,
+ // de a felhasználó ott nem írhat át egyetlen gépi anyagkódot sem.
+ assert.match(html,/result\.bins\.map\(bin=>bin\.materialColor/);
  assert.match(html,/const color=String\(f\?\.materialColor/);
  assert.match(html,/machineExportBundle\(/);
  assert.match(html,/showDirectoryPicker/);
