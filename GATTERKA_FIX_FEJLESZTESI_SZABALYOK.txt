@@ -119,3 +119,30 @@ A korábbi szabályzat és védőteszt a következő mappában szerepel:
 docs/archivum/2026-11-03-teljes-tabla-felso-igazitasa-elott/
 Tilos módosítani a jelenlegi fizikai szabást, xPrg exportot és
 szabásztérképet kifejezett új tulajdonosi utasítás nélkül.
+
+2026-11-03 – MUNKALAP XPRG RAJZI VÁGÁSOKHOZ IGAZÍTÁSA (ÚJ TULAJDONOSI UTASÍTÁS)
+----------------------------------------------------------------------------------
+A tulajdonos megerősítette: a 38 mm munkalap XPRG-je a már helyes
+szabástérképen látható tényleges vágásokat adja ki. A 4100×600/900 munkalap
+egy teljes szélességű keresztvágási menet: az első alsó keresztvágás RY
+távolsága a visszaforgatott csík eredeti tényleges első távolsága,
+a további Y utasítások csak a bin.cuts CROSS vágásaiból készülnek.
+Nincs mesterséges teljes szélességű csík-vágás és RX/X/U második menet
+a 38 mm munkalap XPRG-jében. Az utolsó, eredeti táblaszélen végződő
+darabhoz nem szabad képzeletbeli vágást exportálni.
+A fejléc P/Lunghezza = 600/900, Larghezza = 4100 marad.
+A 18 mm bútorlapok kétmenetes xPrg exportja, a fizikai szabásterv,
+a teljes szabástérkép, a Windows Mentés másként és az xMix útvonalai
+nem változtak. A gépi XPRG védő-ujjlenyomata: 73337891.
+Az előző teljes forrás külön archivált GitHub-ága:
+archive/before-worktop-xprg-part-sorting-20261103.
+A munkalap új parancsainak SCM gépi ellenőrzése szükséges, a
+forrás- és tesztellenőrzés önmagában nem bizonyítja a gépi megfelelést.
+
+2026-11-03 – ALKATRÉSZSOROK EGYÉRMŰ SORRENDJE
+----------------------------------------------
+Az Alkatrészek oldalon az alkatrészsor a ⠿ fogantyúval egérrel megfogható,
+és az adott bútoron belül előrébb/hátrébb ejthető. Az átrendezett
+parts[] lista a projekt/széria meglévő mentésébe bekerül.
+Másik bútorba nem lehet véletlenül áttolni alkatrészt; a képletek,
+vastagság, szín, alkatrésztartalom és gépi optimalizáló változatlan.
