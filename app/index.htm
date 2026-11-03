@@ -2010,8 +2010,10 @@
   }
   const colors=['#dcebdd','#e4ece2','#d8e8de','#e9e8d7','#d8e4ea','#eadfda','#dde6d3','#e9e1ea'];
   function svgBoardSize(bin,compact=false){
-    // Fizikailag és a PNG-n is fekvő helyzetű a 4100 mm-es munkalap.
-    const rotated=Math.abs(Number(bin.thickness??0)-38)>=.001&&
+    // A 38 mm-es munkalapot a képernyőn 90°-kal fordítva ábrázoljuk:
+    // 4100 mm függőlegesen, 600/900 mm vízszintesen. Így a változatlan
+    // xPrg gépi keresztvágások a rajzon kizárólag vízszintesen látszanak.
+    const rotated=Math.abs(Number(bin.thickness??0)-38)<.001||
       (bin.machine?.feed||result?.cutAxis||state.cutDirection)==='y';
     const pad=compact?40:80,top=rotated?(compact?90:140):pad,extra=compact?22:35;
     const boardWidth=rotated?bin.b:bin.a,boardHeight=rotated?bin.a:bin.b;
@@ -2050,10 +2052,10 @@
         return `<g><title>${cutNum}. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#bd805b" stroke-width="4" stroke-dasharray="16 10" fill="none"/><circle cx="${lx}" cy="${ly}" r="16" fill="#fff8ef" stroke="#b87c59" stroke-width="2"/><text x="${lx}" y="${ly+6}" font-family="Arial" font-size="17" font-weight="700" text-anchor="middle" fill="#915c3e">${cutNum}</text></g>`;
       }
       if(rotated){
-        // A Y irányú szabásvonal vízszintes lesz az elfordított lapon,
-        // a fentről történő kezdést külön, lefelé mutató nyíl jelzi.
+        // Elfordított munkalapnál az eredeti Y-tengelyű keresztvágás
+        // vízszintessé válik, ezért a cím tényleges gépi tengelyt ír.
         const markX=x+dx*.83,markY=y+dy*.83;
-        return `<g><title>1. vágás · Y tengely · ${nfmt(cut.length)} mm · kezdés felülről</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
+        return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm · elfordított nézet</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
       }
       const mx=x+dx*.69,my=y+dy*.69;
       const head=cut.axis==='x'?`M${mx+18} ${my-13}L${mx} ${my}L${mx+18} ${my+13}`:`M${mx-13} ${my-18}L${mx} ${my}L${mx+13} ${my-18}`;
@@ -2064,13 +2066,16 @@
     const t=rect(trim,trim,bin.a-2*trim,bin.b-2*trim);
     const trimBoundary=trim>0?`<rect x="${t.x}" y="${t.y}" width="${t.a}" height="${t.b}" stroke="#b97f58" stroke-width="2" stroke-dasharray="12 8" fill="none"/>`:'';
     const entryX=tx+boardWidth-Math.min(145,Math.max(45,boardWidth*.12));
-    const startingArrow=rotated?`<g><title>Kezdővágás felülről lefelé</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="#a84a27">KEZDŐVÁGÁS FELÜLRŐL ↓</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
+    const is38Worktop=Math.abs(Number(bin.thickness??0)-38)<.001;
+    const startingArrow=rotated?`<g><title>${is38Worktop?'A munkalap vágásai vízszintesen történnek':'Kezdővágás felülről lefelé'}</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${is38Worktop?16:25}" font-weight="800" fill="#a84a27">${is38Worktop?'CSAK VÍZSZINTES VÁGÁS':'KEZDŐVÁGÁS FELÜLRŐL ↓'}</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
     const name=h(bin.name),allUsed=bin.used/(bin.a*bin.b)*100;
     const boardMaterial=h(String(bin.materialColor||
       bin.placements?.find(p=>p.part?.materialColor)?.part?.materialColor||'Nincs megadva').trim());
     const boardMaterialLabel=boardMaterial+' · '+nfmt(bin.thickness)+' mm';
-    const horizontalLabel=rotated?`${nfmt(bin.b)} mm · Y: keresztirány ↔`:`${nfmt(bin.a)} mm · X: szálirány ↔`;
-    const verticalLabel=rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
+    const horizontalLabel=is38Worktop?`${nfmt(bin.b)} mm · teljes szélesség ↔`:
+      rotated?`${nfmt(bin.b)} mm · Y: keresztirány ↔`:`${nfmt(bin.a)} mm · X: szálirány ↔`;
+    const verticalLabel=is38Worktop?`${nfmt(bin.a)} mm · munkalap hossza ↕`:
+      rotated?`${nfmt(bin.a)} mm · X: szálirány ↕`:`${nfmt(bin.b)} mm · Y: kereszt`;
     const dimensionTop=`<path d="M${tx} ${ty-27}H${tx+boardWidth} M${tx} ${ty-37}V${ty-17} M${tx+boardWidth} ${ty-37}V${ty-17}" stroke="#728478" fill="none" stroke-width="2"/><text x="${tx+boardWidth/2}" y="${ty-34}" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${horizontalLabel}</text>`;
     const dimensionSide=`<path d="M${tx-28} ${ty}V${ty+boardHeight} M${tx-37} ${ty}H${tx-18} M${tx-37} ${ty+boardHeight}H${tx-18}" fill="none" stroke="#728478" stroke-width="2"/><text x="${tx-36}" y="${ty+boardHeight/2}" transform="rotate(-90 ${tx-36} ${ty+boardHeight/2})" text-anchor="middle" font-family="Arial,sans-serif" fill="#4a6555" font-size="25" font-weight="700">${verticalLabel}</text>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}<text x="${w/2}" y="${hgt-11}" font-family="Arial,sans-serif" text-anchor="middle" font-size="17" fill="#668173">${name} · ${bin.placements.length} db · ${nfmt(allUsed)}% területi kihasználtság</text><text x="${w/2}" y="${hgt-40}" font-family="Arial,sans-serif" text-anchor="middle" font-size="23" font-weight="700" fill="#234335">Tábla anyaga: ${boardMaterialLabel}</text></svg>`;
@@ -2199,7 +2204,7 @@
     // a szabásterv automatikusan elkészül. Kézi újraszámolás nem szükséges.
     if(!result)result=computeNesting();
     const run='';
-    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. <strong>38 mm-es munkalap:</strong> mindig 4100 mm-es vízszintes él, 600/900 mm teljes szélességű keresztvágással, hosszanti szabás nélkül.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. <strong>38 mm-es munkalap:</strong> a rajzon 90°-kal elforgatva (600/900 mm vízszintes, 4100 mm függőleges), kizárólag vízszintes keresztvágással. A gépi xPrg export változatlan.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
     <div style="align-self:center;flex:0 0 auto"><button class="btn primary" data-action="refresh-nesting" title="A választott tájolással és elrendezéssel újraszámolja a táblákat">⟳ Elrendezés frissítése</button></div></div></div></div>`;
     let body='';
     if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><span class="muted small">A terv az adatok megadásakor automatikusan elkészül.</span><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}
@@ -2220,7 +2225,7 @@
         <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
         <div class="panel-body"><div class="board-tabs">${result.bins.map((bin,i)=>`<button class="board-tab ${i===state.selectedBoard?'active':''}" data-action="select-board" data-index="${i}">Tábla ${i+1} <span style="opacity:.7">· ${nfmt(bin.a)}×${nfmt(bin.b)}×${nfmt(bin.thickness)} · ${h(bin.materialColor||'—')}</span></button>`).join('')}</div>
           <div class="display-board" style="margin-top:17px"><div><div class="drawing-area">${svgBoard(b)}</div>
-            <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${Math.abs(Number(b.thickness)-38)<.001?'38 mm munkalap · 4100 mm vízszintesen · teljes szélességű keresztvágás':
+            <div class="legend" style="margin-top:12px"><span><i></i> Alkatrész</span><span><i class="trim"></i> Maradék / szél</span><span>${Math.abs(Number(b.thickness)-38)<.001?'38 mm munkalap · tábla 90°-kal elforgatva · csak vízszintes keresztvágás':
   (b.machine?.feed||result.cutAxis)==='y'?'Elfordított nézet: X ↕ szálirány · Y ↔ keresztirány · első vágás felülről':'X ↔ szálirány · Y ↕ keresztirány'} · szaggatott: szélezési határ</span></div></div>
             <div class="board-meta"><h3>Tábla összesítő</h3><p class="muted small">${h(b.name)}</p>
               <div class="rowmeta"><span>Anyagméret</span><b>${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)}</b></div>
