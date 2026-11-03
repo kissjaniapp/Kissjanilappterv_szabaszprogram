@@ -146,3 +146,27 @@ Az Alkatrészek oldalon az alkatrészsor a ⠿ fogantyúval egérrel megfogható
 parts[] lista a projekt/széria meglévő mentésébe bekerül.
 Másik bútorba nem lehet véletlenül áttolni alkatrészt; a képletek,
 vastagság, szín, alkatrésztartalom és gépi optimalizáló változatlan.
+
+2026-11-03 – 38 MM MUNKALAP: RY EGYSZERI SZÉLEZÉSSEL (KIFEJEZETT UTASÍTÁS)
+--------------------------------------------------------------------------
+A 38 mm-es, 4100 × 600/900 mm munkalap első XPRG vágásának
+RY mérete: ELSŐ ALKATRÉSZ SZABÁSI HOSSZA + EGYSZERI SZÉLEZÉS.
+Példa: 600 mm alkatrész, 10 mm szélezés -> RY=610 mm.
+Ezután külön Y=600 mm vágás készíti a darabot végleges méretre.
+A többi munkalap-alkatrészhez szintén Y készméretre vágás és F zárás
+tartozik. 0 mm szélezésnél nincs ugyanott két képzeletbeli vágás:
+az első RY már a kész vágás, csak az azt követő alkatrészek kapnak Y-t.
+Az XPRG-ben mindegyik művelet a FŐ szabástérképen tényleges vágásként
+szerepel: első ráhagyásos vágás, majd a készméretes keresztvágások.
+A 600/900 mm-es eredeti munkalapszélességet nem szabad szélezni,
+a szélezés kizárólag a 4100 mm-es hosszirányban egyszeri végráhagyás.
+A fűrészrés helyét a darabok közt külön számoljuk, a nyers munkalap
+hosszába a szélezési ráhagyásnak és valamennyi vágásrésnek bele kell
+férnie. A 18 mm bútorlapok gépi sorrendje és exportja változatlan.
+P/Lunghezza 600/900, Larghezza 4100 változatlan.
+Az xMix, Windows natív Mentés másként, fájlnevek/útvonalak FIXEK.
+ÚJ védő-ujjlenyomatok: finalize 3afdc9ea, XPRG 1888dce4.
+Visszaállítható főági előzmény:
+archive/before-worktop-ry-single-trim-20261103
+A munkalap első RY/Y vágását és a fűrészrés-értelmezést tényleges
+gépi szárazpróbával ellenőrizni kell az éles gyártás előtt.
