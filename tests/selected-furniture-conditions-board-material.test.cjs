@@ -85,7 +85,7 @@ test('A névfelajánlás saját paraméternél is működik, de bútoronként sz
   assert.match(html,/selected\.parts/);
   assert.match(html,/partReferenceSuggestions\(el\)/);
 });
-test('Az SVG szabástervben az anyag neve és a lapvastagság is megjelenik',()=>{
+test('A fő SVG szabástérkép alján nincs anyagsor, a munkalap kiinduló mérete felül látható',()=>{
   const code=region('function svgBoardSize(bin,compact=false){','\n  function trimmingSteps(');
   const draw=vm.runInNewContext('(function(){'+code+';return svgBoard;})()',{
     result:null,state:{cutDirection:'auto'},colors:['#eeeeee'],
@@ -93,6 +93,10 @@ test('Az SVG szabástervben az anyag neve és a lapvastagság is megjelenik',()=
   });
   const svg=draw({a:2800,b:2070,thickness:18,materialColor:'Freya',trim:12,
     name:'Új tábla',used:0,placements:[],cuts:[]});
-  assert.match(svg,/Tábla anyaga: Freya · 18 mm/);
+  assert.doesNotMatch(svg,/Tábla anyaga:/);
+  assert.doesNotMatch(svg,/2[.] menet ·/);
+  const worktop=draw({a:4100,b:900,thickness:38,materialColor:'Munkalap',trim:0,
+    name:'Munkalap',used:0,placements:[],cuts:[]});
+  assert.match(worktop,/Kiinduló munkalap: 4100 × 900 × 38 mm/);
   assert.match(html,/const svg=svgBoard\(bin\)/,'a PNG ugyanebből az SVG-ből készül');
 });
