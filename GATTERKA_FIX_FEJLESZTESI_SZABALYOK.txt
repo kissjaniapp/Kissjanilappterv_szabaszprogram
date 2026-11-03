@@ -198,3 +198,30 @@ archive/before-unified-worktop-board-cutting-20261103
 Az RY/RX gépi referenciaélhez viszonyított megvalósítását, az
 első és második menet összhangját KÖTELEZŐ tényleges próbaszabással
 ellenőrizni; teszteredmény önmagában nem elég.
+
+2026-11-03 – VÁGÁSI SORREND VÉGLEG FIX; CSAK A MUNKALAP XPRG FEJLÉCE JAVÍTHATÓ
+-------------------------------------------------------------------------------
+A tulajdonos megerősítette, hogy MINDEN jelenlegi fizikai vágási sorrend JÓ,
+ezért a makeStripPlan/finalize, buildProductionSequence, a fő szabástérkép,
+valamint a bútorlap gépi parancssora VÁLTOZTATHATATLAN. A következő új
+kérés kizárólag a már kiszámított munkalap XPRG-KIMENETÉNEK javítása.
+A hibát a korábbi exportban a kizárólag 38 mm-es munkalapra alkalmazott
+Lunghezza/Larghezza/P FELCSERÉLÉS okozta:
+  hibás:   Lunghezza=600/900, Larghezza=4100, P=600/900
+  javított: Lunghezza=4100, Larghezza=600/900, P=4100
+A JÓVÁHAGYOTT BÚTORLAPOS EXPORTÁLÁSI SZABÁLYT kell minden táblán
+EGYSÉGESEN alkalmazni: x gépállás = Lunghezza/P: a, Larghezza: b;
+y gépállás = Lunghezza/P: b, Larghezza: a.
+Munkalapnál a gépi állás x; az első menet Y=600 vagy 900 mm,
+a második menet RX és X darabolása és az összes fizikai vágás
+ELRENDEZÉSE változatlan. A 600/900 mm hosszúságú valós
+keresztvágás nem azonos a fejléc 4100 mm-es Lunghezzájával.
+Az xPrg XML-szerkezet, RY/Y/RX/X/F típusok és összes Dim érték
+(kivéve a fejléc és P) szintén VÁLTOZTATHATATLAN.
+Az xMix, fájlnevek, teljes Windows Mentés másként funkció FIX.
+VÉDETT UJJLENYOMATOK: fizikai finalize 1e0ac4b9,
+gyártási sorrend afa801b9, xPrg-export 7d1632e5,
+Windows mentés f49fe3b5, fő SVG 86d21042.
+Visszaállítási pont: archive/locked-good-cut-order-before-worktop-xprg-header-20261103
+A gépi tényleges értelmezést próbaszabás/szárazpróba nélkül
+nem szabad késztermeléshez hitelesítettnek tekinteni.
