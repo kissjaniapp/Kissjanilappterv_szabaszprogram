@@ -41,17 +41,24 @@ function plan(rows,boards=[]){
     const bin=result.bins[i];
     const cuts=(xprgs[i].match(/<Cut /g)||[]).length;
     assert.ok(cuts<=99,'egy xPrg sem lépheti túl a 99 gépi parancsot');
-    // MUNKALAP ÉS BÚTORLAP azonos XPRG modellje:
-    // P + RY + csíkonként Y + RX + darabonként X + F.
-    assert.equal(cuts,bin.machine.commandCount,
-      'a munkalapnak és a bútorlapnak ugyanaz a kétmenetes parancsszámlálója');
     if(bin.thickness===38){
-      const finishedParts=bin.machine.strips.reduce((sum,strip)=>sum+strip.items.length,0);
-      assert.equal(cuts,4+2*finishedParts,
-        'a munkalap pontosan egy Y/RX csíkot és készméretes X/F darabokat kap');
-      assert.equal((xprgs[i].match(/<Cut T="RX"/g)||[]).length,1);
-      assert.equal((xprgs[i].match(/<Cut T="Y"/g)||[]).length,1);
-      assert.equal((xprgs[i].match(/<Cut T="X"/g)||[]).length,finishedParts);
+      // Munkalap: csak a FŐ térkép valódi keresztvágásai, P/RY/Y/F.
+      // Soha nem fordul el a tábla RX/X/U második menet miatt.
+      const finishedParts=bin.machine.strips[0].items.length;
+      const physical=bin.cuts.slice().sort((a,b)=>a.order-b.order);
+      const firstIsPart=physical[0].stage==='cross';
+      const yCuts=physical.filter(c=>c.stage==='cross').length-Number(firstIsPart);
+      assert.equal(cuts,2+yCuts+finishedParts,
+        'P + RY + a további tényleges Y vágások + alkatrészenként F');
+      assert.equal((xprgs[i].match(/<Cut T="RY"/g)||[]).length,1);
+      assert.equal((xprgs[i].match(/<Cut T="Y"/g)||[]).length,yCuts);
+      assert.equal((xprgs[i].match(/<Cut T="F"/g)||[]).length,finishedParts);
+      assert.doesNotMatch(xprgs[i],/<Cut T="(?:RX|X|U)"/);
+      assert.ok(cuts<=bin.machine.commandCount,
+        'az optimalizáló parancskorlátja konzervatív marad');
+    }else{
+      assert.equal(cuts,bin.machine.commandCount,
+        'a bútorlapok bevált gépi parancssora változatlan');
     }
     for(const placed of bin.placements){
       assert.equal(placed.part.thickness,bin.thickness);
@@ -93,9 +100,9 @@ test('250 darab 38 mm-es munkalaprész sem hoz létre hosszanti vágást',()=>{
   assert.ok(result.bins.every(bin=>bin.machine.feed==='x'&&
     bin.cuts.every(c=>(c.stage==='cross'||c.stage==='cross-head-trim')&&c.length===bin.b)));
   assert.ok(xprgs.every(s=>!s.includes('T="U"')));
-  assert.ok(xprgs.every(s=>/Lunghezza="4100[.]00"/.test(s)&&
-    /Larghezza="600[.]00"/.test(s)&&
-    /<Cut T="P" Dim="4100[.]00"/.test(s)));
+  assert.ok(xprgs.every(s=>/Lunghezza="600[.]00"/.test(s)&&
+    /Larghezza="4100[.]00"/.test(s)&&
+    /<Cut T="P" Dim="600[.]00"/.test(s)));
 });
 test('hibás kézi 38 mm-es tábla és hibás alkatrészméret visszautasítva',()=>{
   const engine=strip({trim:10,kerf:5,boards:[],selectedRemnantIds:[]});
