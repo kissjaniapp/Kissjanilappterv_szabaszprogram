@@ -81,14 +81,16 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.equal(bin.machine.topAligned,true);
  assert.equal(bin.machine.feed,'x');
  assert.equal(strip.firstCutRule,'top-aligned-bottom');
- assert.ok(near(strip.firstCutPosition,3012.5));
+ assert.ok(near(strip.firstCutPosition,1012.5),
+   'az első RY vágás az első 1000 mm-es darab + 10 mm szélezés');
  assert.ok(bin.placements.some(p=>near(p.x,0)),'darab a csík tetején');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
  assert.match(xml,/Lunghezza="600[.]00"/);
  assert.match(xml,/Larghezza="4100[.]00"/);
  assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
- assert.match(xml,/Cut T="RY" Dim="1087[.]50"/);
+ assert.match(xml,/Cut T="RY" Dim="1010[.]00"/);
+ assert.match(xml,/Cut T="Y" Dim="1000[.]00"/);
  assert.doesNotMatch(xml,/Cut T="RX"/,'egymenetes munkalapnál nincs második menet');
  assert.equal((xml.match(/<Cut T="Y"/g)||[]).length,
    bin.cuts.filter(c=>c.stage==='cross').length,
@@ -117,7 +119,7 @@ test('38 mm-es munkalapon első vágás és kiinduló 4100×600 mm forrásméret
  assert.doesNotMatch(svg,/2[.] menet/);
  assert.doesNotMatch(svg,/Tábla anyaga:/);
  const lines=[...svg.matchAll(/<path d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)" stroke="#(?:c45b34|bd805b)"/g)];
- assert.equal(lines.length,3);
+ assert.equal(lines.length,4,'az RY ráhagyásos vágás után külön készméretre vágás kell');
  for(const c of lines)assert.ok(near(c[2],c[4]),'csak vízszintes munkalapvágás');
  assert.ok(near(lines[0][2],bin.cuts[0].x1+140),'az első jelölt vágás a tényleges gépi helyen van');
 });
