@@ -103,8 +103,10 @@ test('a 38 mm munkalap minden vágásvonala vízszintes a 90°-os rajzon',()=>{
   const svg=functions.svgBoard(bin);
   assert.match(svg,/CSAK VÍZSZINTES VÁGÁS/);
   assert.doesNotMatch(svg,/KEZDŐVÁGÁS FELÜLRŐL/);
-  const lines=[...svg.matchAll(/<path d="M([\d.]+) ([\d.]+)L([\d.]+) ([\d.]+)" stroke="#(?:c45b34|bd805b)" stroke-width="(?:8|4)"/g)];
-  assert.ok(lines.length>=4,'a valós vágások megjelennek');
+  // A két gépi menet most KÜLÖN rajzon van, így a munkalap
+  // három méretre vágásához három vízszintes vágásvonal jelenik meg.
+  const lines=[...svg.matchAll(/<path d="M([\d.]+) ([\d.]+)L([\d.]+) ([\d.]+)" stroke="#(?:c45b34|bd805b)" stroke-width="(?:8|4|3)"/g)];
+  assert.ok(lines.length>=3,'a második menet vízszintes vágásai megjelennek');
   for(const cut of lines){
     assert.equal(Number(cut[2]),Number(cut[4]),'függőleges vágás jelenik meg');
     assert.notEqual(Number(cut[1]),Number(cut[3]),'nem valós vízszintes vágás');
