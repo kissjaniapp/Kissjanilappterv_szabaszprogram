@@ -2802,21 +2802,21 @@
       // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      // A 38 mm munkalap 4100 mm-es irányban helyezkedik el,
-      // de a GÉP egyetlen VÍZSZINTES keresztvágáshoz a teljes 600/900
-      // mm széles oldalt kapja P/Lunghezza értékként. Ha P=4100
-      // és RX/X darabolás készül, a WinCut elfordítja a munkalapot,
-      // és nem a szabástérkép vízszintes vágásait hajtja végre.
-      // A 18 mm bútorlap fejléce és kétmenetes kódja marad FIX.
+      // A WinCut valódi fejléce: Lunghezza = hossz (X irány),
+      // Larghezza = szélesség (Y irány). A 4100×600/900 munkalapnál
+      // a 4100-as Larghezza gépi 402-es szélességhibát okozott.
+      // A 4100×600/900 mm munkalap egyetlen X irányú keresztvágási
+      // SOR, nem P→Y csík és NEM visszaforgatott RX/X menet!
+      // Az eredeti bútorlapos x/y gépállás-értelmezés változatlan.
       const worktop=Math.abs(Number(bin.thickness)-38)<.001;
       if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
         throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
-      const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
+      const feedLength=m.feed==='x'?bin.a:bin.b;
       const headerLength=feedLength;
-      const headerWidth=worktop?bin.a:(m.feed==='x'?bin.b:bin.a);
+      const headerWidth=m.feed==='x'?bin.b:bin.a;
       if(worktop&&(m.feed!=='x'||bin.cuts.some(c=>c.length>0&&
-           Math.abs(c.length-feedLength)>.001)))
-        throw Error((i+1)+'. tábla: a munkalap vágáshossza eltér a 600/900 mm-es valódi vágástól.');
+           Math.abs(c.length-headerWidth)>.001)))
+        throw Error((i+1)+'. tábla: a munkalap vágásainak teljes szélessége nem 600/900 mm.');
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
@@ -2848,14 +2848,14 @@
         cuts.push('\t\t<Cut T="'+type+'" Dim="'+num(value)+
           '" Rip="1" ID="'+cuts.length+'" />');
       };
-      add('P',feedLength);
       if(worktop){
-        // 38 MM MUNKALAP – EGYETLEN GÉPI BEADÁSI IRÁNY, FORGATÁS NÉLKÜL.
-        // A már jóváhagyott bin.cuts fizikailag vízszintes vágásait
-        // exportáljuk a TÉNYLEGES sorrendben. Nem nyitunk kitalált
-        // 600/900 mm-es csíkot RY=0 és Y=600/900 utasításokkal;
-        // RX/X második menetet sem kérünk, amely a gépben elfordítaná
-        // a 4100 mm hosszú munkalapot. A bútorlapos else ág FIX.
+        // A GÉP SZÉLESSÉGE 600/900, HOSSZA 4100. Az X az
+        // eredeti 4100 mm-es hossz mentén készít keresztvágást.
+        // A WinCut kézikönyve szerint X-szel közvetlenül
+        // kezdődhet program: P/Y kényszercsíkozás és RX
+        // utáni 90°-os visszaforgatás NÉLKÜL.
+        // A bin.cuts fizikai sorrendje és az összes vágási
+        // koordináta VÁLTOZTATHATATLAN; csak a kódolás új.
         const strip=m.strips[0];
         if(m.feed!=='x'||m.strips.length!==1||
            Math.abs(Number(strip.width)-Number(bin.b))>.001||
@@ -2868,32 +2868,29 @@
            physical.slice(1).some(c=>c.stage!=='cross'))
           throw Error((i+1)+'. tábla: a munkalap XPRG-vágásai nem egyeznek a jóváhagyott térképpel.');
         const first=physical[0];
-        // RY: az első keresztvágás a 4100 mm-es tábla túlsó
-        // végétől számított távolsága. A fizikailag lezajló legelső
-        // vágás középvonala a bin.cuts[0].x1; a méret ugyanaz, amit
-        // a bútorlapos visszaforgatott csík RX értéke képviselt.
+        // Az első, a 4100-as alaplap túlsó végétől számított
+        // teljes szélességű vágás helye. A korábbi RY=3081.5
+        // Y tisztításként hibás koordinátatengelyre került.
         const firstDistance=bin.a-Number(first.x1);
         if(!Number.isFinite(firstDistance)||firstDistance<0||
            firstDistance>bin.a)
-          throw Error((i+1)+'. tábla: hibás első keresztvágási távolság.');
-        add('RY',firstDistance);
+          throw Error((i+1)+'. tábla: hibás első munkalap-keresztvágási távolság.');
+        add('X',firstDistance);
         let completed=0;
-        // Ha a legelső RY egyben az első kész darab keresztvágása,
-        // akkor nincs hozzá külön, nem létező Y művelet.
         if(first.stage==='cross'){add('F',0);completed++;}
         for(const cut of physical.slice(1)){
-          add('Y',cut.pieceSize);
+          add('X',cut.pieceSize);
           add('F',0);
           completed++;
         }
         if(completed>(strip.items||[]).length)
-          throw Error((i+1)+'. tábla: több darabvágás, mint alkatrész.');
-        // A táblaszélen záródó utolsó darabhoz nem teszünk
-        // mesterséges vágást: csak F jelöli a kész alkatrészt.
+          throw Error((i+1)+'. tábla: több készrevágás, mint munkalap-alkatrész.');
         while(completed<(strip.items||[]).length){add('F',0);completed++;}
+
       }else{
-        // A bútorlap teljes, kétmenetes RY/Y/RX/X/U/F exportja
+        // A bútorlap teljes, kétmenetes P/RY/Y/RX/X/U/F exportja
         // szándékosan, byte-ról byte-ra változatlan marad.
+        add('P',feedLength);
         add('RY',m.firstTrimDistance??bin.trim);
         for(const strip of m.strips){
           if(!Number.isFinite(strip.width)||strip.width<=0)
