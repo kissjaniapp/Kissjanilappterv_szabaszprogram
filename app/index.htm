@@ -1607,9 +1607,13 @@
     if(!validWorktop38Stock(b))return null;
     const thickness=Number(b.thickness??18);
     const trim=isWorktop38(thickness)?0:Math.max(0,Number(state.trim)||0);
+    // A 600/900 mm-es gyári szélesség változatlan, a munkalap
+    // egyszeri VÉGszélezése külön adat (nem a négyoldali bin.trim).
+    const worktopEdgeTrim=isWorktop38(thickness)?Math.max(0,Number(state.trim)||0):0;
     const a=Number(b.a),height=Number(b.b);
     if(!Number.isFinite(a)||!Number.isFinite(height)||!Number.isFinite(thickness)||a<=2*trim||height<=2*trim||thickness<=0)return null;
     return {id:b.id||'standard',index,name:b.name||'Maradék tábla',a,b:height,thickness,automatic,trim,
+      worktopEdgeTrim,
       materialColor:String(b.materialColor||'').trim(),
       free:[{id:'S1',x:trim,y:trim,w:a-2*trim,h:height-2*trim}],nextSection:2,placements:[],cuts:[],used:0};
   }
@@ -1747,9 +1751,8 @@
     const breadth=(p,axis=sortingFeed)=>axis==='x'?p.b:p.a;
     const along=(p,axis=sortingFeed)=>axis==='x'?p.a:p.b;
     const feedCandidates=bin=>{
-      // A 38 mm-es munkalapnál a 4100 mm-es ÉL vízszintes a gépen.
-      // Ez az x gépállás: P és Lunghezza = 4100, a 600/900 mm-es
-      // teljes szélességű csíkból X keresztvágásokkal készülnek a darabok.
+      // A 38 mm-es munkalap nem forgatható, egyetlen teljes 600/900 mm
+      // szélességű vágássorban készül; a gépi P/Lunghezza = 600/900 mm.
       if(isWorktop38(bin.thickness))return !bin.machine||bin.machine.feed==='x'?['x']:[];
       if(bin.machine)return [bin.machine.feed];
       if(feed==='auto')return ['x','y'];
@@ -1783,7 +1786,10 @@
         for(const localFeed of feedCandidates(bin)){
         const m=bin.machine||{feed:localFeed,feedUsed:0,strips:[],
           feedSize:(localFeed==='x'?bin.b:bin.a)-2*bin.trim-(bin.trim?kerf/2:0),
-          crossSize:(localFeed==='x'?bin.a:bin.b)-2*bin.trim-(bin.trim?kerf/2:0)};
+          // A kezdő RY ráhagyásos vágás és a készméretes Y között
+          // egyszeri végszélezés van, plusz egy további fűrészrés.
+          crossSize:(localFeed==='x'?bin.a:bin.b)-2*bin.trim-(bin.trim?kerf/2:0)-
+            (worktop?(Number(bin.worktopEdgeTrim)||0)+kerf:0)};
         const orientations=[{a:item.a,b:item.b,turned:false}];
         // Munkalap forgatása vagy hosszirányú keskenyítése tilos.
         if(!worktop&&item.rot&&item.a!==item.b)orientations.push({a:item.b,b:item.a,turned:true});
@@ -1889,6 +1895,73 @@
     function finalize(bin){
       const m=bin.machine;
       if(!m?.strips.length)return;
+
+      // MUNKALAP: a gép az első alkatrészből egyszeri szélezéssel
+      // NAGYOBB darabot választ le (RY = méret + szélezés), majd
+      // külön Y vágással készméretre szabja. A további darabok is Y
+      // készméretre vágást kapnak. A két első fizikai vágást a fő
+      // szabástérképen is rögzítjük; a bútorlapok kétmenetes kódja lent FIX.
+      if(isWorktop38(bin.thickness)){
+        const strip=m.strips[0],entries=strip?.items||[];
+        const edgeTrim=Number(bin.worktopEdgeTrim)||0;
+        if(m.feed!=='x'||m.strips.length!==1||
+           Math.abs(Number(strip.width)-Number(bin.b))>.001||
+           entries.some(e=>Math.abs(Number(e.breadth)-Number(bin.b))>.001))
+          throw Error('A munkalap csak egyetlen teljes szélességű sor lehet.');
+        if(edgeTrim>eps&&edgeTrim+eps<kerf)
+          throw Error('A munkalap végszélezése kisebb a fűrészrésnél.');
+        const needed=entries.reduce((sum,e)=>sum+Number(e.along),0)+
+          edgeTrim+entries.length*kerf;
+        if(!entries.length||needed>bin.a+eps)
+          throw Error('Nincs hely az egyszeri munkalap-szélezésnek és a készméretre vágásnak.');
+        strip.section={id:'S1',x:0,y:0,w:bin.a,h:bin.b};
+        m.topAligned=true;
+        m.firstCutRule=strip.firstCutRule='worktop-first-part-plus-one-trim';
+        const firstLength=Number(entries[0].along);
+        m.firstTrimDistance=strip.firstTrimDistance=firstLength+edgeTrim;
+        m.firstCutPosition=strip.firstCutPosition=firstLength+edgeTrim+kerf/2;
+        const addWorktopCut=(center,stage,pieceSize,isTrim)=>{
+          const order=bin.cuts.length+1;
+          bin.cuts.push({
+            axis:'y',x1:center,y1:0,x2:center,y2:bin.b,order,length:bin.b,
+            section:'S1',sectionX:0,sectionY:0,sectionW:bin.a,sectionH:bin.b,
+            offset:center,fromEdge:center-kerf/2,kerf,partSide:'start',
+            pieceSize,beforeSection:'S'+(2*order),afterSection:'S'+(2*order+1),
+            beforeSize:center-kerf/2,afterSize:bin.a-center-kerf/2,
+            kind:isTrim?'trim':'part',edge:isTrim?'egyszeri munkalap-végszélezés':'',
+            stage,stripIndex:strip.index
+          });
+        };
+        // A fejvágás az első készméretnél egy szélezéssel nagyobb.
+        // Szélezés = 0 esetén nincs kettős vágás ugyanazon a helyen.
+        if(edgeTrim>eps)
+          addWorktopCut(firstLength+edgeTrim+kerf/2,
+            'cross-head-trim',firstLength+edgeTrim,true);
+        let cursor=0;
+        for(let i=0;i<entries.length;i++){
+          const entry=entries[i],partLength=Number(entry.along);
+          if(i>0)cursor+=kerf;
+          const start=cursor;
+          if(i===0){
+            if(edgeTrim>eps)
+              addWorktopCut(start+partLength+kerf/2,'cross',partLength,false);
+            else
+              addWorktopCut(start+partLength+kerf/2,'cross-head-trim',partLength,false);
+          }else{
+            addWorktopCut(start+partLength+kerf/2,'cross',partLength,false);
+          }
+          bin.placements.push({
+            x:start,y:0,w:entry.realW,h:entry.realH,
+            realW:entry.realW,realH:entry.realH,part:entry.item,
+            turned:false,section:'S'+(10+i),stripIndex:strip.index,
+            completionStep:bin.cuts.length,finishCutIndex:bin.cuts.length-1
+          });
+          bin.used+=entry.item.a*entry.item.b;
+          cursor+=partLength;
+          if(i===0)cursor+=edgeTrim;
+        }
+        return;
+      }
       // A két menet táblánként az adott ütköztetési élt használja.
       const boardFeed=m.feed;
       const stripAxis=boardFeed==='x'?'x':'y',crossAxis=boardFeed==='x'?'y':'x';
@@ -2830,38 +2903,49 @@
           '" Rip="1" ID="'+cuts.length+'" />');
       };
       add('P',feedLength);
-      // A vágástípus és XML formátum nem változik: a RY a teljes
-      // tábla beadott éle és az első vágás közepe közötti távolság.
-      // Egész táblán ez a régi szélezés, kisebb tábla/munkalap
-      // esetén a fent elhelyezett alkatrészmező alatti vágás.
+      // A normál bútorlapok RY/RX/Y/X vágási logikája továbbra is FIX.
+      // A 38 mm-es munkalap egyetlen teljes szélességű menet:
+      // RY = első alkatrész kész szabásmérete + EGYSZERI végszélezés;
+      // utána Y = készméret, minden további alkatrészre is.
       if(worktop){
-        // A jóváhagyott munkalap térképén CSAK a teljes 600/900 mm
-        // szélességet átvágó, vízszintesnek rajzolt keresztvágások vannak.
-        // Az export a valós bin.cuts vágássorból indul, és nem ad hozzá
-        // egy képzeletbeli teljes szélességű csíkot és RX/X második menetet.
         const strip=m.strips[0];
         if(m.feed!=='x'||m.strips.length!==1||
            Math.abs(Number(strip.width)-Number(bin.b))>.001||
            (strip.items||[]).some(part=>Math.abs(part.breadth-bin.b)>.001))
           throw Error((i+1)+'. tábla: a munkalap nem egyetlen teljes szélességű sor.');
+        const items=strip.items||[],edgeTrim=Number(bin.worktopEdgeTrim)||0;
+        const firstSize=Number(items[0]?.along);
+        if(!items.length||!Number.isFinite(firstSize)||firstSize<=0)
+          throw Error((i+1)+'. tábla: hiányzik a munkalap első alkatrésze.');
+        if(edgeTrim>0&&edgeTrim+0.001<kerf)
+          throw Error((i+1)+'. tábla: a munkalap szélezése kisebb a fűrészrésnél.');
+        const expectedRy=firstSize+edgeTrim;
         const physical=bin.cuts.filter(c=>c.stage==='cross-head-trim'||c.stage==='cross')
           .slice().sort((a,b)=>(a.boardOrder??a.order)-(b.boardOrder??b.order));
-        if(physical.some(c=>c.axis!=='y'||Math.abs(c.length-feedLength)>.001))
-          throw Error((i+1)+'. tábla: az XPRG és a munkalap térképének vágásai eltérnek.');
-        const first=physical.find(c=>c.stage==='cross-head-trim');
-        if(first&&physical[0]!==first)
-          throw Error((i+1)+'. tábla: hibás a munkalap első vágási sorrendje.');
-        add('RY',first?(strip.firstTrimDistance??0):0);
+        const first=physical[0];
         const crossCuts=physical.filter(c=>c.stage==='cross');
-        if(crossCuts.length>(strip.items||[]).length)
-          throw Error((i+1)+'. tábla: hibás a munkalap vágásszáma.');
-        for(const cut of crossCuts){
-          add('Y',cut.pieceSize);
+        const expectedCrossCount=items.length-(edgeTrim>0?0:1);
+        if(!first||first.stage!=='cross-head-trim'||
+           physical.some(c=>c.axis!=='y'||Math.abs(c.length-feedLength)>.001)||
+           crossCuts.length!==expectedCrossCount||
+           Math.abs(Number(strip.firstTrimDistance)-expectedRy)>.001||
+           items.reduce((sum,e)=>sum+Number(e.along),0)+
+             edgeTrim+items.length*kerf>bin.a+.001)
+          throw Error((i+1)+'. tábla: a munkalap rajzi és XPRG-vágásai eltérnek.');
+        const expectedCuts=edgeTrim>0?items:items.slice(1);
+        if(crossCuts.some((cut,k)=>Math.abs(Number(cut.pieceSize)-
+            Number(expectedCuts[k].along))>.001))
+          throw Error((i+1)+'. tábla: hibás készméretre vágási sorrend.');
+        add('RY',expectedRy);
+        for(let k=0;k<items.length;k++){
+          const size=Number(items[k].along);
+          if(!Number.isFinite(size)||size<=0)
+            throw Error((i+1)+'. tábla: hibás munkalap-alkatrészméret.');
+          // Nulla szélezésnél a RY maga az első készre vágás;
+          // nem végzünk azonos helyen még egy képzeletbeli Y vágást.
+          if(k>0||edgeTrim>0)add('Y',size);
           add('F',0);
         }
-        // Az utolsó darab az eredeti felső táblaélhez érhet;
-        // a nem létező záróvágást az XPRG-be sem írjuk bele.
-        for(let n=crossCuts.length;n<(strip.items||[]).length;n++)add('F',0);
       }else{
         add('RY',m.firstTrimDistance??bin.trim);
         for(const strip of m.strips){
