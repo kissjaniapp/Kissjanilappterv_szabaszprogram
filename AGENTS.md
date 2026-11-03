@@ -21,3 +21,15 @@ módosítást követően már az ÚJ kód ujjlenyomatait védi; a régi ujjlenyo
 az archív tesztben olvashatók. Ne változtasd meg egyik szabályt vagy ujjlenyomatot
 sem újabb kifejezett jóváhagyás és előzetes verzióarchiválás nélkül.
 A tényleges xPrg gépi próbavágás szükséges, tesztfuttatás önmagában nem elegendő.
+
+## 2026-11-03 – a szabástérkép jóváhagyott tisztítása
+
+A felhasználó csak a fő táblarajzot kéri: a második menet alsó
+miniábrái és az alsó „Tábla anyaga” sor törölve. A 38 mm-es
+munkalap fő rajzán kötelező a vízszintes „1. VÁGÁS” és a
+kiinduló 4100 × 600/900 × 38 mm munkalapméret fejlécben.
+Ez csak megjelenítés; minden gépi, kétmenetes végigvágási és
+xMix/xPrg előállítási szabály FIX, továbbra is változatlan.
+Az előző megjelenítés visszaállítható az
+`archive/before-board-map-cleanup-20261103` GitHub-ágon.
+A megjelenítés aktuális ujjlenyomata: `bffa3920`.
