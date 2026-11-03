@@ -30,8 +30,12 @@ function part(a,b,qty=3,thickness=38){
     originalA:a,originalB:b,thickness,materialColor:'Fehér',
     edge:'0-0',edgeThickness:2,mill:false,millDepth:0,rot:false};
 }
-function generated(row,feed='auto'){
-  const plan=makeStripPlan(0,{rows:[row],errors:[],total:row.qty},feed);
+function generated(row,feed='auto',trim=10){
+  const solver=vm.runInNewContext('(function(){'+nestingSource+
+    ';return makeStripPlan;})()',{
+      state:{trim,kerf:5,boards:[],selectedRemnantIds:[]},remnantCatalog:[]
+    });
+  const plan=solver(0,{rows:[row],errors:[],total:row.qty},feed);
   assert.equal(plan.failed.length,0,'Az alkatrésznek fel kell férnie.');
   assert.equal(plan.bins.length,1,'Csak egy táblát várok.');
   buildProductionSequence(plan.bins);
@@ -54,7 +58,9 @@ for(const width of [600,900]){
     assert.equal(commands[0].type,'P');
     assert.equal(commands[0].dim,width);
     assert.equal(commands[1].type,'RY');
-    assert.equal(commands[1].dim,Number(bin.machine.strips[0].firstTrimDistance.toFixed(2)));
+    assert.equal(commands[1].dim,Number((bin.machine.strips[0].items[0].along+10).toFixed(2)),
+      'RY = az első készméret + pontosan egy szélezés');
+    assert.equal(bin.worktopEdgeTrim,10);
     assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),
       Array.from(cross,c=>Number(c.pieceSize.toFixed(2))),
       'egy Y parancs pontosan egy tényleges rajzi CROSS vágás');
@@ -64,6 +70,40 @@ for(const width of [600,900]){
       'munkalapnál nem lehet képzeletbeli RX/X/U vagy külön Y csíkvágás');
   });
 }
+test('600 mm munkalapdarab, 10 mm szélezés: RY=610, utána Y=600',()=>{
+  for(const width of [600,900]){
+    const {bin,commands}=generated(part(600,width,1));
+    assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','F']);
+    assert.equal(commands[1].dim,610);
+    assert.equal(commands[2].dim,600);
+    assert.equal(bin.cuts.length,2,'első ráhagyásos vágás és második készrevágás');
+    assert.equal(bin.cuts[0].stage,'cross-head-trim');
+    assert.equal(bin.cuts[1].stage,'cross');
+    assert.equal(bin.placements[0].w,600);
+    assert.equal(bin.placements[0].x,0);
+    assert.equal(bin.cuts[0].x1-bin.cuts[1].x1,10);
+  }
+});
+test('12 mm szélezés: RY=612, Y=600, egyetlen ráhagyás',()=>{
+  const {bin,commands}=generated(part(600,600,1),'auto',12);
+  assert.equal(commands[1].dim,612);
+  assert.equal(commands[2].dim,600);
+  assert.equal(bin.worktopEdgeTrim,12);
+  assert.equal(bin.cuts[0].x1-bin.cuts[1].x1,12);
+});
+test('szélezés nélkül nincs dupla fizikai vágás ugyanazon a helyen',()=>{
+  const {bin,commands}=generated(part(600,600,1),'auto',0);
+  assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','F']);
+  assert.equal(commands[1].dim,600);
+  assert.equal(bin.cuts.length,1);
+});
+test('az első munkalap alkatrész méretéhez 1x szélezést számol, a többi Y készméret',()=>{
+  const {bin,commands}=generated(part(600,600,3));
+  assert.equal(commands[1].dim,610);
+  assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),[600,600,600]);
+  assert.equal(bin.cuts.length,4);
+  assert.deepEqual(Array.from(bin.placements,p=>p.x),[0,615,1220]);
+});
 test('a normál 18 mm bútorlap gépi RY/Y/RX/X/F kódolása változatlan',()=>{
   const {bin,commands}=generated(part(964,200,3,18),'x');
   assert.equal(commands[0].type,'P');
