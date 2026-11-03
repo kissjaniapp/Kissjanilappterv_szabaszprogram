@@ -36,11 +36,13 @@ test('4100×600 munkalapból 1 alkatrész: kiinduló méret és az 1. vágás a 
   assert.match(svg,/Kiinduló munkalap: 4100 × 600 × 38 mm/);
   assert.match(svg,/>1[.] VÁGÁS<\/text>/);
   const cuts=lines(svg);
-  assert.equal(cuts.length,1,'az egyetlen első, teljes szélességű vágás látható');
+  assert.equal(cuts.length,2,'RY ráhagyásos vágás és Y készméretre vágás is látható');
   assert.ok(near(cuts[0][2],cuts[0][4]),'vízszintes első vágás');
   assert.ok(near(cuts[0][2],bin.cuts[0].x1+size.top),
     'a piros első vágás a valós fizikai koordinátán van');
   assert.equal(Math.abs(Number(cuts[0][1])-Number(cuts[0][3])),600);
+  assert.ok(near(bin.cuts[0].x1-bin.cuts[1].x1,10),
+    'az első RY és a készméretre vágás között egyetlen szélezési ráhagyás');
 });
 test('4100×900 munkalapból több alkatrész: 900 mm széles első vágás',()=>{
   const out=solve(0,{rows:[row(1000,900,38,3,'Márvány')]},'auto');
@@ -50,7 +52,7 @@ test('4100×900 munkalapból több alkatrész: 900 mm széles első vágás',()=
   assert.match(svg,/>1[.] VÁGÁS<\/text>/);
   const cuts=lines(svg);
   assert.equal(cuts.length,bin.cuts.length);
-  assert.equal(cuts.length,3);
+  assert.equal(cuts.length,4,'három munkalapdarab és az egyszeri RY szélezés');
   for(const c of cuts){
     assert.ok(near(c[2],c[4]),'tilos a függőleges vágásvonal');
     assert.equal(Math.abs(Number(c[1])-Number(c[3])),900);
