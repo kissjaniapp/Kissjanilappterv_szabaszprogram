@@ -53,14 +53,15 @@ for(const width of [600,900]){
     assert.equal(strip.width,width);
     assert.equal(bin.worktopEdgeTrim,10);
     assert.equal(bin.machine.topAligned,true);
+    assert.equal(bin.machine.feed,'x','a vágási gépállás FIX, nem változtatjuk meg az export miatt');
     assert.equal(strip.firstCutRule,'top-aligned-bottom');
-    assert.match(xml,new RegExp('Lunghezza="'+width+'[.]00" Larghezza="4100[.]00"'));
+    assert.match(xml,new RegExp('Lunghezza="4100[.]00" Larghezza="'+width+'[.]00"'));
     assert.deepEqual(Array.from(commands,c=>c.type),
       ['P','RY','Y','RX','X','F','X','F','X','F'],
       'a munkalap sem kaphat külön RY/Y algoritmust');
-    assert.equal(commands[0].dim,width);
+    assert.equal(commands[0].dim,4100,'a munkalap P mérete is a bútorlap feed=x tájolásához igazodik');
     assert.equal(commands[1].dim,0,'a gyári 600/900 mm szélesség szélezés nélküli');
-    assert.equal(commands[2].dim,width,'első menet: teljes szélességű csík');
+    assert.equal(commands[2].dim,width,'az Y a munkalap változatlan teljes szélessége');
     assert.equal(commands[3].dim,Number(strip.firstTrimDistance.toFixed(2)),
       'a visszaforgatott csík alsó első vágása az RX');
     assert.deepEqual(Array.from(commands.filter(c=>c.type==='X'),c=>c.dim),
@@ -78,7 +79,7 @@ test('600 mm munkalapdarab: a gép bútorlapos csíkozás + visszaforgatott X pa
   for(const width of [600,900]){
     const {bin,commands}=generated(part(600,width,1));
     assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','RX','X','F']);
-    assert.equal(commands[0].dim,width);
+    assert.equal(commands[0].dim,4100,'a munkalap P mérete is a bútorlap feed=x tájolásához igazodik');
     assert.equal(commands[1].dim,0);
     assert.equal(commands[2].dim,width);
     assert.equal(commands[3].dim,3482.5);
@@ -95,7 +96,7 @@ test('12 mm szélezés csak a munkalap végszélezésében szerepel, teljes szé
   const {bin,commands}=generated(part(600,600,1),'auto',12);
   assert.equal(bin.worktopEdgeTrim,12);
   assert.equal(bin.trim,0);
-  assert.equal(commands[0].dim,600);
+  assert.equal(commands[0].dim,4100);
   assert.equal(commands[1].dim,0);
   assert.equal(commands[2].dim,600);
   assert.equal(commands[3].dim,3480.5);
