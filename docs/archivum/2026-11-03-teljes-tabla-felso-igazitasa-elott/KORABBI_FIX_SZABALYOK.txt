@@ -1,0 +1,89 @@
+GATTERKA SZABÁSZPROGRAM – ÚJ, FIX VÁGÁSI SZABÁLYOK
+Érvényes: 2026-11-03-tól, a tulajdonos kifejezett jóváhagyásával
+========================================================
+
+ELŐZŐ VERZIÓ – VISSZAÁLLÍTÁSI PONT
+--------------------------------
+GitHub ág: archive/legacy-cutting-logic-before-20261103
+Konkrét commit: 9c616ba1a37eba977554fd02eaebff70f11cbc3c
+Régi szabályzat: docs/archivum/2026-11-03-regi-vagasi-logika/GATTERKA_FIX_FEJLESZTESI_SZABALYOK_EREDETI.txt
+Régi ujjlenyomat-teszt: docs/archivum/2026-11-03-regi-vagasi-logika/locked-machine-invariants_EREDETI.txt
+Az új szabályt ne változtasd vissza véletlenül! Az archív ágból a
+kód és a régi szabályzat külön visszaállítható.
+
+ÚJ FIX VÁGÁSI ELV
+----------------
+1. Minden tényleges gépi vágás VÍZSZINTES a képernyőn és a külön
+   menetenkénti ábrán. A tábla/csík forgatásait külön ábrázold.
+2. Teljes, nagy alaptáblán (2800×2070 mm, 18 mm standard; valamint
+   az ilyen teljes méretű kézi tábla) a régi vágásindítás és
+   a szélezési távolság számítása MARAD.
+3. KISEBB / MARADÉK TÁBLA esetén a csíkok a tábla FELSŐ részéhez
+   igazodnak. A LEGELSŐ teljes vágás az alsó, utolsó csík
+   alatt, a szükséges alkatrészmező határán történik.
+   Az alsó maradék egyben marad; a csíkok utána alulról felfelé
+   kerülnek levágásra. A fűrészrés figyelembevétele kötelező.
+4. A levágott csíkokat az ELSŐ MENET végeztével mind vissza kell
+   kérni, és egyenként 90°-KAL ELFORGATNI.
+5. A 90°-kal elforgatott csíkon a készítendő alkatrészek ismét
+   a csík TETEJÉRE igazodnak. Az első vágás a legalsó
+   alkatrész alatt történik, majd alulról felfelé történik
+   a méretre szabás. A maradékot ne vágd feleslegesen.
+6. A 38 mm munkalap kizárólag 4100×600 vagy 4100×900 mm.
+   A teljes eredeti szélesség megmarad. A csík/alkatrész
+   vágási műveletek a gépi és rajzi tájolásnak megfelelően
+   vízszintesek; hosszanti keskenyítés tilos.
+7. A különböző vastagságú és színű anyagok külön táblákra
+   kerülnek. A gépi parancsok száma táblánként legfeljebb 99.
+8. A szabástérképen kizárólag a FŐ tábla rajza látható.
+   A tábla ALATT nem lehet 2. menetes kis szemléltető ábra,
+   "Tábla anyaga" sor vagy külön területkihasználtsági sor.
+   Az 1. és a 90°-os 2. menet GÉPI PROGRAMLOGIKÁJA továbbra is él.
+   Az alkatrészek függőleges határa nem jelölhet külön gépi vágást.
+9. A 38 mm-es munkalap FŐ térképén látszódjon a tényleges
+   legelső, teljes 600/900 mm szélességű, VÍZSZINTES piros vágás,
+   "1. VÁGÁS" címkével. A kiinduló anyag mérete a térkép
+   FEJLÉCÉBEN szerepeljen: 4100 × 600 × 38 mm vagy
+   4100 × 900 × 38 mm. Az adott tábla színe/anyaga és a
+   gépi xMix/xPrg kód nem változik emiatt.
+
+GÉPI EXPORT – FIX RENDSZER
+------------------------
+Az xMix/xPrg XML szerkezete, fájlelnevezése, útvonala és a
+Windows natív Mentés másként megmarad.
+A már jóváhagyott változtatásban a RY és RX első vágási
+TÁVOLSÁGA kisebb táblán és visszaforgatott csíkon az új
+geometria szerint eltérhet a régi, fix szélezési mérettől.
+A teljes nagytábla RY/RX számítása változatlan.
+Az engedélyezett új értékeket a gépen PRÓBASZABÁSSAL kell
+ellenőrizni; a GitHub tesztek nem bizonyítják a tényleges
+SCM WinCut/xPrg futtatási viselkedését.
+
+ALKATRÉSZ-ÖSSZESÍTŐ
+-------------------
+Az élzárás helye és kódja külön oszlopban szerepel,
+az ABS VASTAGSÁGA külön oszlopban, egyértelműen.
+
+KÖTELEZŐ FEJLESZTÉSI MÓDSZER
+---------------------------
+- Az ÚJ működés a fix; egy későbbi hibajavítás nem
+  változtathatja vissza hallgatólagosan a régire.
+- A jelenlegi tesztek ujjlenyomatai:
+  tests/locked-machine-invariants.test.cjs
+  finalize: 99575204
+  gyártási sorrend: afa801b9
+  xMix/xPrg: c393cfd9
+  Windows Mentés másként: f49fe3b5
+- A külön kétmenetes rajz jelenlegi ujjlenyomata: bffa3920.
+- Módosítás előtt és után: oldalak/anyagszínek/méretek,
+  sorrend, gépi XML és a teljes tesztcsomag ellenőrzése.
+- Újabb vágási sorrend vagy xMix/xPrg módosítás kizárólag
+  tulajdonosi kifejezett utasításra, előző verzió mentésével.
+- Éles üzem előtt gépi próbaszabás és ellenőrzés kötelező.
+
+RAJZI MEGJELENÍTÉS ARCHÍVUMA
+--------------------------
+Korábbi, kétmenetes miniábrákat is tartalmazó főág: archive/before-board-map-cleanup-20261103
+Ez az archív ág nem módosítható; szükség esetén ebből visszaállítható
+az előző SVG/PNG megjelenítés. A négy FIX fizikai/gépi/mentési kódrész
+változatlan maradt.
