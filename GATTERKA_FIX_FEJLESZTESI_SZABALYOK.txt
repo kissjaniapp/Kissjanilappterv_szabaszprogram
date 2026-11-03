@@ -262,3 +262,40 @@ archive/before-worktop-horizontal-xprg-repair-20261103
 Az automatizált tesztek a helyes exportformátumot és a hibás
 forgatási parancsok hiányát ellenőrzik, de NEM helyettesítik a
 gép WinCut előnézetét, szárazpróbáját és a valós hitelesítést.
+
+2026-11-03 – WINCUT ERROR[402] LARGHEZZA ERRATA – MUNKALAP XPRG-BIZTONSÁGI JAVÍTÁSA
+-----------------------------------------------------------------------------------
+A tulajdonos gépén a 4100×600/900 munkalap P=600/900,
+Lunghezza=600/900, Larghezza=4100 fejlécet a WinCut
+"Error[402]: Larghezza errata" hibával VISSZAUTASÍTOTTA.
+A 4100×600 fejléces korábbi P=4100, Y=600, RX/X kétmenetes
+program viszont fizikailag ELLENŐRZÖTTEN FELFORGATTA AZ ANYAGOT.
+MINDKETTŐ NEM MEGFELELŐ, MINDKETTŐ TILOS.
+A WinCut programozási kézikönyve szerinti X kód a hosszúság
+(Lunghezza) irányú keresztvágás, a Y a szélességi (Larghezza)
+irányú művelet; a gépi X-program önállóan is kezdődhet X-szel.
+Kizárólag a munkalap XPRG-exportjának új, tesztelendő kódolása:
+- Fejléc: Lunghezza = 4100, Larghezza = 600 vagy 900, Swap = 0.
+- CSAK a jóváhagyott bin.cuts sorrendben, teljes 600/900 mm
+  keresztmetszetet végigvágó X parancsok és kész darabonként F.
+- Az első X vágás: bin.a - bin.cuts[0].x1 (a 4100 mm-es
+  végtől a tényleges első vágás fűrészközépvonaláig mért táv).
+- Utána minden további bin.cuts CROSS vágás valós készmérete
+  X-ként, azt követően F zárás. Szükség esetén a táblaél
+  kész darabjához F, de fiktív gépi vágás soha.
+- 38 MM MUNKALAPNÁL TILOS: P, RY, Y, RX, U és gépi
+  90°-os csík-visszaforgatás; az anyag fekvése nem változhat.
+- Példa 999×600, 12 mm végszélezés, 5 mm fűrészrés:
+  fejléc 4100×600×38; X=3081.50; X=999; F=0.
+A 18 mm BÚTORLAPOK MEGLÉVŐ KÉTMENETES XML-PARANCSAI,
+a már jó fizikai makeStripPlan/finalize és vágássorrend,
+a teljes szabástérkép, xMix és Windows Mentés másként FIX.
+Egyikük kódját sem szabad a munkalapos kimenet miatt módosítani.
+A védőujjlenyomatok:
+finalize 1e0ac4b9, production afa801b9, export 390467c6,
+save f49fe3b5, SVG 86d21042.
+Archívum: archive/before-worktop-x-only-error402-fix-20261103
+FIGYELEM: az X-only XML program a kézikönyvi kódolásra és a
+helyes fizikai geometriára épül; saját SCM WinCut gépi elfogadása
+és szabásiránya a HELYSZÍNI ELŐNÉZET/SZÁRAZPRÓBA előtt nem bizonyított.
+Az ellenőrzésig ÉLES ANYAGOT NEM SZABHAT.
