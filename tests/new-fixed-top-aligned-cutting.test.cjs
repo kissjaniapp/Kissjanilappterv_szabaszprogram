@@ -83,7 +83,7 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.equal(strip.firstCutRule,'top-aligned-bottom');
  assert.ok(near(strip.firstCutPosition,3027.5),
    'együttes alkatrészhossz + 1x végszélezés + fűrészrések az első alsó vágásnál');
- assert.ok(bin.placements.some(p=>near(p.x,0)),'darab a csík tetején');
+ assert.ok(bin.placements.some(p=>near(p.x,15)),'a kész darab a felülre igazított csík végszélezése után kezdődik');
  assert.ok(bin.cuts.every(c=>c.stage!=='rip'&&c.stage!=='strip'));
  const xml=exportXml([bin])[0];
  assert.match(xml,/Lunghezza="600[.]00"/);
