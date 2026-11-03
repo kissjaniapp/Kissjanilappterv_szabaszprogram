@@ -1839,7 +1839,8 @@
         if(!worktop&&item.rot&&item.a!==item.b)orientations.push({a:item.b,b:item.a,turned:true});
         for(const o of orientations){
           if(worktop){
-            if(!validWorktop38Part({...o,thickness:item.thickness})||
+            if(!validWorktop38Part({...o,thickness:item.thickness,
+                 materialId:item.materialId||'',materialColor:item.materialColor||''})||
                Math.abs(o.b-bin.b)>eps||o.a>bin.a+eps)continue;
           }else if(bin.a+eps<o.a+MIN_BOARD_EXTRA||bin.b+eps<o.b+MIN_BOARD_EXTRA)continue;
           const bw=breadth(o,localFeed),len=along(o,localFeed);
