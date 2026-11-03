@@ -64,9 +64,11 @@ test('38 mm-es munkalap kizárólag 4100×600 vagy 4100×900, eredeti szélessé
     assert.ok([600,900].includes(bin.b));
     assert.equal(bin.thickness,38);
     assert.equal(bin.trim,0,'a 600/900 mm-es kész szélesség nem változhat');
-    assert.equal(bin.machine.feed,'y','a fűrész csak a 600/900 mm-en vágjon át');
-    assert.equal(bin.cuts.filter(c=>c.stage==='cross'||c.stage==='rip').length,0,
-      'a munkalapot nem szabhatja hosszában vagy második menetben');
+    assert.equal(bin.machine.feed,'x','P és Lunghezza = 4100 vízszintes él');
+    assert.equal(bin.cuts.filter(c=>c.stage==='strip'||c.stage==='rip').length,0,
+      'tilos a munkalapból hosszanti csíkot vagy U alábontást vágni');
+    assert.ok(bin.cuts.every(c=>c.stage==='cross'&&c.length===bin.b),
+      'a keresztvágások a teljes 600/900 mm szélességben haladjanak');
     assert.ok(bin.placements.every(p=>!p.turned));
     const layout=draw(bin);
     assert.equal(layout.rotated,false,'a rajzon is vízszintes munkalap legyen');
@@ -77,9 +79,12 @@ test('38 mm-es munkalap kizárólag 4100×600 vagy 4100×900, eredeti szélessé
 test('250 darab 38 mm-es munkalaprész sem hoz létre hosszanti vágást',()=>{
   const {result,xprgs}=plan([row(200,600,38,'Tölgy',250)]);
   assert.ok(result.bins.length>3);
-  assert.ok(result.bins.every(bin=>bin.machine.feed==='y'&&
-    bin.cuts.every(c=>c.stage!=='cross'&&c.stage!=='rip')));
+  assert.ok(result.bins.every(bin=>bin.machine.feed==='x'&&
+    bin.cuts.every(c=>c.stage==='cross'&&c.length===bin.b)));
   assert.ok(xprgs.every(s=>!s.includes('T="U"')));
+  assert.ok(xprgs.every(s=>/Lunghezza="4100[.]00"/.test(s)&&
+    /Larghezza="600[.]00"/.test(s)&&
+    /<Cut T="P" Dim="4100[.]00"/.test(s)));
 });
 test('hibás kézi 38 mm-es tábla és hibás alkatrészméret visszautasítva',()=>{
   const engine=strip({trim:10,kerf:5,boards:[],selectedRemnantIds:[]});
