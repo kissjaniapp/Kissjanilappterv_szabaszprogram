@@ -637,7 +637,7 @@
       const wrapper=[...document.querySelectorAll('[data-custom-parameter]')]
         .find(el=>el.dataset.customParameter===rule.id);
       const label=wrapper?.querySelector('[data-custom-status]');
-      if(label)label.textContent=customRuleStatus(f,rule);
+      if(label)label.textContent=customParameterStatus(f,rule);
     }
   }
   // Az első alkatrész neve – ha nincs külön megadva – a paraméter neve.
@@ -757,52 +757,40 @@
     return state.error?'IF hiba: '+state.error:
       state.active?'IF igaz: bekerül a szabásba':'IF hamis: most kimarad';
   }
+  function customParameterStatus(f,rule){
+    if(!String(rule.name||'').trim())return 'Add meg a paraméter nevét';
+    try{
+      const vars={W:+f.w,H:+f.ht,D:+f.d,T:Number(f.t)||18,
+        S:effectiveShelves(f),O:effectiveDivider(f)};
+      const value=namedFurnitureParameter(rule.name,vars,f);
+      return value?'Igaz · IF hivatkozásban 1':'Hamis · IF hivatkozásban 0';
+    }catch(e){return 'Paraméterhiba: '+e.message;}
+  }
   function customParametersPanel(f){
     const rules=f.customParameters||[];
     const rows=rules.map(rule=>`
       <div class="panel top-gap custom-parameter-rule" style="padding:12px" data-custom-parameter="${h(rule.id)}">
         <div class="custom-parameter-head">
-          <div style="flex:1;min-width:170px"><label>Paraméter neve</label>
-            <input data-scope="custom-param" data-id="${h(rule.id)}" data-key="name" value="${h(rule.name)}"></div>
-          <div style="min-width:145px"><label>Kerüljön a bútorba?</label>
-            <select data-scope="custom-param" data-id="${h(rule.id)}" data-key="enabled">
-              <option value="false" ${!rule.enabled?'selected':''}>Nem</option>
-              <option value="true" ${rule.enabled?'selected':''}>Igen</option>
-            </select></div>
-          <button class="btn sm ghost danger" data-action="delete-custom-param" data-id="${h(rule.id)}">Paraméter törlése</button>
+          <div style="min-width:0"><label>Paraméter neve</label>
+            <input data-scope="custom-param" data-id="${h(rule.id)}" data-key="name"
+              placeholder="Például: f-osztóka" value="${h(rule.name)}"></div>
+          <button class="btn sm ghost danger" data-action="delete-custom-param"
+            data-id="${h(rule.id)}">Paraméter törlése</button>
         </div>
         <div class="custom-parameter-condition">
-          <div style="flex:1;min-width:210px"><label>Feltétel – mikor kerüljön bele?</label>
-            <input data-scope="custom-param" data-id="${h(rule.id)}" data-key="condition"
-              autocomplete="off" spellcheck="false" placeholder="Mindig, vagy pl. H>=1200" value="${h(rule.condition||'')}">
-            <div class="tiny muted">Üres = mindig. Példák: H>=1200 · W>600 && D>=400 · H<900 || W>1000</div>
-          </div><span class="muted small" data-custom-status>${h(customRuleStatus(f,rule))}</span>
+          <div style="min-width:0"><label>Feltétel – mikor kerüljön bele?</label>
+            <div class="expr-cell"><input data-scope="custom-param" data-id="${h(rule.id)}"
+              data-key="condition" autocomplete="off" spellcheck="false"
+              placeholder="Például: W>=1100" value="${h(rule.condition||'')}"></div>
+            <div class="tiny muted">A feltétel adja a paraméter 1 (igaz) vagy 0 (hamis) értékét. Üres = igaz.</div>
+          </div><span class="muted small" data-custom-status>${h(customParameterStatus(f,rule))}</span>
         </div>
-        <div class="muted small" style="margin:8px 0">Ehhez a kapcsolóhoz tartozó alkatrészek és képleteik:</div>
-        ${(rule.parts||[]).map(spec=>`
-        <div class="custom-parameter-part-row">
-          ${[['name','Alkatrész neve'],['a','Első méret · szál'],['b','Második méret'],['q','Darabszám']].map(([key,label])=>`
-            <div class="custom-parameter-part-field">
-              <label>${label}</label><div class="${key==='name'?'':'expr-cell'}"><input data-scope="custom-part" data-id="${h(rule.id)}"
-                data-part-id="${h(spec.id)}" data-key="${key}" autocomplete="off" spellcheck="false"
-                ${key==='name'&&(rule.parts||[])[0]===spec?'placeholder="Üresen = paraméter neve"':''}
-                value="${h(spec[key]??'')}"></div>
-            </div>`).join('')}
-          <button class="btn sm ghost danger" data-action="delete-custom-part"
-            data-id="${h(rule.id)}" data-part-id="${h(spec.id)}">✕</button>
-        </div>`).join('')}
-        <div class="toolbar"><button class="btn sm" data-action="add-custom-part"
-          data-id="${h(rule.id)}">＋ Alkatrész ehhez a paraméterhez</button>
-          <span class="muted small">Az első alkatrész neve üresen maradhat: ekkor a paraméter nevét kapja. A képletek csak az adott bútor alkatrészeit használhatják.</span>
-        </div>
+        <div class="tiny muted">Az alkatrészt az <strong>Alkatrészek</strong> oldalon hozd létre. A külön IF mezőben a paraméter neve önmagában vagy <code>[${h(rule.name||'paraméter neve')}]</code> formában is használható.</div>
       </div>`).join('');
     return `<div class="panel top-gap custom-parameters-panel" style="padding:14px">
       <div class="toolbar"><strong>Saját bútorparaméterek</strong>
         <button class="btn sm primary" data-action="add-custom-param">＋ Saját paraméter</button></div>
-      <div class="muted small">Bármilyen elnevezett igen/nem paramétert létrehozhatsz.
-        Egy paraméter 1, 2 vagy több alkatrészt tartalmazhat, W/H/D/T/S/O képletekkel.
-        Ha Igen, az alkatrészek csak a megadott feltétel teljesülésekor kerülnek be; üres feltételnél mindig.
-        A munkában szabadon módosíthatod őket, a mentett Széria változatlan marad.</div>
+      <div class="muted small">Itt a bútor saját, névvel hivatkozható feltételeit adhatod meg. Az alkatrészeket külön, a következő oldalon hozod létre. Nincs külön Igen/Nem kapcsoló: az IF-képlet határozza meg, bekerül-e egy alkatrész. A méret- és darabszámképletekben a <code>[paraméter neve]</code> hivatkozás 1 vagy 0.</div>
       ${rows||'<div class="muted small" style="margin:12px 0">Még nincs saját paraméter.</div>'}
     </div>`;
   }
@@ -3091,8 +3079,7 @@
     if(action==='add-custom-param'){
       const f=getFurniture();if(!f)return;
       if(!Array.isArray(f.customParameters))f.customParameters=[];
-      f.customParameters.push({id:uuid(),name:'',enabled:false,
-        parts:[makeCustomPartDefinition()]});
+      f.customParameters.push({id:uuid(),name:'',condition:'',enabled:true,parts:[]});
       result=null;render();return;
     }
     if(action==='add-custom-part'){
@@ -3341,8 +3328,7 @@
       if(!rule)return;
       const key=el.dataset.key;
       if(scope==='custom-param'){
-        if(key==='enabled')rule.enabled=el.value==='true';
-        else if(key==='name')rule.name=el.value;
+        if(key==='name')rule.name=el.value;
         else if(key==='condition')rule.condition=el.value;
       }else{
         const spec=(rule.parts||[]).find(x=>x.id===el.dataset.partId);
