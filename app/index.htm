@@ -690,6 +690,39 @@
       }
     }
   }
+  // A régi szériákban a paraméterhez közvetlen alkatrész tartozott.
+  // Az adatvesztés elkerüléséhez ezeket egyszer független alkatrésszé
+  // alakítjuk, a korábbi feltételt átvisszük az új IF mezőbe.
+  // Az új, üres paraméterekből önmaguktól NEM keletkezik alkatrész.
+  function migrateLegacyCustomParts(f){
+    if(!Array.isArray(f.parts))f.parts=[];
+    for(const rule of f.customParameters||[]){
+      if(!Array.isArray(rule.parts)||!rule.parts.length)continue;
+      for(const spec of rule.parts){
+        let part=f.parts.find(p=>p.customParameterId===rule.id&&p.customPartId===spec.id);
+        if(!part){
+          part={id:uuid(),name:customPartName(rule,spec),
+            a:spec.a,b:spec.b,q:spec.q,
+            edge:'0-0',edgeSides:sidesFromCode('0-0'),
+            edgeThickness:2,mill:true,millDepth:1,
+            grainRequired:true,rot:false,materialId:'',materialColor:''};
+          f.parts.push(part);
+        }
+        if(part.ifCondition==null){
+          part.ifCondition=rule.enabled===false?'0':
+            String(rule.name||'').trim()?'['+String(rule.name).trim()+']':
+              String(rule.condition||'').trim();
+        }
+        delete part.customParameterId;
+        delete part.customPartId;
+        delete part.customNameInherited;
+      }
+      // A régi szerkesztő alkatrészdefiníciói az önálló alkatrészekbe
+      // kerültek; ismételt megnyitás nem duplikálhatja őket.
+      rule.parts=[];
+      rule.enabled=true;
+    }
+  }
   // A bútornak vannak önálló, névvel hivatkozható IF-paraméterei.
   // [paraméter neve] minden méret-/darabszámképletben 1 vagy 0 értéket ad.
   // A hivatkozás csak az AKTUÁLIS bútor saját paramétereit keresheti.
@@ -1086,6 +1119,7 @@
   function getParts(){
     let rows=[],errors=[];
     for(const f of state.furnitures){
+      migrateLegacyCustomParts(f);
       const thickness=Number(f.t)||18;
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       for(const part of f.parts){
