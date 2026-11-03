@@ -1586,9 +1586,10 @@
     const breadth=(p,axis=sortingFeed)=>axis==='x'?p.b:p.a;
     const along=(p,axis=sortingFeed)=>axis==='x'?p.a:p.b;
     const feedCandidates=bin=>{
-      // A 38 mm-es munkalap csak fekvő, 4100 mm hosszon adagolt állásban
-      // mehet: a fűrész a teljes 600/900 mm szélességet vágja keresztben.
-      if(isWorktop38(bin.thickness))return !bin.machine||bin.machine.feed==='y'?['y']:[];
+      // A 38 mm-es munkalapnál a 4100 mm-es ÉL vízszintes a gépen.
+      // Ez az x gépállás: P és Lunghezza = 4100, a 600/900 mm-es
+      // teljes szélességű csíkból X keresztvágásokkal készülnek a darabok.
+      if(isWorktop38(bin.thickness))return !bin.machine||bin.machine.feed==='x'?['x']:[];
       if(bin.machine)return [bin.machine.feed];
       if(feed==='auto')return ['x','y'];
       // Az ütköztetett ÉL hosszát választjuk, NEM a beadott méretet.
