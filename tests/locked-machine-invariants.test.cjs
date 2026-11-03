@@ -31,6 +31,11 @@
 // A JÓVÁHAGYOTT fizikai finalize, gyártási sorrend, SVG térkép,
 // bútorlap export és Windows Mentés másként szigorúan változatlan.
 // Archívum: archive/before-worktop-horizontal-xprg-repair-20261103
+// 2026-11-03: a tényleges WinCut Error[402] Larghezza errata
+// miatt a 38 mm munkalaphoz 4100×600/900 fejléc és egyetlen
+// X-sorozat szükséges, kezdeti P/Y vagy RX második menet nélkül.
+// A bútorlapok teljes eredeti XPRG kódja és a fizikai vágás FIX.
+// Visszaállítás: archive/before-worktop-x-only-error402-fix-20261103
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
@@ -52,7 +57,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','f5c0140d'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','390467c6'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
