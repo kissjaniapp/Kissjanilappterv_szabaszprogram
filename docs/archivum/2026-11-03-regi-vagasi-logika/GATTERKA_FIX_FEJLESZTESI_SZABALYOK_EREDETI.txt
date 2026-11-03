@@ -1,0 +1,65 @@
+GATTERKA SZABÁSZPROGRAM – KÖTELEZŐ FEJLESZTÉSI SZABÁLYOK
+====================================================
+
+Projekt: https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
+
+ALAPELV: A MÁR ELFOGADOTT GÉPI VÁGÁSI SORRENDHEZ ÉS AZ xMix/xPrg
+MENTÉSI RENDSZERHEZ NEM NYÚLUNK.
+
+1. FIX: GÉPI VÁGÁSI SORREND (MÓDOSÍTÁSI TILALOM)
+-------------------------------------------------
+- Az első gépi vágás helye és kiszámítása.
+- A teljes hosszban végigmenő (guillotine) vágások logikája.
+- A csíkok levágásának, visszaadásának és keresztvágásának sorrendje.
+- Az alkatrészek kivágásának és a fizikai műveleteknek a sorrendje.
+- A szálirány, a tábla orientációja és a gépi koordináták összhangja.
+- A szabásterv rajzának és a gépi vágási parancsoknak az egyezése.
+
+Tilos e működést véletlenül is megváltoztatni optimalizálás, refaktorálás,
+hibajavítás, megjelenítési módosítás vagy más fejlesztés mellékhatásaként.
+
+2. FIX: xMix/xPrg EXPORT ÉS WINDOWS MENTÉS (MÓDOSÍTÁSI TILALOM)
+---------------------------------------------------------------
+- Az xMix és xPrg gépi fájlok szerkezete, adattartalma és sorrendje.
+- A gépi parancsok, méretek, koordináták és a fájlhivatkozások kezelése.
+- A Windows „Mentés másként”, célmappa-választás, fájlelnevezés.
+- Az elérési utak megadása és a véletlen felülírás elkerülése.
+- A bevált és elfogadott működés kompatibilitása a vágógéppel.
+
+Ezeket a részeket csak a tulajdonos előzetes, egyértelmű, kifejezetten
+ezekre a részekre vonatkozó engedélyével lehet módosítani.
+
+3. KÖTELEZŐ MUNKAMÓDSZER
+-------------------------
+- Fejlesztés előtt ellenőrizd az aktuális GitHub-főágat és a kért feladatot.
+- Kizárólag a kért funkciókat változtasd; a működő funkciókat őrizd meg.
+- Lehetőleg külön fejlesztési ágon dolgozz, a főágat ne kockáztasd.
+- A gépi vágási és mentési programrészeket változatlanul tartsd.
+- Módosítás után futtasd a teszteket, és ellenőrizd a rögzített invariánsokat.
+- A gépi működéshez vagy mentéshez nyúló igénynél előbb kérj külön jóváhagyást.
+- Az általános „javítsd”, „fejleszd”, „folytasd”, „optimalizáld” kérések
+  nem jelentenek felhatalmazást a fix részek módosítására.
+
+4. ELLENŐRZÉS
+--------------
+A következő tesztben rögzített négy kódszakasz változatlan kell maradjon:
+  tests/locked-machine-invariants.test.cjs
+
+A négy védett blokk:
+  - Fizikai csíkvágás, első vágás és visszaadás
+  - Kötelező kétmenetes gyártási sorrend
+  - xMix/xPrg fájlformátum és parancssor
+  - Mentés másként – Windows helyi mentés
+
+TILOS a védőtesztet, a korábban elfogadott ujjlenyomatokat, vagy a
+teszthatárokat pusztán azért módosítani, hogy egy véletlen eltérés átmenjen.
+Egy sikeres teszt sem helyettesíti a gép előtti ellenőrzést.
+
+5. A SZABÁLY ELSŐBBSÉGE
+------------------------
+Ha egy későbbi fejlesztési kérés ütközik a fentiekkel, az ütközést
+jelezni kell. A fix szabályt csak a tulajdonos külön, kifejezett
+felhatalmazása írhatja felül.
+
+RÖVID VÁLTOZAT:
+„A rögzített vágási sorrendhez és az xMix/xPrg mentéshez nem nyúlok.”
