@@ -24,6 +24,13 @@
 // és Mentés másként (f49fe3b5) ujjlenyomata változatlanul FIX.
 // Archívum: archive/locked-good-cut-order-before-worktop-xprg-header-20261103
 // Visszaállítás: archive/before-unified-worktop-board-cutting-20261103
+// 2026-11-03: a gépi XPRG-t a felhasználó tényleges 999×600 mm-es
+// fájljával ellenőrizve, a korábbi 4100-as P/RX/X elforgatás tiltva.
+// 38 mm munkalapnál a RY/Y a FŐ térkép eredeti vízszintes
+// keresztvágásait adja, 600/900-as P-vel, gépi forgatás nélkül.
+// A JÓVÁHAGYOTT fizikai finalize, gyártási sorrend, SVG térkép,
+// bútorlap export és Windows Mentés másként szigorúan változatlan.
+// Archívum: archive/before-worktop-horizontal-xprg-repair-20261103
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
@@ -45,7 +52,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','7d1632e5'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','f5c0140d'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
