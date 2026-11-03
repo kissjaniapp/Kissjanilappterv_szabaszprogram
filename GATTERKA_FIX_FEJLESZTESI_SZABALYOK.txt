@@ -225,3 +225,40 @@ Windows mentés f49fe3b5, fő SVG 86d21042.
 Visszaállítási pont: archive/locked-good-cut-order-before-worktop-xprg-header-20261103
 A gépi tényleges értelmezést próbaszabás/szárazpróba nélkül
 nem szabad késztermeléshez hitelesítettnek tekinteni.
+
+2026-11-03 – KRITIKUS GÉPI HIBA JAVÍTVA: MUNKALAP XPRG NEM FORGATHATJA EL AZ ANYAGOT
+-----------------------------------------------------------------------------------
+A tulajdonos által feltöltött 4100×600×38 munkalap / 999 mm-es kész alkatrész
+xPrg fájl ténylegesen hibás volt: a fejléce 4100×600, P=4100,
+RY=0, Y=600, RX=3081.50, X=999, F. A gépi értelmezés során az anyag
+befordult és függőleges vágásokat jelölt. Ez ÉLESEN NEM HASZNÁLHATÓ.
+EZ A KORÁBBI FEJLÉC-ÉS KÉTMENETES MUNKALAPXPRG UTASÍTÁS VISSZAVONVA.
+A 38 mm-es munkalap KIZÁRÓLAG az eredeti, FŐ szabástérképen és
+bin.cuts-ban már helyesen számított teljes szélességű vízszintes
+KERESZTVÁGÁSAIT EXPORTÁLHATJA, AZOK EREDETI FIZIKAI SORRENDJÉBEN:
+- Lunghezza/P: mindig 600 vagy 900 mm; Larghezza: 4100 mm.
+- A LEGELSŐ valódi keresztvágás RY távolsága a tábla 4100 mm-es
+  távolabbi végétől számított fűrészközépvonal (= bin.a - bin.cuts[0].x1).
+- A későbbi valódi keresztvágások Y méretben, alkatrészenként F
+  jelöléssel kerülnek ki. Ha az első RY kész alkatrészt vág,
+  nem szabad ugyanoda további fiktív Y műveletet exportálni.
+- Nincs munkalapnál RY=0 + Y=600/900 ál-csíkozás; RX/X/U és további
+  gépi 90°-os elforgatás SZIGORÚAN TILOS.
+Konkrét kontrollpélda a feltöltött hibás gépi fájlhoz:
+4100 × 600 × 38 mm, 999 × 600 mm kész darab, 12 mm szélezés,
+5 mm fűrészrés esetén:
+  Fejléc: Lunghezza=600, Larghezza=4100, Spessore=38, Swap=0.
+  Gépi parancsok: P=600, RY=3081.50, Y=999, F=0.
+A 4100 × 900 mm-es munkalap ugyanilyen szabályt követ P=900-zal.
+A MÁR JÓNAK NYILVÁNÍTOTT makeStripPlan/finalize geometria,
+összes tényleges vágás pozíciója és sorrendje, a fő szabástérkép,
+az összes 18 mm-es bútorlap gépi XML és a Windows Mentés másként
+VÁLTOZTATHATATLAN. Csak a munkalap XPRG-kódolása változott.
+Rögzített kódujjlenyomatok: finalize 1e0ac4b9,
+buildProductionSequence afa801b9, xPrg f5c0140d,
+saveXprgToSelectedFolder f49fe3b5, SVG 86d21042.
+Előző teljes állapot archiválva:
+archive/before-worktop-horizontal-xprg-repair-20261103
+Az automatizált tesztek a helyes exportformátumot és a hibás
+forgatási parancsok hiányát ellenőrzik, de NEM helyettesítik a
+gép WinCut előnézetét, szárazpróbáját és a valós hitelesítést.
