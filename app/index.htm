@@ -2817,21 +2817,24 @@
       // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      // A WinCut valódi fejléce: Lunghezza = hossz (X irány),
-      // Larghezza = szélesség (Y irány). A 4100×600/900 munkalapnál
-      // a 4100-as Larghezza gépi 402-es szélességhibát okozott.
-      // A 4100×600/900 mm munkalap egyetlen X irányú keresztvágási
-      // SOR, nem P→Y csík és NEM visszaforgatott RX/X menet!
-      // Az eredeti bútorlapos x/y gépállás-értelmezés változatlan.
+      // A tulajdonos által JÓVÁHAGYOTT 38 mm munkalap-próba:
+      // a teljes szélesség az egyetlen vágáshossz, tehát
+      // P = Lunghezza = bin.b, Larghezza = bin.a, Swap = 1.
+      // A gépi műveletek P → RY → Y → F (darabonként Y/F),
+      // végig 600/900 vagy egyedileg rögzített teljes szélességen.
+      // RX/X/U második menet, anyagforgatás TILOS. A WinCutban
+      // ezt a Swap=1 fejlécet MÉG próbaimporttal ellenőrizni kell,
+      // korábbi Swap=0 változat Larghezza=4100 miatt 402 hibát adott.
+      // A bútorlap exportja minden bájtjában változatlan marad.
       const worktop=Math.abs(Number(bin.thickness)-38)<.001;
       if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
         throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
-      const feedLength=m.feed==='x'?bin.a:bin.b;
+      const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
       const headerLength=feedLength;
-      const headerWidth=m.feed==='x'?bin.b:bin.a;
+      const headerWidth=worktop?bin.a:(m.feed==='x'?bin.b:bin.a);
       if(worktop&&(m.feed!=='x'||bin.cuts.some(c=>c.length>0&&
-           Math.abs(c.length-headerWidth)>.001)))
-        throw Error((i+1)+'. tábla: a munkalap vágásainak teljes szélessége nem 600/900 mm.');
+           Math.abs(c.length-feedLength)>.001)))
+        throw Error((i+1)+'. tábla: a munkalap keresztvágása nem a teljes táblaszélességen fut.');
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
@@ -2864,42 +2867,41 @@
           '" Rip="1" ID="'+cuts.length+'" />');
       };
       if(worktop){
-        // A GÉP SZÉLESSÉGE 600/900, HOSSZA 4100. Az X az
-        // eredeti 4100 mm-es hossz mentén készít keresztvágást.
-        // A WinCut kézikönyve szerint X-szel közvetlenül
-        // kezdődhet program: P/Y kényszercsíkozás és RX
-        // utáni 90°-os visszaforgatás NÉLKÜL.
-        // A bin.cuts fizikai sorrendje és az összes vágási
-        // koordináta VÁLTOZTATHATATLAN; csak a kódolás új.
+        // 38 MM MUNKALAP – A JÓVÁHAGYOTT LÉPÉSES SZIMULÁCIÓ:
+        // P=teljes szélesség, RY=az első fizikai maradékleválasztás,
+        // Y=készméret, F=kész darab (a többi darabra Y/F ismétlődik).
+        // A vágások sorrendjét és koordinátáit változatlanul a
+        // fizikai bin.cuts adja. Sem X, sem U, sem RX nem szükséges.
         const strip=m.strips[0];
         if(m.feed!=='x'||m.strips.length!==1||
            Math.abs(Number(strip.width)-Number(bin.b))>.001||
            (strip.items||[]).some(p=>Math.abs(Number(p.breadth)-Number(bin.b))>.001))
-          throw Error((i+1)+'. tábla: a munkalap csak teljes 600/900 mm szélességű sor.');
+          throw Error((i+1)+'. tábla: a munkalapnak egyetlen, teljes szélességű sorban kell lennie.');
         const physical=(bin.cuts||[]).slice().sort((a,b)=>a.order-b.order);
         if(!physical.length||
            physical.some(c=>(c.stage!=='cross-head-trim'&&c.stage!=='cross')||
              c.axis!=='y'||Math.abs(Number(c.length)-bin.b)>.001)||
            physical.slice(1).some(c=>c.stage!=='cross'))
-          throw Error((i+1)+'. tábla: a munkalap XPRG-vágásai nem egyeznek a jóváhagyott térképpel.');
+          throw Error((i+1)+'. tábla: a munkalap XPRG-vágásai eltérnek a jóváhagyott térképtől.');
         const first=physical[0];
-        // Az első, a 4100-as alaplap túlsó végétől számított
-        // teljes szélességű vágás helye. A korábbi RY=3081.5
-        // Y tisztításként hibás koordinátatengelyre került.
         const firstDistance=bin.a-Number(first.x1);
-        if(!Number.isFinite(firstDistance)||firstDistance<0||
-           firstDistance>bin.a)
-          throw Error((i+1)+'. tábla: hibás első munkalap-keresztvágási távolság.');
-        add('X',firstDistance);
+        if(!Number.isFinite(firstDistance)||firstDistance<0||firstDistance>bin.a)
+          throw Error((i+1)+'. tábla: hibás az első keresztvágás távolsága.');
+        add('P',feedLength);
+        add('RY',first.stage==='cross-head-trim'?firstDistance:0);
         let completed=0;
-        if(first.stage==='cross'){add('F',0);completed++;}
-        for(const cut of physical.slice(1)){
-          add('X',cut.pieceSize);
+        for(const cut of physical){
+          if(cut.stage!=='cross')continue; // A RY már elvégezte a szélezést.
+          if(!Number.isFinite(Number(cut.pieceSize))||Number(cut.pieceSize)<=0)
+            throw Error((i+1)+'. tábla: hibás készméretes munkalapvágás.');
+          add('Y',cut.pieceSize);
           add('F',0);
           completed++;
         }
         if(completed>(strip.items||[]).length)
-          throw Error((i+1)+'. tábla: több készrevágás, mint munkalap-alkatrész.');
+          throw Error((i+1)+'. tábla: több készrevágás, mint alkatrész.');
+        // Ha a legfelső elem a táblaélhez illeszkedik, a még
+        // hiányzó F lezárás nem igényel kitalált gépi vágást.
         while(completed<(strip.items||[]).length){add('F',0);completed++;}
 
       }else{
@@ -2939,7 +2941,7 @@
         '\t<Header NumFogliPacco="1.00" Descrizione="'+esc(headerDescription)+
         '" Spessore="'+num(bin.thickness)+'" Date="'+esc(date)+
         '" Lunghezza="'+num(headerLength)+'" Larghezza="'+num(headerWidth)+
-        '" SpessoreLama="'+num(kerf)+'" Swap="0" />\r\n'+
+        '" SpessoreLama="'+num(kerf)+'" Swap="'+(worktop?'1':'0')+'" />\r\n'+
         '\t<Material Tipologia="" Codice="'+esc(materialDescription)+'" />\r\n'+
         '\t<Pattern>\r\n'+cuts.join('\r\n')+
         '\r\n\t</Pattern>\r\n</SchemaDoc>\r\n';
