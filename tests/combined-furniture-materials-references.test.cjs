@@ -90,6 +90,58 @@ test('anyagadatbázis egyetlen színmezőt és 12/15/18/36/38 mm-es legördülő
  for(const t of [12,15,18,36,38])assert.match(view,new RegExp('<option value="'+t+'"'));
  assert.match(view,/data-material-sort/);
 });
+
+test('anyagadatbázis: opcionális X/Y táblaméretek menthetők a szín és vastagság mellé',()=>{
+ const source=region('  function catalogSheetDimension(value){','  const materialThicknesses=');
+ const legacy=[
+  {id:'old',name:'Régi szín',thickness:18},
+  {id:'one',color:'Freya',thickness:18,boardA:'2800',boardB:'2070'},
+  {id:'two',color:'Munkalap',thickness:38,boardA:4100,boardB:900},
+  {id:'bad',color:'Hibás',thickness:15,boardA:-12,boardB:'nem szám'}
+ ];
+ const data=vm.runInNewContext('(function(){'+source+
+   ';return {materialCatalog,materialBoardSizeSuffix,catalogSheetDimension};})()',{
+   storedArray:()=>legacy,materialKey:'gatterka-anyagkatalogus-v1',defaults:[],
+   Number,String
+ });
+ const arr=Array.from(data.materialCatalog);
+ assert.equal(arr.length,4);
+ assert.equal(arr[0].color,'Régi szín');
+ assert.equal(arr[0].boardA,'');
+ assert.equal(arr[0].boardB,'');
+ assert.equal(arr[1].boardA,2800);
+ assert.equal(arr[1].boardB,2070);
+ assert.equal(data.materialBoardSizeSuffix(arr[1]),' · 2800 × 2070 mm');
+ assert.equal(data.materialBoardSizeSuffix(arr[2]),' · 4100 × 900 mm');
+ assert.equal(arr[3].boardA,'');
+ assert.equal(arr[3].boardB,'');
+ assert.equal(data.catalogSheetDimension(''), '');
+ assert.equal(data.catalogSheetDimension(0), '');
+ assert.equal(data.catalogSheetDimension(11000), '');
+ const materialView=region('function materialsAndRemnantsView(onlyMaterials=false){','\n  function stockPage(){');
+ const view=vm.runInNewContext('(function(){'+materialView+
+   ';return materialsAndRemnantsView;})()',{
+   materialCatalog:arr,materialThicknesses:[12,15,18,36,38],h:x=>String(x),
+   state:{selectedRemnantIds:[]},remnantCatalog:[]
+ })(true);
+ assert.match(view,/data-key="boardA"/);
+ assert.match(view,/data-key="boardB"/);
+ assert.match(view,/Tábla hosszúsága/);
+ assert.match(view,/Tábla szélessége/);
+ assert.match(view,/value="2800"/);
+ assert.match(view,/value="2070"/);
+ assert.match(html,/const emptyDimension=boardDimension&&String\(el.value\).trim\(\)===''\;/);
+ assert.match(html,/storeCatalog\(scope==='material'\?materialKey/);
+ const optionSource=region('function materialOptions(part,f){','\n  function effectiveShelves(');
+ const opts=vm.runInNewContext('(function(){'+optionSource+
+   ';return materialOptions;})()',{
+   materialCatalog:arr,materialForPart:()=>({color:'Freya',thickness:18}),
+   materialBoardSizeSuffix:data.materialBoardSizeSuffix,h:x=>String(x),String
+ })({materialId:'one'},{materialId:'one'});
+ assert.match(opts,/Freya · 18 mm · 2800 × 2070 mm/);
+ assert.match(opts,/Munkalap · 38 mm · 4100 × 900 mm/);
+});
+
 test('anyagadatbázis rendezése elmentődik, a legördülő ugyanazt a sorrendet használja',()=>{
  const src=region('function reorderMaterialCatalog(id,targetId,after=false){','\n  document.addEventListener(\'dragstart\'');
  const materials=[{id:'a',color:'Fehér',thickness:18},{id:'b',color:'Tölgy',thickness:36},{id:'c',color:'Hexa',thickness:15}];
