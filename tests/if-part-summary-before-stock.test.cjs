@@ -60,8 +60,10 @@ test('összesítő csak a szabásba kerülő alkatrészeket írja ki, szerkeszt�
   assert.doesNotMatch(html,/Nulla darab/);
   assert.match(html,/Készméret \(X × Y\)/);
   assert.match(html,/Szabásméret \(X × Y\)/);
-  assert.match(html,/1-0 · X1 · 2 mm ABS/);
-  assert.match(html,/0-1 · Y1 · 0.4 mm ABS/);
+  assert.match(html,/1-0 · X1/);
+  assert.match(html,/<td class="abs-value">2 mm<\/td>/);
+  assert.match(html,/0-1 · Y1/);
+  assert.match(html,/<td class="abs-value">0.4 mm<\/td>/);
   assert.match(html,/400 × 120 mm/);
   assert.match(html,/400 × 119 mm/);
   assert.doesNotMatch(html,/data-scope="part"/);
