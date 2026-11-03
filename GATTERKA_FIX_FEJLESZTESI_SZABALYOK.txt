@@ -170,3 +170,31 @@ Visszaállítható főági előzmény:
 archive/before-worktop-ry-single-trim-20261103
 A munkalap első RY/Y vágását és a fűrészrés-értelmezést tényleges
 gépi szárazpróbával ellenőrizni kell az éles gyártás előtt.
+
+2026-11-03 – MUNKALAP: A BÚTORLAP KÉTMENETES VÁGÁSI LOGIKÁJA AZ IRÁNYADÓ
+-----------------------------------------------------------------------
+A tulajdonos a korábbi külön munkalapos RY=első darab+szélezés,
+majd Y=első darab eljárást HIBÁSNAK minősítette és visszavonta.
+A 38 mm-es munkalap ugyanolyan gépi XPRG parancsmenetet használ,
+mint a bútorlap: P, RY, Y, RX, X, [U ha szükséges], F.
+A munkalap egyetlen gyári 600 vagy 900 mm-es teljes szélességű
+csík; a 4100 mm-es hossz a visszaforgatás utáni X darabolási irány.
+Az első csíkmenet után a 90°-kal visszaadott teljes szélességű
+munkalapon a kész darabok X mérettel készülnek, nem Y mérettel.
+Munkalapnál hosszirányú U alábontás TILOS, a gyári 600/900 mm
+szélességet egyetlen oldalán sem szabad keskenyebbre vágni.
+Az egyszeri, felhasználó által beállított végszélezés a 4100 mm-es
+hosszú irányú, felülre igazított X darabolási helyigény része,
+és nem újabb külön RY/Y parancspár. A fűrészrés külön számít.
+A munkalap felirata és fejléc: P/Lunghezza = 600/900,
+Larghezza = 4100, vastagság = 38 mm.
+A 18 mm-es bútorlap fizikai végigvágása, XPRG kódja, a fő térkép
+megjelenítője és Windows Mentés másként megmarad.
+VÉDETT aktuális kód-ujjlenyomatok: finalize 1e0ac4b9,
+XPRG 4a04f390, gyártási sorrend afa801b9,
+mentés f49fe3b5, rajz 86d21042.
+Visszaállítási pont:
+archive/before-unified-worktop-board-cutting-20261103
+Az RY/RX gépi referenciaélhez viszonyított megvalósítását, az
+első és második menet összhangját KÖTELEZŐ tényleges próbaszabással
+ellenőrizni; teszteredmény önmagában nem elég.
