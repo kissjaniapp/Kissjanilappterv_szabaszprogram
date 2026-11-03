@@ -93,9 +93,9 @@ test('250 darab 38 mm-es munkalaprész sem hoz létre hosszanti vágást',()=>{
   assert.ok(result.bins.every(bin=>bin.machine.feed==='x'&&
     bin.cuts.every(c=>(c.stage==='cross'||c.stage==='cross-head-trim')&&c.length===bin.b)));
   assert.ok(xprgs.every(s=>!s.includes('T="U"')));
-  assert.ok(xprgs.every(s=>/Lunghezza="600[.]00"/.test(s)&&
-    /Larghezza="4100[.]00"/.test(s)&&
-    /<Cut T="P" Dim="600[.]00"/.test(s)));
+  assert.ok(xprgs.every(s=>/Lunghezza="4100[.]00"/.test(s)&&
+    /Larghezza="600[.]00"/.test(s)&&
+    /<Cut T="P" Dim="4100[.]00"/.test(s)));
 });
 test('hibás kézi 38 mm-es tábla és hibás alkatrészméret visszautasítva',()=>{
   const engine=strip({trim:10,kerf:5,boards:[],selectedRemnantIds:[]});
