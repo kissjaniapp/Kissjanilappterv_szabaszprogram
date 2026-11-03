@@ -325,3 +325,59 @@ A 38 mm munkalap gépi XPRG-továbbfejlesztése csak tényleges WinCut
 A felhasználó által feltöltött elfogadott 2800×2070×18 XPRG BÚTORLAP-
 minta igazolja az ismert P→RY→Y→RX→X→F szerkezetet, de önmagában
 nem igazolja az ugyanolyan 38 mm-es munkalap gépi viselkedését.
+
+2026-11-03 – JÓVÁHAGYOTT MUNKALAP P/RY/Y/F PRÓBA, EGYEDI KATALÓGUSMÉRET
+----------------------------------------------------------------------
+A felhasználó lépésenként elfogadta a 38 mm munkalap
+EGYSOROS, TELJES SZÉLESSÉGŰ, EGYETLEN GÉPÁLLÁSÚ megmunkálását.
+A 4100 × 600 × 38 mm munkalapból 2 db 964 × 600 mm alkatrész,
+12 mm szélezés és 5 mm fűrészrés esetében az aktuális pontos XPRG:
+  Header Lunghezza=600, Larghezza=4100, Spessore=38,
+  SpessoreLama=5, Swap=1.
+  <Cut T="P"  Dim="600.00" />
+  <Cut T="RY" Dim="2147.50" />
+  <Cut T="Y"  Dim="964.00" />
+  <Cut T="F"  Dim="0.00" />
+  <Cut T="Y"  Dim="964.00" />
+  <Cut T="F"  Dim="0.00" />
+A tényleges XML Cut rekordok a korábbi Rip="1", folyamatos ID
+szerkezetet tartják meg; ez a lista szemléltető rövidítés.
+Az RY első valódi keresztvágás koordinátájából készül:
+bin.a - bin.cuts[0].x1. A későbbi Y utasítások az eredeti
+bin.cuts készméretéből, minden valós Y vágáshoz F lezárással
+származnak. Az RX, X és U 38 mm munkalapnál NEM szerepelhet.
+A gép a munkalapot nem fordíthatja, nem csíkozhatja hosszirányban.
+A bútorlap P/RY/Y/RX/X/U/F parancssora MINDEN BÁJTJÁBAN FIX.
+
+ANYAGADATBÁZIS: a szín + vastagság mellett már meglevő szabad
+boardA (hossz, X) és boardB (szélesség, Y) méretbevitelt a
+38 mm MUNKALAP AUTÓMATA ALAPTÁBLÁJÁNAK is átadjuk.
+Ha mindkét mező pozitív, véges és <=10000 mm, a 38 mm
+munkalap azt használja; nincs további 4100×600/900 korlát.
+A kész alkatrésznek a teljes tábla szélességét meg kell
+tartania, és a tábla hosszán el kell férnie; tilos hosszirányú
+keskenyítés vagy forgatás. Ha nincs teljes kétméretes
+katalógusrekord, a korábbi 4100×600/900 alapérték marad.
+A más vastagságú bútorlapok szabványtáblájára a
+katalógus méretei továbbra sem hatnak.
+A munkalap hossza/szélessége a kiválasztott szín rekordja
+alapján kerül a gépi fejlécbe, mindig P=Lunghezza=boardB,
+Larghezza=boardA, Swap=1.
+
+A fizikai finalize teljes algoritmusa, minden vágás helye és
+sorrendje, a buildProductionSequence, a fő SVG, az xMix, a
+Windows Mentés másként változatlanul FIX; a munkalap
+exportág és a 38 mm munkalap automata tábla-méretezése
+engedélyezetten változott.
+KÓDUJJLENYOMATOK: fizika 1e0ac4b9, gyártás afa801b9,
+xPrg 659fdd7e, mentés f49fe3b5, SVG 86d21042.
+Visszaállítás:
+archive/before-validated-p-ry-y-f-worktop-and-catalog-stock-20261103
+
+FONTOS: A korábbi P=600, Lunghezza=600, Larghezza=4100, Swap=0
+munkalap-változatot a WinCut 402 hibával elutasította.
+Az új Swap=1, P/RY/Y/F szerkezet a tulajdonos által
+jóváhagyott TESZT, de gépi WinCut-import/szimuláció NEM
+volt igazolva. Bármilyen éles fűrészindítás előtt csak
+előnézeti/szárazpróbás ellenőrzés végezhető; nem szabad
+gyártásra hitelesítettnek nevezni.
