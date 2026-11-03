@@ -7,7 +7,7 @@ ELŐZŐ VERZIÓ – VISSZAÁLLÍTÁSI PONT
 GitHub ág: archive/legacy-cutting-logic-before-20261103
 Konkrét commit: 9c616ba1a37eba977554fd02eaebff70f11cbc3c
 Régi szabályzat: docs/archivum/2026-11-03-regi-vagasi-logika/GATTERKA_FIX_FEJLESZTESI_SZABALYOK_EREDETI.txt
-Régi ujjlenyomat-teszt: docs/archivum/2026-11-03-regi-vagasi-logika/locked-machine-invariants_EREDETI.test.cjs
+Régi ujjlenyomat-teszt: docs/archivum/2026-11-03-regi-vagasi-logika/locked-machine-invariants_EREDETI.txt
 Az új szabályt ne változtasd vissza véletlenül! Az archív ágból a
 kód és a régi szabályzat külön visszaállítható.
 
