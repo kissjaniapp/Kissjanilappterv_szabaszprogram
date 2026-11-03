@@ -92,18 +92,18 @@ test('1620×785 maradék táblán is minden sorszám megjelenik',()=>{
   assert.equal(bin.machine.topAligned,true);
   assertFullNumbering(bin);
 });
-test('38 mm-es 4100×600 munkalap: bútorlapos feed x, Lunghezza/P 4100, Larghezza 600',()=>{
+test('38 mm-es 4100×600 munkalap: vízszintes 600-as XPRG fejléc és RY/Y',()=>{
   const bin=plan([part(1000,600,3,38)],'auto',10).bins[0],xprg=xml(bin);
   assert.equal(bin.a,4100);assert.equal(bin.b,600);
-  assert.match(xprg,/Lunghezza="4100[.]00" Larghezza="600[.]00"/);
-  assert.match(xprg,/<Cut T="P" Dim="4100[.]00"/);
+  assert.match(xprg,/Lunghezza="600[.]00" Larghezza="4100[.]00"/);
+  assert.match(xprg,/<Cut T="P" Dim="600[.]00"/);
   assertFullNumbering(bin);
 });
-test('38 mm-es 4100×900 munkalap: bútorlapos feed x, Lunghezza/P 4100, Larghezza 900',()=>{
+test('38 mm-es 4100×900 munkalap: vízszintes 900-as XPRG fejléc és RY/Y',()=>{
   const bin=plan([part(1000,900,3,38)],'auto',10).bins[0],xprg=xml(bin);
   assert.equal(bin.a,4100);assert.equal(bin.b,900);
-  assert.match(xprg,/Lunghezza="4100[.]00" Larghezza="900[.]00"/);
-  assert.match(xprg,/<Cut T="P" Dim="4100[.]00"/);
+  assert.match(xprg,/Lunghezza="900[.]00" Larghezza="4100[.]00"/);
+  assert.match(xprg,/<Cut T="P" Dim="900[.]00"/);
   assertFullNumbering(bin);
 });
 test('a fő SVG méretek, sorszámok rajzolása nem változtatja meg a gépi adatokat',()=>{
