@@ -13,7 +13,12 @@
 // 2026-11-03: a tulajdonos új utasítására a 38 mm-es munkalap XPRG parancsait
 // a fő szabástérképen ténylegesen szereplő keresztvágásokhoz igazítottuk.
 // A normál bútorlapok exportja, a fizikai geometria és a Windows mentés FIX.
-// 2026-11-03: a munkalap RY javítása is kifejezetten engedélyezett:\n// első alkatrész mérete + egyszeri végszélezés, majd Y készméretre vágás.\n// A munkalapos fizikai rajz és XPRG együtt módosult; a bútorlap és mentés fix.\n// Visszaállítás: archive/before-worktop-ry-single-trim-20261103\n// További módosítás csak tulajdonosi engedéllyel.
+// 2026-11-03: a tulajdonos a munkalap külön RY/Y szabályát visszavonta.
+// A 38 mm munkalapra is a 18 mm bútorlap eredeti kétmenetes
+// P → RY → Y → RX → X → F logikáját alkalmazzuk, külön ciklus nélkül.
+// A munkalap a teljes 600/900 mm szélességét megőrzi, U nélkül.
+// A bútorlapok és a Windows mentési rutin kódja változatlan.
+// Visszaállítás: archive/before-unified-worktop-board-cutting-20261103
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
@@ -31,11 +36,11 @@ function fingerprint(text){
 }
 const locked=[
  ['Fizikai csíkvágás (első vágás és 90° visszaadás)',
-  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','3afdc9ea'],
+  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','1e0ac4b9'],
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','1888dce4'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','4a04f390'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
