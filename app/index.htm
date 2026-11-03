@@ -774,7 +774,7 @@
         if(!expression)throw Error('Üres IF feltétel');
         const m=expression.match(/^(.+?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/);
         const numeric=value=>calcPartFormula(value,vars,f,
-          part||{id:'parameter-definition',name:'Paraméter'},'if',visited);
+          part||{id:'parameter-definition:'+visited.join(':'),name:'Paraméter'},'if',visited);
         let active;
         if(m){
           const a=numeric(m[1]),b=numeric(m[3]);
@@ -1131,7 +1131,8 @@
         dir.toLowerCase(),chain);
       return '('+value+')';
     });
-    return calc(expandFurnitureParameters(expression,vars,f,chain),vars);
+    return calc(f?.customParameters?.length?
+      expandFurnitureParameters(expression,vars,f,chain):expression,vars);
   }
   function getParts(){
     let rows=[],errors=[];
@@ -3262,9 +3263,9 @@
   }
   function partReferenceSuggestions(el){
     closePartSuggestions();
-    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"],[data-scope="custom-part"][data-key="a"],[data-scope="custom-part"][data-key="b"],[data-scope="custom-part"][data-key="q"]'))return;
-    const custom=el.dataset.scope==='custom-part';
-    // Kizárólag az aktuális bútor alkatrészeit ajánlhatja fel.
+    if(!el?.matches?.('[data-scope="part"][data-key="a"],[data-scope="part"][data-key="b"],[data-scope="part"][data-key="q"],[data-scope="part"][data-key="ifCondition"],[data-scope="custom-param"][data-key="condition"],[data-scope="custom-part"][data-key="a"],[data-scope="custom-part"][data-key="b"],[data-scope="custom-part"][data-key="q"]'))return;
+    const custom=el.dataset.scope==='custom-part'||el.dataset.scope==='custom-param';
+    // Kizárólag az aktuális bútor alkatrészeit és paramétereit ajánlhatja fel.
     const selected=custom?getFurniture():
       state.furnitures.find(f=>(f.parts||[]).some(p=>p.id===el.dataset.id));
     if(!selected)return;
@@ -3278,7 +3279,10 @@
       String(p.name||'').toLocaleLowerCase('hu-HU')
        .startsWith(token.toLocaleLowerCase('hu-HU'))&&
       !String(p.name||'').startsWith('=')&&!String(p.name||'').includes('{')).slice(0,8);
-    if(!matches.length)return;
+    const parameterMatches=(selected.customParameters||[]).filter(param=>
+      String(param.name||'').toLocaleLowerCase('hu-HU')
+        .startsWith(token.toLocaleLowerCase('hu-HU'))).slice(0,8);
+    if(!matches.length&&!parameterMatches.length)return;
     const container=el.closest('.expr-cell');if(!container)return;
     const pop=document.createElement('div');
     pop.className='part-ref-suggestions';pop.setAttribute('role','listbox');
@@ -3302,6 +3306,23 @@
         btn.addEventListener('click',insert);
         pop.appendChild(btn);options.push({btn,insert});
       }
+    }
+    for(const param of parameterMatches){
+      const btn=document.createElement('button');btn.type='button';
+      btn.className='part-ref-option';
+      btn.textContent=param.name+' · Bútor IF-paraméter (1/0)';
+      btn.setAttribute('role','option');
+      btn.addEventListener('mousedown',event=>event.preventDefault());
+      const insert=()=>{
+        const code='['+param.name+']';
+        const value=String(el.value);
+        el.value=value.slice(0,offset)+code+value.slice(position);
+        el.setSelectionRange(offset+code.length,offset+code.length);
+        el.dispatchEvent(new Event('input',{bubbles:true}));
+        el.focus();closePartSuggestions();
+      };
+      btn.addEventListener('click',insert);
+      pop.appendChild(btn);options.push({btn,insert});
     }
     if(options.length){
       options[0].btn.classList.add('suggestion-active');
@@ -3331,6 +3352,7 @@
       if(!rule)return;
       rule.condition=el.value;
       syncCustomParameterParts(f);refreshCustomRuleStatuses(f);
+      partReferenceSuggestions(el);
       refreshLiveFormulaValues();result=null;save();return;
     }
     if(scope==='custom-part'&&['name','a','b','q'].includes(key)){
@@ -3347,7 +3369,7 @@
       if(['a','b','q'].includes(key))partReferenceSuggestions(el);
       refreshLiveFormulaValues();result=null;save();return;
     }
-    if(scope==='part'&&['a','b','q','name','materialColor'].includes(key)){
+    if(scope==='part'&&['a','b','q','name','materialColor','ifCondition'].includes(key)){
       const part=state.furnitures.flatMap(f=>f.parts).find(p=>p.id===el.dataset.id);
       if(!part)return;
       part[key]=el.value;
@@ -3359,8 +3381,8 @@
         if(spec)spec.name=el.value;
         part.customNameInherited=false;
       }
-      if(['a','b','q','name'].includes(key))refreshLiveFormulaValues();
-      if(['a','b','q'].includes(key))partReferenceSuggestions(el);
+      if(['a','b','q','name','ifCondition'].includes(key))refreshLiveFormulaValues();
+      if(['a','b','q','ifCondition'].includes(key))partReferenceSuggestions(el);
       scheduleLiveNesting();
     }else if(scope==='furniture'&&['w','ht','d','t','qty','s','dividerThreshold'].includes(key)){
       const furniture=state.furnitures.find(f=>f.id===el.dataset.id);
@@ -3465,7 +3487,7 @@
       // A képletmezőket nem töröljük le a DOM-ból a blur/change eseménynél.
       if(liveNestingTimer){clearTimeout(liveNestingTimer);liveNestingTimer=null;}
       result=hadNesting||state.active==='nesting'?computeNesting():null;
-      if((scope==='part'&&['a','b','q','name','materialColor'].includes(key))||
+      if((scope==='part'&&['a','b','q','name','materialColor','ifCondition'].includes(key))||
          (scope==='furniture'&&['w','ht','d','t','qty','s','dividerThreshold'].includes(key))||
          (el.tagName==='INPUT'&&el.type!=='checkbox')||
          (el.tagName==='SELECT'&&scope!=='ui')){
