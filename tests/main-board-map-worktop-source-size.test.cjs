@@ -75,7 +75,7 @@ test('teljes és maradéktábla: csak a fő szabásztérkép jelenik meg',()=>{
   for(const bin of examples){
     const svg=pictures.svgBoard(bin),size=pictures.svgBoardSize(bin);
     assert.equal(size.passHeight,0);
-    assert.doesNotMatch(svg,/2[.] menet · [0-9]+[.] csík/);
+    assert.doesNotMatch(svg,/2[.] menet · [0-9]+[.] csík · 90° forgatás/);
     assert.doesNotMatch(svg,/Tábla anyaga:/);
     assert.doesNotMatch(svg,/területi kihasználtság/);
     assert.equal(svg.match(/<svg /g).length,1);
