@@ -47,74 +47,77 @@ function generated(row,feed='auto',trim=10){
   return {bin,xml,commands};
 }
 for(const width of [600,900]){
-  test('38 mm munkalap '+width+': ugyanaz a kétmenetes P/RY/Y/RX/X/F mint bútorlapnál',()=>{
+  test('38 mm munkalap '+width+': a jó szabástérkép keresztvágásai mennek RY/Y-ként a gépre',()=>{
     const {bin,xml,commands}=generated(part(1000,width));
-    const strip=bin.machine.strips[0];
-    assert.equal(strip.width,width);
-    assert.equal(bin.worktopEdgeTrim,10);
+    const physical=bin.cuts.slice().sort((a,b)=>a.order-b.order);
+    assert.equal(bin.machine.feed,'x','a jóváhagyott fizikai vágási irány FIX');
     assert.equal(bin.machine.topAligned,true);
-    assert.equal(bin.machine.feed,'x','a vágási gépállás FIX, nem változtatjuk meg az export miatt');
-    assert.equal(strip.firstCutRule,'top-aligned-bottom');
-    assert.match(xml,new RegExp('Lunghezza="4100[.]00" Larghezza="'+width+'[.]00"'));
+    assert.equal(bin.machine.strips.length,1);
+    assert.equal(bin.machine.strips[0].width,width);
+    assert.equal(bin.worktopEdgeTrim,10);
+    assert.match(xml,new RegExp('Lunghezza="'+width+'[.]00" Larghezza="4100[.]00"'));
     assert.deepEqual(Array.from(commands,c=>c.type),
-      ['P','RY','Y','RX','X','F','X','F','X','F'],
-      'a munkalap sem kaphat külön RY/Y algoritmust');
-    assert.equal(commands[0].dim,4100,'a munkalap P mérete is a bútorlap feed=x tájolásához igazodik');
-    assert.equal(commands[1].dim,0,'a gyári 600/900 mm szélesség szélezés nélküli');
-    assert.equal(commands[2].dim,width,'az Y a munkalap változatlan teljes szélessége');
-    assert.equal(commands[3].dim,Number(strip.firstTrimDistance.toFixed(2)),
-      'a visszaforgatott csík alsó első vágása az RX');
-    assert.deepEqual(Array.from(commands.filter(c=>c.type==='X'),c=>c.dim),
-      [1000,1000,1000],'a második menetben készméretes X darabolás');
+      ['P','RY','Y','F','Y','F','Y','F'],
+      'nincs gépi elforgatást okozó második RX/X/U menet');
+    assert.equal(commands[0].dim,width);
+    assert.equal(commands[1].dim,Number((4100-physical[0].x1).toFixed(2)));
+    assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),
+      [1000,1000,1000]);
     assert.equal(commands.filter(c=>c.type==='F').length,3);
-    assert.equal(bin.cuts.filter(c=>c.stage==='cross-head-trim').length,1);
-    assert.equal(bin.cuts.filter(c=>c.stage==='cross').length,3);
-    assert.ok(bin.cuts.every(c=>c.axis==='y'&&c.length===width));
-    assert.ok(!commands.some(c=>c.type==='U'));
-    assert.ok(!bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'));
-    assert.equal(commands.length,bin.machine.commandCount);
+    assert.equal(commands.length,2+2*bin.machine.strips[0].items.length);
+    assert.ok(physical.every(c=>
+      (c.stage==='cross'||c.stage==='cross-head-trim')&&
+      c.axis==='y'&&c.length===width));
+    assert.equal(physical.length,4,'az első vágás és három készrevágás fizikailag is létezik');
+    assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/);
   });
 }
-test('600 mm munkalapdarab: a gép bútorlapos csíkozás + visszaforgatott X parancsaival dolgozik',()=>{
+test('a feltöltött hibás 4100×600 munkalapos XPRG reprodukciója: 999 mm, 12 mm szélezés',()=>{
+  const {bin,xml,commands}=generated(part(999,600,1),'auto',12);
+  assert.equal(bin.cuts.length,2);
+  assert.equal(bin.cuts[0].x1,1018.5);
+  assert.equal(bin.cuts[1].x1,14.5);
+  assert.match(xml,/Lunghezza="600[.]00" Larghezza="4100[.]00"/);
+  assert.deepEqual(Array.from(commands,c=>[c.type,c.dim]),[
+    ['P',600],['RY',3081.5],['Y',999],['F',0]
+  ]);
+  assert.doesNotMatch(xml,/Swap="1"/);
+  assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/,
+    'a hibát okozó elforgatást és függőleges vágást nem adhatjuk ki újra');
+});
+test('600 vagy 900 széles munkalap egyetlen 600 mm-es alkatrésszel: P/RY/Y/F',()=>{
   for(const width of [600,900]){
     const {bin,commands}=generated(part(600,width,1));
-    assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','RX','X','F']);
-    assert.equal(commands[0].dim,4100,'a munkalap P mérete is a bútorlap feed=x tájolásához igazodik');
-    assert.equal(commands[1].dim,0);
-    assert.equal(commands[2].dim,width);
-    assert.equal(commands[3].dim,3482.5);
-    assert.equal(commands[4].dim,600);
+    assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','F']);
+    assert.equal(commands[0].dim,width);
+    assert.equal(commands[1].dim,3482.5);
+    assert.equal(commands[2].dim,600);
     assert.equal(bin.cuts.length,2);
-    assert.equal(bin.cuts[0].stage,'cross-head-trim');
-    assert.equal(bin.cuts[1].stage,'cross');
-    assert.equal(bin.cuts[0].x1-bin.cuts[1].x1,605);
     assert.equal(bin.placements[0].w,600);
-    assert.equal(bin.placements[0].x,15,'a 10 mm végszélezés és 5 mm rés a kész darabon kívül van');
+    assert.equal(bin.placements[0].x,15);
   }
 });
-test('12 mm szélezés csak a munkalap végszélezésében szerepel, teljes szélessége megmarad',()=>{
+test('12 mm szélezésnél az RY a térkép tényleges vágásközépvonalából számol',()=>{
   const {bin,commands}=generated(part(600,600,1),'auto',12);
   assert.equal(bin.worktopEdgeTrim,12);
   assert.equal(bin.trim,0);
-  assert.equal(commands[0].dim,4100);
-  assert.equal(commands[1].dim,0);
+  assert.equal(commands[0].dim,600);
+  assert.equal(commands[1].dim,3480.5);
   assert.equal(commands[2].dim,600);
-  assert.equal(commands[3].dim,3480.5);
-  assert.equal(commands[4].dim,600);
   assert.equal(bin.placements[0].x,17);
 });
-test('0 mm szélezés: nincs kitalált munkalap-specifikus Y darabolás',()=>{
+test('0 mm szélezésnél sem kerül képzeletbeli munkalapfordítás az XPRG-be',()=>{
   const {bin,commands}=generated(part(600,600,1),'auto',0);
-  assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','RX','X','F']);
+  assert.deepEqual(Array.from(commands,c=>c.type),['P','RY','Y','F']);
   assert.equal(bin.worktopEdgeTrim,0);
   assert.equal(bin.placements[0].x,5);
-  assert.equal(bin.cuts.length,2);
 });
-test('több azonos munkalap-alkatrész: minden X készméret külön szerepel',()=>{
+test('három munkalap-alkatrész: mindhárom Y készméret, változatlan fizikai sorrend',()=>{
   const {bin,commands}=generated(part(600,600,3));
-  assert.deepEqual(Array.from(commands.filter(c=>c.type==='X'),c=>c.dim),[600,600,600]);
+  assert.deepEqual(Array.from(commands.filter(c=>c.type==='Y'),c=>c.dim),[600,600,600]);
   assert.equal(bin.cuts.length,4);
   assert.deepEqual(Array.from(bin.placements,p=>p.x),[1225,620,15]);
+  assert.doesNotMatch(commands.map(c=>c.type).join(','),/RX|X|U/);
 });
 test('a normál 18 mm bútorlap gépi RY/Y/RX/X/F kódolása változatlan',()=>{
   const {bin,commands}=generated(part(964,200,3,18),'x');
