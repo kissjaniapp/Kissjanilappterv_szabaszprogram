@@ -1888,17 +1888,19 @@
       const boardFeed=m.feed;
       const stripAxis=boardFeed==='x'?'x':'y',crossAxis=boardFeed==='x'?'y':'x';
       const dimension=(rect,axis)=>axis==='y'?rect.w:rect.h;
-      // ÚJ, JÓVÁHAGYOTT SZABÁLY (2026-11-03):
-      // Egész alaptábla: változatlan, teljes tábla mínusz szélezés.
-      // Kisebb/maradék tábla és 38 mm munkalap: a szabandó csíkok
-      // a tábla FELSŐ részén helyezkednek el. Előbb a legalsó
-      // alkatrész alatti vonalon választjuk le az alsó maradékot,
-      // azután alulról felfelé levágjuk a csíkokat. 2. menetben
-      // minden leválasztott csíkot 90°-kal elforgatunk; ott ugyanígy
-      // a csík TETEJÉRE igazítjuk a darabokat, és alulról felfelé
-      // szabjuk méretre. Az xPrg Y/RX/X művelettípusok megmaradnak.
+      // ÚJ FIX SZABÁLY: A NAGY ALAPTÁBLÁNÁL IS FELÜLRE IGAZÍTUNK,
+      // ha a felrakott alkatrészek kevesebben vannak és a táblán
+      // felhasználatlan, egyben leválasztható alsó terület marad.
+      // A közel teljes tábla korábban bevált kezdőszélezése marad.
+      // 38 mm munkalap és kisebb/maradék tábla: mindig az új elv.
+      // Ez a tényleges vágási pozíciót módosítja, nem pusztán a rajzot.
+      const fullFeedExtent=dimension({x:0,y:0,w:bin.a,h:bin.b},stripAxis);
+      const lowerRemainder=fullFeedExtent-bin.trim-m.feedUsed;
+      const substantialLowerRemainder=lowerRemainder>=Math.max(
+        kerf+eps,bin.trim+kerf+eps);
       const topAligned=isWorktop38(bin.thickness)||
-        (!bin.automatic&&bin.a*bin.b<STANDARD_BOARD.a*STANDARD_BOARD.b-eps);
+        (!bin.automatic&&bin.a*bin.b<STANDARD_BOARD.a*STANDARD_BOARD.b-eps)||
+        substantialLowerRemainder;
       m.topAligned=topAligned;
       let remaining={id:bin.trim?'R0':'S1',x:0,y:0,w:bin.a,h:bin.b};
       bin.nextSection=bin.trim?1:2;
@@ -2764,9 +2766,18 @@
       // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      const feedLength=m.feed==='x'?bin.a:bin.b;
+      // A munkalap valós keresztvágása teljes 600/900 mm széles,
+      // ezért Lunghezza és P = 600/900 mm, Larghezza = 4100 mm.
+      // A normál bútorlapok igazolt x/y gépállás szerinti értelmezése
+      // és a gépi parancsok sorrendje változatlan marad.
+      const worktop=isWorktop38(bin.thickness);
+      if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
+        throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
+      const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
       const headerLength=feedLength;
-      const headerWidth=m.feed==='x'?bin.b:bin.a;
+      const headerWidth=worktop?bin.a:(m.feed==='x'?bin.b:bin.a);
+      if(worktop&&bin.cuts.some(c=>c.length>0&&Math.abs(c.length-feedLength)>.001))
+        throw Error((i+1)+'. tábla: a munkalap vágáshossza eltér az xPrg fejlécétől.');
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
