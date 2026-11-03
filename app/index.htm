@@ -2246,13 +2246,13 @@
     const visibleCuts=hasTwoPass&&!is38Worktop?bin.cuts.filter(c=>
       c.stage==='head-trim'||c.stage==='strip'):bin.cuts;
     const cutLines=visibleCuts.map((cut,i)=>{
-      const cutNum=bin.machine?(cut.boardOrder||cut.globalOrder||i+1):i+1;
+      const cutNum=bin.machine?(cut.boardOrder||cut.globalOrder||cut.order||i+1):i+1;
       const start=point(cut.x1,cut.y1),end=point(cut.x2,cut.y2);
       const x=start.x,y=start.y,x2=end.x,y2=end.y,dx=x2-x,dy=y2-y;
       if(i>0||(bin.machine&&cutNum!==1)){
         const lx=x+Math.sign(dx)*Math.min(33,Math.abs(dx)*.08);
         const ly=y+Math.sign(dy)*Math.min(33,Math.abs(dy)*.08);
-        return `<g><title>${cutNum}. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#bd805b" stroke-width="4" stroke-dasharray="16 10" fill="none"/><circle cx="${lx}" cy="${ly}" r="16" fill="#fff8ef" stroke="#b87c59" stroke-width="2"/><text x="${lx}" y="${ly+6}" font-family="Arial" font-size="17" font-weight="700" text-anchor="middle" fill="#915c3e">${cutNum}</text></g>`;
+        return `<g data-cut-order="${cutNum}" data-cut-pass="${cut.stage==='head-trim'||cut.stage==='strip'?1:2}"><title>${cutNum}. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#bd805b" stroke-width="4" stroke-dasharray="16 10" fill="none"/><circle cx="${lx}" cy="${ly}" r="16" fill="#fff8ef" stroke="#b87c59" stroke-width="2"/><text x="${lx}" y="${ly+6}" font-family="Arial" font-size="17" font-weight="700" text-anchor="middle" fill="#915c3e">${cutNum}</text></g>`;
       }
       if(rotated){
         // A munkalap 90°-kal elforgatott fő nézetében az első,
@@ -2260,16 +2260,31 @@
         // vonal, rajta szöveges "1. VÁGÁS" megjelöléssel.
         if(is38Worktop){
           const labelX=(x+x2)/2,labelY=y-17;
-          return `<g><title>1. VÁGÁS · ${nfmt(cut.length)} mm · munkalap</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><rect x="${labelX-100}" y="${labelY-43}" width="200" height="46" rx="9" fill="#bb512c"/><text x="${labelX}" y="${labelY-11}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="white">1. VÁGÁS</text></g>`;
+          return `<g data-cut-order="${cutNum}" data-cut-pass="${cut.stage==='head-trim'||cut.stage==='strip'?1:2}"><title>1. VÁGÁS · ${nfmt(cut.length)} mm · munkalap</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><rect x="${labelX-100}" y="${labelY-43}" width="200" height="46" rx="9" fill="#bb512c"/><text x="${labelX}" y="${labelY-11}" text-anchor="middle" font-family="Arial,sans-serif" font-size="25" font-weight="800" fill="white">1. VÁGÁS</text></g>`;
         }
         const markX=x+dx*.83,markY=y+dy*.83;
-        return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm · elfordított nézet</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
+        return `<g data-cut-order="${cutNum}" data-cut-pass="${cut.stage==='head-trim'||cut.stage==='strip'?1:2}"><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm · elfordított nézet</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><circle cx="${markX}" cy="${markY}" r="23" fill="#bb512c" stroke="#fff8ef" stroke-width="3"/><text x="${markX}" y="${markY+8}" font-family="Arial" font-size="24" font-weight="800" text-anchor="middle" fill="white">1</text></g>`;
       }
       const mx=x+dx*.69,my=y+dy*.69;
       const head=cut.axis==='x'?`M${mx+18} ${my-13}L${mx} ${my}L${mx+18} ${my+13}`:`M${mx-13} ${my-18}L${mx} ${my}L${mx+13} ${my-18}`;
       const labelX=cut.axis==='x'?x-190:x+23,labelY=cut.axis==='x'?y-30:y+60;
-      return `<g><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><path d="${head}" fill="none" stroke="#a93e22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="${labelX-10}" y="${labelY-30}" width="190" height="46" rx="11" fill="#bb512c"/><text x="${labelX+85}" y="${labelY+1}" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="25" font-weight="700">1. VÁGÁS ${cut.axis==='x'?'←':'↓'}</text></g>`;
+      return `<g data-cut-order="${cutNum}" data-cut-pass="${cut.stage==='head-trim'||cut.stage==='strip'?1:2}"><title>1. vágás · ${cut.axis.toUpperCase()} tengely · ${nfmt(cut.length)} mm</title><path d="M${x} ${y}L${x2} ${y2}" stroke="#c45b34" stroke-width="8" fill="none"/><path d="${head}" fill="none" stroke="#a93e22" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="${labelX-10}" y="${labelY-30}" width="190" height="46" rx="11" fill="#bb512c"/><text x="${labelX+85}" y="${labelY+1}" text-anchor="middle" fill="white" font-family="Arial,sans-serif" font-size="25" font-weight="700">1. VÁGÁS ${cut.axis==='x'?'←':'↓'}</text></g>`;
     }).join('');
+
+    // A 90°-kal visszaadott csíkok méretre vágásai NEM vetíthetők rá
+    // a teljes táblára függőleges gépi vágásként. Ezeket a fő rajzon,
+    // a tényleges vágás eredeti koordinátájához közel, sorszámozott
+    // 90°-os jelvényként mutatjuk; minden gépi vágás sorszáma látszik,
+    // de NINCS új alsó miniábra és NINCS hamis függőleges vágásvonal.
+    const rotatedStripNumbers=(hasTwoPass&&!is38Worktop?
+      bin.cuts.filter(c=>c.stage!=='head-trim'&&c.stage!=='strip'):[])
+      .map((cut,i)=>{
+        const cutNum=cut.boardOrder||cut.globalOrder||cut.order||i+1;
+        const at=point((cut.x1+cut.x2)/2,(cut.y1+cut.y2)/2);
+        const px=Math.max(tx+24,Math.min(tx+boardWidth-24,at.x));
+        const py=Math.max(ty+24,Math.min(ty+boardHeight-24,at.y));
+        return `<g data-cut-order="${cutNum}" data-cut-pass="2"><title>${cutNum}. vágás · 2. menet · ${cut.stripIndex}. csík 90°-os visszaforgatás után · ${cut.stage}</title><circle cx="${px}" cy="${py}" r="19" fill="#385e8d" stroke="#f8faf7" stroke-width="3"/><text x="${px}" y="${py+6}" text-anchor="middle" font-family="Arial,sans-serif" font-size="17" font-weight="800" fill="white">${cutNum}</text><text x="${px+21}" y="${py-16}" font-family="Arial,sans-serif" font-size="15" font-weight="700" fill="#385e8d">90°</text></g>`;
+      }).join('');
     const trim=bin.trim||0;
     const t=rect(trim,trim,bin.a-2*trim,bin.b-2*trim);
     const trimBoundary=trim>0?`<rect x="${t.x}" y="${t.y}" width="${t.a}" height="${t.b}" stroke="#b97f58" stroke-width="2" stroke-dasharray="12 8" fill="none"/>`:'';
@@ -2288,7 +2303,7 @@
     // A munkalap forrásmérete a FŐ szabásztérkép FEJLÉCÉBEN szerepel;
     // nem állítunk vissza sem alsó anyagfeliratot, sem 2. menetes miniábrát.
     const stockSizeLabel=is38Worktop?`<text x="${tx+boardWidth/2}" y="${ty-67}" text-anchor="middle" font-family="Arial,sans-serif" font-size="19" font-weight="700" fill="#305646">Kiinduló munkalap: ${nfmt(bin.a)} × ${nfmt(bin.b)} × ${nfmt(bin.thickness)} mm</text>`:'';
-    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}${stockSizeLabel}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${dimensionTop}${dimensionSide}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hgt}" viewBox="0 0 ${w} ${hgt}" role="img" aria-label="Méretezett guillotine szabásterv: ${name}" preserveAspectRatio="xMidYMid meet"><rect width="${w}" height="${hgt}" fill="#f8faf7"/>${startingArrow}${stockSizeLabel}<rect x="${tx}" y="${ty}" width="${boardWidth}" height="${boardHeight}" fill="#e7e0d5" stroke="#a2ad9e" stroke-width="3"/>${trimBoundary}${shapes}${cutLines}${rotatedStripNumbers}${dimensionTop}${dimensionSide}</svg>`;
   }
   function trimmingSteps(bin){
     const trim=Number(bin.trim)||0,kerf=Math.max(0,Number(state.kerf)||0);
