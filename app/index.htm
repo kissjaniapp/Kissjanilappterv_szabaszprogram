@@ -1263,11 +1263,6 @@
       <div class="panel-body">
         ${state.furnitures.length>1?`<div class="furniture-select"><select aria-label="Bútor kiválasztása" data-scope="ui" data-key="selectedFurniture">${state.furnitures.map(x=>`<option value="${h(x.id)}" ${x.id===f.id?'selected':''}>${h(x.name||'Új bútor')}</option>`).join('')}</select></div>`:''}
         ${state.furnitures.length>1?'<div class="mini-info"><strong>'+(state.furnitures.findIndex(x=>x.id===f.id)+1)+' / '+state.furnitures.length+' bútor testreszabása</strong> · Minden bútornak külön méretei, anyaga és paraméterei vannak.</div>':''}
-        ${(f.customParameters||[]).length===0?`<div class="furniture-name"><label>Bútor megnevezése</label><input data-scope="furniture" data-key="name" data-id="${f.id}" value="${h(f.name)}"></div>`:''}
-        <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
-          <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
-        </div>
-        ${customParametersPanel(f)}
         <div class="job-info">
           <div><label>Hová készül? / Megrendelő</label><input aria-label="Hová készül" data-scope="furniture" data-id="${f.id}" data-key="destination" value="${h(f.destination||'')}"><div class="field-hint">A matrica legfelső sorába kerül.</div></div>
           <div><label>Alapanyag az anyagadatbázisból</label><select aria-label="Bútor alapanyaga" data-scope="furniture" data-id="${f.id}" data-key="materialId">
@@ -1276,6 +1271,11 @@
           <div class="field-hint">Az alapanyag színét és vastagságát is kitölti. Alkatrészenként eltérhet.</div>
           <button class="btn sm" style="margin-top:9px" data-action="materials-page">⚙ Anyagadatbázis szerkesztése</button></div>
         </div>
+        ${(f.customParameters||[]).length===0?`<div class="furniture-name"><label>Bútor megnevezése</label><input data-scope="furniture" data-key="name" data-id="${f.id}" value="${h(f.name)}"></div>`:''}
+        <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
+          <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
+        </div>
+        ${customParametersPanel(f)}
         <div data-live-cabinet>${cabinet(f)}</div>
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
         <div class="furniture-next"><span class="muted small">Minden bútor külön testreszabható.</span>
