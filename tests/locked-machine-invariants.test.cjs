@@ -18,6 +18,11 @@
 // P → RY → Y → RX → X → F logikáját alkalmazzuk, külön ciklus nélkül.
 // A munkalap a teljes 600/900 mm szélességét megőrzi, U nélkül.
 // A bútorlapok és a Windows mentési rutin kódja változatlan.
+// 2026-11-03: új engedély csak a munkalap XPRG-fejléc/P
+// bútorlapos méretirányának visszaállítására: x feed -> 4100/600 vagy 4100/900.
+// A finalize (1e0ac4b9), gyártási sorrend (afa801b9), SVG (86d21042)
+// és Mentés másként (f49fe3b5) ujjlenyomata változatlanul FIX.
+// Archívum: archive/locked-good-cut-order-before-worktop-xprg-header-20261103
 // Visszaállítás: archive/before-unified-worktop-board-cutting-20261103
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
@@ -40,7 +45,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','4a04f390'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','7d1632e5'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
