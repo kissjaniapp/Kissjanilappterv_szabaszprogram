@@ -751,8 +751,15 @@
     if(matches.length>1)throw Error('Nem egyértelmű bútorparaméter: '+name);
     const rule=matches[0],id='parameter:'+rule.id;
     if(visited.includes(id))throw Error('Körkörös bútorparaméter-hivatkozás: '+name);
-    // Régi igen/nem szériákból betöltött kapcsolók állapotát megőrizzük,
-    // de új paramétereknél nincs külön kapcsoló.
+    // Az új paraméterek értéke szám (például szokli = 1, 2 vagy 3).
+    // A régi, képletes feltételeket külön érték hiányában megőrizzük.
+    if(Object.prototype.hasOwnProperty.call(rule,'value')){
+      const text=String(rule.value??'').trim();
+      const number=Number(text.replace(',','.'));
+      if(!text||!Number.isSafeInteger(number)||number<0||number>99)
+        throw Error('A(z) '+name+' paraméter 0 és 99 közötti egész szám lehet');
+      return number;
+    }
     if(rule.enabled===false&&(rule.parts||[]).length)return 0;
     return evaluateFurnitureIf(rule.condition,vars,f,null,[...visited,id])?1:0;
   }
@@ -772,9 +779,18 @@
         let expression=original.trim(),negated=false;
         while(expression.startsWith('!')){negated=!negated;expression=expression.slice(1).trim();}
         if(!expression)throw Error('Üres IF feltétel');
-        const m=expression.match(/^(.+?)\s*(>=|<=|==|!=|>|<)\s*(.+)$/);
-        const numeric=value=>calcPartFormula(value,vars,f,
-          part||{id:'parameter-definition:'+visited.join(':'),name:'Paraméter'},'if',visited);
+        // Az IF elfogadja a [szokli]==2 és a rövid szokli=2 alakot is.
+        const m=expression.match(/^(.+?)\s*(>=|<=|==|!=|=|>|<)\s*(.+)$/);
+        const numeric=value=>{
+          const term=String(value).trim();
+          const parameters=(f?.customParameters||[]).filter(p=>
+            String(p.name||'').trim().toLocaleLowerCase('hu-HU')===
+            term.toLocaleLowerCase('hu-HU')&&term);
+          if(parameters.length===1)return namedFurnitureParameter(term,vars,f,visited);
+          if(parameters.length>1)throw Error('Nem egyértelmű bútorparaméter: '+term);
+          return calcPartFormula(term,vars,f,
+            part||{id:'parameter-definition:'+visited.join(':'),name:'Paraméter'},'if',visited);
+        };
         let active;
         if(m){
           const a=numeric(m[1]),b=numeric(m[3]);
@@ -783,7 +799,7 @@
             case '<=':active=a<=b;break;
             case '>':active=a>b;break;
             case '<':active=a<b;break;
-            case '==':active=a===b;break;
+            case '==':case '=':active=a===b;break;
             case '!=':active=a!==b;break;
           }
         }else{
@@ -813,7 +829,9 @@
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:Number(f.t)||18,
         S:effectiveShelves(f),O:effectiveDivider(f)};
       const value=namedFurnitureParameter(rule.name,vars,f);
-      return value?'Igaz · IF hivatkozásban 1':'Hamis · IF hivatkozásban 0';
+      return Object.prototype.hasOwnProperty.call(rule,'value')?
+        'Értéke: '+value+' · ezt használják az alkatrészek képletei':
+        value?'Régi feltétel igaz · értéke 1':'Régi feltétel hamis · értéke 0';
     }catch(e){return 'Paraméterhiba: '+e.message;}
   }
   function customParametersPanel(f){
@@ -828,19 +846,21 @@
             data-id="${h(rule.id)}">Paraméter törlése</button>
         </div>
         <div class="custom-parameter-condition">
-          <div style="min-width:0"><label>Feltétel – mikor kerüljön bele?</label>
-            <div class="expr-cell"><input data-scope="custom-param" data-id="${h(rule.id)}"
-              data-key="condition" autocomplete="off" spellcheck="false"
-              placeholder="Például: W>=1100" value="${h(rule.condition||'')}"></div>
-            <div class="tiny muted">A feltétel adja a paraméter 1 (igaz) vagy 0 (hamis) értékét. Üres = igaz.</div>
+          <div style="min-width:0"><label>Paraméter értéke (szám)</label>
+            <input type="number" min="0" max="99" step="1" data-scope="custom-param"
+              data-id="${h(rule.id)}" data-key="value" inputmode="numeric"
+              placeholder="Például: 2" value="${h(rule.value??'')}">
+            <div class="tiny muted">Például <strong>szokli = 2</strong>. 0 = nincs, 1 / 2 / 3 = választott kialakítás.</div>
+            ${rule.value==null&&String(rule.condition||'').trim()?
+              '<div class="tiny muted">Régi feltétel: <code>'+h(rule.condition)+'</code>. Szám megadásáig ez marad érvényben.</div>':''}
           </div><span class="muted small" data-custom-status>${h(customParameterStatus(f,rule))}</span>
         </div>
-        <div class="tiny muted">Az alkatrészt az <strong>Alkatrészek</strong> oldalon hozd létre. A külön IF mezőben a paraméter neve önmagában vagy <code>[${h(rule.name||'paraméter neve')}]</code> formában is használható.</div>
+        <div class="tiny muted">Az <strong>Alkatrészek</strong> oldalon az IF mezőben: <code>[${h(rule.name||'szokli')}]==1</code>, <code>[${h(rule.name||'szokli')}]==2</code>, <code>[${h(rule.name||'szokli')}]==3</code>, vagy röviden <code>${h(rule.name||'szokli')}=2</code>. Méret- és darabszámképletben a <code>[${h(rule.name||'szokli')}]</code> a tényleges számértéket adja.</div>
       </div>`).join('');
     return `<div class="panel top-gap custom-parameters-panel" style="padding:14px">
       <div class="toolbar"><strong>Saját bútorparaméterek</strong>
         <button class="btn sm primary" data-action="add-custom-param">＋ Saját paraméter</button></div>
-      <div class="muted small">Itt a bútor saját, névvel hivatkozható feltételeit adhatod meg. Az alkatrészeket külön, a következő oldalon hozod létre. Nincs külön Igen/Nem kapcsoló: az IF-képlet határozza meg, bekerül-e egy alkatrész. A méret- és darabszámképletekben a <code>[paraméter neve]</code> hivatkozás 1 vagy 0.</div>
+      <div class="muted small">A bútor saját paraméterének add meg a <strong>nevét és a számértékét</strong> (például szokli = 2). Az alkatrészeket külön hozd létre, és a soruknál található <strong>IF</strong> fülön döntsd el, melyik értéknél kerüljenek be. A <code>[paraméter neve]</code> képletekben a megadott számot adja vissza. A régi képletes paraméterek is betölthetők.</div>
       ${rows||'<div class="muted small" style="margin:12px 0">Még nincs saját paraméter.</div>'}
     </div>`;
   }
@@ -2067,7 +2087,7 @@
     const trimBoundary=trim>0?`<rect x="${t.x}" y="${t.y}" width="${t.a}" height="${t.b}" stroke="#b97f58" stroke-width="2" stroke-dasharray="12 8" fill="none"/>`:'';
     const entryX=tx+boardWidth-Math.min(145,Math.max(45,boardWidth*.12));
     const is38Worktop=Math.abs(Number(bin.thickness??0)-38)<.001;
-    const startingArrow=rotated?`<g><title>${is38Worktop?'A munkalap vágásai vízszintesen történnek':'Kezdővágás felülről lefelé'}</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${is38Worktop?16:25}" font-weight="800" fill="#a84a27">${is38Worktop?'CSAK VÍZSZINTES VÁGÁS':'KEZDŐVÁGÁS FELÜLRŐL ↓'}</text><path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/></g>`:'';
+    const startingArrow=rotated?`<g><title>${is38Worktop?'A munkalap vágásai vízszintesen történnek':'Kezdővágás felülről lefelé'}</title><text x="${tx+boardWidth/2}" y="${ty-110}" text-anchor="middle" font-family="Arial,sans-serif" font-size="${is38Worktop?16:25}" font-weight="800" fill="#a84a27">${is38Worktop?'CSAK VÍZSZINTES VÁGÁS':'KEZDŐVÁGÁS FELÜLRŐL ↓'}</text>${is38Worktop?'':`<path d="M${entryX} ${ty-96}V${ty-53}" fill="none" stroke="#c45b34" stroke-width="9" stroke-linecap="round"/><path d="M${entryX-15} ${ty-67}L${entryX} ${ty-51}L${entryX+15} ${ty-67}" fill="none" stroke="#c45b34" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`}</g>`:'';
     const name=h(bin.name),allUsed=bin.used/(bin.a*bin.b)*100;
     const boardMaterial=h(String(bin.materialColor||
       bin.placements?.find(p=>p.part?.materialColor)?.part?.materialColor||'Nincs megadva').trim());
@@ -3220,7 +3240,7 @@
     if(action==='add-custom-param'){
       const f=getFurniture();if(!f)return;
       if(!Array.isArray(f.customParameters))f.customParameters=[];
-      f.customParameters.push({id:uuid(),name:'',condition:'',enabled:true,parts:[]});
+      f.customParameters.push({id:uuid(),name:'',value:'1',condition:'',enabled:true,parts:[]});
       result=null;render();return;
     }
     if(action==='add-custom-part'){
@@ -3393,7 +3413,8 @@
     for(const param of parameterMatches){
       const btn=document.createElement('button');btn.type='button';
       btn.className='part-ref-option';
-      btn.textContent=param.name+' · Bútor IF-paraméter (1/0)';
+      btn.textContent=param.name+' · Bútorparaméter ('+
+        (param.value==null?'régi 0/1':String(param.value))+')';
       btn.setAttribute('role','option');
       btn.addEventListener('mousedown',event=>event.preventDefault());
       const insert=()=>{
@@ -3430,12 +3451,12 @@
       rememberMachineRoot(el.value);
       return; // Gépelés közben nem bontjuk le az inputot és a gombokat.
     }
-    if(scope==='custom-param'&&key==='condition'){
+    if(scope==='custom-param'&&(key==='value'||key==='condition')){
       const f=getFurniture(),rule=f?.customParameters?.find(x=>x.id===el.dataset.id);
       if(!rule)return;
-      rule.condition=el.value;
+      rule[key]=el.value;
       syncCustomParameterParts(f);refreshCustomRuleStatuses(f);
-      partReferenceSuggestions(el);
+      if(key==='condition')partReferenceSuggestions(el);
       refreshLiveFormulaValues();result=null;save();return;
     }
     if(scope==='custom-part'&&['name','a','b','q'].includes(key)){
@@ -3495,7 +3516,7 @@
       const key=el.dataset.key;
       if(scope==='custom-param'){
         if(key==='name')rule.name=el.value;
-        else if(key==='condition')rule.condition=el.value;
+        else if(key==='condition'||key==='value')rule[key]=el.value;
       }else{
         const spec=(rule.parts||[]).find(x=>x.id===el.dataset.partId);
         if(!spec||!['name','a','b','q'].includes(key))return;
