@@ -30,10 +30,10 @@ test('egy tábla nem kever két különböző színt, akkor sem, ha azonos a vas
   assert.equal(colors[0],bin.materialColor);
  }
 });
-test('38 munkalap, 12 RTG és 15 Hexa RTG csak azonos vastagságú készletre kerül',()=>{
- const boards=[sheet('munkalap',2800,2070,38,'Munkalap'),
+test('a 4100×600 munkalap, a 12 RTG és 15 Hexa RTG csak megfelelő készletre kerül',()=>{
+ const boards=[sheet('munkalap',4100,600,38,'Munkalap'),
   sheet('rtg',2800,2070,12,'RTG'),sheet('hexa',2800,2070,15,'Hexa RTG')];
- const out=solve(boards,[row('M',900,200,38,'Munkalap'),
+ const out=solve(boards,[row('M',900,600,38,'Munkalap'),
  row('R',900,200,12,'RTG'),row('H',900,200,15,'Hexa RTG')]);
  assert.equal(out.failed.length,0);
  assert.equal(out.bins.length,3);
