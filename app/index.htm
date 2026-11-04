@@ -2239,43 +2239,31 @@
   }
   function computeNesting(){
     const parts=getParts();
-    // A munkalap kizárólag teljes szélességű keresztvágásból készül.
-    // Az anyagadatbázisban megadott X/Y méret az adott 38 mm-es
-    // alapanyag egyedi teljes táblamérete, hiányában 4100×600/900.
-    // Külön tesztkörnyezetben a katalógus-segéd hiányozhat.
-    const currentWorktopSize=r=>typeof worktop38CatalogSize==='function'?
-      worktop38CatalogSize(r):null;
-    const badWorktop=(parts.rows||[]).find(r=>{
-      if(r.skipped||r.error||!(Math.abs(Number(r.thickness)-38)<.001))return false;
-      const size=currentWorktopSize(r);
-      const fitsWidth=w=>{
-        const gap=w-Number(r.b),kerf=Math.max(0,Number(state.kerf)||0);
-        return Number(r.b)>0&&gap>=-.0001&&
-          (gap<=.0001||gap+.0001>=kerf);
-      };
-      return !(Number(r.a)>0&&Number(r.a)<=(size?.a??4100)+.0001&&
-        (size?fitsWidth(size.b):[600,900].some(fitsWidth)));
-    });
-    if(badWorktop){
-      const size=currentWorktopSize(badWorktop);
-      return {error:
-        'A 38 mm-es munkalap első menete TELJES táblaszélességű, '+
-        'a keskenyebb kész alkatrészhez második menetes U-vágás szükséges. A választott alapanyag '+
-        (size?(size.a+' × '+size.b):( '4100 × 600 vagy 4100 × 900'))+
-        ' mm, a kért alkatrész pedig '+badWorktop.a+' × '+badWorktop.b+
-        ' mm. Ellenőrizd a táblaszélességet, a legalább fűrészrésnyi U-maradékot, az anyagszínt és a méretlevonást.'};
-    }
-    const stock38=[...(state.boards||[]),...(typeof remnantCatalog==='undefined'?[]:
-      remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id))
-        .map(r=>({...r,isRemnant:true})))];
-    if(stock38.some(b=>Number(b.qty)>0&&Math.abs(Number(b.thickness)-38)<.001&&
-      !(typeof validWorktop38Stock==='function'?
-        validWorktop38Stock(b):
-        (Math.abs(Number(b.a)-4100)<.001&&
-          [600,900].some(w=>Math.abs(Number(b.b)-w)<.001)))))
-      return {error:'A 38 mm-es készlettábla mérete eltér az anyagadatbázisban megadott '+
-        'hosszúságtól/szélességtől (vagy az alapértelmezett 4100 × 600/900 mm-től). '+
-        'Javítsd a színt vagy a kézi készletméretet.'};
+    // A munkalapos szabást a tulajdonos VÉGLEG MEGSZÜNTETTE.
+    // A régi 38 mm munkalapos projekt és anyag adatai megmaradnak,
+    // de sem tervet, sem gépi XML/XMix fájlt nem készíthetünk belőlük.
+    const rejectedWorktop=(parts.rows||[]).find(r=>
+      !r.skipped&&!r.error&&Number(r.qty)>0&&(
+        Math.abs(Number(r.thickness)-38)<.001||
+        String(r.materialId||'')==='work38'||
+        /munkalap/i.test(String(r.materialColor||r.furniture?.materialColor||''))));
+    if(rejectedWorktop)return {error:
+      'A munkalapok szabását megszüntettük: a gép nem tudja kezelni. '+
+      'Ebből a projektből csak bútorlapos szabásterv és xPrg/xMix készíthető. '+
+      'A korábbi munkalapos alkatrészeket távolítsd el vagy tedd inaktívvá.'};
+    // A "Bevonni" minden jelölt maradékra KÖTELEZŐ. Az adatbázist
+    // nem írjuk át, a kijelölések projektenként megmaradnak.
+    const requiredRemnants=[...new Set(state.selectedRemnantIds||[])];
+    const requiredCatalog=requiredRemnants.map(id=>
+      (typeof remnantCatalog==='undefined'?[]:remnantCatalog).find(r=>r.id===id));
+    const unavailable=requiredCatalog.find(r=>!r||!(Number(r.qty)>0));
+    if(unavailable||requiredCatalog.length!==requiredRemnants.length)
+      return {error:'Bevonni jelölt maradéktábla hiányzik vagy elfogyott. '+
+        'Az Anyagadatbázisban javítsd a jelölést és a készlet darabszámát.'};
+    if(requiredCatalog.some(r=>Math.abs(Number(r.thickness)-38)<.001||
+       /munkalap/i.test(String(r.materialColor||''))))
+      return {error:'A bevonni jelölt munkalapmaradék gépi szabását is megszüntettük. '+
+        'Vedd ki a jelölését, és csak bútorlapos maradékot használj.'};
     // MINDEN választható elrendezés ugyanazt a gépen elfogadott
     // teljes szélességű, kétmenetes csíkos szabást alkalmazza.
     // A gépi és anyagtakarékos mód saját keresése változatlan.
@@ -2321,16 +2309,33 @@
       }):[];
       const largestReusable=remnants.length?Math.max(...remnants):0;
       const reuseConcentration=remnants.reduce((sum,area)=>sum+Math.pow(area/1e6,2),0);
-      const score=trial.failed.length*1e18+trial.sheetArea*1e5+
+      // Kötelező maradékok kihagyása soha nem lehet jó terv:
+      // a keresés előbb mindegyik kijelölt maradék tényleges
+      // felhasználását teljesítő változatot részesíti előnyben.
+      const missingMandatory=requiredRemnants.filter(id=>
+        !trial.bins.some(bin=>bin.isRemnant&&bin.id===id&&
+          (bin.placements||[]).length>0));
+      const score=missingMandatory.length*1e24+
+        trial.failed.length*1e18+trial.sheetArea*1e5+
         trial.bins.length*1e7+machineStripArea*.025+
         cuts.length*1000+cuts.reduce((s,c)=>s+c.length,0)*.01+
         (economyMode? -largestReusable*.06-reuseConcentration*8000:0);
-      if(!best||score<best.score){best={...trial,score,cutAxis:axis,
+      if(!best||score<best.score){best={...trial,score,missingMandatory,cutAxis:axis,
         layoutDescription:economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
           state.layoutMode==='machine'?'Gépi csíkos':
           (state.layoutMode==='rows'?'Polcos':state.layoutMode==='mosaic'?'Mozaikos':'Szabad')+
           ' keresés · gépi, kétmenetes csíkterv',
         largestReusableArea:largestReusable};}
+    }
+    if(best?.missingMandatory?.length){
+      const labels=best.missingMandatory.map(id=>{
+        const r=requiredCatalog.find(x=>x?.id===id);
+        return (r?.name||'Maradéktábla')+' ('+(r?.a||'?')+' × '+(r?.b||'?')+' mm)';
+      });
+      return {error:'A Bevonni jelölés kötelező, de nem sikerült alkatrészt '+
+        'elhelyezni a következő maradékon: '+labels.join(', ')+'. '+
+        'Ellenőrizd a színt, a vastagságot, a méretet és az alkatrészek darabszámát. '+
+        'Egyetlen kijelölt maradékot sem hagyhatunk ki észrevétlenül.'};
     }
     if(machineMode&&best&&!best.error)best.production=buildProductionSequence(best.bins);
     return best;
