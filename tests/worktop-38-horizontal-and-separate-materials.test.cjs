@@ -80,8 +80,21 @@ test('különböző színű és vastagságú alapanyag egyetlen táblán sem kev
     row(700,600,38,'Fehér',3),row(800,900,38,'Fehér',2),
     row(900,600,38,'Fekete',4),row(500,300,18,'Fehér',3)
   ]);
-  const keys=new Set(result.bins.map(b=>b.thickness+'|'+b.materialColor+'|'+b.b));
-  assert.equal(keys.size,4);
+  // Az új munkalap U-alábontás miatt a 600 mm-es Fehér elemek
+  // a 900 mm-es Fehér táblára is kerülhetnek (U=600).
+  // A valóban VÉDETT szabály a különböző színek/vastagságok tiltása.
+  const groups=new Set(result.bins.map(b=>b.thickness+'|'+b.materialColor));
+  assert.equal(groups.size,3);
+  for(const bin of result.bins){
+    assert.ok(bin.placements.every(p=>
+      Number(p.part.thickness)===Number(bin.thickness)&&
+      String(p.part.materialColor).toLocaleLowerCase('hu-HU')===
+        String(bin.materialColor).toLocaleLowerCase('hu-HU')),
+      'egy táblán sem keveredhet szín vagy vastagság');
+  }
+  assert.ok(result.bins.some(b=>b.thickness===38&&b.materialColor==='Fehér'&&
+    b.cuts.some(c=>c.stage==='rip')),
+    'a keskenyebb 600-as készméret a 900-as Fehér táblából U-val készülhet');
 });
 test('38 mm-es munkalap kizárólag 4100×600 vagy 4100×900, eredeti szélességgel',()=>{
   const {result}=plan([row(1000,600,38,'Fehér',4),row(800,900,38,'Kő',8)]);
