@@ -1513,7 +1513,11 @@
       const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
       const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
-        '<td class="num">'+nfmt(r.originalA)+' × '+nfmt(r.originalB)+' mm</td>'+
+        '<td class="num">'+
+        (dimensionUnderline(part,'a')?'<span style="text-decoration-line:underline;text-decoration-style:solid;text-underline-offset:3px">'+nfmt(r.originalA)+'</span>':nfmt(r.originalA))+
+        ' × '+
+        (dimensionUnderline(part,'b')?'<span style="text-decoration-line:underline;text-decoration-style:double;text-underline-offset:3px">'+nfmt(r.originalB)+'</span>':nfmt(r.originalB))+
+        ' mm</td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
         '<td>'+edge+'</td><td>'+filing+'</td><td class="abs-value">'+abs+'</td></tr>';
