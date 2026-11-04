@@ -129,7 +129,7 @@ test('38 mm-es munkalapon első vágás és kiinduló 4100×600 mm forrásméret
  assert.ok(near(lines[0][2],bin.cuts[0].x1+140),'az első jelölt vágás a tényleges gépi helyen van');
 });
 test('az összesítőben az Élzárás és ABS vastagság külön oszlop',()=>{
- assert.match(html,/<th>Élzárás jelölése<\/th><th>ABS vastagság<\/th>/);
+ assert.match(html,/<th>Élzárás jelölése<\/th><th>Reszelés<\/th><th>ABS vastagság<\/th>/);
  assert.match(html,/<td class="abs-value">/);
  assert.match(html,/\.abs-value\{/);
 });
