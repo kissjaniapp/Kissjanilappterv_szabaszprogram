@@ -1633,9 +1633,15 @@
   const validWorktop38Stock=b=>{
     if(!isWorktop38(b.thickness))return true;
     const size=worktop38CatalogSize(b);
-    return size?(Math.abs(Number(b.a)-size.a)<.001&&Math.abs(Number(b.b)-size.b)<.001):
-      (Math.abs(Number(b.a)-WORKTOP_38_LENGTH)<.001&&
-        WORKTOP_38_WIDTHS.some(w=>Math.abs(Number(b.b)-w)<.001));
+    const fullLength=size?.a??WORKTOP_38_LENGTH;
+    const widthOk=size?Math.abs(Number(b.b)-size.b)<.001:
+      WORKTOP_38_WIDTHS.some(w=>Math.abs(Number(b.b)-w)<.001);
+    // A maradék munkalap rövidebb is lehet, de a TELJES
+    // színhez rögzített szélességét meg kell őriznie. Teljes
+    // alaptábla méretét nem lazítjuk, és nem keletkezik U/X vágás.
+    return widthOk&&(b.isRemnant?
+      Number(b.a)>0&&Number(b.a)<=fullLength+.001:
+      Math.abs(Number(b.a)-fullLength)<.001);
   };
   const validWorktop38Part=p=>{
     if(!isWorktop38(p.thickness))return true;
@@ -1657,8 +1663,8 @@
     const worktopEdgeTrim=isWorktop38(thickness)?Math.max(0,Number(state.trim)||0):0;
     const a=Number(b.a),height=Number(b.b);
     if(!Number.isFinite(a)||!Number.isFinite(height)||!Number.isFinite(thickness)||a<=2*trim||height<=2*trim||thickness<=0)return null;
-    return {id:b.id||'standard',index,name:b.name||'Maradék tábla',a,b:height,thickness,automatic,trim,
-      worktopEdgeTrim,
+    return {id:b.id||'standard',index,name:b.name||'Maradék tábla',a,b:height,thickness,automatic,
+      isRemnant:!!b.isRemnant,trim,worktopEdgeTrim,
       materialColor:String(b.materialColor||'').trim(),
       free:[{id:'S1',x:trim,y:trim,w:a-2*trim,h:height-2*trim}],nextSection:2,placements:[],cuts:[],used:0};
   }
@@ -1670,7 +1676,8 @@
       (state.selectedRemnantIds||[]).includes(r.id)&&Number(r.qty)>0);
     // Csak-maradék módban a kézzel felvett teljes táblákat sem
     // szabad felhasználni. Kizárólag a konkrétan kijelölt maradékok.
-    for(const b of [...(state.onlySelectedRemnants?[]:(state.boards||[])),...checked]){
+    for(const b of [...(state.onlySelectedRemnants?[]:(state.boards||[])),
+      ...checked.map(r=>({...r,isRemnant:true}))]){
       for(let i=0;i<Math.max(0,Math.min(100,Number(b.qty)||0));i++){
         const bin=createBin(b,i+1);
         if(bin)bins.push(bin);
@@ -2216,7 +2223,8 @@
         ' mm. Ellenőrizd a színt, a tábla X/Y méretét és az élzárás miatti méretlevonást.'};
     }
     const stock38=[...(state.onlySelectedRemnants?[]:(state.boards||[])),...(typeof remnantCatalog==='undefined'?[]:
-      remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id)))];
+      remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id))
+        .map(r=>({...r,isRemnant:true})))];
     if(stock38.some(b=>Number(b.qty)>0&&Math.abs(Number(b.thickness)-38)<.001&&
       !(typeof validWorktop38Stock==='function'?
         validWorktop38Stock(b):
