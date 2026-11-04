@@ -518,3 +518,55 @@ finalize 1e0ac4b9; buildProductionSequence afa801b9;
 xPrg/xMix a16c7e88 (csak xMix-sorrend további engedélyezett módosítása);
 Windows natív mentés f49fe3b5; SVG 86d21042.
 Archívum: archive/before-xmix-worktops-last-20261104
+
+2026-11-04 – VÉGLEG CSAK BÚTORLAP-SZABÁS; MARADÉK BEVONNI KÖTELEZŐ
+-------------------------------------------------------------------
+TULAJDONOSI VÉGLEGES DÖNTÉS:
+A 38 mm-es munkalap egyedi gépi szabását a WinCut gép NEM TUDTA
+kezelni, ezért a munkalap-szabás fejlesztését MEGSZÜNTETJÜK.
+A korábban egyeztetett P/RY/Y/RX/X/U/F munkalapos kísérletek
+ÉS a munkalapos XMix-utolsó sorrend csak történeti/archív adatok.
+AZ ÉLES ALKALMAZÁSBAN TILOS a 38 mm-es munkalapból új szabástervet
+vagy xPrg/xMix-et kiadni. Az aktuális computeNesting erre
+hibát ad: sem a korábban felvitt munkalapos alkatrészek, sem a
+munkalapmaradékok nem kerülhetnek ki gépi programként.
+A munkalap alapértelmezett anyagát kivettük az új anyaglista
+alapértelmezéseiből. A régi felhasználói projekt- és
+anyagrekordokat NEM TÖRÖLJÜK (biztonságos migráció).
+A megőrzött régi munkalapos kód a felhasználói gépi
+munkafolyamatból NEM elérhető, csak archív kompatibilitás.
+
+A "Csak kijelölt maradéktáblákból szabjon – teljes tábla
+használata nélkül" külön kapcsoló MEGSZŰNT. A régi projektek
+onlySelectedRemnants jelölése betöltéskor törlődik,
+a korábbi Bevonni kijelölések megmaradnak.
+Az Anyagadatbázis/Anyagkészlet maradéklistájában
+maradékonként EGYETLEN aktív választó van: "Bevonni".
+Az új BEVONNI SZABÁLY:
+- Ha egy maradék "Bevonni" jelölést kapott, az aktuális
+  szabástervnek abból ténylegesen ALKATRÉSZT KELL kiszabnia.
+- MINDEN kijelölt maradékfajtához előzetesen rendelünk
+  legalább egy, méretben, vastagságban és színben megfelelő
+  alkatrészt, a gépi csíkok fizikájának megváltoztatása nélkül.
+  Több darabos készletrekordnál legalább egy fizikai maradéklap
+  használata kötelező, nem az összes készletpéldányé.
+- Ha bármely kijelölt maradékhoz nincs vágható alkatrész,
+  a program HIBÁT jelez és gépi mentést NEM enged.
+  Nem válthat csendben teljes táblára.
+- Miután minden kijelölt maradék felhasználása teljesült,
+  a többi alkatrészhez kézi teljes vagy automatikus
+  bútorlap is használható. Nincs új "csak-maradék" mód.
+- A felhasználó az Anyagadatbázisban és az Anyagkészletben
+  ugyanazt a Bevonni jelölést látja, a kijelölés mentődik.
+A tábla kiválasztásának prioritása és a használat hibakezelése
+engedélyezetten változott; a TÉNYLEGES gépi vágásgeometria és
+a bútorlapok kipróbált XML/XMix/Windows mentési formátuma FIX.
+
+VÉDETT KÓDUJJLENYOMATOK (változatlan):
+finalize 1e0ac4b9; buildProductionSequence afa801b9;
+buildOfflineXprgProject a16c7e88; natív Windows mentés f49fe3b5;
+fő SVG szabástérkép 86d21042.
+Előző állapot:
+archive/before-furniture-only-mandatory-selected-remnants-20261104
+A korábbi, 38 mm munkalapra vonatkozó összes pozitív
+utasítás ezen szakasztól kezdve FELÜLÍRVA.
