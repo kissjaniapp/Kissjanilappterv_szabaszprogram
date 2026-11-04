@@ -29,10 +29,7 @@ function mockDocument(){
 const fcStart=html.indexOf('  function filingCode(sides,a,b){');
 const fcEnd=html.indexOf('  let loaded=null;',fcStart);
 assert.ok(fcStart>=0&&fcEnd>fcStart,'Hiányzik a reszeléskód');
-const filingSource=html.slice(fcStart,fcEnd).replace(
-  'const code=codeFromSides(sides||{});',
-  "const flags=sides||{};const code=Number(!!flags.x1)+Number(!!flags.x2)+'-'+(Number(!!flags.y1)+Number(!!flags.y2));"
-);
+const filingSource=html.slice(fcStart,fcEnd);
 const dimensionSource="function dimensionUnderline(part,axis){const edge=String(part.edge||'0-0'),flags=part.filingSides||{};const i=axis==='a'?0:2;return Number(edge[i]||0)>0||(i===0?!!(flags.x1||flags.x2):!!(flags.y1||flags.y2));}";
 const render=vm.runInNewContext('(function(){'+filingSource+
   ';return '+html.slice(a,b).trim()+';})()');
@@ -51,7 +48,7 @@ test('PNG fejlécében az anyag és gyártási célhely; sorban készméret és 
   assert.equal(pages[0].width,1600);
   const text=pages[0].text.map(x=>x.str).join('\n');
   for(const expected of ['ALKATRÉSZLISTA','Feya','Kiskunfélegyháza',
-    'Oldallap 1','910 × 600','1-1','Reszelés','1-2','Összesen: 2 db'])
+    'Oldallap 1','910 × 600','1-1','Reszelés','1Hresz-2Rresz','Összesen: 2 db'])
     assert.ok(text.includes(expected),'Nem jelenik meg: '+expected);
 });
 test('többoldalas PNG: nem vágja le a 100 sornál hosszabb alkatrészlistát',()=>{
@@ -80,16 +77,16 @@ test('az X1/X2/Y1/Y2 élhely-jelölések nem szerepelnek a PNG szövegeiben',()=
     'A PNG-ben tiltott kód szerepel: '+marker);
  }
  assert.ok(text.includes('1-1'));
- assert.ok(text.includes('1-2'));
+ assert.ok(text.includes('1Hresz-2Rresz'));
  assert.ok(!text.some(s=>s.includes('1-1 · 2 mm')),
    'a Műhely példány élzárási kódja csak 1-1 lehet');
 });
 
-test('Reszelés 0-0 és 2-2 között szálirány-keresztirány formátumú',()=>{
- assert.equal(filingCode({x1:true},200,400),'1-0');
- assert.equal(filingCode({y1:true,y2:true},964,600),'0-2');
- assert.equal(filingCode({x1:true,y1:true,y2:true},964,600),'1-2');
- assert.equal(filingCode({x1:true,x2:true,y1:true,y2:true},964,600),'2-2');
+test('Reszelés beírása számmal, kiírása Hresz és Rresz jelöléssel',()=>{
+ assert.equal(filingCode({x1:true},200,400),'1Rresz');
+ assert.equal(filingCode({y1:true,y2:true},964,600),'2Rresz');
+ assert.equal(filingCode({x1:true,y1:true,y2:true},964,600),'1Hresz-2Rresz');
+ assert.equal(filingCode({x1:true,x2:true,y1:true,y2:true},964,600),'2Hresz-2Rresz');
  assert.equal(filingCode({},964,600),'');
 });
 test('Műhely példány PNG fejléc és fájlnév: kizárólag elkészült alkatrészek',()=>{
@@ -98,7 +95,7 @@ test('Műhely példány PNG fejléc és fájlnév: kizárólag elkészült alkat
  const words=pages[0].text.map(x=>x.str);
  assert.ok(words.includes('MŰHELY PÉLDÁNY'));
  assert.ok(words.includes('1-1'));
- assert.ok(words.includes('1-2'));
+ assert.ok(words.includes('1Hresz-2Rresz'));
  assert.match(html,/data-action="download-workshop-copy-png"/);
  assert.match(html,/Műhely példány\.png/);
  assert.match(html,/Műhely példány\.zip/);
@@ -125,14 +122,14 @@ test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabá
  }};
  const show=()=>makeLabel({placement:oldPlacement},0,0,48.5,25.4);
  const mixed=show();
- assert.match(mixed,/>1-2<\/text>/);
- assert.ok(mixed.indexOf('>1-0</text>')<mixed.indexOf('>1-2</text>'),
+ assert.match(mixed,/>1Hresz-2Rresz<\/text>/);
+ assert.ok(mixed.indexOf('>1-0</text>')<mixed.indexOf('>1Hresz-2Rresz</text>'),
    'reszelés a matricán az élzárás után, annak alatti sorban');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:true,y2:true};
- assert.match(show(),/>0-2<\/text>/,
+ assert.match(show(),/>2Rresz<\/text>/,
    'a matrica a frissített alkatrészjelölést mutatja új bin generálása nélkül');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:false,y2:false};
- assert.doesNotMatch(show(),/>0-2<\/text>|>1-2<\/text>/,
+ assert.doesNotMatch(show(),/Hresz|Rresz/,
    'kikapcsolt reszelés nem maradhat a korábbi matricaállapotból');
 });
 test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös kódolással',()=>{
@@ -149,7 +146,7 @@ test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös k�
    materialColor:'Freya',originalA:910,originalB:600,
    edge:'1-1',filingSides:{x1:true,y1:true,y2:true},edgeThickness:2
  }}},0,0,48.5,25.4);
- assert.match(text,/>1-2<\/text>/);
- assert.ok(text.indexOf('1-1')<text.indexOf('1-2'),
+ assert.match(text,/>1Hresz-2Rresz<\/text>/);
+ assert.ok(text.indexOf('1-1')<text.indexOf('1Hresz-2Rresz'),
   'a reszelésnek az élzárási jelölés után kell állnia');
 });
