@@ -408,7 +408,7 @@
   function dimensionUnderline(part,axis){
     const edge=String(part.edge||'0-0'),filing=codeFromSides(part.filingSides||{});
     const index=axis==='a'?0:2;
-    return Number(edge[index]||0)>0||Number(filing[index]||0)>0;
+    return Math.max(Number(edge[index]||0),Number(filing[index]||0));
   }
   function codeFromSides(s){
     return `${Number(!!s.x1)+Number(!!s.x2)}-${Number(!!s.y1)+Number(!!s.y2)}`;
@@ -1370,7 +1370,7 @@
     const formula=String(part[axis]??'');
     const hasFormula=isFormulaText(formula);
     const value=partDimensionPreview(part,f,axis);
-    return `<div class="expr-cell ${hasFormula?'has-formula':''}" data-expr-part="${h(part.id)}" data-expr-axis="${axis}"><input class="expr" style="text-decoration:${!hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${axis==='b'?'double':'solid'};text-underline-offset:3px" aria-label="${label}" autocomplete="off" spellcheck="false" data-scope="part" data-id="${part.id}" data-key="${axis}" value="${h(formula)}"><output class="expr-result ${value==='–'?'invalid':''}" style="text-decoration:${hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${axis==='b'?'double':'solid'};text-underline-offset:3px" aria-label="Kiszámolt készméret milliméterben" title="Kiszámolt készméret · ABS és marás levonása nélkül">${h(value)}</output></div>`;
+    return `<div class="expr-cell ${hasFormula?'has-formula':''}" data-expr-part="${h(part.id)}" data-expr-axis="${axis}"><input class="expr" style="text-decoration:${!hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${dimensionUnderline(part,axis)===2?'double':'solid'};text-underline-offset:3px" aria-label="${label}" autocomplete="off" spellcheck="false" data-scope="part" data-id="${part.id}" data-key="${axis}" value="${h(formula)}"><output class="expr-result ${value==='–'?'invalid':''}" style="text-decoration:${hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${dimensionUnderline(part,axis)===2?'double':'solid'};text-underline-offset:3px" aria-label="Kiszámolt készméret milliméterben" title="Kiszámolt készméret · ABS és marás levonása nélkül">${h(value)}</output></div>`;
   }
   // Gépeléskor nem rajzoljuk újra az egész oldalt. Csak az eredményt
   // és az összesítést frissítjük, így megmarad a kurzor és a kijelölés.
@@ -1387,11 +1387,11 @@
       const input=wrapper.querySelector('input'),outputMark=wrapper.querySelector('output');
       if(input){
         input.style.textDecorationLine=underlined&&!active?'underline':'none';
-        input.style.textDecorationStyle=key==='b'?'double':'solid';
+        input.style.textDecorationStyle=underlined===2?'double':'solid';
       }
       if(outputMark){
         outputMark.style.textDecorationLine=underlined&&active?'underline':'none';
-        outputMark.style.textDecorationStyle=key==='b'?'double':'solid';
+        outputMark.style.textDecorationStyle=underlined===2?'double':'solid';
       }
       const output=wrapper.querySelector('.expr-result');
       if(output){
@@ -1515,9 +1515,9 @@
       const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
         '<td class="num">'+
-        (dimensionUnderline(part,'a')?'<span style="text-decoration-line:underline;text-decoration-style:solid;text-underline-offset:3px">'+nfmt(r.originalA)+'</span>':nfmt(r.originalA))+
+        (dimensionUnderline(part,'a')?'<span style="text-decoration-line:underline;text-decoration-style:'+(dimensionUnderline(part,'a')===2?'double':'solid')+';text-underline-offset:3px">'+nfmt(r.originalA)+'</span>':nfmt(r.originalA))+
         ' × '+
-        (dimensionUnderline(part,'b')?'<span style="text-decoration-line:underline;text-decoration-style:double;text-underline-offset:3px">'+nfmt(r.originalB)+'</span>':nfmt(r.originalB))+
+        (dimensionUnderline(part,'b')?'<span style="text-decoration-line:underline;text-decoration-style:'+(dimensionUnderline(part,'b')===2?'double':'solid')+';text-underline-offset:3px">'+nfmt(r.originalB)+'</span>':nfmt(r.originalB))+
         ' mm</td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
@@ -3377,8 +3377,8 @@
       line(fit(destination,2.3*scale,width-2*margin),x+margin,y+height*.115,2.3*scale,'400')+
       `<path d="M${x+margin} ${y+height*.16}H${x+width-margin}" stroke="#aaa" stroke-width=".2"/>`+
       line(dimensions,x+margin+inset,y+height*.37,dimensionSize,'800')+
-      (markingA?`<path d="M${x+margin+inset} ${y+height*.37+dimensionSize*.18}h${firstDimension.length*dimensionSize*.57}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.055)}"/>`:'')+
-      (markingB?`<path d="M${x+margin+inset+(firstDimension.length+3)*dimensionSize*.57} ${y+height*.37+dimensionSize*.14}h${secondDimension.length*dimensionSize*.57} m-${secondDimension.length*dimensionSize*.57} ${dimensionSize*.14}h${secondDimension.length*dimensionSize*.57}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.045)}" fill="none"/>`:'')+
+      (markingA?`<path d="M${x+margin+inset} ${y+height*.37+dimensionSize*.18}h${firstDimension.length*dimensionSize*.57}${markingA===2?` m-${firstDimension.length*dimensionSize*.57} ${dimensionSize*.14}h${firstDimension.length*dimensionSize*.57}`:''}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.055)}" fill="none"/>`:'')+
+      (markingB?`<path d="M${x+margin+inset+(firstDimension.length+3)*dimensionSize*.57} ${y+height*.37+dimensionSize*.18}h${secondDimension.length*dimensionSize*.57}${markingB===2?` m-${secondDimension.length*dimensionSize*.57} ${dimensionSize*.14}h${secondDimension.length*dimensionSize*.57}`:''}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.045)}" fill="none"/>`:'')+
       line(edge,x+width-margin-inset,y+height*.37,codeSize,'800','text-anchor="end"')+
       (filing?line(filing,x+width-margin-inset,y+height*.49,3.7*scale,'800','text-anchor="end"'):'')+
       line(fit(part.name,3.6*scale,width-2*margin),x+margin,y+height*.60,3.6*scale,'700')+
