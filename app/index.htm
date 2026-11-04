@@ -391,7 +391,7 @@
     selectedFurniture:null,
     furnitures:[],
     boards:[],
-    selectedRemnantIds:[],
+    selectedRemnantIds:[],onlySelectedRemnants:false,
     kerf:5,trim:12,cutDirection:'auto',layoutMode:'auto',selectedBoard:0,
     xprgMaterialCode:'BLAP003',xprgFolder:'.\\xPrg\\',xprgHeaderMode:'sample',
     xmixMachineRoot:savedMachineRoot,
@@ -955,7 +955,7 @@
       const data=JSON.parse(JSON.stringify(entry.data));
       data.furnitures=[copy];data.selectedFurniture=copy.id;
       data.projectName=(data.projectName||copy.name)+' (másolat)';
-      data.boards=[];data.selectedRemnantIds=[];data.active='furniture';
+      data.boards=[];data.selectedRemnantIds=[];data.onlySelectedRemnants=false;data.active='furniture';
       library.push({id:uuid(),createdAt:Date.now(),updatedAt:Date.now(),
         data,furnitureFolders:{[copy.id]:dest}});
       try{localStorage.setItem(libraryKey,JSON.stringify(library));}catch{}
@@ -1527,8 +1527,13 @@
       '<button class="btn sm ghost danger" data-action="remove-material" data-id="'+h(m.id)+'">✕</button></div>').join('')+
       '<div class="muted small">A tábla X (szálirányú hosszúság) és Y (keresztirányú szélesség) mérete mm-ben, színenként menthető; a régi anyagoknál üresen hagyható. A 38 mm-es munkalapnál az automatikusan felhasznált teljes tábla méretét ez a két mező határozza meg (mindkettőt add meg). A kézi készlettáblákat és a bútorlapok eddigi szabási rendjét nem írja át. A különböző anyagszínű és vastagságú alkatrészek nem kerülhetnek ugyanarra a táblára.</div></div></div>';
     const ids=state.selectedRemnantIds||[];
-    const rem='<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Maradéktábla-készlet</div><div class="panel-sub">Csak a bepipált maradék kerül a szabástervbe. Az elérhető készletet itt szerkesztheted.</div></div><button class="btn sm" data-action="add-remnant">＋ Maradéktábla</button></div>'+
-      '<div class="panel-body">'+(remnantCatalog.length?remnantCatalog.map(r=>'<div class="toolbar" style="margin:8px 0"><label title="A szabásba bevonni"><input type="checkbox" data-scope="remnant-selection" data-id="'+h(r.id)+'" '+(ids.includes(r.id)?'checked':'')+'> Bevonni</label>'+
+    const rem='<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Maradéktábla-készlet és szabási mód</div><div class="panel-sub">A Bevonni jelöléssel kiválaszthatod a használható maradékokat, a második jelölővel pedig kizárhatod az összes teljes táblát.</div></div><button class="btn sm" data-action="add-remnant">＋ Maradéktábla</button></div>'+
+      '<div class="panel-body">'+
+      '<div class="mini-info" style="margin-bottom:12px"><label style="display:flex;align-items:center;gap:10px;cursor:pointer"><input type="checkbox" data-scope="remnant-only" '+(state.onlySelectedRemnants?'checked':'')+'> <strong>Csak kijelölt maradéktáblákból szabjon – teljes tábla használata nélkül</strong></label>'+
+      '<div class="small muted" style="margin-top:6px">'+(state.onlySelectedRemnants?
+      'AKTÍV: kizárólag az alább Bevonni jelölt, készleten lévő maradékok használhatók; az automatikus és a teljes készlettáblák tiltva. Ha nem fér el minden alkatrész, a program hibát jelez.':
+      'KIKAPCSOLVA: a Bevonni jelölt maradékok elsőbbséget kapnak, szükség esetén teljes vagy automatikus táblát is használhat a szabászat.')+'</div></div>'+
+      (remnantCatalog.length?remnantCatalog.map(r=>'<div class="toolbar" style="margin:8px 0"><label title="Ezt a maradéktáblát bevonni a szabásba"><input type="checkbox" data-scope="remnant-selection" data-id="'+h(r.id)+'" '+(ids.includes(r.id)?'checked':'')+'> Bevonni</label>'+
       '<label>Megnevezés <input data-scope="remnant" data-id="'+h(r.id)+'" data-key="name" value="'+h(r.name||'Maradék')+'"></label>'+
       '<label>X / szál (mm) <input type="number" min="1" data-scope="remnant" data-id="'+h(r.id)+'" data-key="a" value="'+h(r.a)+'" style="width:90px"></label>'+
       '<label>Y / kereszt (mm) <input type="number" min="1" data-scope="remnant" data-id="'+h(r.id)+'" data-key="b" value="'+h(r.b)+'" style="width:90px"></label>'+
@@ -1538,7 +1543,7 @@
       '<button class="btn sm ghost danger" data-action="remove-remnant" data-id="'+h(r.id)+'">✕</button></div>').join(''):
       '<div class="muted small">Nincsenek nyilvántartott maradéktáblák.</div>')+
       '</div></div>';
-    return onlyMaterials?mat:rem;
+    return onlyMaterials?mat+rem:rem;
   }
   function stockPage(){
     const old=stockView();
@@ -1663,7 +1668,9 @@
     // soha nem fogyasztja el őket.
     const checked=(typeof remnantCatalog==='undefined'?[]:remnantCatalog).filter(r=>
       (state.selectedRemnantIds||[]).includes(r.id)&&Number(r.qty)>0);
-    for(const b of [...state.boards,...checked]){
+    // Csak-maradék módban a kézzel felvett teljes táblákat sem
+    // szabad felhasználni. Kizárólag a konkrétan kijelölt maradékok.
+    for(const b of [...(state.onlySelectedRemnants?[]:(state.boards||[])),...checked]){
       for(let i=0;i<Math.max(0,Math.min(100,Number(b.qty)||0));i++){
         const bin=createBin(b,i+1);
         if(bin)bins.push(bin);
@@ -1752,7 +1759,7 @@
       // Készleten megadott maradékok MINDIG megelőzik a korlátlan alaptáblát.
       let best=bestPlacement(item,bins,kerf,axis,variant,corner,upcoming);
       if(!best)best=bestPlacement(item,standardBins,kerf,axis,variant,corner,upcoming);
-      if(!best&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
+      if(!best&&!state.onlySelectedRemnants&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
         const next=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD,
           materialColor:String(item.materialColor||'').trim()},standardBins.length+1,true);
         if(next){
@@ -1899,7 +1906,7 @@
     for(const item of items){
       let choice=bestOn(item,bins);
       if(!choice)choice=bestOn(item,standardBins);
-      if(!choice&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
+      if(!choice&&!state.onlySelectedRemnants&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
         const bin=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD,
           materialColor:String(item.materialColor||'').trim()},
           standardBins.length+1,true);
@@ -1908,7 +1915,7 @@
           if(fit){standardBins.push(bin);choice=fit;}
         }
       }
-      if(!choice&&isWorktop38(item.thickness)&&validWorktop38Part(item)){
+      if(!choice&&!state.onlySelectedRemnants&&isWorktop38(item.thickness)&&validWorktop38Part(item)){
         // A 38 mm munkalap teljes X/Y alapanyaga anyagonként választható.
         // Hiányzó katalógusadatnál a korábbi 4100×600/900 alapérték marad.
         const configured=worktop38CatalogSize(item);
@@ -2208,7 +2215,7 @@
         ' mm, a kért alkatrész pedig '+badWorktop.a+' × '+badWorktop.b+
         ' mm. Ellenőrizd a színt, a tábla X/Y méretét és az élzárás miatti méretlevonást.'};
     }
-    const stock38=[...(state.boards||[]),...(typeof remnantCatalog==='undefined'?[]:
+    const stock38=[...(state.onlySelectedRemnants?[]:(state.boards||[])),...(typeof remnantCatalog==='undefined'?[]:
       remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id)))];
     if(stock38.some(b=>Number(b.qty)>0&&Math.abs(Number(b.thickness)-38)<.001&&
       !(typeof validWorktop38Stock==='function'?
@@ -2226,6 +2233,9 @@
     if(parts.errors.length)return {error:'Előbb javítsd a képlethibákat. '+parts.errors[0]};
     if(parts.total>700)return {error:'A program egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
+    if(state.onlySelectedRemnants&&!(typeof remnantCatalog!=='undefined'&&
+       remnantCatalog.some(r=>(state.selectedRemnantIds||[]).includes(r.id)&&Number(r.qty)>0)))
+      return {error:'Csak maradéktáblákból szabás aktív, de nincs kijelölve egyetlen használható maradék sem. Az Anyagadatbázisban pipálj be legalább egy maradéktáblát a Bevonni négyzettel.'};
     let best=null;
     const economyMode=state.layoutMode==='economy';
     const machineMode=true; // a szabad/mozaikos/polcos keresés is gépi csíkterv
@@ -2516,13 +2526,15 @@
       const b=result.bins[Math.max(0,Math.min(result.bins.length-1,state.selectedBoard))];
       const util=result.sheetArea?result.usedArea/result.sheetArea*100:0;
       const ecoInfo=state.layoutMode==='economy'?`<div class="notice" style="margin-bottom:16px"><strong>Anyagtakarékos csíkterv</strong> · teljes sáv- és csíkvágásokkal. Legnagyobb egybefüggő becsült maradék: <strong>${nfmt((result.largestReusableArea||0)/1e6)} m²</strong>. Hasonlítsd össze a „Gépi csíkos” móddal is; nem garantált optimum.</div>`:'';
-      const stats=`${ecoInfo}<div class="statrow">
+      const onlyRemnantNote=state.onlySelectedRemnants?
+        '<div class="mini-info" style="margin-bottom:14px"><strong>Csak kijelölt maradéktáblák:</strong> a program teljes vagy automatikus táblát nem használ; a hiányzó alkatrészeket nem helyettesíti alaptáblával.</div>':'';
+      const stats=`${onlyRemnantNote}${ecoInfo}<div class="statrow">
         <div class="stat"><div class="label">Elhelyezett alkatrész</div><div class="value">${result.items.length-result.failed.length}<span class="small muted"> / ${result.items.length}</span></div><div class="detail">${result.failed.length?'Nem fér el minden elem':'Minden elem elhelyezve'}</div></div>
-        <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">maradék és szükség esetén automatikus alaptábla</div></div>
+        <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">${state.onlySelectedRemnants?'kizárólag kijelölt maradéktábla':'maradék és szükség esetén automatikus alaptábla'}</div></div>
         <div class="stat"><div class="label">Kihozatal</div><div class="value">${nfmt(util)}<span class="small muted">%</span></div><div class="detail">nettó alkatrész / teljes felhasznált tábla</div></div>
         <div class="stat"><div class="label">Alkatrészek anyagigénye</div><div class="value">${nfmt(result.usedArea/1e6)}<span class="small muted"> m²</span></div><div class="detail">nettó alkatrészfelület az összes táblán, hulladék nélkül</div></div>
       </div>`;
-      const unfitted=result.failed.length?`<div class="notice error" style="margin-bottom:17px"><strong>${result.failed.length} alkatrész nem fért el:</strong> ${h(result.failed.slice(0,6).map(p=>p.name+' ('+p.a+' × '+p.b+')').join(', '))}${result.failed.length>6?'…':''}. Vegyél fel nagyobb vagy több táblát.</div>`:'';
+      const unfitted=result.failed.length?`<div class="notice error" style="margin-bottom:17px"><strong>${result.failed.length} alkatrész nem fért el:</strong> ${h(result.failed.slice(0,6).map(p=>p.name+' ('+p.a+' × '+p.b+')').join(', '))}${result.failed.length>6?'…':''}. ${state.onlySelectedRemnants?'Jelölj ki további vagy nagyobb maradéktáblákat az Anyagadatbázisban. Teljes táblát a program nem használ.':'Vegyél fel nagyobb vagy több táblát.'}</div>`:'';
       const smaller=b?suggestedBoardSize(b):null;
       const boardPanel=b?`<div class="panel">
         <div class="panel-head"><div><div class="panel-title">Méretezett kiosztás</div><div class="panel-sub">${h(b.name)} · ${nfmt(b.a)} × ${nfmt(b.b)} × ${nfmt(b.thickness)} mm · ${b.index}. példány</div></div><div class="export-box"><button class="btn sm" data-action="download-png">↓ PNG</button></div></div>
@@ -3931,6 +3943,10 @@
       refreshCustomRuleStatuses(f);refreshLiveFormulaValues();
       save();return; // A Tab minden képletmezőn és legördülőn továbblép.
     
+    }
+    if(scope==='remnant-only'){
+      state.onlySelectedRemnants=!!el.checked;
+      result=null;render();return;
     }
     if(scope==='remnant-selection'){
       const selected=new Set(state.selectedRemnantIds||[]);
