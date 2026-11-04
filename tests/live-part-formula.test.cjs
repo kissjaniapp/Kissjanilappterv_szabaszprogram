@@ -76,22 +76,23 @@ test('közvetlen szám továbbra is rendesen szerkeszthető',()=>{
  assert.doesNotMatch(source,/class="expr-cell has-formula"/);
 });
 
-test('aláhúzás: 0 nincs, 1 egyszeres, 2 kétszeres, X és Y független',()=>{
+test('aláhúzás: a szám mindig helyben marad, 0/1/2 külön vonalsávot kapcsol',()=>{
  const p=part();
  p.edge='0-0';p.filingSides={};
  for(const axis of ['a','b']){
    const bare=formulaEngine.partDimensionInput(p,furniture,axis,'Méret');
-   assert.match(bare,/text-decoration:none/);
+   assert.match(bare,/class="dimension-mark-slot mark-0"/);
+   assert.match(bare,/style="text-decoration:none"/);
  }
- for(const [edge,expectedX,expectedY] of [['1-0','solid','none'],['0-2','none','double'],['2-1','double','solid']]){
+ for(const [edge,expectedX,expectedY] of [['1-0',1,0],['0-2',0,2],['2-1',2,1]]){
    p.edge=edge;
    const x=formulaEngine.partDimensionInput(p,furniture,'a','X');
    const y=formulaEngine.partDimensionInput(p,furniture,'b','Y');
-   assert.match(x,new RegExp('text-decoration-style:'+ (expectedX==='none'?'solid':expectedX)));
-   assert.match(y,new RegExp('text-decoration-style:'+ (expectedY==='none'?'solid':expectedY)));
-   assert.equal(x.includes('text-decoration:underline'),expectedX!=='none');
-   assert.equal(y.includes('text-decoration:underline'),expectedY!=='none');
-   assert.match(x,/class="expr" style="text-decoration:none/);
-   assert.match(y,/class="expr" style="text-decoration:none/);
+   assert.match(x,new RegExp('class="dimension-mark-slot mark-'+expectedX+'"'));
+   assert.match(y,new RegExp('class="dimension-mark-slot mark-'+expectedY+'"'));
+   assert.match(x,/value="W-18"/);
+   assert.match(y,/value="D"/);
+   assert.match(x,/class="expr" style="text-decoration:none"/);
+   assert.match(y,/class="expr" style="text-decoration:none"/);
  }
 });
