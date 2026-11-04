@@ -1491,20 +1491,17 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
     const rows=included.map(r=>{
       const f=r.furniture,part=r.part;
       const header=lastFurniture!==f.id?
-        '<tr class="furniture-part-group"><td colspan="6"><strong>'+
+        '<tr class="furniture-part-group"><td colspan="7"><strong>'+
         h(f.name||'Bútor')+'</strong></td></tr>':'';
       lastFurniture=f.id;
-      const sides=part.edgeSides||sidesFromCode(r.edge);
-      const sidesText=['x1','x2','y1','y2'].filter(side=>sides[side])
-        .map(side=>side.toUpperCase()).join(', ');
-      const edge=r.edge==='0-0'?'Nincs':
-        h(r.edge)+' · '+h(sidesText||'Élzárás');
+      const edge=h(r.edge||'0-0');
+      const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
       const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
         '<td class="num">'+nfmt(r.originalA)+' × '+nfmt(r.originalB)+' mm</td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
-        '<td>'+edge+'</td><td class="abs-value">'+abs+'</td></tr>';
+        '<td>'+edge+'</td><td>'+filing+'</td><td class="abs-value">'+abs+'</td></tr>';
     }).join('');
     const warning=summary.errors.length?
       '<div class="notice error top-gap"><strong>Hibás IF vagy alkatrészképlet:</strong> '+
@@ -1519,16 +1516,16 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
       'A táblázat csak olvasható.</div></div></div>'+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th>'+
       '<th>Készméret (X × Y)</th><th>Szabásméret (X × Y)</th>'+
-      '<th>Darabszám</th><th>Élzárás jelölése</th><th>ABS vastagság</th></tr></thead><tbody>'+
-      (rows||'<tr><td colspan="6" class="muted">Nincs alkatrész.</td></tr>')+
+      '<th>Darabszám</th><th>Élzárás jelölése</th><th>Reszelés</th><th>ABS vastagság</th></tr></thead><tbody>'+
+      (rows||'<tr><td colspan="7" class="muted">Nincs alkatrész.</td></tr>')+
       '</tbody></table></div></div>';
     const enabled=!!included.length&&!summary.errors.length;
     return intro('04 / ALKATRÉSZ-ÖSSZESÍTŐ','Alkatrész-összesítő',
-      'A szabásba kerülő alkatrészek méretei és élzárása. A hamis IF-feltételű sorok kimaradnak.',
+      'A szabásba kerülő alkatrészek méretei, élzárása és reszelése. A hamis IF-feltételű sorok kimaradnak.',
       '<button class="btn" data-action="page" data-page="parts">← Alkatrészek</button>')+
       warning+empty+panel+
       '<div class="section-bottom"><strong>'+nfmt(summary.total)+' db kerül a szabásba</strong>'+
-      '<div class="actions"><button class="btn" data-action="page" data-page="parts">← Vissza</button>'+
+      '<div class="actions"><button class="btn" data-action="download-workshop-copy-png">↓ Műhely példány PNG</button><button class="btn" data-action="page" data-page="parts">← Vissza</button>'+
       '<button class="btn primary" data-action="page" data-page="stock"'+
       (enabled?'':' disabled title="Előbb javítsd az alkatrészhibákat"')+
       '>Anyagkészlet →</button></div></div>';
@@ -1777,7 +1774,7 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
       if(r.error)continue;
       for(let i=0;i<r.qty;i++)items.push({name:r.resolvedName||r.part.name,source:r.furniture.name,
         destination:r.furniture.destination||'',materialColor:r.materialColor||r.furniture.materialColor||'',a:r.a,b:r.b,
-        originalA:r.originalA,originalB:r.originalB,edge:r.edge,edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,
+        originalA:r.originalA,originalB:r.originalB,edge:r.edge,filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,
         thickness:r.thickness,rot:r.rot,number:i+1,uid:r.part.id});
     }
     const sorters=[(a,b)=>b.a*b.b-a.a*a.b || Math.max(b.a,b.b)-Math.max(a.a,a.b),
@@ -1821,7 +1818,7 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
       items.push({name:r.resolvedName||r.part.name,source:r.furniture.name,
         destination:r.furniture.destination||'',materialColor:r.materialColor||r.furniture.materialColor||'',materialId:r.materialId||'',a:r.a,b:r.b,
         originalA:r.originalA,originalB:r.originalB,edge:r.edge,
-        edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,thickness:r.thickness,
+        filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,thickness:r.thickness,
         rot:r.rot,number:i+1,uid:r.part.id});
     }
     // Régi x/y gépállások és új, táblánként értelmezett hosszú/rövid él.
