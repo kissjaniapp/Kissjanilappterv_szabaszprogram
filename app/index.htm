@@ -407,6 +407,17 @@
   function codeFromSides(s){
     return `${Number(!!s.x1)+Number(!!s.x2)}-${Number(!!s.y1)+Number(!!s.y2)}`;
   }
+  // A reszelés külön beállítás, nem módosítja az élzárást és a szabásméretet.
+  // H: hosszabb él, R: rövidebb él; az X1/X2 az X méret,
+  // az Y1/Y2 az Y méret mentén fut.
+  function filingCode(sides,a,b){
+    const flags=sides||{},x=Number(!!flags.x1)+Number(!!flags.x2),
+      y=Number(!!flags.y1)+Number(!!flags.y2);
+    if(!x&&!y)return '';
+    const xLong=Number(a)>=Number(b);
+    const hCount=xLong?x:y,rCount=xLong?y:x;
+    return [hCount?hCount+'Hresz':'',rCount?rCount+'Rresz':''].filter(Boolean).join('-');
+  }
   let loaded=null;
   try { loaded=parse(localStorage.getItem('lapterv-project-v2')); } catch { /* Egyes file:// böngészők letilthatják a tárhelyet. */ }
   const state = loaded && Array.isArray(loaded.furnitures) && Array.isArray(loaded.boards) ? loaded : defaultState();
@@ -517,6 +528,8 @@
         // A régi 1 mm-es alapértéket a két választható élzáró közül 2 mm-re állítjuk.
         if(![2,0.4].includes(Number(part.edgeThickness)))part.edgeThickness=2;
         if(!part.edgeSides)part.edgeSides=sidesFromCode(part.edge);
+        const filing=part.filingSides||{};
+        part.filingSides={x1:!!filing.x1,x2:!!filing.x2,y1:!!filing.y1,y2:!!filing.y2};
         // Korábbi „Forg.” jelölésből visszaállítjuk a szálirányhoz kötöttséget.
         if(part.grainRequired==null)part.grainRequired=!part.rot;
         // A régebbi, beállított marásértéket meghagyjuk, ha létezik.
@@ -620,6 +633,7 @@
     const add=(kind,name,a,b,q)=>{
       f.parts.push({id:uuid(),parametricType:'plinth-'+kind,
         name,a,b,q,edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
         edgeThickness:2,mill:true,millDepth:1,grainRequired:true,rot:false,
         materialId:'',materialColor:''});
     };
@@ -724,6 +738,7 @@
           customNameInherited:!String(spec.name||'').trim()&&(rule.parts||[])[0]===spec,
           a:spec.a,b:spec.b,q:spec.q,
           edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
           edgeThickness:2,mill:true,millDepth:1,
           grainRequired:true,rot:false,materialId:'',materialColor:''});
       }
@@ -743,6 +758,7 @@
           part={id:uuid(),name:customPartName(rule,spec),
             a:spec.a,b:spec.b,q:spec.q,
             edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
             edgeThickness:2,mill:true,millDepth:1,
             grainRequired:true,rot:false,materialId:'',materialColor:''};
           f.parts.push(part);
@@ -932,10 +948,13 @@
     atado.name='Átadó';
     atado.parts=[
       {id:uuid(),name:'Oldal',a:'H',b:'D',q:'2',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
         edgeThickness:2,mill:true,millDepth:1,grainRequired:true,rot:false},
       {id:uuid(),name:'Fenék',a:'W-2*T',b:'D',q:'1',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
         edgeThickness:2,mill:true,millDepth:1,grainRequired:true,rot:false},
       {id:uuid(),name:'Polc',a:'W-2*T',b:'D',q:'S',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},
         edgeThickness:2,mill:true,millDepth:1,grainRequired:true,rot:false}
     ];
     seriesCatalog.push({id:'alap-atado',folderId:'series',furniture:atado,updatedAt:Date.now()});
@@ -3752,9 +3771,11 @@
     if(action==='add-parametric-parts'){
       const f=getFurniture();if(!f)return;
       if(!f.parts.some(p=>p.parametricType==='shelf'))
-        f.parts.push({id:uuid(),parametricType:'shelf',name:'Polc',a:'W-2*T',b:'D',q:'S',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true});
+        f.parts.push({id:uuid(),parametricType:'shelf',name:'Polc',a:'W-2*T',b:'D',q:'S',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true});
       if(!f.parts.some(p=>p.parametricType==='divider'))
-        f.parts.push({id:uuid(),parametricType:'divider',name:'Függőleges osztó',a:'H-2*T',b:'D',q:'O',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true});
+        f.parts.push({id:uuid(),parametricType:'divider',name:'Függőleges osztó',a:'H-2*T',b:'D',q:'O',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true});
       state.active='parts';result=null;render();return;
     }
     if(action==='open-settings'){openSettings();return;}
@@ -3802,7 +3823,8 @@
     else if(action==='add-part'){
       const f=getFurniture();if(!f)return;
       const id=uuid();
-      f.parts.push({id,name:'',a:'',b:'',q:'',edge:'0-0',edgeSides:sidesFromCode('0-0'),edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true,materialId:'',materialColor:''});
+      f.parts.push({id,name:'',a:'',b:'',q:'',edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true,materialId:'',materialColor:''});
       result=null;render();
       document.querySelector('[data-scope="part"][data-id="'+id+'"][data-key="name"]')?.focus();
     }
