@@ -7,7 +7,8 @@ function region(from,to){
   assert.ok(a>=0&&b>a,'Hiányzik a programszakasz: '+from);
   return html.slice(a,b);
 }
-const code=region('  function makeCustomPartDefinition(){','  function startSeriesEditor(')+
+const code=region('  function codeFromSides(s){','  let loaded=null;')+
+  region('  function makeCustomPartDefinition(){','  function startSeriesEditor(')+
   region('function calc(formula,vars){','  function getParts(){')+
   region('  function getParts(){','  function intro(')+
   region('  function intro(','  function steps(){')+
@@ -60,10 +61,13 @@ test('összesítő csak a szabásba kerülő alkatrészeket írja ki, szerkeszt�
   assert.doesNotMatch(html,/Nulla darab/);
   assert.match(html,/Készméret \(X × Y\)/);
   assert.match(html,/Szabásméret \(X × Y\)/);
-  assert.match(html,/1-0 · X1/);
+  assert.match(html,/<td>1-0<\/td><td>—<\/td>/);
+  assert.doesNotMatch(html,/1-0 · X1/);
   assert.match(html,/<td class="abs-value">2 mm<\/td>/);
-  assert.match(html,/0-1 · Y1/);
+  assert.match(html,/<td>0-1<\/td><td>—<\/td>/);
+  assert.doesNotMatch(html,/0-1 · Y1/);
   assert.match(html,/<td class="abs-value">0.4 mm<\/td>/);
+  assert.match(html,/Műhely példány PNG/);
   assert.match(html,/400 × 120 mm/);
   assert.match(html,/400 × 119 mm/);
   assert.doesNotMatch(html,/data-scope="part"/);
