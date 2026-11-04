@@ -2695,7 +2695,7 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
   }
   // Önálló, nagy felbontású PNG alkatrészlista: anyag, célhely, készméret, db, élzárás.
   // Több alkatrészsor esetén lapozott PNG-ket készítünk; nem XLSX-et.
-  function buildPartsPngPages(list,doc=document){
+  function buildPartsPngPages(list,doc=document,workshop=false){
     if(list.errors?.length)throw Error('Először javítsd az alkatrészlista hibás méreteit: '+list.errors[0]);
     const rows=list.rows.filter(r=>!r.skipped&&!r.error&&r.qty>0);
     if(!rows.length)throw Error('Nincs exportálható alkatrész. Előbb add meg a méreteket és a darabszámot.');
@@ -2734,16 +2734,16 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
       ctx.fillStyle='#dcece4';ctx.font='700 22px "Segoe UI",Arial,sans-serif';
       ctx.fillText('GATTERKA  /  SZABÁSZTERVEZŐ',pad,50);
       ctx.fillStyle='#ffffff';ctx.font='700 49px "Segoe UI",Arial,sans-serif';
-      ctx.fillText('ALKATRÉSZLISTA',pad,120);
+      ctx.fillText(workshop?'MŰHELY PÉLDÁNY':'ALKATRÉSZLISTA',pad,120);
       ctx.fillStyle='#587269';ctx.font='700 21px "Segoe UI",Arial,sans-serif';
       ctx.fillText('ANYAG',pad,205);ctx.fillText('HOVÁ KÉSZÜL',pad,280);
       ctx.fillStyle='#203e32';ctx.font='600 29px "Segoe UI",Arial,sans-serif';
       paintWrapped(ctx,material,230,204,1250,2,32);
       paintWrapped(ctx,destination,280,279,1200,2,32);
       ctx.fillStyle='#e8efeb';ctx.fillRect(pad,head-52,width-pad*2,50);
-      const columns=[pad+14,pad+675,pad+1050,pad+1185];
+      const columns=[pad+14,pad+665,pad+1060,pad+1180,pad+1322];
       ctx.fillStyle='#244d3e';ctx.font='700 23px "Segoe UI",Arial,sans-serif';
-      ['Alkatrész neve','Készméret (mm)','Darab','Élzárás'].forEach((label,i)=>
+      ['Alkatrész neve','Készméret (mm)','Darab','Élzárás','Reszelés'].forEach((label,i)=>
         ctx.fillText(label,columns[i],head-17));
       section.forEach((r,i)=>{
         const y=head+i*rowHeight;
@@ -2755,10 +2755,12 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
         ctx.fillText(format(r.originalA)+' × '+format(r.originalB),columns[1],y+42);
         ctx.fillText(String(r.qty),columns[2],y+42);
         ctx.font='21px "Segoe UI",Arial,sans-serif';
-        const edge=r.edge==='0-0'?'Nincs élzárás':
-          r.edge+' · '+format(r.edgeThickness)+' mm'+(r.mill?' · '+format(r.millDepth)+' mm előmarás':'');
-        // Az X1/X2/Y1/Y2 azonosítók megmaradnak az alkatrész adataiban, de nem kerülnek a PNG-re.
-        ctx.fillText(edge,columns[3],y+42);
+        // Az összesítő és a "Műhely példány" egyaránt csak a
+        // rövid, 1-0 típusú ABS jelölést és a külön reszeléskódot mutatja.
+        ctx.fillText(String(r.edge||'0-0'),columns[3],y+42);
+        const filing=filingCode(r.part.filingSides,r.originalA,r.originalB);
+        ctx.font='600 20px "Segoe UI",Arial,sans-serif';
+        paintWrapped(ctx,filing||'—',columns[4],y+33,width-pad-columns[4],2,22,8);
       });
       const fy=head+section.length*rowHeight+50;
       ctx.fillStyle='#17392f';ctx.font='700 24px "Segoe UI",Arial,sans-serif';
@@ -2776,24 +2778,24 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
     downloadBlob(blob,filename);
     return true;
   }
-  async function downloadPartsPng(){
+  async function downloadPartsPng(workshop=false){
     try{
-      const pages=buildPartsPngPages(getParts());
+      const pages=buildPartsPngPages(getParts(),document,workshop);
       const cabinet=fileName(getFurniture()?.name||state.projectName||'Gatterka')||'Gatterka';
       const files=[];
       for(let i=0;i<pages.length;i++){
         const blob=await new Promise((resolve,reject)=>
           pages[i].toBlob(b=>b?resolve(b):reject(Error('Nem sikerült PNG-fájlt készíteni.')),'image/png'));
         if(pages.length===1){
-          downloadBlob(blob,cabinet+'_alkatreszlista.png');
+          downloadBlob(blob,workshop?'Műhely példány.png':cabinet+'_alkatreszlista.png');
           return;
         }
-        files.push([cabinet+'_alkatreszlista_oldal_'+String(i+1).padStart(2,'0')+'.png',
+        files.push([(workshop?'Műhely példány':'alkatreszlista')+'_oldal_'+String(i+1).padStart(2,'0')+'.png',
           new Uint8Array(await blob.arrayBuffer())]);
       }
       // Többoldalas alkatrészlista egyetlen ZIP, nem engedélykérő többes letöltés.
       if(files.length)
-        downloadBlob(xlsxZip(files,'application/zip'),cabinet+'_alkatreszlista_PNG.zip');
+        downloadBlob(xlsxZip(files,'application/zip'),workshop?'Műhely példány.zip':cabinet+'_alkatreszlista_PNG.zip');
     }catch(err){
       showNotice('Az alkatrészlista PNG mentése sikertelen: '+(err?.message||'ismeretlen hiba'));
     }
@@ -3849,6 +3851,7 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
     }
     else if(action==='import-json'){$('#import-input').click();}
     else if(action==='download-parts-png')downloadPartsPng();
+    else if(action==='download-workshop-copy-png')downloadPartsPng(true);
     else if(action==='print-labels')printLabels();
     else if(action==='download-labels-png')downloadLabelPng();
     else if(action==='download-svg')downloadBoardSvg();
