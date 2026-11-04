@@ -3350,7 +3350,7 @@
     // sem tűnik el a reszelés: X1, X2, Y1, Y2.
     const savedPart=(typeof state!=='undefined'&&Array.isArray(state.furnitures))?
       state.furnitures.flatMap(f=>f.parts||[]).find(p=>p.id===part.uid):null;
-    const currentPart=savedPart||part;
+    const currentPart={...part,...savedPart,edge:savedPart?.edge??part.edge,filingSides:savedPart?.filingSides??part.filingSides};
     const markingA=dimensionUnderline(currentPart,'a'),markingB=dimensionUnderline(currentPart,'b');
     const filing=filingCode(savedPart?.filingSides??part.filingSides,
       part.originalA??part.a,part.originalB??part.b);
