@@ -1921,35 +1921,7 @@
       }
       return best;
     }
-    for(const item of items){
-      let choice=bestOn(item,bins);
-      if(!choice)choice=bestOn(item,standardBins);
-      if(!choice&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
-        const bin=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD,
-          materialColor:String(item.materialColor||'').trim()},
-          standardBins.length+1,true);
-        if(bin){
-          const fit=bestOn(item,[bin]);
-          if(fit){standardBins.push(bin);choice=fit;}
-        }
-      }
-      if(!choice&&isWorktop38(item.thickness)&&validWorktop38Part(item)){
-        // A 38 mm munkalap teljes X/Y alapanyaga anyagonként választható.
-        // Hiányzó katalógusadatnál a korábbi 4100×600/900 alapérték marad.
-        const configured=worktop38CatalogSize(item);
-        const stockA=configured?.a??WORKTOP_38_LENGTH;
-        const stockB=configured?.b??WORKTOP_38_WIDTHS.find(w=>
-          w>=item.b-.0001&&(w-item.b<.0001||w-item.b+.0001>=kerf));
-        const bin=createBin({id:'worktop-38',name:'Munkalap · '+stockA+' × '+stockB+' × 38',
-          a:stockA,b:stockB,thickness:38,materialId:item.materialId||'',
-          materialColor:String(item.materialColor||'').trim()},
-          standardBins.length+1,true);
-        if(bin){
-          const fit=bestOn(item,[bin]);
-          if(fit){standardBins.push(bin);choice=fit;}
-        }
-      }
-      if(!choice){failed.push(item);continue;}
+    function commitPlacement(item,choice){
       const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
       const addedCommands=isWorktop38(item.thickness)?
         4+(bin.b-item.b>eps?1:0):
@@ -1967,6 +1939,59 @@
       strip.items.push({item,turned:orientation.turned,realW:orientation.a,
         realH:orientation.b,breadth:isWorktop38(item.thickness)?orientation.b:bw,along:len});
       strip.usedLength+=len;
+    }
+    // A "Bevonni" MOST KÖTELEZŐ felhasználás. Minden bejelölt
+    // maradékfajtából először egy alkatrészt lefoglalunk, és csak
+    // a fennmaradóknál engedjük a teljes / automatikus alaptáblát.
+    // Ha valamelyik maradékhoz nincs megfelelő alkatrész, a
+    // computeNesting megtiltja a hiányos terv gépi mentését.
+    const reserved=new Set();
+    const requiredIds=[...new Set(state.selectedRemnantIds||[])];
+    for(const id of requiredIds){
+      const chosenBins=bins.filter(b=>b.isRemnant&&b.id===id);
+      let selected=null;
+      for(const item of items){
+        if(reserved.has(item))continue;
+        const choice=bestOn(item,chosenBins);
+        if(choice&&(!selected||choice.score<selected.choice.score))
+          selected={item,choice};
+      }
+      if(selected){
+        commitPlacement(selected.item,selected.choice);
+        reserved.add(selected.item);
+      }
+    }
+    for(const item of items){
+      if(reserved.has(item))continue;
+      let choice=bestOn(item,bins);
+      if(!choice)choice=bestOn(item,standardBins);
+      if(!choice&&Math.abs(item.thickness-STANDARD_BOARD.thickness)<.001){
+        const bin=createBin({id:'standard',name:'Alaptábla · automatikus (2800 × 2070 × 18)',...STANDARD_BOARD,
+          materialColor:String(item.materialColor||'').trim()},
+          standardBins.length+1,true);
+        if(bin){
+          const fit=bestOn(item,[bin]);
+          if(fit){standardBins.push(bin);choice=fit;}
+        }
+      }
+      if(!choice&&isWorktop38(item.thickness)&&validWorktop38Part(item)){
+        // Régi munkalap-kód: csak kompatibilitás céljából marad.
+        // A computeNesting a 38 mm munkalapos munkát letiltja.
+        const configured=worktop38CatalogSize(item);
+        const stockA=configured?.a??WORKTOP_38_LENGTH;
+        const stockB=configured?.b??WORKTOP_38_WIDTHS.find(w=>
+          w>=item.b-.0001&&(w-item.b<.0001||w-item.b+.0001>=kerf));
+        const bin=createBin({id:'worktop-38',name:'Munkalap · '+stockA+' × '+stockB+' × 38',
+          a:stockA,b:stockB,thickness:38,materialId:item.materialId||'',
+          materialColor:String(item.materialColor||'').trim()},
+          standardBins.length+1,true);
+        if(bin){
+          const fit=bestOn(item,[bin]);
+          if(fit){standardBins.push(bin);choice=fit;}
+        }
+      }
+      if(!choice){failed.push(item);continue;}
+      commitPlacement(item,choice);
     }
     function finalize(bin){
       const m=bin.machine;
