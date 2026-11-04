@@ -12,9 +12,8 @@ const sheet=(id,a,b,thickness,color)=>({id,name:id,a,b,thickness,materialColor:c
 const row=(name,a,b,thickness,color)=>({part:{id:name,name},furniture:{name:'Szekrény',materialColor:color},qty:1,
  a,b,originalA:a,originalB:b,thickness,materialColor:color,rot:false,edge:'0-0',
  edgeThickness:2,mill:false,millDepth:0});
-function solve(boards,rows,selected=[],remnants=[],onlyRemnants=false){
- const state={trim:12,kerf:5,boards,selectedRemnantIds:selected,
-   onlySelectedRemnants:onlyRemnants};
+function solve(boards,rows,selected=[],remnants=[]){
+ const state={trim:12,kerf:5,boards,selectedRemnantIds:selected};
  const plan=vm.runInNewContext('(function(){'+html.slice(start,end)+';return makeStripPlan;})()',
    {state,remnantCatalog:remnants,Math,Number,String});
  return plan(0,{rows,total:rows.length,errors:[]},'auto');
@@ -50,75 +49,75 @@ test('csak bepipált maradék kerülhet a nestingbe, és az előnézet nem csök
  assert.equal(selected.bins[0].id,'maradek1');
  assert.equal(remnant.qty,1);
 });
-test('Két maradék-üzemmód: bevonáskor a kijelölt maradék előnyt élvez, de teljes tábla engedett',()=>{
+test('Bevonni jelölés kötelező: a maradék előbb részt vesz, a többi darabhoz teljes tábla engedett',()=>{
  const small=sheet('kis-maradek',1200,650,18,'Freya');
  const full=sheet('teljes',2800,2070,18,'Freya');
- const wanted=[row('A',400,200,18,'Freya')];
- const together=solve([full],wanted,['kis-maradek'],[small],false);
+ const wanted=[row('A',400,200,18,'Freya'),row('B',1800,700,18,'Freya')];
+ const together=solve([full],wanted,['kis-maradek'],[small]);
  assert.equal(together.failed.length,0);
- assert.equal(together.bins[0].id,'kis-maradek');
- assert.equal(together.bins[0].isRemnant,true);
- const fallback=solve([],wanted,[],[],false);
+ assert.ok(together.bins.some(b=>b.id==='kis-maradek'&&b.isRemnant&&b.placements.length>0));
+ assert.ok(together.bins.some(b=>b.id==='teljes'&&b.placements.length>0),
+  'a maradék felhasználása után normál bútorlap is bevonható');
+ const fallback=solve([],wanted,[],[]);
  assert.equal(fallback.failed.length,0);
- assert.equal(fallback.bins[0].automatic,true);
- assert.equal(fallback.bins[0].id,'standard');
+ assert.ok(fallback.bins.some(b=>b.automatic));
 });
-test('Csak maradék módban a kézi teljes tábla és az automatikus bútorlap is kizárt',()=>{
- const small=sheet('kis-maradek',1200,650,18,'Freya');
- const full=sheet('teljes',2800,2070,18,'Freya');
- const present=solve([full],[row('A',400,200,18,'Freya')],
-   ['kis-maradek'],[small],true);
- assert.equal(present.failed.length,0);
- assert.deepEqual(Array.from(present.bins,b=>b.id),['kis-maradek']);
- assert.ok(present.bins.every(b=>b.isRemnant&&!b.automatic));
- const missing=solve([full],[row('A',400,200,18,'Freya')],[],[small],true);
- assert.equal(missing.failed.length,1);
- assert.equal(missing.bins.length,0,'Bevonni jelölő nélkül semmilyen teljes tábla nem lehet');
- const insufficient=solve([full],[row('Nagy',1600,500,18,'Freya')],
-   ['kis-maradek'],[small],true);
- assert.equal(insufficient.failed.length,1);
- assert.equal(insufficient.bins.length,0,
-   'nem szabad automatikus tábla után nyúlni, ha a maradék túl kicsi');
-});
-test('Csak maradék módban munkalapból is rövidebb, de teljes szélességű 38 mm maradék választható',()=>{
- const remnant=sheet('munkalap-maradek',2100,600,38,'Munkalap');
- const whole=sheet('eredeti',4100,600,38,'Munkalap');
- const wanted=[row('M',964,600,38,'Munkalap')];
- const out=solve([whole],wanted,['munkalap-maradek'],[remnant],true);
+test('Két kijelölt maradékhoz a program mindkét maradékon tényleges alkatrészt helyez el',()=>{
+ const r1=sheet('R1',1200,650,18,'Freya');
+ const r2=sheet('R2',1500,700,18,'Freya');
+ const out=solve([],[row('A',400,200,18,'Freya'),row('B',400,200,18,'Freya')],
+  ['R1','R2'],[r1,r2]);
  assert.equal(out.failed.length,0);
- assert.equal(out.bins.length,1);
- const bin=out.bins[0];
- assert.equal(bin.id,'munkalap-maradek');
- assert.equal(bin.isRemnant,true);
- assert.equal(bin.a,2100);assert.equal(bin.b,600);
- assert.ok(bin.cuts.every(c=>(c.stage==='cross'||c.stage==='cross-head-trim')&&c.length===600));
- assert.ok(!bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'));
+ assert.equal(out.bins.length,2);
+ assert.deepEqual(Array.from(out.bins,b=>b.id),['R1','R2']);
+ assert.ok(out.bins.every(b=>b.isRemnant&&b.placements.length===1));
 });
-test('Anyagadatbázisban és Anyagkészletnél is elérhető a két jelölés, a mód elmentődik',()=>{
+test('Anyagadatbázisban és Anyagkészletnél Bevonni látszik; nincs csak-maradék kapcsoló',()=>{
  assert.match(html,/const rem='<div class="panel top-gap">/);
- assert.match(html,/data-scope="remnant-only"/);
  assert.match(html,/data-scope="remnant-selection"/);
+ assert.match(html,/Kötelező maradékfelhasználás/);
  assert.match(html,/return onlyMaterials\?mat\+rem:rem/);
- assert.match(html,/selectedRemnantIds:\[\],onlySelectedRemnants:false/);
- assert.match(html,/state\.onlySelectedRemnants=!!el\.checked/);
- assert.match(html,/state\.onlySelectedRemnants\?\[\]:\(state\.boards\|\|\[\]\)/);
+ assert.doesNotMatch(html,/data-scope="remnant-only"/);
+ assert.doesNotMatch(html,/state\.onlySelectedRemnants=!!el\.checked/);
+ assert.doesNotMatch(html,/onlySelectedRemnants:false/);
 });
-test('Kijelölés nélküli csak-maradék kérésnél egyértelmű hiba, nem rejtett alaptábla',()=>{
+test('Bevonni-nem-felhasználható maradék hibát jelent, nem hallgatólagos kihagyást',()=>{
  const begin=html.indexOf('function computeNesting(){');
  const end=html.indexOf('\n  const colors=',begin);
  assert.ok(begin>=0&&end>begin);
  const source=html.slice(begin,end);
- const state={trim:12,kerf:5,onlySelectedRemnants:true,
-   selectedRemnantIds:[],boards:[],layoutMode:'auto'};
+ const state={trim:12,kerf:5,selectedRemnantIds:['R1'],boards:[],layoutMode:'auto'};
+ const remnant=sheet('R1',1200,650,18,'Fekete');
+ const makeStripPlan=()=>({bins:[],failed:[],items:[],sheetArea:0,usedArea:0});
  const compute=vm.runInNewContext('('+source.trim()+')',{
-   state,remnantCatalog:[sheet('kihagyott',1100,600,18,'Freya')],
-   getParts:()=>({rows:[{qty:1,a:400,b:200,thickness:18}],
+   state,remnantCatalog:[remnant],getParts:()=>({
+     rows:[{qty:1,a:400,b:200,thickness:18,materialColor:'Freya'}],
+     errors:[],total:1}),
+   makeStripPlan,buildProductionSequence:()=>({}),Math,Number,Array
+ });
+ const out=compute();
+ assert.match(out.error,/Bevonni jelölés kötelező/);
+ assert.match(out.error,/R1/);
+});
+test('Régi, megszűnt csak-maradék kapcsoló mentésből automatikusan eltűnik',()=>{
+ assert.match(html,/delete state\.onlySelectedRemnants/);
+ assert.match(html,/delete data\.onlySelectedRemnants/);
+ assert.match(html,/selectedRemnantIds:\[\]/);
+});
+test('Munkalap szabás nincs: a 38 mm régi program nem kerülhet gépi mentésbe',()=>{
+ const begin=html.indexOf('function computeNesting(){');
+ const end=html.indexOf('\n  const colors=',begin);
+ const source=html.slice(begin,end);
+ const state={trim:12,kerf:5,selectedRemnantIds:[],boards:[]};
+ const compute=vm.runInNewContext('('+source.trim()+')',{
+   state,remnantCatalog:[],getParts:()=>({
+     rows:[{qty:1,a:964,b:600,thickness:38,materialColor:'Munkalap'}],
      errors:[],total:1}),Math,Number,Array
  });
  const out=compute();
- assert.match(out.error,/nincs kijelölve egyetlen használható maradék/);
+ assert.match(out.error,/munkalapok szabását megszüntettük/i);
+ assert.doesNotMatch(html,/id:'work38',name:'Munkalap'/);
 });
-
 test('a gépi gyártási sorrendet és a natív mentési függvényt nem helyettesíti új kód',()=>{
  assert.match(html,/function buildProductionSequence\(bins\)/);
  assert.match(html,/async function saveXprgToSelectedFolder\(\)/);
