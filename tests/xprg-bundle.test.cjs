@@ -77,6 +77,40 @@ test('az összes tábla egy közös XML xMix-ben, külön xPrg almappában szere
   }
  }
 });
+test('xMix: a 38 mm-es munkalapok MINDIG a bútorlapok után kerülnek, stabil sorrendben',()=>{
+ const worktop=(color,along=964)=>({
+   name:'Munkalap '+color,a:4100,b:600,thickness:38,trim:0,
+   cuts:[
+     {stage:'cross-head-trim',axis:'y',x1:1018.5,length:600},
+     {stage:'cross',axis:'y',x1:14.5,length:600,pieceSize:along}
+   ],
+   machine:{feed:'x',strips:[{
+     index:1,width:600,items:[{
+       along,breadth:600,item:{name:'Munkalap darab',materialColor:color}
+     }]
+   }]}
+ });
+ const boards=[worktop('Kő'),base('Freya','x',{name:'Bútorlap első'}),
+   worktop('Munkalap'),base('Fekete','x',{name:'Bútorlap második'})];
+ const out=exportBundle(boards);
+ const xml=xmix(out);
+ const order=Array.from(xml.matchAll(/<RigaMix File="([^"]+)"/g),
+   match=>match[1].split('\\').at(-1));
+ assert.deepEqual(order,[out.names[1],out.names[3],out.names[0],out.names[2]],
+   'előbb minden 18 mm bútorlap, majd minden 38 mm munkalap');
+ assert.equal(out.names.length,4);
+ assert.equal(xprgs(out).length,4);
+ assert.match(xprgs(out)[0][1],/Spessore="38[.]00"/,
+   'a generált xPrg fájlok eredeti sorrendje és tartalma változatlan');
+ assert.match(xprgs(out)[1][1],/Spessore="18[.]00"/);
+ assert.deepEqual(Array.from(xml.matchAll(/<RigaMix /g)).length,4);
+});
+test('xMix: kizárólag bútorlapok vagy kizárólag munkalapok esetén a sorrend változatlan',()=>{
+ const regular=exportBundle([base('A'),base('B'),base('C')]);
+ const names=Array.from(xmix(regular).matchAll(/<RigaMix File="([^"]+)"/g),
+   match=>match[1].split('\\').at(-1));
+ assert.deepEqual(names,regular.names);
+});
 test('a dátum és a Hová készül mező adja a projektmappa nevét',()=>{
  const out=exportBundle([base()],'Kiss János / konyha');
  assert.equal(out.cabinetFolder,'2026_10_30_Kiss_Janos_konyha');
