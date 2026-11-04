@@ -83,7 +83,7 @@ test('az X1/X2/Y1/Y2 élhely-jelölések nem szerepelnek a PNG szövegeiben',()=
 });
 
 test('Reszelés beírása számmal, kiírása Hresz és Rresz jelöléssel',()=>{
- assert.equal(filingCode({x1:true},200,400),'1Rresz');
+ assert.equal(filingCode({x1:true},200,400),'1Hresz');
  assert.equal(filingCode({y1:true,y2:true},964,600),'2Rresz');
  assert.equal(filingCode({x1:true,y1:true,y2:true},964,600),'1Hresz-2Rresz');
  assert.equal(filingCode({x1:true,x2:true,y1:true,y2:true},964,600),'2Hresz-2Rresz');
