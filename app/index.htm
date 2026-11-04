@@ -421,8 +421,9 @@
     const flags=sides||{},x=Number(!!flags.x1)+Number(!!flags.x2),
       y=Number(!!flags.y1)+Number(!!flags.y2);
     if(!x&&!y)return '';
-    const xLong=Number(a)>=Number(b);
-    const hCount=xLong?x:y,rCount=xLong?y:x;
+    // X = H (szálirányú hosszú él), Y = R (keresztirányú rövid él).
+    // Nem fordítjuk meg akkor sem, ha az Y méret számszerűen nagyobb.
+    const hCount=x,rCount=y;
     return [hCount?hCount+'Hresz':'',rCount?rCount+'Rresz':''].filter(Boolean).join('-');
   }
   let loaded=null;
