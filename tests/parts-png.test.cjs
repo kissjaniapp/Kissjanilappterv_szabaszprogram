@@ -26,10 +26,17 @@ function mockDocument(){
     }
   };
 }
-const render=vm.runInNewContext('('+html.slice(a,b).trim()+')');
+const fcStart=html.indexOf('  function filingCode(sides,a,b){');
+const fcEnd=html.indexOf('  let loaded=null;',fcStart);
+assert.ok(fcStart>=0&&fcEnd>fcStart,'Hiányzik a reszeléskód');
+const filingSource=html.slice(fcStart,fcEnd);
+const render=vm.runInNewContext('(function(){'+filingSource+
+  ';return '+html.slice(a,b).trim()+';})()');
+const filingCode=vm.runInNewContext('(function(){'+filingSource+';return filingCode;})()');
 function part(i){
   return {skipped:false,error:null,qty:2,
-    part:{name:'Oldallap '+i,edgeSides:{x1:true,y2:true}},
+    part:{name:'Oldallap '+i,edgeSides:{x1:true,y2:true},
+      filingSides:{x1:true,x2:false,y1:true,y2:true}},
     furniture:{materialColor:'Feya',destination:'Kiskunfélegyháza'},
     originalA:910,originalB:600,edge:'1-1',edgeThickness:2,mill:true,millDepth:1
   };
@@ -40,7 +47,7 @@ test('PNG fejlécében az anyag és gyártási célhely; sorban készméret és 
   assert.equal(pages[0].width,1600);
   const text=pages[0].text.map(x=>x.str).join('\n');
   for(const expected of ['ALKATRÉSZLISTA','Feya','Kiskunfélegyháza',
-    'Oldallap 1','910 × 600','1-1 · 2 mm · 1 mm előmarás','Összesen: 2 db'])
+    'Oldallap 1','910 × 600','1-1','Reszelés','1Hresz-2Rresz','Összesen: 2 db'])
     assert.ok(text.includes(expected),'Nem jelenik meg: '+expected);
 });
 test('többoldalas PNG: nem vágja le a 100 sornál hosszabb alkatrészlistát',()=>{
@@ -68,13 +75,45 @@ test('az X1/X2/Y1/Y2 élhely-jelölések nem szerepelnek a PNG szövegeiben',()=
   assert.ok(!text.some(s=>new RegExp('^'+marker+'(?:,|$)').test(s)),
     'A PNG-ben tiltott kód szerepel: '+marker);
  }
- assert.ok(text.includes('1-1 · 2 mm · 1 mm előmarás'));
+ assert.ok(text.includes('1-1'));
+ assert.ok(text.includes('1Hresz-2Rresz'));
+ assert.ok(!text.some(s=>s.includes('1-1 · 2 mm')),
+   'a Műhely példány élzárási kódja csak 1-1 lehet');
 });
 
-test('PNG a beállított előmarási mélységet írja ki, nem a korábbi fix 1 mm-t',()=>{
-  const row=part(1);row.millDepth=1.5;
-  const doc=mockDocument();render({errors:[],rows:[row]},doc);
-  const text=doc.canvases.flatMap(c=>c.text.map(x=>x.str));
-  assert.ok(text.includes('1-1 · 2 mm · 1,5 mm előmarás'));
-  assert.ok(!text.includes('1-1 · 2 mm · 1 mm előmarás'));
+test('Reszelés: X1 a rövidebb élen 1Rresz; Y1 és Y2 2Rresz; vegyesen 1Hresz-2Rresz',()=>{
+ assert.equal(filingCode({x1:true},200,400),'1Rresz');
+ assert.equal(filingCode({y1:true,y2:true},964,600),'2Rresz');
+ assert.equal(filingCode({x1:true,y1:true,y2:true},964,600),'1Hresz-2Rresz');
+ assert.equal(filingCode({x1:true,x2:true,y1:true,y2:true},964,600),'2Hresz-2Rresz');
+ assert.equal(filingCode({},964,600),'');
+});
+test('Műhely példány PNG fejléc és fájlnév: kizárólag elkészült alkatrészek',()=>{
+ const doc=mockDocument(),pages=render({errors:[],rows:[part(1)]},doc,true);
+ assert.equal(pages.length,1);
+ const words=pages[0].text.map(x=>x.str);
+ assert.ok(words.includes('MŰHELY PÉLDÁNY'));
+ assert.ok(words.includes('1-1'));
+ assert.ok(words.includes('1Hresz-2Rresz'));
+ assert.match(html,/data-action="download-workshop-copy-png"/);
+ assert.match(html,/Műhely példány\.png/);
+ assert.match(html,/Műhely példány\.zip/);
+});
+test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös kódolással',()=>{
+ const lStart=html.indexOf('  function labelSvgContent(');
+ const lEnd=html.indexOf('  const labelPaper=',lStart);
+ assert.ok(lStart>=0&&lEnd>lStart);
+ const label=vm.runInNewContext('(function(){'+filingSource+
+   html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
+     h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+     nfmt:Number
+   });
+ const text=label({placement:{part:{
+   name:'Oldallap',source:'Szekrény',destination:'Műhely',
+   materialColor:'Freya',originalA:910,originalB:600,
+   edge:'1-1',filingSides:{x1:true,y1:true,y2:true},edgeThickness:2
+ }}},0,0,48.5,25.4);
+ assert.match(text,/1Hresz-2Rresz/);
+ assert.ok(text.indexOf('1-1')<text.indexOf('1Hresz-2Rresz'),
+  'a reszelésnek az élzárási jelölés után kell állnia');
 });
