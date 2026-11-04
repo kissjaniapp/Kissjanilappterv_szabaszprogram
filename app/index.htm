@@ -17,8 +17,17 @@
       min-width:105px;max-width:145px;padding:9px 16px!important;border-radius:10px}
     @media(max-width:500px){.library-row{gap:8px;padding:10px}.library-open{min-width:91px;padding:8px 11px!important}}
     .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:24px}.step{display:flex;align-items:center;gap:12px;text-align:left;border:1px solid #e2e9e3;background:#fff;border-radius:13px;padding:14px 16px;min-width:0}.step.active{border-color:#9abdaa;background:#edf6ef}.step:hover{border-color:#8fb8a2}.step-number{flex:0 0 34px;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:#e9efe9;color:#577563;font-size:13px;font-weight:850}.step.active .step-number{background:var(--pine);color:white}.step-name{font-weight:800;font-size:13px}.step-sub{font-size:11px;color:var(--muted);margin-top:3px}.panel{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);min-width:0}.panel-head{padding:21px 23px;border-bottom:1px solid #eef1ed;display:flex;justify-content:space-between;align-items:center;gap:13px}.panel-body{padding:22px 23px}.panel-title{font-weight:800;font-size:16px;letter-spacing:-.3px}.panel-sub{font-size:12px;color:var(--muted);margin-top:5px}.two-col{display:grid;grid-template-columns:minmax(325px, .78fr) minmax(0,1.22fr);gap:18px}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 14px}.field-grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}.field-hint{font-size:11px;color:#94a198;margin-top:5px}.input-unit{position:relative}.input-unit input{padding-right:38px}.input-unit span{position:absolute;right:12px;top:10px;color:#91a096;font-size:12px;pointer-events:none}.furniture-select{display:flex;gap:8px;align-items:center;margin-bottom:18px}.furniture-select select{flex:1;font-weight:700}.mini-info{display:flex;align-items:center;gap:8px;margin-top:18px;padding:10px 12px;background:#f2f7f2;border-radius:10px;color:#587364;font-size:12px}.cabinet-visual{margin:20px 0 0;padding:12px;background:linear-gradient(145deg,#fafcf8,#f0f4f0);border:1px solid #edf0ec;border-radius:13px}.cabinet-visual svg{display:block;margin:auto;max-width:100%;height:auto}.table-wrap{overflow-x:auto;min-width:0}table{width:100%;border-collapse:collapse;text-align:left}th{color:#809086;background:#f8faf8;font-weight:750;text-transform:uppercase;font-size:10px;letter-spacing:.65px;white-space:nowrap}td,th{border-bottom:1px solid #edf0ed;padding:11px 10px;vertical-align:middle}td:first-child,th:first-child{padding-left:18px}td:last-child,th:last-child{padding-right:18px}tbody tr:hover{background:#fbfcfa}tbody tr:last-child td{border-bottom:0}td input{padding:8px 9px;font-size:12px}td .expr{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;width:100%;min-width:0}
-    .expr-cell{width:132px;min-width:110px}
+    .expr-cell{width:132px;min-width:110px;min-height:64px;position:relative;box-sizing:border-box;padding-bottom:11px}
+    .expr-cell:not(.has-formula){padding-top:7px}
     .expr-cell .expr-result{display:none}
+    /* A jelölés saját, állandó 8px-es sávban van: a méretszám soha nem mozdul. */
+    .dimension-mark-slot{position:absolute;left:10px;bottom:4px;height:8px;max-width:calc(100% - 19px);pointer-events:none;background-repeat:no-repeat;color:#23473a}
+    .dimension-mark-slot.mark-0{background-image:none}
+    .dimension-mark-slot.mark-1{background-image:linear-gradient(currentColor,currentColor);background-size:100% 2px;background-position:left bottom 3px}
+    .dimension-mark-slot.mark-2{background-image:linear-gradient(currentColor,currentColor),linear-gradient(currentColor,currentColor);background-size:100% 2px,100% 2px;background-position:left bottom 5px,left bottom 1px}
+    .dimension-printed{display:inline-flex;flex-direction:column;vertical-align:middle;white-space:nowrap;text-align:left}
+    .dimension-printed .dimension-mark-slot{position:static;width:100%!important;max-width:none;flex:0 0 8px}
+    .dimension-printed .dimension-number{display:block;line-height:1.25}
     .expr-cell.has-formula{padding:5px 9px 6px;background:#fff;border:1px solid #dbe3dc;border-radius:9px;transition:border-color .15s,box-shadow .15s}
     .expr-cell.has-formula:focus-within{border-color:#5d987e;box-shadow:0 0 0 3px #deeee5}
     .expr-cell.has-formula .expr{display:block;padding:0;margin:0;height:18px;border:0;outline:0;background:transparent;box-shadow:none;font-size:11px;line-height:18px;color:#7c8e83;letter-spacing:.1px}
@@ -1370,7 +1379,10 @@
     const formula=String(part[axis]??'');
     const hasFormula=isFormulaText(formula);
     const value=partDimensionPreview(part,f,axis);
-    return `<div class="expr-cell ${hasFormula?'has-formula':''}" data-expr-part="${h(part.id)}" data-expr-axis="${axis}"><input class="expr" style="text-decoration:${!hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${dimensionUnderline(part,axis)===2?'double':'solid'};text-underline-offset:3px" aria-label="${label}" autocomplete="off" spellcheck="false" data-scope="part" data-id="${part.id}" data-key="${axis}" value="${h(formula)}"><output class="expr-result ${value==='–'?'invalid':''}" style="text-decoration:${hasFormula&&dimensionUnderline(part,axis)?'underline':'none'};text-decoration-style:${dimensionUnderline(part,axis)===2?'double':'solid'};text-underline-offset:3px" aria-label="Kiszámolt készméret milliméterben" title="Kiszámolt készméret · ABS és marás levonása nélkül">${h(value)}</output></div>`;
+    const count=dimensionUnderline(part,axis);
+    const visible=String(hasFormula?value:formula);
+    const markWidth=Math.min(105,Math.max(8,visible.length*(hasFormula?10.8:8.7)));
+    return `<div class="expr-cell ${hasFormula?'has-formula':''}" data-expr-part="${h(part.id)}" data-expr-axis="${axis}"><input class="expr" style="text-decoration:none" aria-label="${label}" autocomplete="off" spellcheck="false" data-scope="part" data-id="${part.id}" data-key="${axis}" value="${h(formula)}"><output class="expr-result ${value==='–'?'invalid':''}" style="text-decoration:none" aria-label="Kiszámolt készméret milliméterben" title="Kiszámolt készméret · ABS és marás levonása nélkül">${h(value)}</output><span class="dimension-mark-slot mark-${count}" data-mark-for="${axis}" aria-hidden="true" style="width:${markWidth}px"></span></div>`;
   }
   // Gépeléskor nem rajzoljuk újra az egész oldalt. Csak az eredményt
   // és az összesítést frissítjük, így megmarad a kurzor és a kijelölés.
@@ -1383,15 +1395,12 @@
       const key=wrapper.dataset.exprAxis;
       const active=isFormulaText(part[key]);
       wrapper.classList.toggle('has-formula',active);
-      const underlined=dimensionUnderline(part,key);
-      const input=wrapper.querySelector('input'),outputMark=wrapper.querySelector('output');
-      if(input){
-        input.style.textDecorationLine=underlined&&!active?'underline':'none';
-        input.style.textDecorationStyle=underlined===2?'double':'solid';
-      }
-      if(outputMark){
-        outputMark.style.textDecorationLine=underlined&&active?'underline':'none';
-        outputMark.style.textDecorationStyle=underlined===2?'double':'solid';
+      const count=dimensionUnderline(part,key);
+      const mark=wrapper.querySelector('.dimension-mark-slot');
+      if(mark){
+        mark.className='dimension-mark-slot mark-'+count;
+        const visible=String(active?partDimensionPreview(part,current,key):part[key]??'');
+        mark.style.width=Math.min(105,Math.max(8,visible.length*(active?10.8:8.7)))+'px';
       }
       const output=wrapper.querySelector('.expr-result');
       if(output){
@@ -1513,12 +1522,11 @@
       const edge=h(r.edge||'0-0');
       const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
       const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
+      const marked=(number,count)=>'<span class="dimension-printed"><span class="dimension-number">'+
+        nfmt(number)+'</span><span aria-hidden="true" class="dimension-mark-slot mark-'+count+'"></span></span>';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
-        '<td class="num">'+
-        (dimensionUnderline(part,'a')?'<span style="text-decoration-line:underline;text-decoration-style:'+(dimensionUnderline(part,'a')===2?'double':'solid')+';text-underline-offset:3px">'+nfmt(r.originalA)+'</span>':nfmt(r.originalA))+
-        ' × '+
-        (dimensionUnderline(part,'b')?'<span style="text-decoration-line:underline;text-decoration-style:'+(dimensionUnderline(part,'b')===2?'double':'solid')+';text-underline-offset:3px">'+nfmt(r.originalB)+'</span>':nfmt(r.originalB))+
-        ' mm</td>'+
+        '<td class="num">'+marked(r.originalA,dimensionUnderline(part,'a'))+
+        ' × '+marked(r.originalB,dimensionUnderline(part,'b'))+' mm</td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
         '<td>'+edge+'</td><td>'+filing+'</td><td class="abs-value">'+abs+'</td></tr>';
