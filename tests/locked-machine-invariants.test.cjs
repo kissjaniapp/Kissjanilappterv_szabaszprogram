@@ -51,6 +51,11 @@
 // Az összes bútorlap XML, finalize, termelési sorrend, Windows
 // mentés, SVG megjelenítés byte-ra változatlan.
 // Archív: archive/before-worktop-reversed-two-pass-rx-x-20261104
+// 2026-11-04: az xMix RigheMix sorrendje fix: minden bútorlap először,
+// a 38 mm munkalapok az összes bútorlap után. Mindkét csoporton belül
+// az eredeti táblasorrend változatlan. Az xPrg fájlok byte-ra változatlanok,
+// ahogy a vágási geometria, a mentés és a munkalapos kétmenetes export.
+// Archivált előző állapot: archive/before-xmix-worktops-last-20261104
 // A teszt nem igazolja a gép tényleges végrehajtását; CNC éles használat előtt
 // próbaszabás és az első vágás/távolságok gépi ellenőrzése kötelező.
 const {test}=require('node:test');
@@ -72,7 +77,7 @@ const locked=[
  ['Kötelező kétmenetes gyártási sorrend',
   'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','4a75ad82'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','a16c7e88'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
