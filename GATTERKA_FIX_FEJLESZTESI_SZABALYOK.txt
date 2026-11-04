@@ -381,3 +381,44 @@ jóváhagyott TESZT, de gépi WinCut-import/szimuláció NEM
 volt igazolva. Bármilyen éles fűrészindítás előtt csak
 előnézeti/szárazpróbás ellenőrzés végezhető; nem szabad
 gyártásra hitelesítettnek nevezni.
+
+2026-11-04 – MARADÉKTÁBLÁK KÉT KÜLÖN SZABÁSI MÓDJA (FIX GÉPI PARANCSOK)
+--------------------------------------------------------------------
+A tulajdonos a maradéktáblák kétféle felhasználását kéri:
+  1) "Bevonni" – maradéktáblánként külön, a már működő jelölőnégyzet.
+     A kijelölt maradék elsőbbséget kap; ha nem fér el minden
+     alkatrész, a program normál módban továbbra is felhasználhat
+     meglévő teljes táblát vagy automatikus alaptáblát.
+  2) "Csak kijelölt maradéktáblákból szabjon – teljes tábla nélkül"
+     – önálló jelölőnégyzet az Anyagadatbázis és Anyagkészlet
+     Maradéktábla-készlet részében. Állapota a projekttel mentődik.
+     Bekapcsolásakor kizárólag a Bevonni jelölésű,
+     0-nál nagyobb készletű maradéktáblák használhatók.
+     TILOS automatikus 2800×2070-es bútorlapot, automatikus
+     38 mm munkalapot vagy kézzel rögzített teljes készlettáblát
+     hozzáadni. A gép nem kaphat észrevétlen teljes táblát.
+     Ha semmi nincs kijelölve, az alkalmazás érthető hibát ad;
+     ha a kijelölt maradék túl kicsi vagy kevés, a maradó
+     alkatrészek elhelyezetlenek, a gépi mentés tiltva marad.
+Mindkét jelölő az Anyagadatbázis oldalon ÉS az Anyagkészlet
+maradéktábla-részében megtalálható.
+A régi projektek onlySelectedRemnants mező nélkül normál
+üzemmódban működnek tovább, a már kijelölt maradékok megmaradnak.
+Az új opció állapota a projekttel együtt tartósan mentődik.
+A maradéktáblák a program működő biztonsági megszorításait
+és teljes szélességű vágási elvét megtartják. A 38 mm-es
+munkalap maradékának hossza az eredeti teljes táblánál
+kisebb lehet, de a teljes, az anyag színéhez rendelt 600/900
+vagy egyedi katalógusszélessége nem változhat: hosszanti
+keskenyítés, RX/X/U gépi forgatás soha nem engedélyezett.
+A 38 mm-es teljes alaptábla validálása továbbra is szigorú.
+
+VÉDETT KÓDRÉSZEK – NEM MÓDOSULTAK:
+fizikai finalize 1e0ac4b9; buildProductionSequence afa801b9;
+xMix/xPrg export 659fdd7e; natív Windows mentés f49fe3b5;
+fő SVG megjelenítés 86d21042.
+Az előző állapot archiválva:
+archive/before-remnant-only-cutting-mode-20261104
+A csak-maradék mód CSAK az alapanyag kiválasztását korlátozza.
+Sem új vágási parancsot, sem más vágási sorrendet nem vezet be.
+A munkalap P/RY/Y/F próbája továbbra is gépen NEM hitelesített.
