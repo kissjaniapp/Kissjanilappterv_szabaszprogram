@@ -416,13 +416,10 @@
   // A reszelés külön beállítás, nem módosítja az élzárást és a szabásméretet.
   // H: hosszabb él, R: rövidebb él; az X1/X2 az X méret,
   // az Y1/Y2 az Y méret mentén fut.
+  // A reszelés is a szálirányú-keresztirányú két számjegyes kódot használja.
   function filingCode(sides,a,b){
-    const flags=sides||{},x=Number(!!flags.x1)+Number(!!flags.x2),
-      y=Number(!!flags.y1)+Number(!!flags.y2);
-    if(!x&&!y)return '';
-    const xLong=Number(a)>=Number(b);
-    const hCount=xLong?x:y,rCount=xLong?y:x;
-    return [hCount?hCount+'Hresz':'',rCount?rCount+'Rresz':''].filter(Boolean).join('-');
+    const code=codeFromSides(sides||{});
+    return code==='0-0'?'':code;
   }
   let loaded=null;
   try { loaded=parse(localStorage.getItem('lapterv-project-v2')); } catch { /* Egyes file:// böngészők letilthatják a tárhelyet. */ }
