@@ -2790,7 +2790,7 @@ ${[['x1','X1'],['x2','X2'],['y1','Y1'],['y2','Y2']].map(([side,label])=>`<label 
           downloadBlob(blob,workshop?'Műhely példány.png':cabinet+'_alkatreszlista.png');
           return;
         }
-        files.push([(workshop?'Műhely példány':'alkatreszlista')+'_oldal_'+String(i+1).padStart(2,'0')+'.png',
+        files.push([(workshop?'Műhely példány':cabinet+'_alkatreszlista')+'_oldal_'+String(i+1).padStart(2,'0')+'.png',
           new Uint8Array(await blob.arrayBuffer())]);
       }
       // Többoldalas alkatrészlista egyetlen ZIP, nem engedélykérő többes letöltés.
