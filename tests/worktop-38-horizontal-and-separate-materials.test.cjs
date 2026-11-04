@@ -42,21 +42,28 @@ function plan(rows,boards=[]){
     const cuts=(xprgs[i].match(/<Cut /g)||[]).length;
     assert.ok(cuts<=99,'egy xPrg sem lépheti túl a 99 gépi parancsot');
     if(bin.thickness===38){
-      // A munkalap programja egyetlen P/RY/Y/F menetben szab
-      // a teljes eredeti, változatlan szélességen.
+      // Munkalap: először minden Y, csak utána RX/X/U/F.
+      // Gyári szélesség esetén U nincs, keskenyebb darabnál U kell.
       const finishedParts=bin.machine.strips[0].items.length;
       const physical=bin.cuts.slice().sort((a,b)=>a.order-b.order);
       const yCuts=physical.filter(c=>c.stage==='cross').length;
-      assert.equal(cuts,2+yCuts+finishedParts,
-        'P+RY, valódi készméretes Y vágások és darabonként F');
+      const uCuts=physical.filter(c=>c.stage==='rip').length;
+      assert.equal(cuts,2+yCuts+3*finishedParts+uCuts,
+        'P+RY, Y-k az első menetben; RX/X/(U)/F a második menetben');
       assert.equal((xprgs[i].match(/<Cut T="P"/g)||[]).length,1);
       assert.equal((xprgs[i].match(/<Cut T="RY"/g)||[]).length,1);
       assert.equal((xprgs[i].match(/<Cut T="Y"/g)||[]).length,yCuts);
+      assert.equal((xprgs[i].match(/<Cut T="RX"/g)||[]).length,finishedParts);
+      assert.equal((xprgs[i].match(/<Cut T="X"/g)||[]).length,finishedParts);
+      assert.equal((xprgs[i].match(/<Cut T="U"/g)||[]).length,uCuts);
       assert.equal((xprgs[i].match(/<Cut T="F"/g)||[]).length,finishedParts);
       assert.match(xprgs[i],/Swap="1"/);
-      assert.doesNotMatch(xprgs[i],/<Cut T="(?:RX|X|U)"/);
-      assert.ok(cuts<=bin.machine.commandCount,
-        'az optimalizáló parancskorlátja konzervatív marad');
+      assert.equal(cuts,bin.machine.commandCount);
+      assert.ok(cuts<=99,'az xPrg nem lépheti át a 99 parancsos limitet');
+      const types=Array.from(xprgs[i].matchAll(/<Cut T="([^"]+)"/g),m=>m[1]);
+      const firstRX=types.indexOf('RX');
+      assert.equal(types.slice(0,firstRX).filter(t=>t==='Y').length,yCuts,
+        'minden rövidél-keresztvágás a visszakérés előtt van');
     }else{
       assert.equal(cuts,bin.machine.commandCount,
         'a bútorlapok bevált gépi parancssora változatlan');
@@ -105,7 +112,9 @@ test('250 darab 38 mm-es munkalaprész sem hoz létre hosszanti vágást',()=>{
     /Larghezza="4100[.]00"/.test(s)&&
     /<Cut T="P" Dim="600[.]00"/.test(s)&&
     /Swap="1"/.test(s)&&
-    !/<Cut T="(?:RX|X|U)"/.test(s)));
+    /<Cut T="RX"/.test(s)&&
+    /<Cut T="X"/.test(s)&&
+    !/<Cut T="U"/.test(s)));
 });
 test('hibás kézi 38 mm-es tábla és hibás alkatrészméret visszautasítva',()=>{
   const engine=strip({trim:10,kerf:5,boards:[],selectedRemnantIds:[]});
@@ -113,9 +122,11 @@ test('hibás kézi 38 mm-es tábla és hibás alkatrészméret visszautasítva',
     assert.equal(engine.validWorktop38Stock({a,b,thickness:38}),false);
     assert.equal(engine.createBin({id:'invalid',a,b,thickness:38},1),null);
   }
-  for(const [a,b] of [[4500,600],[1000,650],[700,870]]){
+  for(const [a,b] of [[4500,600],[1000,902],[1000,0],[700,-10]]){
     assert.equal(engine.validWorktop38Part({a,b,thickness:38}),false);
   }
+  assert.equal(engine.validWorktop38Part({a:964,b:550,thickness:38}),true);
+  assert.equal(engine.validWorktop38Part({a:964,b:850,thickness:38}),true);
   assert.equal(engine.validWorktop38Stock({a:4100,b:600,thickness:38}),true);
   assert.equal(engine.validWorktop38Part({a:1000,b:900,thickness:38}),true);
 });
