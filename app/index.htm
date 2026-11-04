@@ -3046,6 +3046,14 @@
     });
     // A gépen működő XML-es xMix minta: Header, Materials, RigheMix.
     // A Relatív .\xPrg\ hivatkozás mellé ugyanilyen ZIP-almappát készítünk.
+    // FIX anyagbeadási sorrend az XMix-ben: valamennyi bútorlap ELŐSZÖR,
+    // az összes 38 mm-es munkalap UTOLJÁRA. Az eredeti sorrend
+    // mindkét csoporton belül változatlan, az .xPrg fájlok tartalma,
+    // neve és a mentés sorrendje továbbra is érintetlen.
+    const xmixOrderedNames=names.map((file,index)=>({
+      file,index,worktop:Math.abs(Number(bins[index].thickness)-38)<.001
+    })).sort((a,b)=>Number(a.worktop)-Number(b.worktop)||a.index-b.index)
+      .map(item=>item.file);
     const mix='<xMix>\r\n'+
       '\t<Header Descrizione="'+esc(project)+'" Import="" Date="'+esc(date)+'" />\r\n'+
       '\t<Materials>\r\n'+
@@ -3053,7 +3061,7 @@
         '" Codice="'+esc(color)+'" Quantita="999" />').join('\r\n')+
       '\r\n\t</Materials>\r\n'+
       '\t<RigheMix>\r\n'+
-      names.map(file=>'\t\t<RigaMix File="'+esc(xprgLocation.directory+file)+
+      xmixOrderedNames.map(file=>'\t\t<RigaMix File="'+esc(xprgLocation.directory+file)+
         '" Rep="1" Pacco="1" CambioMateriale="0" />').join('\r\n')+
       '\r\n\t</RigheMix>\r\n</xMix>\r\n';
     const mixName=root+'_'+bins.length+'_tablas.xMix';
