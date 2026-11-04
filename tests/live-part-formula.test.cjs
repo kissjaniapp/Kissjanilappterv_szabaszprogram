@@ -22,7 +22,7 @@ const formulaEngine=vm.runInNewContext('(function(){\n'+
   html.slice(matA,matB)+'\n'+html.slice(shelfA,shelfB)+'\n'+
   html.slice(dividerA,dividerB)+'\n'+
   html.slice(calcA,calcB)+'\n'+
-  'function dimensionUnderline(part,axis){const edge=String(part.edge||"0-0"),filing=part.filingSides||{};const i=axis==="a"?0:2;return Number(edge[i]||0)>0||(i===0?!!(filing.x1||filing.x2):!!(filing.y1||filing.y2));}\n'+
+  'function dimensionUnderline(part,axis){const edge=String(part.edge||"0-0"),filing=part.filingSides||{};const i=axis==="a"?0:2;return Math.max(Number(edge[i]||0),i===0?Number(!!filing.x1)+Number(!!filing.x2):Number(!!filing.y1)+Number(!!filing.y2));}\n'+
   html.slice(helperA,helperB)+
   '\nreturn {calc,isFormulaText,partDimensionPreview,partDimensionInput};\n})()',{
     h:x=>String(x??'').replace(/"/g,'&quot;'),
@@ -74,4 +74,24 @@ test('közvetlen szám továbbra is rendesen szerkeszthető',()=>{
  assert.match(source,/class="expr-cell "/);
  assert.match(source,/value="980"/);
  assert.doesNotMatch(source,/class="expr-cell has-formula"/);
+});
+
+test('aláhúzás: 0 nincs, 1 egyszeres, 2 kétszeres, X és Y független',()=>{
+ const p=part();
+ p.edge='0-0';p.filingSides={};
+ for(const axis of ['a','b']){
+   const bare=formulaEngine.partDimensionInput(p,furniture,axis,'Méret');
+   assert.match(bare,/text-decoration:none/);
+ }
+ for(const [edge,expectedX,expectedY] of [['1-0','solid','none'],['0-2','none','double'],['2-1','double','solid']]){
+   p.edge=edge;
+   const x=formulaEngine.partDimensionInput(p,furniture,'a','X');
+   const y=formulaEngine.partDimensionInput(p,furniture,'b','Y');
+   assert.match(x,new RegExp('text-decoration-style:'+ (expectedX==='none'?'solid':expectedX)));
+   assert.match(y,new RegExp('text-decoration-style:'+ (expectedY==='none'?'solid':expectedY)));
+   assert.equal(x.includes('text-decoration:underline'),expectedX!=='none');
+   assert.equal(y.includes('text-decoration:underline'),expectedY!=='none');
+   assert.match(x,/class="expr" style="text-decoration:none/);
+   assert.match(y,/class="expr" style="text-decoration:none/);
+ }
 });
