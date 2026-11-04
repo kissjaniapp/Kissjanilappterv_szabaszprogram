@@ -422,3 +422,72 @@ archive/before-remnant-only-cutting-mode-20261104
 A csak-maradék mód CSAK az alapanyag kiválasztását korlátozza.
 Sem új vágási parancsot, sem más vágási sorrendet nem vezet be.
 A munkalap P/RY/Y/F próbája továbbra is gépen NEM hitelesített.
+
+2026-11-04 – MUNKALAP VISSZAFORDÍTOTT KÉTMENETES XPRG – TULAJDONOSI JÓVÁHAGYÁS
+-----------------------------------------------------------------------------
+ÚJ TULAJDONOSI UTASÍTÁS – A KORÁBBI, CSAK P/RY/Y/F MUNKALAPOS
+PRÓBÁKRA VONATKOZÓ TILTÁSOK VISSZAVONVA. A BÚTORLAP
+BEVÁLT XML-STRUKTÚRÁJA AZ ALAP, DE A MUNKALAPNÁL
+FORDÍTOTT MENETSORRENDBEN, A KÉT MENET ELVÁLASZTVA:
+  1. A gép 600/900 mm vagy a színhez rögzített teljes
+     táblaszélességen keresztben szab; P=teljes keresztvágási szélesség.
+  2. RY: első, az eredeti fizikai tervből számolt maradékleválasztás
+     (bin.a - bin.cuts[0].x1).
+  3. MINDEN rövidél/darabhossz vágás Y=az adott alkatrész hossza,
+     F nélkül. A Y sorozat LEZÁRUL, MIELŐTT a visszakérés kezdődik.
+  4. A már leválasztott darabok 90°-os visszakérése, sorban:
+     RX=0, X=a teljes munkalapszélesség, majd
+     ha szükséges U=a keskenyebb kész szélesség, végül F=0.
+     Teljes 600/900 mm-es vagy egyedi táblaszélesség esetén
+     U NINCS: a második menet darabonként egy X visszavágást és
+     F lezárást tartalmaz. Ez NEM a korábbi Y/F egymásba fűzése.
+  5. A P/Lunghezza továbbra is a keresztvágás 600/900 vagy
+     egyedileg megadott szélessége, a Larghezza a szál hossza,
+     a kísérleti Swap=1 pedig változatlan.
+  6. Ez KIZÁRÓLAG a 38 mm munkalap exportágában érvényes.
+     A bútorlap P/RY/Y/RX/X/U/F változatlan, byte-ra azonos.
+
+A tulajdonos által elfogadott konkrét példa:
+  Tábla 4100 × 600 × 38 mm, 2 db 964 × 600 mm kész elem,
+  12 mm szélezés, 5 mm fűrészrés:
+  <Cut T="P" Dim="600.00" />
+  <Cut T="RY" Dim="2147.50" />
+  <Cut T="Y" Dim="964.00" />
+  <Cut T="Y" Dim="964.00" />
+  <Cut T="RX" Dim="0.00" />
+  <Cut T="X" Dim="600.00" />
+  <Cut T="F" Dim="0.00" />
+  <Cut T="RX" Dim="0.00" />
+  <Cut T="X" Dim="600.00" />
+  <Cut T="F" Dim="0.00" />
+(A tényleges XML-nek az összes Cut sorban Rip="1", folyamatos ID
+mezője van; a fenti sorok kizárólag méret-/sorrendpéldák.)
+
+Keskenyebb példa: 2 db 964 × 550 mm, 600 mm széles
+munkalapból: a két Y=964 után minden darabra
+RX=0, X=600, U=550, F=0.
+A 600/900 mm szélesség teljes marad az 1. menetben;
+a szűkítés kizárólag a 90°-kal visszaadott darab 2.
+menetében történik. Az eredeti vágás- és darabhelyeket
+számító finalize függvény nem módosult. Az alapanyag
+katalógusmérete, a rövidebb munkalapmaradék és a
+csak-kijelölt-maradékok üzemmód továbbra is érvényes.
+A 99 parancsos határt munkalapnál az új 2 + darabonként
+4 + esetleges U parancsok alapján is ellenőrzi a tervező;
+a nagy feladatot több táblára osztja.
+
+VÉDETT UJJLENYOMATOK:
+  finalize 1e0ac4b9
+  buildProductionSequence afa801b9
+  xMix/xPrg export 4a75ad82 (kizárólag 38 mm munkalap-ág változott)
+  Windows natív Mentés másként f49fe3b5
+  fő SVG 86d21042.
+Visszaállítás: archive/before-worktop-reversed-two-pass-rx-x-20261104
+
+FIGYELEM: a felhasználó a SZIMULÁCIÓT hagyta jóvá, nem
+valós WinCut gépi elfogadást. A Header Larghezza=4100,
+Swap=1, RX=0, az egymás utáni Y-k és a teljes tábla szélére
+eső X fizikai és WinCut-kódolása NEM HITelesített. Az előző
+Larghezza=4100/Swap=0 402-es gépi hibája ismert; Swap=1
+nem bizonyított megoldás. CNC próbaszabás előtt csak
+WinCut import, szimuláció és szigorú szárazpróba végezhető.
