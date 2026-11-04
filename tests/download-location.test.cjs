@@ -15,7 +15,7 @@ test('az exportok nem nyitnak Mentés másként ablakot',()=>{
 });
 test('a korábbi PNG mentés közvetlen letöltéssé vált',async()=>{
   const begin=html.indexOf('async function saveFileToDisk(');
-  const end=html.indexOf('\n  async function downloadPartsPng()',begin);
+  const end=html.indexOf('\n  async function downloadPartsPng(',begin);
   assert.ok(begin>=0&&end>begin);
   const calls=[];
   const save=vm.runInNewContext('('+html.slice(begin,end).trim()+')',{
@@ -27,12 +27,12 @@ test('a korábbi PNG mentés közvetlen letöltéssé vált',async()=>{
   assert.deepEqual(calls[0],{blob,name:'Teszt.png'});
 });
 test('többoldalas alkatrész-PNG csak egyetlen ZIP-letöltést indít',async()=>{
-  const start=html.indexOf('async function downloadPartsPng(){');
+  const start=html.indexOf('async function downloadPartsPng(');
   const end=html.indexOf('\n  function selectedBin()',start);
   assert.ok(start>=0&&end>start);
   const downloads=[],zipCalls=[];
   const png=vm.runInNewContext('('+html.slice(start,end).trim()+')',{
-    getParts:()=>({}),
+    getParts:()=>({}),document:{},
     buildPartsPngPages:()=>Array.from({length:3},(_,i)=>({
       toBlob:cb=>cb({arrayBuffer:async()=>Uint8Array.of(i+1).buffer})
     })),
