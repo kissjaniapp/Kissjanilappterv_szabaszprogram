@@ -2226,18 +2226,22 @@
     const badWorktop=(parts.rows||[]).find(r=>{
       if(r.skipped||r.error||!(Math.abs(Number(r.thickness)-38)<.001))return false;
       const size=currentWorktopSize(r);
+      const fitsWidth=w=>{
+        const gap=w-Number(r.b),kerf=Math.max(0,Number(state.kerf)||0);
+        return Number(r.b)>0&&gap>=-.0001&&
+          (gap<=.0001||gap+.0001>=kerf);
+      };
       return !(Number(r.a)>0&&Number(r.a)<=(size?.a??4100)+.0001&&
-        (size?Math.abs(Number(r.b)-size.b)<.001:
-          [600,900].some(w=>Math.abs(Number(r.b)-w)<.001)));
+        (size?fitsWidth(size.b):[600,900].some(fitsWidth)));
     });
     if(badWorktop){
       const size=currentWorktopSize(badWorktop);
       return {error:
-        'A 38 mm-es munkalapot az anyagadatbázisban megadott TELJES '+
-        'táblaszélességben kell hagyni. A választott alapanyag '+
+        'A 38 mm-es munkalap első menete TELJES táblaszélességű, '+
+        'a keskenyebb kész alkatrészhez második menetes U-vágás szükséges. A választott alapanyag '+
         (size?(size.a+' × '+size.b):( '4100 × 600 vagy 4100 × 900'))+
         ' mm, a kért alkatrész pedig '+badWorktop.a+' × '+badWorktop.b+
-        ' mm. Ellenőrizd a színt, a tábla X/Y méretét és az élzárás miatti méretlevonást.'};
+        ' mm. Ellenőrizd a táblaszélességet, a legalább fűrészrésnyi U-maradékot, az anyagszínt és a méretlevonást.'};
     }
     const stock38=[...(state.onlySelectedRemnants?[]:(state.boards||[])),...(typeof remnantCatalog==='undefined'?[]:
       remnantCatalog.filter(r=>(state.selectedRemnantIds||[]).includes(r.id))
