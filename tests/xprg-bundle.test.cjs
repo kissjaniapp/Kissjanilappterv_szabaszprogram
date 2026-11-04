@@ -105,11 +105,11 @@ test('xMix: a 38 mm-es munkalapok MINDIG a bútorlapok után kerülnek, stabil s
  assert.match(xprgs(out)[1][1],/Spessore="18[.]00"/);
  assert.deepEqual(Array.from(xml.matchAll(/<RigaMix /g)).length,4);
 });
-test('xMix: kizárólag bútorlapok vagy kizárólag munkalapok esetén a sorrend változatlan',()=>{
+test('xMix: kizárólag bútorlapok esetén az eredeti sorrend változatlan',()=>{
  const regular=exportBundle([base('A'),base('B'),base('C')]);
  const names=Array.from(xmix(regular).matchAll(/<RigaMix File="([^"]+)"/g),
    match=>match[1].split('\\').at(-1));
- assert.deepEqual(names,regular.names);
+ assert.deepEqual(names,Array.from(regular.names));
 });
 test('a dátum és a Hová készül mező adja a projektmappa nevét',()=>{
  const out=exportBundle([base()],'Kiss János / konyha');
