@@ -491,3 +491,30 @@ eső X fizikai és WinCut-kódolása NEM HITelesített. Az előző
 Larghezza=4100/Swap=0 402-es gépi hibája ismert; Swap=1
 nem bizonyított megoldás. CNC próbaszabás előtt csak
 WinCut import, szimuláció és szigorú szárazpróba végezhető.
+
+2026-11-04 – AZ XMix MUNKALAP SORRENDJE KÖTELEZŐEN UTOLSÓ
+--------------------------------------------------------
+ÚJ TULAJDONOSI UTASÍTÁS: ha egy munkában 18 mm-es bútorlapok
+és 38 mm-es munkalapok is szerepelnek, az xMix RigheMix
+végrehajtási felsorolásában MINDEN bútorlapos XPRG-nek
+az ÖSSZES munkalapos XPRG ELŐTT kell szerepelnie.
+- Először minden nem 38 mm-es táblaprogram (bútorlap),
+  utána az összes 38 mm-es munkalap.
+- Az eredeti sorrend az egyes csoportokon belül STABIL;
+  sem a bútorlapok, sem a munkalapok egymás közti
+  táblasorrendjét nem szabad véletlenül átrendezni.
+- Ha nincs vegyes alapanyag, a régi sorrend változatlan.
+- Kizárólag az xMix <RigaMix File=...> hivatkozások sorrendje
+  változik. A hozzájuk tartozó .xPrg fájlok teljes XML-je,
+  neve, táblaszáma, ZIP-elhelyezése és az xMix tényleges
+  Windows útvonalai változatlanok.
+- A bútorlapok bevált P/RY/Y/RX/X/U/F kódolása,
+  a munkalap Y-először majd RX/X/(U)/F kísérleti kódja,
+  a fizikai szabásterv/sorrend és a Windows mentés FIX.
+- Az xMix nem igazolja a munkalap kódjának WinCut elfogadását.
+
+Védett kód-ujjlenyomatok:
+finalize 1e0ac4b9; buildProductionSequence afa801b9;
+xPrg/xMix a16c7e88 (csak xMix-sorrend további engedélyezett módosítása);
+Windows natív mentés f49fe3b5; SVG 86d21042.
+Archívum: archive/before-xmix-worktops-last-20261104
