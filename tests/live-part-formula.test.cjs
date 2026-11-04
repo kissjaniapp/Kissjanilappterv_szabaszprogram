@@ -21,7 +21,9 @@ const formulaEngine=vm.runInNewContext('(function(){\n'+
   'const materialCatalog=[];\n'+
   html.slice(matA,matB)+'\n'+html.slice(shelfA,shelfB)+'\n'+
   html.slice(dividerA,dividerB)+'\n'+
-  html.slice(calcA,calcB)+'\n'+html.slice(helperA,helperB)+
+  html.slice(calcA,calcB)+'\n'+
+  'function dimensionUnderline(part,axis){const edge=String(part.edge||"0-0"),filing=part.filingSides||{};const i=axis==="a"?0:2;return Number(edge[i]||0)>0||(i===0?!!(filing.x1||filing.x2):!!(filing.y1||filing.y2));}\n'+
+  html.slice(helperA,helperB)+
   '\nreturn {calc,isFormulaText,partDimensionPreview,partDimensionInput};\n})()',{
     h:x=>String(x??'').replace(/"/g,'&quot;'),
     nfmt:x=>Number(x).toLocaleString('hu-HU',{maximumFractionDigits:1}),
