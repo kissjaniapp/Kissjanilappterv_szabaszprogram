@@ -1646,10 +1646,18 @@
   const validWorktop38Part=p=>{
     if(!isWorktop38(p.thickness))return true;
     const size=worktop38CatalogSize(p);
-    return size?(Number(p.a)>0&&Number(p.a)<=size.a+.0001&&
-        Math.abs(Number(p.b)-size.b)<.001):
+    const kerf=Math.max(0,Number(state.kerf)||0);
+    // 38 mm munkalap: az első menet a TELJES 600/900 vagy
+    // anyagadatbázisban megadott szélességet keresztben vágja.
+    // Keskenyebb darab esetén a visszaadott részen U alábontás
+    // szükséges; a fűrészrésnél kisebb U-maradék nem gyártható.
+    const widthFits=width=>{
+      const gap=width-Number(p.b);
+      return Number(p.b)>0&&gap>=-.0001&&(gap<=.0001||gap+.0001>=kerf);
+    };
+    return size?(Number(p.a)>0&&Number(p.a)<=size.a+.0001&&widthFits(size.b)):
       (Number(p.a)>0&&Number(p.a)<=WORKTOP_38_LENGTH+.0001&&
-        WORKTOP_38_WIDTHS.some(w=>Math.abs(Number(p.b)-w)<.001));
+        WORKTOP_38_WIDTHS.some(widthFits));
   };
   const MIN_BOARD_EXTRA=5;
   function createBin(b,index,automatic=false){
@@ -1855,13 +1863,19 @@
           if(worktop){
             if(!validWorktop38Part({...o,thickness:item.thickness,
                  materialId:item.materialId||'',materialColor:item.materialColor||''})||
-               Math.abs(o.b-bin.b)>eps||o.a>bin.a+eps)continue;
+               o.b>bin.b+eps||o.a>bin.a+eps||
+               (bin.b-o.b>eps&&bin.b-o.b+eps<kerf))continue;
+            // A többi munkalapdarabbal közös, teljes szélességű
+            // első keresztvágás után következik a szélességi U.
+            const used=m.strips.reduce((n,st)=>n+(st.items||[]).reduce(
+              (z,p)=>z+4+(st.width-p.breadth>eps?1:0),0),0);
+            if(2+used+4+(bin.b-o.b>eps?1:0)>MAX_SAFE_XPRG_COMMANDS)continue;
           }else if(bin.a+eps<o.a+MIN_BOARD_EXTRA||bin.b+eps<o.b+MIN_BOARD_EXTRA)continue;
-          const bw=breadth(o,localFeed),len=along(o,localFeed);
+          const bw=worktop?bin.b:breadth(o,localFeed),len=along(o,localFeed);
           if(bw>m.feedSize+eps||len>m.crossSize+eps)continue;
           for(const strip of m.strips){
             const gap=strip.width-bw;
-            if(worktop&&Math.abs(gap)>eps)continue; // Nincs hosszanti U / rip vágás.
+            if(worktop&&Math.abs(gap)>eps)continue; // Az első menetben csak egy TELJES szélességű munkalap-sor.
             const addition=(strip.usedLength?kerf:0)+len;
             const left=m.crossSize-strip.usedLength-addition;
             if(gap<-eps||!isValidRemainder(gap)||!isValidRemainder(left))continue;
@@ -1927,7 +1941,8 @@
         // Hiányzó katalógusadatnál a korábbi 4100×600/900 alapérték marad.
         const configured=worktop38CatalogSize(item);
         const stockA=configured?.a??WORKTOP_38_LENGTH;
-        const stockB=configured?.b??item.b;
+        const stockB=configured?.b??WORKTOP_38_WIDTHS.find(w=>
+          w>=item.b-.0001&&(w-item.b<.0001||w-item.b+.0001>=kerf));
         const bin=createBin({id:'worktop-38',name:'Munkalap · '+stockA+' × '+stockB+' × 38',
           a:stockA,b:stockB,thickness:38,materialId:item.materialId||'',
           materialColor:String(item.materialColor||'').trim()},
@@ -1939,8 +1954,10 @@
       }
       if(!choice){failed.push(item);continue;}
       const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
-      const addedCommands=choice.strip?
-        2+(choice.strip.width-bw>0.001&&choice.strip.width-bw+0.001>=kerf?1:0):4;
+      const addedCommands=isWorktop38(item.thickness)?
+        4+(bin.b-item.b>eps?1:0):
+        choice.strip?
+          2+(choice.strip.width-bw>0.001&&choice.strip.width-bw+0.001>=kerf?1:0):4;
       m.commandCount=(m.commandCount??2)+addedCommands;
       if(!bin.materialColor)bin.materialColor=String(item.materialColor||'').trim();
       let strip=choice.strip;
@@ -1951,7 +1968,7 @@
       }
       if(strip.usedLength)strip.usedLength+=kerf;
       strip.items.push({item,turned:orientation.turned,realW:orientation.a,
-        realH:orientation.b,breadth:bw,along:len});
+        realH:orientation.b,breadth:isWorktop38(item.thickness)?orientation.b:bw,along:len});
       strip.usedLength+=len;
     }
     function finalize(bin){
@@ -2879,22 +2896,23 @@
       // attól, melyik a hosszabb. A csíkterv és az XML vágássorrend FIX.
       if(m.feed!=='x'&&m.feed!=='y')
         throw Error((i+1)+'. tábla: ismeretlen gépi beadási irány.');
-      // A tulajdonos által JÓVÁHAGYOTT 38 mm munkalap-próba:
-      // a teljes szélesség az egyetlen vágáshossz, tehát
-      // P = Lunghezza = bin.b, Larghezza = bin.a, Swap = 1.
-      // A gépi műveletek P → RY → Y → F (darabonként Y/F),
-      // végig 600/900 vagy egyedileg rögzített teljes szélességen.
-      // RX/X/U második menet, anyagforgatás TILOS. A WinCutban
-      // ezt a Swap=1 fejlécet MÉG próbaimporttal ellenőrizni kell,
-      // korábbi Swap=0 változat Larghezza=4100 miatt 402 hibát adott.
-      // A bútorlap exportja minden bájtjában változatlan marad.
+      // 38 mm-es munkalap: a jóváhagyott FORDÍTOTT KÉTMENETES próba.
+      // Első menet: P=teljes vágáshossz (600/900 vagy egyedi bin.b),
+      // RY=első maradékvágás, azután MINDEN rövidél / Y=darabhossz.
+      // Második menet: a már levágott darabok 90°-os visszakérése,
+      // darabonként RX=0, X=teljes szélesség, ha kell U=kész szélesség,
+      // végül F. Teljes kész szélességnél NINCS U: egy X és F.
+      // KÍSÉRLETI: WinCut elfogadását, Swap=1 jelentését, RX=0 és
+      // a tábla szélére eső X vágás értelmezését ellenőrizni kell.
+      // A gép által elfogadott 18 mm-es bútorlap XML továbbra is FIX.
       const worktop=Math.abs(Number(bin.thickness)-38)<.001;
-      if(worktop&&bin.cuts.some(c=>c.stage==='strip'||c.stage==='rip'))
-        throw Error((i+1)+'. tábla: munkalapnál tilos a hosszirányú csíkozás.');
+      if(worktop&&bin.cuts.some(c=>c.stage==='strip'))
+        throw Error((i+1)+'. tábla: a munkalap első menetéhez csak teljes szélességű keresztvágás engedett.');
       const feedLength=worktop?bin.b:(m.feed==='x'?bin.a:bin.b);
       const headerLength=feedLength;
       const headerWidth=worktop?bin.a:(m.feed==='x'?bin.b:bin.a);
-      if(worktop&&(m.feed!=='x'||bin.cuts.some(c=>c.length>0&&
+      if(worktop&&(m.feed!=='x'||bin.cuts.some(c=>
+           (c.stage==='cross'||c.stage==='cross-head-trim')&&c.length>0&&
            Math.abs(c.length-feedLength)>.001)))
         throw Error((i+1)+'. tábla: a munkalap keresztvágása nem a teljes táblaszélességen fut.');
       // A fejléc leírása az adott táblán elhelyezett alkatrészek anyagszíne,
@@ -2929,42 +2947,52 @@
           '" Rip="1" ID="'+cuts.length+'" />');
       };
       if(worktop){
-        // 38 MM MUNKALAP – A JÓVÁHAGYOTT LÉPÉSES SZIMULÁCIÓ:
-        // P=teljes szélesség, RY=az első fizikai maradékleválasztás,
-        // Y=készméret, F=kész darab (a többi darabra Y/F ismétlődik).
-        // A vágások sorrendjét és koordinátáit változatlanul a
-        // fizikai bin.cuts adja. Sem X, sem U, sem RX nem szükséges.
+        // A JÓVÁHAGYOTT GÉPI SZIMULÁCIÓ SORRENDJE:
+        // P → RY → (az összes Y), MAJD a visszakért 964 mm-es
+        // részeken egyenként RX → X → (szükség szerint U) → F.
+        // A fizikai bin.cuts helyét és sorrendjét nem számoljuk át.
         const strip=m.strips[0];
         if(m.feed!=='x'||m.strips.length!==1||
            Math.abs(Number(strip.width)-Number(bin.b))>.001||
-           (strip.items||[]).some(p=>Math.abs(Number(p.breadth)-Number(bin.b))>.001))
-          throw Error((i+1)+'. tábla: a munkalapnak egyetlen, teljes szélességű sorban kell lennie.');
+           (strip.items||[]).some(p=>!Number.isFinite(Number(p.breadth))||
+              Number(p.breadth)<=0||Number(p.breadth)>bin.b+.001))
+          throw Error((i+1)+'. tábla: a munkalap első menete egy teljes szélességű sor.');
         const physical=(bin.cuts||[]).slice().sort((a,b)=>a.order-b.order);
         if(!physical.length||
-           physical.some(c=>(c.stage!=='cross-head-trim'&&c.stage!=='cross')||
-             c.axis!=='y'||Math.abs(Number(c.length)-bin.b)>.001)||
-           physical.slice(1).some(c=>c.stage!=='cross'))
-          throw Error((i+1)+'. tábla: a munkalap XPRG-vágásai eltérnek a jóváhagyott térképtől.');
-        const first=physical[0];
-        const firstDistance=bin.a-Number(first.x1);
+           physical.some(c=>!['cross-head-trim','cross','rip'].includes(c.stage)||
+             (c.stage==='rip'?c.axis!=='x':
+               c.axis!=='y'||Math.abs(Number(c.length)-bin.b)>.001))||
+           physical[0].stage!=='cross-head-trim')
+          throw Error((i+1)+'. tábla: a munkalap XPRG fizikai vágásai eltérnek a szabástérképtől.');
+        const firstDistance=bin.a-Number(physical[0].x1);
         if(!Number.isFinite(firstDistance)||firstDistance<0||firstDistance>bin.a)
-          throw Error((i+1)+'. tábla: hibás az első keresztvágás távolsága.');
+          throw Error((i+1)+'. tábla: hibás az első maradékleválasztás helye.');
+        const realCross=physical.filter(c=>c.stage==='cross');
+        if(realCross.length!==(strip.items||[]).length||
+           realCross.some((c,k)=>Math.abs(Number(c.pieceSize)-
+             Number(strip.items[k].along))>.001))
+          throw Error((i+1)+'. tábla: a munkalap kész hosszvágásai nem egyeznek a fizikai tervvel.');
         add('P',feedLength);
-        add('RY',first.stage==='cross-head-trim'?firstDistance:0);
-        let completed=0;
-        for(const cut of physical){
-          if(cut.stage!=='cross')continue; // A RY már elvégezte a szélezést.
-          if(!Number.isFinite(Number(cut.pieceSize))||Number(cut.pieceSize)<=0)
-            throw Error((i+1)+'. tábla: hibás készméretes munkalapvágás.');
-          add('Y',cut.pieceSize);
+        add('RY',firstDistance);
+        // 1. MENET: minden 600/900 mm hosszúságú keresztvágás,
+        // AZ ÖSSZES kész 964-es rész elválasztása a forgatás ELŐTT.
+        for(const cut of realCross)add('Y',cut.pieceSize);
+        // 2. MENET: csak ezután kérjük vissza a leválasztott részeket.
+        for(const part of strip.items||[]){
+          const partWidth=Number(part.breadth);
+          const left=strip.width-partWidth;
+          if(!Number.isFinite(partWidth)||partWidth<=0||
+             left<-.001||(left>.001&&left+.001<kerf))
+            throw Error((i+1)+'. tábla: hibás visszakért munkalap-szélesség.');
+          add('RX',0); // 0 mm – kísérleti szélező / beállító parancs.
+          add('X',strip.width); // egyetlen szélességi készrevágás.
+          if(left>.001){
+            if(!physical.some(c=>c.stage==='rip'&&c.stripIndex===strip.index))
+              throw Error((i+1)+'. tábla: hiányzik a keskenyebb munkalap U keresztvágása.');
+            add('U',partWidth);
+          }
           add('F',0);
-          completed++;
         }
-        if(completed>(strip.items||[]).length)
-          throw Error((i+1)+'. tábla: több készrevágás, mint alkatrész.');
-        // Ha a legfelső elem a táblaélhez illeszkedik, a még
-        // hiányzó F lezárás nem igényel kitalált gépi vágást.
-        while(completed<(strip.items||[]).length){add('F',0);completed++;}
 
       }else{
         // A bútorlap teljes, kétmenetes P/RY/Y/RX/X/U/F exportja
