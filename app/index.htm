@@ -22,6 +22,7 @@
     .expr-cell .expr-result{display:none}
     /* A jelölés saját, állandó 8px-es sávban van: a méretszám soha nem mozdul. */
     .dimension-mark-slot{position:absolute;left:10px;bottom:4px;height:8px;max-width:calc(100% - 19px);pointer-events:none;background-repeat:no-repeat;color:#23473a}
+    .expr-cell:not(.has-formula) .dimension-mark-slot{bottom:22px}
     .dimension-mark-slot.mark-0{background-image:none}
     .dimension-mark-slot.mark-1{background-image:linear-gradient(currentColor,currentColor);background-size:100% 2px;background-position:left bottom 3px}
     .dimension-mark-slot.mark-2{background-image:linear-gradient(currentColor,currentColor),linear-gradient(currentColor,currentColor);background-size:100% 2px,100% 2px;background-position:left bottom 5px,left bottom 1px}
