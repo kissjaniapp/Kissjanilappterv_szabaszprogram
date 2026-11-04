@@ -99,6 +99,38 @@ test('Műhely példány PNG fejléc és fájlnév: kizárólag elkészült alkat
  assert.match(html,/Műhely példány\.png/);
  assert.match(html,/Műhely példány\.zip/);
 });
+
+test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabásterv mellett is',()=>{
+ const lStart=html.indexOf('  function labelSvgContent(');
+ const lEnd=html.indexOf('  const labelPaper=',lStart);
+ assert.ok(lStart>=0&&lEnd>lStart);
+ const state={furnitures:[{id:'f1',parts:[{
+   id:'p1',filingSides:{x1:true,x2:false,y1:true,y2:true}
+ }]}]};
+ const makeLabel=vm.runInNewContext('(function(){'+filingSource+
+   html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
+     state,
+     h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+     nfmt:Number
+   });
+ // A már meglevő gépi elhelyezés / matricaadat nem tartalmazza a filingSides mezőt.
+ const oldPlacement={part:{
+   uid:'p1',name:'Polc',source:'Konyha',destination:'Műhely',
+   materialColor:'Freya',originalA:964,originalB:600,edge:'1-0',
+   edgeThickness:2,mill:true,millDepth:1
+ }};
+ const show=()=>makeLabel({placement:oldPlacement},0,0,48.5,25.4);
+ const mixed=show();
+ assert.match(mixed,/1Hresz-2Rresz/);
+ assert.ok(mixed.indexOf('>1-0</text>')<mixed.indexOf('>1Hresz-2Rresz</text>'),
+   'reszelés a matricán az élzárás után, annak alatti sorban');
+ state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:true,y2:true};
+ assert.match(show(),/>2Rresz<\/text>/,
+   'a matrica a frissített alkatrészjelölést mutatja új bin generálása nélkül');
+ state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:false,y2:false};
+ assert.doesNotMatch(show(),/Hresz|Rresz/,
+   'kikapcsolt reszelés nem maradhat a korábbi matricaállapotból');
+});
 test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös kódolással',()=>{
  const lStart=html.indexOf('  function labelSvgContent(');
  const lEnd=html.indexOf('  const labelPaper=',lStart);
