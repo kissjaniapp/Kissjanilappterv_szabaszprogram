@@ -68,7 +68,9 @@ test('összesítő csak a szabásba kerülő alkatrészeket írja ki, szerkeszt�
   assert.doesNotMatch(html,/0-1 · Y1/);
   assert.match(html,/<td class="abs-value">0.4 mm<\/td>/);
   assert.match(html,/Műhely példány PNG/);
-  assert.match(html,/<span[^>]*>400<\/span> × 120 mm/);
+  assert.match(html,/class="dimension-number">400<\/span>/);
+  assert.match(html,/class="dimension-mark-slot mark-1"/);
+  assert.match(html,/class="dimension-mark-slot mark-0"/);
   assert.match(html,/400 × 119 mm/);
   assert.doesNotMatch(html,/data-scope="part"/);
   assert.doesNotMatch(html,/<input/);
