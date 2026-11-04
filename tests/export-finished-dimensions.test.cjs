@@ -69,9 +69,10 @@ test('a széria-szerkesztő az Anyagkészlet, Matrica és Mentés oldalakra is t
  const events=section("document.addEventListener('click',e=>{","document.addEventListener('input',e=>{");
  assert.doesNotMatch(events,/projectScreen==='series-edit'&&!/);
 });
-test('a szabásterv közepén ott a kézi elrendezés-frissítés, a meglévő számítás változatlan',()=>{
- assert.match(html,/data-action="refresh-nesting"/);
- assert.match(html,/action==='run-nesting'\|\|action==='refresh-nesting'/);
+test('az elrendezés és az ütköztetés változásakor automatikus frissítés van, kézi gomb nélkül',()=>{
+ assert.doesNotMatch(html,/data-action="refresh-nesting"/);
+ assert.match(html,/\['cutDirection','layoutMode'\]\.includes\(key\)/);
+ assert.match(html,/result=hadNesting\|\|state\.active==='nesting'\?computeNesting\(\):null/);
  assert.match(html,/result=computeNesting\(\);state\.selectedBoard=0/);
 });
 test('a teljes tábla összesítő egyetlen PNG és nincs többé SVG felirat',()=>{
