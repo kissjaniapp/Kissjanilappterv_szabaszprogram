@@ -570,3 +570,50 @@ Előző állapot:
 archive/before-furniture-only-mandatory-selected-remnants-20261104
 A korábbi, 38 mm munkalapra vonatkozó összes pozitív
 utasítás ezen szakasztól kezdve FELÜLÍRVA.
+
+2026-11-04 – ALKATRÉSZ RESZELÉS JELÖLÉSE / MŰHELY PÉLDÁNY PNG
+--------------------------------------------------------------
+ÚJ TULAJDONOSI UTASÍTÁS, csak alkatrészszerkesztő és kísérő dokumentumok:
+- Az alkatrészmegadás táblázatában az ABS vastagság és a marás KÖZÉ
+  önálló RESZELÉS oszlop került, négy jelölőnégyzettel:
+  X1, X2, Y1, Y2 (pontosan úgy, mint az élzárásnál).
+- Ez új, független `filingSides` attribútum. Régi projekteknek
+  és alkatrészeknek alapértelmezésben semelyik élen nincs reszelés.
+  A kijelölés mentéskor megmarad; nem módosítja az ABS pipaállapotait,
+  nem módosítja a kész/szabásméretet, élmarásmélységet, forgatást,
+  az IF képletet és a gépi vágási sorrendet.
+- A kész alkatrész eredeti X/Y mérete alapján X1/X2 az X élhosszát,
+  Y1/Y2 az Y élhosszát jelenti. A hosszabb élek H, a rövidebbek R.
+  Például 200 × 400 mm és X1 pipa: 1Rresz.
+  964 × 600 mm és Y1,Y2 pipa: 2Rresz.
+  964 × 600 mm és X1,Y1,Y2 pipa: 1Hresz-2Rresz.
+  Azonos X és Y méret esetén egységesen X a H és Y az R.
+  Formátum: [H élek száma]Hresz-[R élek száma]Rresz;
+  hiányzó szakaszt kihagyjuk, ha nincs reszelés, üres.
+- Az Alkatrész-összesítő ÉLZÁRÁS oszlopa KIZÁRÓLAG
+  `1-0`, `0-2`, `2-2`, `0-0` stb. rövid kódot ír.
+  NINCS mellette X1/X2/Y1/Y2 felsorolás, ABS mm és marásadat.
+  Ezt KÖZVETLENÜL a Reszelés külön oszlopa követi.
+- Az A4-es alkatrészmatricán az élzárási jelölés JOBB OLDALÁN
+  ALUL, külön sorban ugyanaz az 1Hresz-2Rresz kód jelenik meg.
+  Az SVG előnézet, A4-nyomtatás és PNG pontosan ugyanazt
+  a labelSvgContent függvényt használja.
+- Az Alkatrész-összesítő "Műhely példány PNG" gombja
+  a listát `Műhely példány.png` néven menti.
+  Több mint 100 alkatrészsornál egységes ZIP
+  `Műhely példány.zip`, benne oldalanként számozott PNG.
+  A PNG-n az élzárás csak `1-0`, a Reszelés saját oszlopban
+  látható, a készméret és a darabszám megmarad.
+  Az alkatrészmegadási oldal régi "Lista PNG" gombja
+  és fájlnevei változatlanok.
+- A bútorlap tényleges szabási geometriája, az 1. vágás,
+  a teljes vágássorrend, a gépi P/RY/Y/RX/X/U/F,
+  az xPrg/xMix/XML/Windows Mentés másként FIX.
+  A korábban megszüntetett munkalapos program nem tér vissza.
+
+VÉDETT KÓDUJJLENYOMATOK változatlanul:
+fizikai finalize 1e0ac4b9, gyártási sorrend afa801b9,
+xPrg/xMix a16c7e88, Windows natív mentés f49fe3b5,
+fő SVG 86d21042.
+Előző változat archiválva:
+archive/before-part-filing-and-workshop-png-20261104
