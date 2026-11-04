@@ -92,10 +92,14 @@ test('38 mm munkalap: teljes szélesség, a 90° utáni darabok felül',()=>{
  assert.match(xml,/<Cut T="P" Dim="600[.]00"/);
  assert.match(xml,/<Cut T="RY" Dim="1072[.]50"/);
  assert.equal((xml.match(/<Cut T="Y" Dim="1000[.]00"/g)||[]).length,3,
-   'a kész munkalapdarabok minden esetben teljes szélességű Y vágással készülnek');
+   'a rövidél menti Y vágások mind a visszakérés előtt történnek');
+ assert.equal((xml.match(/<Cut T="RX" Dim="0[.]00"/g)||[]).length,3);
+ assert.equal((xml.match(/<Cut T="X" Dim="600[.]00"/g)||[]).length,3);
  assert.equal((xml.match(/<Cut T="F" Dim="0[.]00"/g)||[]).length,3);
- assert.doesNotMatch(xml,/<Cut T="(?:RX|X|U)"/,
-   'a munkalapnál nincs csík-visszaforgatás és második X menet');
+ assert.doesNotMatch(xml,/<Cut T="U"/,
+   'gyári 600 mm kész szélességnél egy X visszavágás elegendő');
+ const types=Array.from(xml.matchAll(/<Cut T="([^"]+)"/g),m=>m[1]);
+ assert.deepEqual(types.slice(0,5),['P','RY','Y','Y','Y']);
 });
 test('a szabásztérképen csak a fő tábla marad, második menetes miniábra és alsó anyagfelirat nélkül',()=>{
  const data=make([{id:'mar',name:'Maradék',a:1620,b:785,thickness:18,
