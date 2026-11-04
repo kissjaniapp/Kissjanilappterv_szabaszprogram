@@ -4137,6 +4137,10 @@
       // A képletmezőket nem töröljük le a DOM-ból a blur/change eseménynél.
       if(liveNestingTimer){clearTimeout(liveNestingTimer);liveNestingTimer=null;}
       result=hadNesting||state.active==='nesting'?computeNesting():null;
+      // A két szabásterv-választó azonnal újrarajzolja az eredményt.
+      if(scope==='settings'&&['cutDirection','layoutMode'].includes(key)){
+        notice='';render();return;
+      }
       if((scope==='part'&&['a','b','q','name','materialColor','ifCondition'].includes(key))||
          (scope==='furniture'&&['w','ht','d','t','qty','s','dividerThreshold'].includes(key))||
          (el.tagName==='INPUT'&&el.type!=='checkbox')||
