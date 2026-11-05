@@ -2828,7 +2828,7 @@
         .filter(id=>valid.has(id)&&!used.has(id));
       ids.forEach(id=>used.add(id));
       return {id:'slot-'+(i+1),rectIds:ids,rectId:ids[0]||null,
-        name:String(old?.name||''),qty:ids.length,dimA:old?.dimA??null,dimB:old?.dimB??null};
+        name:String(old?.name||''),qty:ids.length,dimA:old?.dimA??null,dimB:old?.dimB??null,sideRectId:old?.sideRectId||null};
     });
     for(const rect of rects){
       if(used.has(rect.id))continue;
@@ -2840,17 +2840,30 @@
   function dxfSlotForRect(f,id){return (f?.dxfSlots||[]).find(x=>(x.rectIds||[]).includes(id));}
   function dxfSameSize(a,b){return !!a&&!!b&&Math.abs(a.w-b.w)<=.05&&Math.abs(a.h-b.h)<=.05;}
 
+
+  function dxfPlate(r){if(!r)return null;const t=Math.min(r.w,r.h);
+    return [18,36,38].some(n=>Math.abs(n-t)<=1)?{long:Math.max(r.w,r.h),thin:t,horizontal:r.w>=r.h}:null;}
+  function dxfSideCandidates(f,slot,r){
+    const front=f?.dxfDrawings?.front,side=f?.dxfDrawings?.side,p=dxfPlate(r);
+    if(!p||!front||!side)return {matches:[],picked:null};
+    const expected=(r.minY+r.maxY)/2-front.box.minY+side.box.minY;
+    const matches=(side.rectangles||[]).filter(c=>c.w>=p.thin*2&&
+      Math.abs(c.h-(p.horizontal?p.thin:r.h))<=Math.max(1,p.thin*.05)&&
+      Math.abs((c.minY+c.maxY)/2-expected)<=Math.max(4,p.thin*1.2))
+      .map(c=>({id:c.id,depth:c.w}));
+    return {matches,picked:matches.find(c=>c.id===slot.sideRectId)||(matches.length===1?matches[0]:null)};
+  }
   function dxfPartRecords(f){
     const rects=f?.dxfDrawings?.front?.rectangles||[];
     return (f.dxfSlots||[]).flatMap(slot=>{
-      const rect=rects.find(r=>(slot.rectIds||[]).includes(r.id));
-      const name=String(slot.name||'').trim();
+      const rect=rects.find(r=>(slot.rectIds||[]).includes(r.id)),name=String(slot.name||'').trim();
       if(!rect||!name||!slot.rectIds.length)return [];
-      const scaled=dxfEffectiveRectangle(f,rect);
-      return [{key:'dxf-'+slot.id,name,a:Math.round(scaled.w*100)/100,b:Math.round(scaled.h*100)/100,
-        qty:slot.rectIds.length,ready:true,
-        formulaA:slot.dimA??('W*'+(rect.w/Math.max(.001,f.dxfReferenceDims?.w||rect.w)).toFixed(8)),
-        formulaB:slot.dimB??('H*'+(rect.h/Math.max(.001,f.dxfReferenceDims?.h||rect.h)).toFixed(8))}];
+      const plate=dxfPlate(rect),side=dxfSideCandidates(f,slot,rect),depth=side.picked?.depth;
+      const axis=plate?.horizontal?'W':'H',baseline=plate?.horizontal?f.dxfReferenceDims?.w:f.dxfReferenceDims?.h;
+      const formulaA=slot.dimA??(axis+'*'+((plate?.long||rect.w)/(baseline||1)).toFixed(8));
+      const formulaB=slot.dimB??(depth?'D*'+(depth/(f.dxfReferenceDims?.d||depth)).toFixed(8):'');
+      return [{key:'dxf-'+slot.id,name,a:plate?.long||rect.w,b:depth||0,
+        qty:slot.rectIds.length,ready:!!plate&&!!formulaB,formulaA,formulaB,thickness:plate?.thin}];
     });
   }
   function syncDxfParts(f){
@@ -2984,9 +2997,10 @@
       const ifLabel=ifState.error?' · IF hiba':ifState.active?'':' · IF hamis, nem látszik a rajzon';
       const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
       const actual=rect?dxfEffectiveRectangle(f,rect):null;
-      const valA=part?.a??slot.dimA??(actual?String(Math.round(actual.w*100)/100):'');
-      const valB=part?.b??slot.dimB??(actual?String(Math.round(actual.h*100)/100):'');
-      return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(140px,1.3fr) 66px minmax(220px,1.8fr);align-items:center;gap:8px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong><small style="display:block">'+ifLabel+'</small></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><strong style="text-align:center">'+slot.rectIds.length+' db</strong><div style="min-width:0"><div style="display:flex;justify-content:center;margin-bottom:5px"><button type="button" class="btn sm" data-dxf-swap="'+h(slot.id)+'" aria-label="X és Y méret felcserélése">⇄ X / Y</button></div><div style="display:grid;grid-template-columns:minmax(75px,1fr) auto minmax(75px,1fr);align-items:center;gap:5px"><input data-dxf-dimension="a" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="X méret vagy képlet" value="'+h(valA)+'"><span>×</span><input data-dxf-dimension="b" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="Y méret vagy képlet" value="'+h(valB)+'"></div><small class="tiny muted">mm vagy képlet</small></div></div>';
+      const plate=dxfPlate(rect),side=rect?dxfSideCandidates(f,slot,rect):{matches:[],picked:null};
+      const valA=part?.a??slot.dimA??(plate?String(plate.long):'');
+      const valB=part?.b??slot.dimB??(side.picked?String(side.picked.depth):'');
+      return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(140px,1.3fr) 66px minmax(220px,1.8fr);align-items:center;gap:8px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong><small style="display:block">'+ifLabel+'</small></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><strong style="text-align:center">'+slot.rectIds.length+' db</strong><div style="min-width:0"><div style="display:flex;justify-content:center;margin-bottom:5px"><button type="button" class="btn sm" data-dxf-swap="'+h(slot.id)+'" aria-label="X és Y méret felcserélése">⇄ X / Y</button></div><div style="display:grid;grid-template-columns:minmax(75px,1fr) auto minmax(75px,1fr);align-items:center;gap:5px"><input data-dxf-dimension="a" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="X méret vagy képlet" value="'+h(valA)+'"><span>×</span><input data-dxf-dimension="b" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="Y méret vagy képlet" value="'+h(valB)+'"></div><small class="tiny muted">Elöl: hossz · oldal: mélység · vastagság '+(plate?nfmt(plate.thin):'?')+' mm</small><select data-dxf-side="'+h(slot.id)+'" aria-label="Oldalnézeti alkatrész"><option value="">'+(side.picked?'Automatikus':'Válassz oldalnézetet')+'</option>'+side.matches.map(m=>'<option value="'+h(m.id)+'" '+(slot.sideRectId===m.id?'selected':'')+'>'+nfmt(m.depth)+' mm</option>').join('')+'</select></div></div>';
     }).join('');
     const info=rects.length?'Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi kiinduló alkatrészhely készült, azonos méretű négyzetek közösen is kezelhetők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
     return '<div class="gatterka-dxf-editor" data-dxf-editor><div class="gatterka-dxf-drawings" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px">'+drawingsHtml+'</div><div style="margin-top:14px">'+info+'</div>'+selector+'<div class="gatterka-dxf-slots" style="margin-top:7px"><div class="tiny muted">Darabszám: az egy alkatrészhez rendelt azonos méretű téglalapok száma. Az X és Y érték itt is szerkeszthető.</div>'+rows+'</div><div class="tiny muted" style="margin-top:12px">A kitöltött sorok automatikusan átkerülnek a Gatterka Alkatrészek oldalára. Ott élzárás, reszelés, marás és további alkatrész is beállítható.</div></div>';
@@ -3106,6 +3120,14 @@
     syncDxfParts(f);refreshDxfPartsPreview(f);save();
   });
 
+  document.addEventListener('change',event=>{
+    const e=event.target.closest('[data-dxf-side]');if(!e)return;
+    const f=getFurniture(),slot=f?.dxfSlots?.find(x=>x.id===e.dataset.dxfSide);if(!slot)return;
+    slot.sideRectId=e.value||null;
+    const p=f.parts.find(x=>x.cabinetDesignKey==='dxf-'+slot.id);
+    if(p&&!slot.dimB)p.dxfFormulaInitialized=false;
+    syncDxfParts(f);save();updateDxfPreviewDom(f);refreshDxfPartsPreview(f);
+  });
   document.addEventListener('click',event=>{
     const button=event.target.closest('[data-dxf-swap]');if(!button)return;
     event.preventDefault();
@@ -3154,7 +3176,8 @@
     if(!Array.isArray(f.parts))f.parts=[];
     const seen=new Set();
     for(const row of records){
-      if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,45}$/.test(row.key)||row.ready===false)continue;
+      if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,45}$/.test(row.key))continue;
+      if(row.ready===false){seen.add(row.key);continue;}
       const a=Number(row.a),b=Number(row.b),q=Number(row.qty);
       if(![a,b,q].every(Number.isFinite)||a<=0||b<=0||q<1||a>10000||b>10000||q>100)continue;
       seen.add(row.key);
