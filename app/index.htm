@@ -2952,7 +2952,11 @@
       if(!d)return '<div class="tiny muted" style="margin:10px 0">'+title+': még nincs DXF feltöltve.</div>';
       const box=d.box,factor=dxfViewScale(f,view);
       const spanX=Math.max(.001,(box.maxX-box.minX)*factor.x),spanY=Math.max(.001,(box.maxY-box.minY)*factor.y);
-      const scale=Math.min(670/spanX,400/spanY),ox=(730-spanX*scale)/2,oy=(440-spanY*scale)/2;
+      const sizes=views.map(([name])=>{const item=drawings[name];if(!item)return null;
+        const factor=dxfViewScale(f,name);return {w:(item.box.maxX-item.box.minX)*factor.x,h:(item.box.maxY-item.box.minY)*factor.y};}).filter(Boolean);
+      // Közös mm/pixel lépték: az oldalnézet nem külön nagyítódik vagy torzul.
+      const scale=Math.min(670/Math.max(...sizes.map(x=>x.w)),400/Math.max(...sizes.map(x=>x.h)));
+      const ox=(730-spanX*scale)/2,oy=(440-spanY*scale)/2;
       const cv=(x,y)=>[ox+(x-box.minX)*factor.x*scale,440-oy-(y-box.minY)*factor.y*scale];
       const geometry=view==='front'&&d.rectangles?.length?
         d.rectangles.filter(r=>{const v=dxfRectIfStatus(f,r);return v.active||!!v.error;})
@@ -2974,15 +2978,20 @@
     }).join('');
     const slots=f.dxfSlots||[],rects=drawings.front?.rectangles||[];
     const selector=slots.length?'<div class="toolbar" style="margin-top:12px;align-items:center"><label for="gatterka-dxf-slot-select"><strong>Kijelölt alkatrészhely</strong></label><select id="gatterka-dxf-slot-select" data-dxf-slot-select style="max-width:320px">'+slots.map(slot=>'<option value="'+h(slot.id)+'" '+(slot.id===selectedSlot?.id?'selected':'')+'>'+h(slot.name||('Üres alkatrészhely '+slot.id.split('-')[1]))+'</option>').join('')+'</select></div>':'';
+
     const rows=slots.map((slot,index)=>{
       const rect=rects.find(x=>(slot.rectIds||[]).includes(x.id));
       const highlight=(slot.rectIds||[]).includes(selected);
       const ifState=rect?dxfRectIfStatus(f,rect):{active:true,error:''};
       const ifLabel=ifState.error?' · IF hiba':ifState.active?'':' · IF hamis, nem látszik a rajzon';
-      return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(145px,1fr) minmax(90px,1fr) 85px minmax(110px,1fr);align-items:center;gap:9px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><input data-dxf-qty="'+h(slot.id)+'" aria-label="Darabszám '+(index+1)+'" type="number" min="1" max="999" step="1" value="'+slot.qty+'"><span class="num">'+(rect?nfmt(dxfEffectiveRectangle(f,rect).w)+' × '+nfmt(dxfEffectiveRectangle(f,rect).h)+' mm':'—')+'</span></div>';
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
+      const actual=rect?dxfEffectiveRectangle(f,rect):null;
+      const valA=part?.a??slot.dimA??(actual?String(Math.round(actual.w*100)/100):'');
+      const valB=part?.b??slot.dimB??(actual?String(Math.round(actual.h*100)/100):'');
+      return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(140px,1.3fr) 66px minmax(220px,1.8fr);align-items:center;gap:8px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong><small style="display:block">'+ifLabel+'</small></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><strong style="text-align:center">'+slot.rectIds.length+' db</strong><div style="min-width:0"><div style="display:flex;justify-content:center;margin-bottom:5px"><button type="button" class="btn sm" data-dxf-swap="'+h(slot.id)+'" aria-label="X és Y méret felcserélése">⇄ X / Y</button></div><div style="display:grid;grid-template-columns:minmax(75px,1fr) auto minmax(75px,1fr);align-items:center;gap:5px"><input data-dxf-dimension="a" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="X méret vagy képlet" value="'+h(valA)+'"><span>×</span><input data-dxf-dimension="b" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="Y méret vagy képlet" value="'+h(valB)+'"></div><small class="tiny muted">mm vagy képlet</small></div></div>';
     }).join('');
-    const info=rects.length?'Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi alkatrészhely készült; a DXF koordinátáiból számolt méretek milliméterben értendők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
-    return '<div class="gatterka-dxf-editor" data-dxf-editor><div class="gatterka-dxf-drawings" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px">'+drawingsHtml+'</div><div style="margin-top:14px">'+info+'</div>'+selector+'<div class="gatterka-dxf-slots" style="margin-top:7px"><div class="tiny muted">Név · darabszám · DXF méret. Üres névvel az alkatrész még nem kerül szabásra.</div>'+rows+'</div><div class="tiny muted" style="margin-top:12px">A kitöltött sorok automatikusan átkerülnek a Gatterka Alkatrészek oldalára. Ott élzárás, reszelés, marás és további alkatrész is beállítható.</div></div>';
+    const info=rects.length?'Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi kiinduló alkatrészhely készült, azonos méretű négyzetek közösen is kezelhetők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
+    return '<div class="gatterka-dxf-editor" data-dxf-editor><div class="gatterka-dxf-drawings" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px">'+drawingsHtml+'</div><div style="margin-top:14px">'+info+'</div>'+selector+'<div class="gatterka-dxf-slots" style="margin-top:7px"><div class="tiny muted">Darabszám: az egy alkatrészhez rendelt azonos méretű téglalapok száma. Az X és Y érték itt is szerkeszthető.</div>'+rows+'</div><div class="tiny muted" style="margin-top:12px">A kitöltött sorok automatikusan átkerülnek a Gatterka Alkatrészek oldalára. Ott élzárás, reszelés, marás és további alkatrész is beállítható.</div></div>';
   }
   function hAttr(val){return h(val);}
   function updateDxfPreviewDom(f){
