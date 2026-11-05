@@ -3711,7 +3711,13 @@
     const file=e.target.files?.[0],f=getFurniture();
     if(!file||!f)return;
     try{
-      if(!file.name.toLowerCase().endsWith('.3mf'))throw Error('Csak .3mf fájlt válassz.');
+      // A fájlnév/kiterjesztés Windows alatt nem mindig megbízható:
+      // a tartalom ZIP/3MF szerkezetét ellenőrizzük, nem pusztán a nevet.
+      const header=new Uint8Array(await file.slice(0,4).arrayBuffer());
+      if(header.length!==4||header[0]!==0x50||header[1]!==0x4b||
+        !((header[2]===3&&header[3]===4)||(header[2]===5&&header[3]===6)))
+        throw Error('A kiválasztott fájl nem 3MF/ZIP formátumú: '+file.name+
+          '. Fusion 360-ból 3MF formátumban mentsd ki.');
       const parsed=threeMfParse(await threeMfZipModel(file));
       threeMfApplyImport(f,parsed);
       if(!save())throw Error('A projekt mentése nem sikerült. Ellenőrizd a szabad tárhelyet.');
