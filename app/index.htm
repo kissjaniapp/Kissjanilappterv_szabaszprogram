@@ -2782,42 +2782,66 @@
     }
     return [...candidates.values()].sort((a,b)=>b.maxY-a.maxY||a.minX-b.minX||a.minY-b.minY).slice(0,150);
   }
+  function dxfBox(lines){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const [x1,y1,x2,y2] of lines){
+      minX=Math.min(minX,x1,x2);minY=Math.min(minY,y1,y2);
+      maxX=Math.max(maxX,x1,x2);maxY=Math.max(maxY,y1,y2);
+    }
+    return {minX,minY,maxX,maxY};
+  }
   function parseCabinetDxf(source){
     if(source.length>5*1024*1024)throw Error('Legfeljebb 5 MB-os DXF tölthető be.');
-    if(source.indexOf(String.fromCharCode(0))>=0)throw Error('Bináris DXF helyett ASCII DXF formátumban mentsd a rajzot.');
-    const lines=source.replaceAll(String.fromCharCode(13),'').split(String.fromCharCode(10)),shapes=[];
-    let index=0;
-    while(index+1<lines.length&&shapes.length<2000){
+    if(source.includes(String.fromCharCode(0)))throw Error('Bináris DXF helyett ASCII DXF formátumban mentsd a rajzot.');
+    const lines=source.replaceAll(String.fromCharCode(13),'').split(String.fromCharCode(10));
+    const shapes=[],entities=[];let index=0;
+    while(index+1<lines.length&&shapes.length<12000){
       const code=lines[index++].trim(),value=(lines[index++]||'').trim();
       if(code!=='0'||(value!=='LINE'&&value!=='LWPOLYLINE'))continue;
       const groups=[];
-      while(index+1<lines.length&&lines[index].trim()!=='0'&&groups.length<12000)groups.push([lines[index++].trim(),(lines[index++]||'').trim()]);
+      while(index+1<lines.length&&lines[index].trim()!=='0'&&groups.length<12000)
+        groups.push([lines[index++].trim(),(lines[index++]||'').trim()]);
       const get=k=>Number(groups.find(g=>g[0]===k)?.[1]);
-      if(value==='LINE'){
-        const segment=[get('10'),get('20'),get('11'),get('21')];
-        if(segment.every(Number.isFinite))shapes.push(segment);
-      }else{
+      const layer=String(groups.find(g=>g[0]==='8')?.[1]||'0').trim();
+      const color=groups.find(g=>g[0]==='62')?.[1]||null;
+      const add=segment=>{if(segment.every(Number.isFinite)){
+        shapes.push(segment);entities.push({line:segment,layer,color});
+      }};
+      if(value==='LINE')add([get('10'),get('20'),get('11'),get('21')]);
+      else{
         const pts=[];let x=null;
-        for(const [code,v] of groups){
-          if(code==='10')x=Number(v);
-          if(code==='20'&&x!==null){const y=Number(v);if(Number.isFinite(x)&&Number.isFinite(y))pts.push([x,y]);x=null;}
+        for(const [key,v] of groups){
+          if(key==='10')x=Number(v);
+          if(key==='20'&&x!==null){const y=Number(v);if(Number.isFinite(x)&&Number.isFinite(y))pts.push([x,y]);x=null;}
         }
-        for(let j=1;j<pts.length;j++)shapes.push([...pts[j-1],...pts[j]]);
-        if((Number(groups.find(g=>g[0]==='70')?.[1]||0)&1)&&pts.length>2)shapes.push([...pts[pts.length-1],...pts[0]]);
+        for(let j=1;j<pts.length;j++)add([...pts[j-1],...pts[j]]);
+        if((Number(groups.find(g=>g[0]==='70')?.[1]||0)&1)&&pts.length>2)
+          add([...pts[pts.length-1],...pts[0]]);
       }
     }
     if(!shapes.length)throw Error('Nem található LINE / LWPOLYLINE rajzelem.');
-    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-    for(const [x1,y1,x2,y2] of shapes){minX=Math.min(minX,x1,x2);minY=Math.min(minY,y1,y2);maxX=Math.max(maxX,x1,x2);maxY=Math.max(maxY,y1,y2);}
     const rectangles=recognizeDxfRectangles(shapes);
-    return {lines:shapes,box:{minX,minY,maxX,maxY},count:shapes.length,rectangles};
+    // The rectangle inherits the layer of its boundary, not the layer of nearby unrelated lines.
+    for(const rect of rectangles){
+      const votes=new Map(),eps=.06;
+      for(const item of entities){
+        const [x1,y1,x2,y2]=item.line;
+        const horizontal=Math.abs(y1-y2)<eps&&(Math.abs(y1-rect.minY)<eps||Math.abs(y1-rect.maxY)<eps)
+          &&Math.min(x1,x2)>=rect.minX-eps&&Math.max(x1,x2)<=rect.maxX+eps;
+        const vertical=Math.abs(x1-x2)<eps&&(Math.abs(x1-rect.minX)<eps||Math.abs(x1-rect.maxX)<eps)
+          &&Math.min(y1,y2)>=rect.minY-eps&&Math.max(y1,y2)<=rect.maxY+eps;
+        if(horizontal||vertical)votes.set(item.layer,(votes.get(item.layer)||0)+1);
+      }
+      const winning=[...votes].sort((a,b)=>b[1]-a[1])[0];
+      rect.layer=winning?.[0]||'0';
+    }
+    return {lines:shapes,entities,box:dxfBox(shapes),count:shapes.length,rectangles};
   }
 
 
   function splitDxfViews(source){
     const rects=source.rectangles||[];
     if(rects.length<2)return {front:source,side:null,splitX:null};
-    // Non-overlapping X-interval clusters; widest positive empty gap separates views.
     const sorted=[...rects].sort((a,b)=>a.minX-b.minX);
     const groups=[];
     for(const r of sorted){
@@ -2832,14 +2856,24 @@
     }
     if(pos<0||gap<1)return {front:source,side:null,splitX:null};
     const split=(groups[pos].maxX+groups[pos+1].minX)/2;
-    const make=(side)=>{
-      const rectangles=rects.filter(r=>side?r.minX>=split:r.maxX<=split);
-      const lines=source.lines.filter(([x1,,x2])=>side?x1>=split&&x2>=split:x1<=split&&x2<=split);
-      if(!lines.length&&!rectangles.length)return null;
-      let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-      for(const [x1,y1,x2,y2] of lines){minX=Math.min(minX,x1,x2);minY=Math.min(minY,y1,y2);maxX=Math.max(maxX,x1,x2);maxY=Math.max(maxY,y1,y2);}
-      if(!Number.isFinite(minX))for(const r of rectangles){minX=Math.min(minX,r.minX);minY=Math.min(minY,r.minY);maxX=Math.max(maxX,r.maxX);maxY=Math.max(maxY,r.maxY);}
-      return {...source,lines,rectangles,count:lines.length,box:{minX,minY,maxX,maxY}};
+    const make=isSide=>{
+      const rectangles=rects.filter(r=>isSide?r.minX>=split:r.maxX<=split);
+      if(!rectangles.length)return null;
+      const outline={
+        minX:Math.min(...rectangles.map(r=>r.minX)),minY:Math.min(...rectangles.map(r=>r.minY)),
+        maxX:Math.max(...rectangles.map(r=>r.maxX)),maxY:Math.max(...rectangles.map(r=>r.maxY))
+      };
+      // Keep details close to the detected furniture; discard remote construction lines
+      // so they cannot shrink both previews or corrupt the reference dimensions.
+      const tolerance=Math.max(10,Math.min(outline.maxX-outline.minX,outline.maxY-outline.minY)*.025);
+      const near=([x1,y1,x2,y2])=>Math.min(x1,x2)<=outline.maxX+tolerance&&
+        Math.max(x1,x2)>=outline.minX-tolerance&&Math.min(y1,y2)<=outline.maxY+tolerance&&
+        Math.max(y1,y2)>=outline.minY-tolerance;
+      const entities=(source.entities||source.lines.map(line=>({line,layer:'0'})))
+        .filter(item=>(isSide?item.line[0]>=split&&item.line[2]>=split:
+          item.line[0]<=split&&item.line[2]<=split)&&near(item.line));
+      const lines=entities.map(item=>item.line);
+      return {...source,lines,entities,rectangles,count:lines.length,box:outline};
     };
     const front=make(false),side=make(true);
     if(!front?.rectangles?.length||!side)return {front:source,side:null,splitX:null};
@@ -2872,7 +2906,7 @@
         .filter(id=>valid.has(id)&&!used.has(id));
       ids.forEach(id=>used.add(id));
       return {id:'slot-'+(i+1),rectIds:ids,rectId:ids[0]||null,
-        name:String(old?.name||''),qty:ids.length,dimA:old?.dimA??null,dimB:old?.dimB??null,sideRectId:old?.sideRectId||null};
+        name:String(old?.name||((rect.layer&&rect.layer!=='0')?rect.layer:'')),qty:ids.length,dimA:old?.dimA??null,dimB:old?.dimB??null,sideRectId:old?.sideRectId||null};
     });
     for(const rect of rects){
       if(used.has(rect.id))continue;
@@ -2890,12 +2924,18 @@
   function dxfSideCandidates(f,slot,r){
     const front=f?.dxfDrawings?.front,side=f?.dxfDrawings?.side,p=dxfPlate(r);
     if(!p||!front||!side)return {matches:[],picked:null};
+    const layer=String(r.layer||'0').trim().toLowerCase();
+    const layerCandidates=layer!=='0'?(side.rectangles||[]).filter(c=>
+      String(c.layer||'0').trim().toLowerCase()===layer&&c.w>=p.thin*2):[];
     const expected=(r.minY+r.maxY)/2-front.box.minY+side.box.minY;
-    const matches=(side.rectangles||[]).filter(c=>c.w>=p.thin*2&&
+    const geometrical=(side.rectangles||[]).filter(c=>c.w>=p.thin*2&&
       Math.abs(c.h-(p.horizontal?p.thin:r.h))<=Math.max(1,p.thin*.05)&&
-      Math.abs((c.minY+c.maxY)/2-expected)<=Math.max(4,p.thin*1.2))
-      .map(c=>({id:c.id,depth:c.w}));
-    return {matches,picked:matches.find(c=>c.id===slot.sideRectId)||(matches.length===1?matches[0]:null)};
+      Math.abs((c.minY+c.maxY)/2-expected)<=Math.max(4,p.thin*1.2));
+    const candidates=layerCandidates.length?layerCandidates:geometrical;
+    const matches=candidates.map(c=>({id:c.id,depth:c.w,layer:c.layer}));
+    const manual=matches.find(c=>c.id===slot.sideRectId);
+    const distinctDepths=new Set(matches.map(c=>Math.round(c.depth*100)));
+    return {matches,picked:manual||(distinctDepths.size===1?matches[0]:null)};
   }
   function dxfPartRecords(f){
     const rects=f?.dxfDrawings?.front?.rectangles||[];
@@ -2988,7 +3028,7 @@
       const sizes=views.map(([name])=>{const item=drawings[name];if(!item)return null;
         const factor=dxfViewScale(f,name);return {w:(item.box.maxX-item.box.minX)*factor.x,h:(item.box.maxY-item.box.minY)*factor.y};}).filter(Boolean);
       // Közös mm/pixel lépték: az oldalnézet nem külön nagyítódik vagy torzul.
-      const scale=Math.min(670/Math.max(...sizes.map(x=>x.w)),400/Math.max(...sizes.map(x=>x.h)));
+      const scale=Math.min(670/spanX,400/spanY);
       const ox=(730-spanX*scale)/2,oy=(440-spanY*scale)/2;
       const cv=(x,y)=>[ox+(x-box.minX)*factor.x*scale,440-oy-(y-box.minY)*factor.y*scale];
       const geometry=view==='front'&&d.rectangles?.length?
@@ -3024,7 +3064,7 @@
       const valB=part?.b??slot.dimB??(side.picked?String(side.picked.depth):'');
       return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(110px,1fr) minmax(140px,1.3fr) 66px minmax(220px,1.8fr);align-items:center;gap:8px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong><small style="display:block">'+ifLabel+'</small></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><strong style="text-align:center">'+slot.rectIds.length+' db</strong><div style="min-width:0"><div style="display:flex;justify-content:center;margin-bottom:5px"><button type="button" class="btn sm" data-dxf-swap="'+h(slot.id)+'" aria-label="X és Y méret felcserélése">⇄ X / Y</button></div><div style="display:grid;grid-template-columns:minmax(75px,1fr) auto minmax(75px,1fr);align-items:center;gap:5px"><input data-dxf-dimension="a" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="X méret vagy képlet" value="'+h(valA)+'"><span>×</span><input data-dxf-dimension="b" data-dxf-slot="'+h(slot.id)+'" type="text" aria-label="Y méret vagy képlet" value="'+h(valB)+'"></div><small class="tiny muted">Elöl: hossz · oldal: mélység · vastagság '+(plate?nfmt(plate.thin):'?')+' mm</small><select data-dxf-side="'+h(slot.id)+'" aria-label="Oldalnézeti alkatrész"><option value="">'+(side.picked?'Automatikus':'Válassz oldalnézetet')+'</option>'+side.matches.map(m=>'<option value="'+h(m.id)+'" '+(slot.sideRectId===m.id?'selected':'')+'>'+nfmt(m.depth)+' mm</option>').join('')+'</select></div></div>';
     }).join('');
-    const info=rects.length?'Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi kiinduló alkatrészhely készült, azonos méretű négyzetek közösen is kezelhetők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
+    const info=rects.length?'Fóliaalapú társítás: az azonos nevű fólián lévő alkatrészeket a program előnyben részesíti; több eltérő mélységnél válassz kézzel. · Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi kiinduló alkatrészhely készült, azonos méretű négyzetek közösen is kezelhetők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
     return '<div class="gatterka-dxf-editor" data-dxf-editor><div class="gatterka-dxf-drawings" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:12px">'+drawingsHtml+'</div><div style="margin-top:14px">'+info+'</div>'+selector+'<div class="gatterka-dxf-slots" style="margin-top:7px"><div class="tiny muted">Darabszám: az egy alkatrészhez rendelt azonos méretű téglalapok száma. Az X és Y érték itt is szerkeszthető.</div>'+rows+'</div><div class="tiny muted" style="margin-top:12px">A kitöltött sorok automatikusan átkerülnek a Gatterka Alkatrészek oldalára. Ott élzárás, reszelés, marás és további alkatrész is beállítható.</div></div>';
   }
   function hAttr(val){return h(val);}
