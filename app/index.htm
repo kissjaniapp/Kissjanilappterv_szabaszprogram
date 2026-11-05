@@ -271,6 +271,14 @@
     .gatterka-palette button.chosen{outline:2px solid var(--pine);outline-offset:2px}
     .gatterka-dxf-card{grid-column:1/-1;margin:10px 0}
     .gatterka-dxf-card svg{width:100%;height:auto;max-height:330px;background:var(--bg);border:1px solid #82988b;border-radius:9px}
+    .gatterka-3mf-views{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:14px 0}
+    .gatterka-3mf-view{min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--surface)}
+    .gatterka-3mf-view>strong{display:block;margin:3px 0 9px}
+    .gatterka-3mf-view-3d{grid-column:1/-1}
+    .gatterka-3mf-view canvas{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:9px;background:var(--bg)}
+    .gatterka-3mf-view canvas[data-3mf-view="three"]{cursor:grab;touch-action:none}
+    .gatterka-3mf-view canvas[data-3mf-view="three"]:active{cursor:grabbing}
+    @media(max-width:900px){.gatterka-3mf-views{grid-template-columns:1fr}}
   </style>
 </head>
 <body>
@@ -2904,19 +2912,31 @@
         if(vertices.length>500000)throw Error('Túl sok 3MF csúcspont.');
         if(!vertices.length)return;
         let lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
-        for(const vertex of vertices){
+        const transformed=vertices.map(vertex=>{
           const xyz=['x','y','z'].map(k=>number(vertex.getAttribute(k),k));
-          const p=apply(m,xyz);
+          const p=apply(m,xyz).map(v=>v*unitScale);
           for(let k=0;k<3;k++){lo[k]=Math.min(lo[k],p[k]);hi[k]=Math.max(hi[k],p[k]);}
+          return p;
+        });
+        const triangleNodes=children(first(mesh,'triangles'),'triangle');
+        const previewTriangles=[];
+        const step=Math.max(1,Math.ceil(triangleNodes.length/450));
+        const roundPreview=n=>Math.round(n*100)/100;
+        for(let index=0;index<triangleNodes.length;index+=step){
+          const tri=triangleNodes[index],indices=['v1','v2','v3'].map(key=>Number(tri.getAttribute(key)));
+          if(indices.some(i=>!Number.isInteger(i)||i<0||i>=transformed.length))
+            throw Error('Érvénytelen háromszögcsúcs: '+name);
+          previewTriangles.push(indices.flatMap(i=>transformed[i].map(roundPreview)));
+          if(previewTriangles.length>=450)break;
         }
-        const extents=hi.map((n,k)=>(n-lo[k])*unitScale);
+        const extents=hi.map((n,k)=>n-lo[k]);
         const dims=[...extents].sort((a,b)=>b-a);
         if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
         if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
         const rounded=n=>Math.round(n*10000)/10000;
         result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
-          originMm:lo.map(x=>rounded(x*unitScale)),
-          axisBoundsMm:extents.map(rounded)});
+          originMm:lo.map(rounded),
+          axisBoundsMm:extents.map(rounded),previewTriangles});
       }
       const components=first(object,'components');
       for(const component of children(components,'component'))
@@ -2944,6 +2964,13 @@
     const rows=model.groups.map(g=>'<tr><td>'+h(g.name)+'</td><td>'+g.dimensions.map(nfmt).join(' × ')+'</td><td>'+g.indices.length+'</td></tr>').join('');
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
       model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
+      (model.parts.some(p=>p.previewTriangles?.length)?
+        '<div class="gatterka-3mf-views">'+
+          '<div class="gatterka-3mf-view"><strong>Elölnézet · X / Z</strong><canvas data-3mf-view="front" aria-label="3MF elölnézet" width="680" height="350"></canvas></div>'+
+          '<div class="gatterka-3mf-view"><strong>Oldalnézet · Y / Z</strong><canvas data-3mf-view="side" aria-label="3MF oldalnézet" width="680" height="350"></canvas></div>'+
+          '<div class="gatterka-3mf-view gatterka-3mf-view-3d"><div class="toolbar"><strong>3D nézet · forgatható</strong><button type="button" class="btn sm" data-action="3mf-reset-view">↻ Nézet visszaállítása</button></div><canvas data-3mf-view="three" aria-label="3MF 3D nézet, egérrel forgatható" width="680" height="420"></canvas><div class="tiny muted">Forgatás: bal egérgombbal húzás · Nagyítás: egérgörgő</div></div>'+
+        '</div>':
+        '<div class="tiny muted">Ehhez a régi importhoz nincs eltárolt háromszögháló. Töltsd be újra a 3MF fájlt a három nézethez.</div>')+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
   function threeMfApplyImport(f,data){
