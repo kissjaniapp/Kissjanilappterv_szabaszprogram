@@ -442,6 +442,28 @@
     const x=m?Number(m[1]):0,y=m?Number(m[2]):0;
     return {x1:x>=1,x2:x===2,y1:y>=1,y2:y===2};
   }
+  const allPartSides=['x1','x2','y1','y2'];
+  function partEdgeThicknesses(part){
+    const enabled=sidesFromCode(part.edge);
+    const stored=part.edgeThicknesses||{};
+    const defaultThickness=[2,0.4].includes(Number(part.edgeThickness))?Number(part.edgeThickness):2;
+    return Object.fromEntries(allPartSides.map(side=>{
+      const requested=Number(stored[side]);
+      return [side,enabled[side]?(requested===2||requested===0.4?requested:defaultThickness):0];
+    }));
+  }
+  function partAbsSummary(part){
+    const sides=partEdgeThicknesses(part);
+    return allPartSides.filter(side=>sides[side]>0)
+      .map(side=>side.toUpperCase()+': '+String(sides[side]).replace('.',',')+' mm').join(' · ')||'—';
+  }
+  function setPartEdgeCode(part,code){
+    const was=partEdgeThicknesses(part);
+    part.edge=code;part.edgeSides=sidesFromCode(code);
+    part.edgeThicknesses=Object.fromEntries(allPartSides.map(side=>[
+      side,part.edgeSides[side]?(was[side]||2):0
+    ]));
+  }
   function edgeCodeValid(value){return /^[012]-[012]$/.test(String(value||'').trim());}
   function dimensionUnderline(part,axis){
     const edge=String(part.edge||'0-0'),filing=codeFromSides(part.filingSides||{});
@@ -455,6 +477,8 @@
     const edge=String(part.edge||'0-0').match(/^([012])-([012])$/);
     if(edge)part.edge=edge[2]+'-'+edge[1];
     part.edgeSides=sidesFromCode(part.edge);
+    const abs=partEdgeThicknesses(part);
+    part.edgeThicknesses={x1:abs.y1,x2:abs.y2,y1:abs.x1,y2:abs.x2};
     const sides=part.filingSides||{};
     part.filingSides={x1:!!sides.y1,x2:!!sides.y2,y1:!!sides.x1,y2:!!sides.x2};
     part.grainAxisSwapped=!part.grainAxisSwapped;
@@ -1401,20 +1425,19 @@
           if(!match)throw Error('Az élzárás formátuma 0-0, 1-0, 0-1, 2-0, 0-2 vagy 2-2 lehet');
           const edgeThickness=part.edgeThickness==null||part.edgeThickness===''?2:pnum(part.edgeThickness);
           if(![2,0.4].includes(edgeThickness))throw Error('Csak 2 vagy 0,4 mm-es élzáró választható');
-          // A 0,4 mm-es élzárónál marást soha nem számolunk.
-          const mill=edgeThickness===2&&!!part.mill;
+          const edgeThicknesses=partEdgeThicknesses(part);
+          const mill=!!part.mill&&allPartSides.some(side=>edgeThicknesses[side]===2);
           const configuredDepth=part.millDepth==null||part.millDepth===''?1:pnum(part.millDepth);
           if(!Number.isFinite(configuredDepth)||configuredDepth<0||configuredDepth>2)throw Error('Az előmarás 0–2 mm között állítható');
           const millDepth=mill?configuredDepth:0;
-          const netEdge=edgeThickness-millDepth;
-          // X-szálirány menti él(ek) a keresztirányú B méretet csökkentik.
-          // Y-keresztirány menti él(ek) a szálirányú A méretet csökkentik.
-          // Az állítható előmarás értékét élenként kompenzáljuk.
-          const a=originalA-Number(match[2])*netEdge;
-          const b=originalB-Number(match[1])*netEdge;
+          // Az élenkénti ABS nettó hozzájárulása külön számítódik.
+          // A 2 mm-es ABS előmarása beállítható; a 0,4-esnél nincs előmarás.
+          const net=side=>edgeThicknesses[side]===2?2-millDepth:edgeThicknesses[side];
+          const a=originalA-net('y1')-net('y2');
+          const b=originalB-net('x1')-net('x2');
           if(!(a>0&&b>0&&originalA<=10000&&originalB<=10000&&q>=0&&Number.isInteger(q)&&Number.isInteger(qty)&&qty>=0&&qty<=300)) throw Error('Érvénytelen méret/darabszám');
           const canRotate=part.grainRequired===false||(part.grainRequired==null&&!!part.rot);
-          rows.push({furniture:f,part,resolvedName,a:Math.round(a*10)/10,b:Math.round(b*10)/10,originalA,originalB,edge,edgeThickness,mill,millDepth,thickness,materialColor:material.color,materialId:part.materialId||f.materialId||'',q,qty,rot:canRotate,grainRequired:!canRotate});
+          rows.push({furniture:f,part,resolvedName,a:Math.round(a*10)/10,b:Math.round(b*10)/10,originalA,originalB,edge,edgeThickness,edgeThicknesses,mill,millDepth,thickness,materialColor:material.color,materialId:part.materialId||f.materialId||'',q,qty,rot:canRotate,grainRequired:!canRotate});
         }catch(e){errors.push(`${f.name} / ${part.name}: ${e.message}`);rows.push({furniture:f,part,error:e.message,qty:0});}
       }
     }
