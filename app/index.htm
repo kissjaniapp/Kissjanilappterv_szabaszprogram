@@ -1339,7 +1339,6 @@
       for(const part of f.parts){
         const material=materialForPart(part,f),thickness=material.thickness;
         vars.T=thickness;
-        ensureWorktopPartIf(part,thickness);
         if(!String(part.name||'').trim()||!String(part.a||'').trim()||!String(part.b||'').trim()||!String(part.q||'').trim()){
           rows.push({furniture:f,part,skipped:true,qty:0});
           continue;
@@ -1349,7 +1348,7 @@
           // A szabásba kizárólag az IF nélküli VAGY igaz IF-es alkatrész
           // kerülhet. Hamis IF és hibás képlet nem hoz létre gépi darabot.
           // A korábbi IF nélküli, képletes működés változatlan.
-          const ifState=String(part.ifCondition??'').trim()?
+          const ifState=(Number(thickness)===38||String(part.ifCondition??'').trim())?
             partIfState(part,f,thickness):{active:true,error:''};
           if(ifState.error)throw Error('IF: '+ifState.error);
           if(!ifState.active){
