@@ -1463,6 +1463,11 @@
         <div class="field-grid">${[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']].map(([key,label])=>`<div><label>${label}</label><div class="input-unit"><input type="number" min="1" step="1" data-scope="furniture" data-id="${f.id}" data-key="${key}" value="${h(f[key])}"><span>mm</span></div></div>`).join('')}
           <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
         </div>
+        <div class="panel top-gap" style="padding:14px;grid-column:1/-1">
+          <div class="toolbar"><strong>Szekrénytervező – 2D / 3D</strong>
+            <button class="btn primary" type="button" data-action="open-cabinet-designer" data-furniture-id="${h(f.id)}">▣ Szekrénytervező megnyitása</button></div>
+          <div class="tiny muted" style="margin-top:8px">A külső méretekkel nyílik meg. A beállítások a bútor saját adataihoz mentődnek. A Saját bútorparaméterek és az eredeti alkatrészlista továbbra is külön működnek.</div>
+        </div>
         ${customParametersPanel(f)}
         <div data-live-cabinet>${cabinet(f)}</div>
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
@@ -2661,6 +2666,38 @@
     }
     return intro('06 / SZABÁSTERV','Szabásterv és kihozatal','Végigfutó, guillotine vágások a rendelkezésre álló táblákból. A narancssárga nyíl jelzi az első vágást.',run)+directionControl+body;
   }
+
+  // A V12 szekrénytervező kapcsolata kizárólag megjelenítést és a bútor saját adatait érinti.
+  function openCabinetDesigner(furnitureId){
+    const f=state.furnitures.find(x=>x.id===furnitureId)||getFurniture();if(!f)return;
+    let overlay=document.getElementById('gatterka-cabinet-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');overlay.id='gatterka-cabinet-overlay';
+      overlay.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(8,24,17,.88);padding:12px;display:flex;flex-direction:column;gap:8px';
+      overlay.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;color:white;gap:12px"><strong>Gatterka · Szekrénytervező (2D / 3D)</strong><button type="button" id="gatterka-cabinet-close" class="btn">✕ Bezárás</button></div><iframe id="gatterka-cabinet-frame" title="Gatterka interaktív szekrénytervező" style="width:100%;height:100%;flex:1;border:0;border-radius:10px;background:#f3f6f2"></iframe>';
+      document.body.appendChild(overlay);
+      overlay.querySelector('#gatterka-cabinet-close').addEventListener('click',()=>{overlay.remove();document.body.style.overflow='';});
+    }
+    overlay.dataset.furnitureId=f.id;overlay.querySelector('#gatterka-cabinet-frame').src='cabinet-designer.html';
+    document.body.style.overflow='hidden';
+  }
+  document.addEventListener('click',event=>{
+    const button=event.target.closest('[data-action="open-cabinet-designer"]');if(!button)return;
+    event.preventDefault();openCabinetDesigner(button.dataset.furnitureId);
+  });
+  window.addEventListener('message',event=>{
+    const overlay=document.getElementById('gatterka-cabinet-overlay'),frame=overlay?.querySelector('#gatterka-cabinet-frame');
+    if(!frame||event.source!==frame.contentWindow||!event.data)return;
+    if(location.protocol!=='file:'&&event.origin!==location.origin)return;
+    const f=state.furnitures.find(x=>x.id===overlay.dataset.furnitureId);if(!f)return;
+    if(event.data.type==='gatterka-designer-ready'){
+      frame.contentWindow.postMessage({type:'gatterka-designer-init',
+        dims:{w:f.w,h:f.ht,d:f.d,t:materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18},
+        design:f.cabinetDesign||null},'*');
+    }else if(event.data.type==='gatterka-designer-save'&&event.data.design&&typeof event.data.design==='object'){
+      f.cabinetDesign=event.data.design;save();
+    }
+  });
   function render(){
     $('#top-steps').style.display='';renderNav();
     if(projectScreen==='series-edit'){
