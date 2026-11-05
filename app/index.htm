@@ -2843,7 +2843,7 @@
       const rect=rects.find(r=>r.id===slot.rectId);
       const name=String(slot.name||'').trim();
       if(!rect||!name)return [];
-      const scaled=dxfScaledRect(f,rect,'front');
+      const scaled=dxfEffectiveRectangle(f,rect);
       return [{key:'dxf-'+slot.id,name,a:Math.round(scaled.w*100)/100,b:Math.round(scaled.h*100)/100,
         qty:Math.max(1,Number(slot.qty)||1),ready:true,
         formulaA:'W*'+(rect.w/Math.max(.001,f.dxfReferenceDims?.w||rect.w)).toFixed(8),
@@ -2986,18 +2986,68 @@
     if(old)old.outerHTML=dxfPreview(f);
   }
 
+
+  let pendingDxfSlot=null,pendingDxfRect=null;
+  function assignDxfRectangle(f,slotId,rectId){
+    if(!f?.dxfDrawings?.front)return;
+    const slots=f.dxfSlots||[],target=slots.find(x=>x.id===slotId),old=slots.find(x=>x.rectId===rectId);
+    if(!target||!old)return;
+    if(target!==old){
+      const previous=target.rectId;target.rectId=rectId;old.rectId=previous;
+    }
+    f.dxfSelectedRect=rectId;
+    pendingDxfSlot=null;pendingDxfRect=null;
+    syncDxfParts(f);save();
+    updateDxfPreviewDom(f);refreshDxfPartsPreview(f);
+  }
+  function chooseDxfSlot(f,id){
+    const slot=(f?.dxfSlots||[]).find(s=>s.id===id);if(!slot)return;
+    if(pendingDxfRect){assignDxfRectangle(f,id,pendingDxfRect);return;}
+    pendingDxfSlot=id;f.dxfSelectedRect=slot.rectId;
+    updateDxfPreviewDom(f);save();
+  }
+  function chooseDxfRectangle(f,id){
+    if(pendingDxfSlot){assignDxfRectangle(f,pendingDxfSlot,id);return;}
+    pendingDxfRect=id;f.dxfSelectedRect=id;
+    updateDxfPreviewDom(f);save();
+  }
   function refreshDxfPartsPreview(f){
     const table=document.querySelector('.gatterka-dxf-parts-live');
     if(!table)return;
     const records=dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p));
     table.innerHTML=records.map(p=>'<tr><td>'+h(p.name)+'</td><td>'+nfmt(p.a)+' × '+nfmt(p.b)+'</td><td>'+nfmt(p.qty)+'</td></tr>').join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>';
   }
+
+  document.addEventListener('focusin',event=>{
+    const input=event.target.closest('[data-dxf-name]');
+    if(!input)return;
+    const f=getFurniture();if(!f)return;
+    const id=input.dataset.dxfName;
+    if(pendingDxfRect){
+      // Completing a pair replaces the input DOM. Restore focus to the newly paired row.
+      assignDxfRectangle(f,id,pendingDxfRect);
+      document.querySelector('[data-dxf-name="'+id+'"]')?.focus({preventScroll:true});
+    }else{
+      pendingDxfSlot=id;
+      const slot=(f.dxfSlots||[]).find(x=>x.id===id);
+      if(slot)f.dxfSelectedRect=slot.rectId;
+      // Only update the SVG and row emphasis; never replace the currently focused input.
+      const card=document.querySelector('.gatterka-dxf-card');
+      for(const r of card?.querySelectorAll('[data-dxf-rect]')||[]){
+        const selected=r.dataset.dxfRect===f.dxfSelectedRect;
+        r.setAttribute('fill',selected?'#f9b54d':'#5dc5bb');
+        r.setAttribute('stroke',selected?'#eb7d12':'#3b9b8a');
+      }
+      for(const row of card?.querySelectorAll('[data-dxf-slot-row]')||[]){
+        row.style.outline=row.dataset.dxfSlotRow===id?'2px solid #eb7d12':'none';
+      }
+    }
+  });
   document.addEventListener('click',event=>{
     const rect=event.target.closest('[data-dxf-rect]');
     if(!rect)return;
     const f=getFurniture();if(!f)return;
-    f.dxfSelectedRect=rect.dataset.dxfRect;
-    updateDxfPreviewDom(f);save();
+    chooseDxfRectangle(f,rect.dataset.dxfRect);
   });
   document.addEventListener('keydown',event=>{
     if((event.key==='Enter'||event.key===' ')&&event.target.matches('[data-dxf-rect]')){
@@ -3009,11 +3059,7 @@
     if(!select)return;
     const f=getFurniture(),slots=f?.dxfSlots;
     if(!slots?.length)return;
-    const src=slots.find(x=>x.rectId===f.dxfSelectedRect),dst=slots.find(x=>x.id===select.value);
-    if(!src||!dst)return;
-    // Két alkatrészhely hozzárendelése felcserélhető, egyetlen rajzi elem nem kerül kétszer listába.
-    const old=src.rectId;src.rectId=dst.rectId;dst.rectId=old;
-    syncDxfParts(f);updateDxfPreviewDom(f);refreshDxfPartsPreview(f);save();
+    chooseDxfSlot(f,select.value);
   });
   document.addEventListener('input',event=>{
     const el=event.target;
@@ -3042,6 +3088,7 @@
         d:views.side?Math.max(.001,views.side.box.maxX-views.side.box.minX):Number(f.d)||450
       };
       f.dxfSlots=[];f.dxfSelectedRect=null;
+      pendingDxfSlot=null;pendingDxfRect=null;
       ensureDxfSlots(f);syncDxfParts(f);
       save();result=null;render();
     }catch(err){showNotice('DXF hiba: '+err.message);}
@@ -3058,7 +3105,11 @@
       if(![a,b,q].every(Number.isFinite)||a<=0||b<=0||q<1||a>10000||b>10000||q>100)continue;
       seen.add(row.key);
       let part=f.parts.find(p=>p.cabinetDesignKey===row.key);
-      if(part){part.a=String(a);part.b=String(b);part.q=String(q);}
+      if(part){
+        // DXF alkatrésznél a felhasználó képleteit ne írja felül a rajzi szinkron.
+        if(!part.dxfGenerated){part.a=String(a);part.b=String(b);}
+        part.q=String(q);
+      }
       else f.parts.push({id:uuid(),cabinetDesignKey:row.key,
         name:String(row.name||row.key).slice(0,100),a:String(a),b:String(b),q:String(q),
         edge:'0-0',edgeSides:sidesFromCode('0-0'),
