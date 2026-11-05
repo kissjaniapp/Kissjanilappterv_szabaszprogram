@@ -2900,18 +2900,48 @@
     const rects=f?.dxfDrawings?.front?.rectangles||[],prev=Array.isArray(f.dxfSlots)?f.dxfSlots:[];
     if(!rects.length){f.dxfSlots=[];return;}
     const valid=new Set(rects.map(x=>x.id)),used=new Set();
-    f.dxfSlots=rects.map((rect,i)=>{
-      const old=prev.find(x=>x.id==='slot-'+(i+1));
-      const ids=(old?(Array.isArray(old.rectIds)?old.rectIds:[old.rectId]):[rect.id])
-        .filter(id=>valid.has(id)&&!used.has(id));
-      ids.forEach(id=>used.add(id));
-      return {id:'slot-'+(i+1),rectIds:ids,rectId:ids[0]||null,
-        name:String(old?.name||((rect.layer&&rect.layer!=='0')?rect.layer:'')),qty:ids.length,dimA:old?.dimA??null,dimB:old?.dimB??null,sideRectId:old?.sideRectId||null};
-    });
-    for(const rect of rects){
-      if(used.has(rect.id))continue;
-      const empty=f.dxfSlots.find(x=>!x.rectIds.length);
-      if(empty){empty.rectIds=[rect.id];empty.rectId=rect.id;empty.qty=1;used.add(rect.id);}
+    if(!prev.length){
+      // One part row for every matching layer + dimensions in the FRONT view.
+      // Side-view occurrences are measurement references, never extra quantities.
+      const groups=[];
+      for(const rect of rects){
+        const layer=String(rect.layer||'0').trim().toLocaleLowerCase('hu');
+        const existing=groups.find(g=>g.layer===layer&&dxfSameSize(g.sample,rect));
+        if(existing)existing.rectIds.push(rect.id);
+        else groups.push({layer,sample:rect,rectIds:[rect.id]});
+      }
+      f.dxfSlots=groups.map((group,i)=>({
+        id:'slot-'+(i+1),rectIds:group.rectIds,rectId:group.rectIds[0],
+        name:group.sample.layer&&group.sample.layer!=='0'?String(group.sample.layer):'',
+        qty:group.rectIds.length,dimA:null,dimB:null,sideRectId:null
+      }));
+    }else{
+      // Keep manually edited names, formulas and assignments on subsequent renders.
+      f.dxfSlots=prev.map(old=>{
+        const ids=(Array.isArray(old.rectIds)?old.rectIds:[old.rectId])
+          .filter(id=>valid.has(id)&&!used.has(id));
+        ids.forEach(id=>used.add(id));
+        return {...old,rectIds:ids,rectId:ids[0]||null,qty:ids.length};
+      });
+      // New rectangles (e.g. reloaded drawing state) are grouped only when
+      // their layer AND geometric dimensions match an existing row.
+      for(const rect of rects){
+        if(used.has(rect.id))continue;
+        const layer=String(rect.layer||'0').trim().toLocaleLowerCase('hu');
+        const same=f.dxfSlots.find(slot=>{
+          const sample=rects.find(x=>x.id===slot.rectIds[0]);
+          return sample&&String(sample.layer||'0').trim().toLocaleLowerCase('hu')===layer
+            &&dxfSameSize(sample,rect);
+        });
+        if(same){same.rectIds.push(rect.id);same.qty=same.rectIds.length;}
+        else{
+          const next=1+Math.max(0,...f.dxfSlots.map(slot=>Number(slot.id.split('-')[1])||0));
+          f.dxfSlots.push({id:'slot-'+next,rectIds:[rect.id],rectId:rect.id,
+            name:rect.layer&&rect.layer!=='0'?String(rect.layer):'',qty:1,
+            dimA:null,dimB:null,sideRectId:null});
+        }
+        used.add(rect.id);
+      }
     }
     if(!valid.has(f.dxfSelectedRect))f.dxfSelectedRect=rects[0].id;
   }
