@@ -2968,6 +2968,9 @@
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
       model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
+        '<div class="toolbar" style="margin:12px 0"><label style="margin:0">Alkatrész kiemelése</label><select data-3mf-highlight aria-label="3MF alkatrész kiemelése" style="max-width:380px"><option value="-1">Teljes szekrény (minden alkatrész)</option>'+
+        model.groups.map((g,i)=>'<option value="'+i+'">'+h(g.name)+' · '+g.indices.length+' db</option>').join('')+
+        '</select></div>'+
         '<div class="gatterka-3mf-views">'+
           '<div class="gatterka-3mf-view"><strong>Elölnézet · X / Z</strong><canvas data-3mf-view="front" aria-label="3MF elölnézet" width="680" height="350"></canvas></div>'+
           '<div class="gatterka-3mf-view"><strong>Oldalnézet · Y / Z</strong><canvas data-3mf-view="side" aria-label="3MF oldalnézet" width="680" height="350"></canvas></div>'+
@@ -2984,8 +2987,16 @@
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
     const id=String(furniture.id);
-    if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-0.72,elevation:0.55,zoom:1});
+    if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-0.72,elevation:0.55,zoom:1,selectedGroup:-1});
     const state3d=threeMfViewStates.get(id);
+    const select=document.querySelector('[data-3mf-highlight]');
+    if(select){
+      select.value=String(state3d.selectedGroup??-1);
+      select.addEventListener('change',()=>{
+        state3d.selectedGroup=Number(select.value);
+        for(const canvas of canvases)draw(canvas);
+      });
+    }
     function draw(canvas){
       const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');
       if(!ctx)return;
@@ -3009,8 +3020,10 @@
           unique.push(...vertices);
           const normal=[(vertices[1][0]-vertices[0][0])*(vertices[2][1]-vertices[0][1])-
             (vertices[1][1]-vertices[0][1])*(vertices[2][0]-vertices[0][0])];
+          const group=Number(state3d.selectedGroup);
+          const active=group<0||model.groups[group]?.indices.includes(pi);
           faces.push({vertices,depth:vertices.reduce((sum,p)=>sum+p[2],0)/3,
-            shade:normal[0]>=0?0.83:1,base:pal[pi%pal.length]});
+            shade:normal[0]>=0?0.83:1,base:active?pal[pi%pal.length]:'#e6eae7'});
         }
       }
       if(!unique.length)return;
