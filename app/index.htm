@@ -1312,6 +1312,7 @@
           continue;
         }
         try{
+          if(part.dxfUnverified)throw Error('DXF: nincs ellenőrzött oldalnézeti méret');
           // A szabásba kizárólag az IF nélküli VAGY igaz IF-es alkatrész
           // kerülhet. Hamis IF és hibás képlet nem hoz létre gépi darabot.
           // A korábbi IF nélküli, képletes működés változatlan.
@@ -2877,7 +2878,15 @@
         part.name=row.name;part.dxfGenerated=true;
         if(!part.dxfFormulaInitialized){
           part.a=row.formulaA;part.b=row.formulaB;part.dxfFormulaInitialized=true;
+        }else if(row.ready&&part.dxfFormulaVersion!==2){
+          const rect=f.dxfDrawings.front.rectangles.find(r=>(f.dxfSlots.find(x=>'dxf-'+x.id===row.key)?.rectIds||[]).includes(r.id));
+          if(rect){
+            if(part.a==='W*'+(rect.w/f.dxfReferenceDims.w).toFixed(8))part.a=row.formulaA;
+            if(part.b==='H*'+(rect.h/f.dxfReferenceDims.h).toFixed(8))part.b=row.formulaB;
+          }
         }
+        part.dxfUnverified=!row.ready;
+        if(row.ready)part.dxfFormulaVersion=2;
       }
     }
   }
