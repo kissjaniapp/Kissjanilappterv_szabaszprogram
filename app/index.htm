@@ -4853,26 +4853,28 @@
     // sem tűnik el a reszelés: X1, X2, Y1, Y2.
     const savedPart=(typeof state!=='undefined'&&Array.isArray(state.furnitures))?
       state.furnitures.flatMap(f=>f.parts||[]).find(p=>p.id===part.uid):null;
-    const currentPart={...part,...savedPart,edge:savedPart?.edge??part.edge,filingSides:savedPart?.filingSides??part.filingSides};
+    const currentPart={...part,...savedPart,edge:savedPart?.edge??part.edge,
+      edgeSides:savedPart?.edgeSides??part.edgeSides,
+      edgeThicknesses:savedPart?.edgeThicknesses??part.edgeThicknesses,
+      filingSides:savedPart?.filingSides??part.filingSides};
     const markingA=dimensionUnderline(currentPart,'a'),markingB=dimensionUnderline(currentPart,'b');
-    const filing=filingCode(savedPart?.filingSides??part.filingSides,
-      part.originalA??part.a,part.originalB??part.b);
+    const edgeLabel=partEdgeLabel(currentPart);
+    const edgeShown=edgeLabel?edge:'';
     const codeSize=5.1*scale;
     const dimensionSize=Math.min(5.7*scale,
-      Math.max(2.5*scale,(width-2*(margin+inset)-(edge.length*.58*codeSize)-2*scale)/(Math.max(1,dimensions.length)*.56)));
-    const band=(Number(part.edgeThickness)===0.4?'0,4':'2')+' mm élzáró'+(part.mill?' · '+nfmt(part.millDepth??1)+' mm marás':'');
+      Math.max(2.5*scale,(width-2*(margin+inset)-(edgeShown.length*.58*codeSize)-2*scale)/(Math.max(1,dimensions.length)*.56)));
+
     return `<g><rect x="${x}" y="${y}" width="${width}" height="${height}" fill="white" stroke="#555" stroke-width=".25"/>`+
-      line(fit(destination,2.3*scale,width-2*margin),x+margin,y+height*.115,2.3*scale,'400')+
+      line(fit(destination,2.3*scale,(width-2*margin)*.54),x+margin,y+height*.115,2.3*scale,'400')+
+      (material?line(fit(material,2.3*scale,(width-2*margin)*.43),x+width-margin,y+height*.115,2.3*scale,'700','text-anchor="end"'):'')+
       `<path d="M${x+margin} ${y+height*.16}H${x+width-margin}" stroke="#aaa" stroke-width=".2"/>`+
       line(dimensions,x+margin+inset,y+height*.37,dimensionSize,'800')+
       (markingA?`<path d="M${x+margin+inset} ${y+height*.37+dimensionSize*.18}h${firstDimension.length*dimensionSize*.57}${markingA===2?` m-${firstDimension.length*dimensionSize*.57} ${dimensionSize*.14}h${firstDimension.length*dimensionSize*.57}`:''}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.055)}" fill="none"/>`:'')+
       (markingB?`<path d="M${x+margin+inset+(firstDimension.length+3)*dimensionSize*.57} ${y+height*.37+dimensionSize*.18}h${secondDimension.length*dimensionSize*.57}${markingB===2?` m-${secondDimension.length*dimensionSize*.57} ${dimensionSize*.14}h${secondDimension.length*dimensionSize*.57}`:''}" stroke="#151515" stroke-width="${Math.max(.15,dimensionSize*.045)}" fill="none"/>`:'')+
-      line(edge,x+width-margin-inset,y+height*.37,codeSize,'800','text-anchor="end"')+
-      (filing?line(filing,x+width-margin-inset,y+height*.49,3.7*scale,'800','text-anchor="end"'):'')+
+      (edgeShown?line(edgeShown,x+width-margin-inset,y+height*.37,codeSize,'800','text-anchor="end"'):'')+
       line(fit(part.name,3.6*scale,width-2*margin),x+margin,y+height*.60,3.6*scale,'700')+
       line(fit(part.source,2.6*scale,width-2*margin),x+margin,y+height*.72,2.6*scale,'400')+
-      line(fit(material,2.5*scale,width-2*margin),x+margin,y+height*.83,2.5*scale,'400')+
-      line(fit(band,2.3*scale,width-2*margin),x+margin,y+height*.93,2.3*scale,'400')+
+      (edgeLabel?line(fit(edgeLabel,2.3*scale,width-2*margin),x+margin,y+height*.89,2.3*scale,'700'):'')+
       `</g>`;
   }
   const labelPaper={width:210,height:297};
