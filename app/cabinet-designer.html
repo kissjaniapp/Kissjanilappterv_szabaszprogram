@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="hu">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#163c30">
+<title>Gatterka – Szekrénytervező | Bútor megadása</title>
+<style>
+:root{--pine:#183f32;--pine-2:#2d6b50;--sage:#e8f3eb;--mint:#d3e8db;--canvas:#f3f6f2;--surface:#fff;--ink:#24342d;--muted:#6f8076;--border:#dce6dd;--orange:#d58a5d;--wood:#c7ad83;--wood-border:#8e7454;--shadow:0 8px 36px rgba(33,57,39,.065)}
+*{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font:14px/1.5 Inter,"Segoe UI",Arial,sans-serif}button,input,select{font:inherit}button{cursor:pointer}input,select{width:100%;min-width:0;background:#fafcf9;border:1px solid #d2ded4;border-radius:9px;padding:9px 10px;color:var(--ink);outline:0}input:focus,select:focus{border-color:#4d9b73;box-shadow:0 0 0 3px #e2efe6}input[type=checkbox]{width:16px;height:16px;accent-color:#246342;box-shadow:none}input[type=radio]{accent-color:#246342}h1,h2,h3,p{margin-top:0}h1{font-size:25px;letter-spacing:-.7px;margin-bottom:3px}h2{font-size:17px;letter-spacing:-.3px;margin-bottom:5px}h3{font-size:13px;margin-bottom:11px}.muted{color:var(--muted)}.mini{font-size:11px}.small{font-size:12px}.shell{display:grid;grid-template-columns:218px minmax(0,1fr);min-height:100vh}.sidebar{background:var(--pine);color:#f3fff6;padding:26px 15px;position:sticky;top:0;height:100vh}.brand{display:flex;gap:10px;align-items:center;padding:0 8px 36px}.brand-icon{width:39px;height:39px;border-radius:11px;background:#e3f1e8;display:grid;place-items:center;font-weight:900;font-size:22px;color:var(--pine)}.brand strong{display:block;font-size:18px;line-height:1.1}.brand span{font-size:10px;color:#afd4be}.nav-tag{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:#88ac98;margin:0 12px 14px}.nav-current{padding:13px 12px;border-radius:11px;background:#34664b;font-weight:700;display:flex;gap:10px;align-items:center}.sidebar-note{position:absolute;bottom:26px;left:24px;right:24px;color:#b8d1c0;font-size:12px;line-height:1.65}.main{padding:27px 30px 44px;min-width:0;max-width:1750px;width:100%;margin:0 auto}.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:23px}.eyebrow{text-transform:uppercase;letter-spacing:1.4px;color:#3f7957;font-weight:850;font-size:10px}.headline{margin-top:8px}.top-actions{display:flex;gap:10px;align-items:center}.pill{padding:7px 11px;background:var(--sage);border-radius:99px;color:#326348;font-size:11px;font-weight:800}.btn{background:#fff;border:1px solid #cfddd1;padding:10px 14px;border-radius:9px;color:var(--pine);font-weight:700}.btn:hover{background:#f1f8f3}.btn.primary{background:var(--pine-2);color:white;border-color:var(--pine-2)}.content{display:grid;grid-template-columns:minmax(360px,470px) minmax(420px,1fr);gap:18px;align-items:start}.controls{display:grid;gap:15px}.panel{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}.panel-head{padding:16px 19px 13px;border-bottom:1px solid #edf1ec;display:flex;justify-content:space-between;gap:10px}.panel-head h2{margin-bottom:0}.panel-body{padding:17px 19px}.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.field label{display:block;font-size:11px;font-weight:750;color:#53665a;margin-bottom:6px}.field.full{grid-column:1/-1}.hint{color:#718579;font-size:11px;margin-top:8px}.seg{display:flex;gap:3px;background:#f0f5f0;border-radius:10px;padding:4px}.seg label{flex:1;text-align:center;margin:0}.seg input{position:absolute;opacity:0;pointer-events:none}.seg span{display:block;padding:8px 5px;border-radius:7px;cursor:pointer;font-size:12px;font-weight:750;color:#698071}.seg input:checked+span{background:white;box-shadow:0 2px 7px #203d2a18;color:var(--pine)}.toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;background:#f7faf7;border:1px solid #e6eee7;padding:12px 13px;border-radius:11px}.toggle strong{display:block;font-size:12px}.toggle .small{margin-top:3px}.count-control{display:flex;align-items:center;gap:8px}.count-control button{width:34px;height:34px;border:1px solid #d2e1d4;border-radius:9px;background:white;font-size:20px;color:var(--pine)}.count-control input{width:56px;text-align:center;font-weight:800;font-size:18px;padding:5px}.choice-list{display:grid;gap:7px}.choice{display:flex;align-items:center;gap:10px;border:1px solid #e3ece3;border-radius:10px;padding:10px 11px;font-size:12px;font-weight:650}.choice input{width:auto}.subbox{margin-top:12px;padding:13px;background:#f7faf7;border-radius:11px}.subbox h3{margin-bottom:8px}.shelf-row{display:grid;grid-template-columns:minmax(70px,1fr) minmax(0,105px) 26px;gap:8px;align-items:center;margin-bottom:8px}.shelf-advanced-row{display:grid;grid-template-columns:minmax(72px,1fr) minmax(0,110px) minmax(0,110px) minmax(0,100px);gap:8px;align-items:end;margin-bottom:8px}.shelf-advanced-row > div{display:grid;gap:4px}.shelf-advanced-row label{font-size:12px;color:#566b60}.shelf-advanced-row .mini-tag{font-size:10px;color:#789080}.shelf-row input.auto-value{background:#edf5ee;color:#51705d}.shelf-row input.locked-value{border-color:#38865b;background:#fff}.shelf-note{margin:5px 0 11px;font-size:11px;color:#6f8076}.shelf-row .auto-tag{color:#3a7752;font-size:10px;white-space:nowrap}.shelf-row .locked-tag{color:#a76b36;font-size:10px}.stats{display:none}.shelf-row label{font-size:12px;color:#536b58}.shelf-row span{font-size:11px;color:#879789}.alert{padding:10px 12px;background:#fff0e8;color:#914b2e;border:1px solid #f6d2b7;border-radius:9px;font-size:12px}.preview-col{display:grid;gap:15px;position:sticky;top:18px}.preview-head{padding:18px 20px 11px;display:flex;justify-content:space-between;gap:12px;align-items:center}.preview-head h2{margin:0}.preview-stage{margin:0 16px 16px;border-radius:13px;background:linear-gradient(135deg,#fafbf9,#edf3ed);border:1px solid #e0e9e1;position:relative;overflow:hidden}.preview-split{display:grid;grid-template-columns:1.25fr .95fr;gap:0;align-items:stretch}.preview-pane + .preview-pane{border-left:1px solid #e0e9e1}.preview-label{padding:10px 12px 0;color:#60766a;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase}.view-controls{display:flex;gap:5px;flex-wrap:wrap;padding:8px 10px;align-items:center}.view-controls button{border:1px solid #cbdacc;border-radius:7px;background:#f7faf7;padding:5px 7px;color:#28533c;font-size:10px;font-weight:750}.view-controls button.active{background:#245d40;border-color:#245d40;color:#fff}.view-controls button:focus-visible{outline:2px solid #b0d6bc;outline-offset:2px}.view-tip{font-size:10px;color:#6b7b71;padding:0 10px 6px}.view-panel #isoDrawing{touch-action:none;cursor:grab}.view-panel #isoDrawing.dragging{cursor:grabbing}@media(max-width:1100px){.preview-split{grid-template-columns:1fr}.preview-pane + .preview-pane{border-left:none;border-top:1px solid #dce6dd}}.schematic{display:block;width:100%;height:auto}.drawing-caption{padding:11px 17px;background:#f8fbf8;color:#75877a;font-size:11px;border-top:1px solid #e5ede7}.legend{display:flex;gap:15px;flex-wrap:wrap;margin-top:8px}.legend span{display:flex;align-items:center;gap:5px}.swatch{width:12px;height:12px;border-radius:3px;display:inline-block;background:#c3a67c;border:1px solid #8e7454}.swatch.dot{background:#5c8870;border-color:#5c8870}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 16px 16px}.stat{border:1px solid var(--border);border-radius:11px;background:#fbfdfb;padding:13px}.stat .value{font-weight:850;font-size:17px;color:#21583b}.stat .label{font-size:10px;color:#73877b}.parts{padding:0 17px 15px}.parts table{border-collapse:collapse;width:100%;font-size:12px}.parts th{text-align:left;font-size:10px;text-transform:uppercase;color:#789080;background:#f5f9f5}.parts th,.parts td{padding:9px;border-bottom:1px solid #eaf0eb}.parts td:last-child{text-align:right;font-variant-numeric:tabular-nums}.footnote{font-size:11px;color:#7e8f82;padding:0 18px 19px}.key{font-weight:800;color:var(--pine)}.hidden{display:none!important}
+@media(max-width:1250px){.content{grid-template-columns:minmax(315px,420px) minmax(360px,1fr)}.main{padding:24px 19px}.sidebar{padding-left:10px;padding-right:10px}.shell{grid-template-columns:180px minmax(0,1fr)}}
+@media(max-width:930px){.shell{grid-template-columns:1fr}.sidebar{height:auto;position:static;padding:12px 18px}.brand{padding:0;display:inline-flex}.nav-tag,.nav-current,.sidebar-note{display:none}.content{grid-template-columns:1fr}.preview-col{position:static}.topbar{align-items:flex-start}.main{padding:17px}.content .controls{order:2}.content .preview-col{order:1}}
+@media(max-width:530px){.main{padding:13px}.fields{grid-template-columns:1fr 1fr;gap:9px}.panel-body{padding:14px}.top-actions .pill{display:none}.stats{grid-template-columns:1fr 1fr}.headline h1{font-size:21px}}
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar"><div class="brand"><div class="brand-icon">▤</div><div><strong>Gatterka</strong><span>BÚTORTERVEZŐ · MINTA</span></div></div><div class="nav-tag">Tervezési modul</div><div class="nav-current">▦ &nbsp; Bútor megadása</div><div class="sidebar-note">Önálló bemutató oldal.<br>Nem kapcsolódik a meglévő szabászprogram mentéséhez és gépi exportjához.</div></aside>
+<main class="main">
+<div class="topbar"><div class="headline"><div class="eyebrow">01 / Bútor megadása</div><h1>Paraméteres szekrénytervező</h1><div class="muted small">Állítsd be a szekrényt – a rajz és az előzetes alkatrészek azonnal változnak.</div></div><div class="top-actions"><span class="pill">Interaktív prototípus</span><button class="btn" id="reset" type="button">↻ Alaphelyzet</button></div></div>
+<div class="content"><div class="controls">
+<section class="panel"><div class="panel-head"><h2>▧ &nbsp; Külső méretek</h2><span class="mini muted">milliméter</span></div><div class="panel-body"><div class="fields">
+<div class="field"><label for="w">Szélesség · X</label><input id="w" type="number" min="200" max="3000" value="600" step="10"></div>
+<div class="field"><label for="h">Magasság · Y</label><input id="h" type="number" min="300" max="3500" value="2000" step="10"></div>
+<div class="field"><label for="d">Mélység · Z</label><input id="d" type="number" min="150" max="1500" value="450" step="10"></div>
+<div class="field"><label for="t">Bútorlap vastagság</label><input id="t" type="number" min="8" max="60" value="18" step="1"></div></div><p class="hint" style="margin-bottom:0">A rajz a szekrénytest megadott külméreteit mutatja; a pótfenék külön alsó lapként jelenik meg.</p></div></section>
+<section class="panel"><div class="panel-head"><h2>▤ &nbsp; Fenék és tető</h2></div><div class="panel-body"><div class="toggle" style="margin-bottom:12px"><div><strong>Kell fenék?</strong><div class="small muted">Kikapcsolva az alsó lap kimarad a rajzból és az alkatrészlistából.</div></div><input type="checkbox" id="hasBottom" checked></div><div id="bottomSetup" class="field"><label>Fenék kialakítása</label><div class="seg"><label><input type="radio" name="bottom" value="between" checked><span>Oldalak közé</span></label><label><input type="radio" name="bottom" value="full"><span>Végigmenő</span></label></div></div>
+<div class="toggle" id="falseBottomSetup" style="margin:11px 0 15px"><div><strong>Pótfenék</strong><div class="small muted">A szekrénynél 1 mm-rel szélesebb: mindkét oldalon 0,5 mm túlnyúlás.</div></div><input type="checkbox" id="falseBottom"></div>
+<div class="toggle" style="margin:11px 0 12px"><div><strong>Kell tető?</strong><div class="small muted">Kikapcsolva a felső lap kimarad a rajzból és az alkatrészlistából.</div></div><input type="checkbox" id="hasTop" checked></div><div id="topSetup" class="field"><label>Tető kialakítása</label><div class="seg"><label><input type="radio" name="top" value="between" checked><span>Oldalak közé</span></label><label><input type="radio" name="top" value="full"><span>Végigmenő</span></label></div></div></div></section>
+<section class="panel"><div class="panel-head"><h2>☷ &nbsp; Polcok</h2><span class="mini muted">automatikus / egyedi</span></div><div class="panel-body"><div class="toggle"><div><strong>Polcok száma</strong><div class="small muted">0 = nincs polc</div></div><div class="count-control"><button id="minus" type="button" aria-label="Polc csökkentése">−</button><input id="count" type="number" min="0" max="12" value="5" aria-label="Polcok száma"><button id="plus" type="button" aria-label="Polc növelése">+</button></div></div>
+<div style="margin-top:14px" class="field" id="distributionSetup"><label>Polcok magassági kiosztása</label><div class="seg"><label><input type="radio" name="distribution" value="equal" checked><span>Egyenlő elosztás</span></label><label><input type="radio" name="distribution" value="manual"><span>Egyedi magasságok</span></label></div></div>
+<div id="manualBox" class="subbox hidden"><h3>Polcok közötti szabad távolságok (mm)</h3><div class="small muted" style="margin-bottom:9px">Alulról felfelé: fenék teteje (fenék nélkül a szekrény alsó síkja) → 1. polc alja → további polcok. A nem módosított mezők automatikusan és egyenlően osztoznak a fennmaradó helyen. A polclap vastagsága külön számít.</div><div id="manualRows"></div><div class="small muted" id="topGapInfo"></div><button class="btn" type="button" id="clearLocks" style="margin-top:10px">↻ Egyedi rögzítések törlése</button></div>
+<div class="alert hidden" id="manualAlert" role="alert" style="margin-top:10px"></div>
+<div class="fields" style="margin-top:14px"><div class="field"><label for="frontSetback">Első visszaállás</label><input id="frontSetback" type="number" min="0" max="200" value="0"></div><div class="field"><label>Hátsó alapeset</label><input id="backPrinciple" type="text" disabled value="Falc szerint automatikus"></div></div>
+<p class="hint">Falcos hát esetén a polc a falc vonaláig ér. Teli hát esetén az automatikus hátsó visszaállás a hátlap vastagsága + a hátlap hátulról megadott visszaállása. Hátfal nélkül a polc az oldallap hátsó síkjáig fut. Az egyedi polcmélység és visszaállás felülírhatja az automatikus értéket.</p><div id="shelfAdvanced" class="subbox"><h3>Polconkénti finomhangolás</h3><div class="small muted" style="margin-bottom:9px">A magassági kiosztás mindig a polc elején (front oldalon) számít. A dőlés alapértéke 0°.</div><div id="shelfRowsAdvanced"></div></div></div></section>
+<section class="panel"><div class="panel-head"><h2>⫶ &nbsp; Polcfuratozás</h2></div><div class="panel-body"><div class="choice-list">
+<label class="choice"><input type="radio" name="drilling" value="fixed" checked><span>Fix polc – nincs állítható furatsor</span></label>
+<label class="choice"><input type="radio" name="drilling" value="full"><span>Végig állítható – teljes raszterfurat-sor</span></label>
+<label class="choice"><input type="radio" name="drilling" value="local"><span>Helyi állítás – furatcsoport minden polchoz</span></label></div>
+<div id="drillSettings" class="subbox hidden"><div class="fields"><div class="field"><label for="raster">Furatosztás (mm)</label><input id="raster" type="number" min="8" max="200" value="32"></div><div class="field" id="holesWrap"><label for="holes">Furat / polc / oldal</label><input id="holes" type="number" min="1" max="9" value="3"></div><div class="field"><label for="supportInset">Polctartó távolsága az éltől</label><input id="supportInset" type="number" min="0" max="200" value="50"></div></div><div class="hint">A polctartó furatok a polc tényleges mélységéhez igazodnak: elöl az első visszaállás + polctartó távolság, hátul az adott polc hátsó visszaállása + polctartó távolság. Teli hátnál az alapértelmezett hátsó visszaállás = hátlapvastagság + hátlap-visszaállás. Döntött polcnál nem rajzolunk polctartót, mert az csak fixen fúrható.</div></div>
+</div></section>
+<section class="panel"><div class="panel-head"><h2>▥ &nbsp; Hátfal</h2></div><div class="panel-body"><div class="field"><label>Hátfal kialakítása</label><div class="seg"><label><input type="radio" name="backType" value="none"><span>Nincs hátfal</span></label><label><input type="radio" name="backType" value="rabbet" checked><span>Falcos hát</span></label><label><input type="radio" name="backType" value="full"><span>Teli hát</span></label></div></div><div id="rabbetSettings" class="subbox"><div class="fields"><div class="field"><label for="rabbetWidth">Falc szélessége (mm)</label><input id="rabbetWidth" type="number" value="4" min="1" max="30"></div><div class="field"><label>Falc mélysége</label><input id="rabbetDepth" type="text" disabled value="13 mm"></div></div><div class="hint">Falcos hát: a hátlap falcba kerül. A polc automatikus hátsó véghelyzete ilyenkor a falc szélességéhez igazodik.</div></div><div id="fullBackSettings" class="subbox hidden"><div class="fields"><div class="field"><label for="fullBackSetback">Teli hát visszaállása hátulról (mm)</label><input id="fullBackSetback" type="number" value="0" min="0" max="200"></div><div class="field"><label>Hátlap vastagsága</label><input id="backThickness" type="text" disabled value="18 mm"></div></div><div class="hint">Teli hát: a hátlap egy, az anyagvastagsággal megegyező bútorlap. A visszaállás a külső hátoldaltól befelé értendő.</div></div></div></section>
+</div>
+<div class="preview-col">
+<section class="panel"><div class="preview-head"><div><h2>Élő szekrényrajz</h2><div class="mini muted">Elölnézet + oldalnézet, mellette elölről nézett izometrikus 3D előnézet</div></div><span class="pill">Automatikusan frissül</span></div><div class="preview-stage"><div class="preview-split"><div class="preview-pane"><div class="preview-label">2D nézet</div><svg id="drawing" class="schematic" viewBox="0 0 720 570" role="img" aria-label="Szekrény sematikus elölnézete és oldalnézete"></svg></div><div class="preview-pane view-panel"><div class="preview-label">3D nézet · <span id="viewName">Elöl – bal</span></div><div class="view-controls" role="group" aria-label="3D nézet választása"><button type="button" data-view="front-left" class="active">Elöl · bal</button><button type="button" data-view="front-right">Elöl · jobb</button><button type="button" data-view="reset">Visszaállítás</button></div><canvas id="isoDrawing" class="schematic" width="520" height="570" role="img" aria-label="Forgatható tömör szekrény 3D nézete"></canvas><div class="view-tip">Egérrel vagy érintéssel forgasd a szekrényt a 3D rajzon.</div><div class="view-tip" id="backDimensionInfo" aria-live="polite"></div></div></div><div class="drawing-caption">A rajzon a polcok közötti szabad távolságokat írjuk ki. A furatok az oldalnézeten láthatók. A 3D nézet tömör testként mutatja a lapokat elölről, bal vagy jobb nézetből. A falc nem gyártási maráspálya.<div class="legend"><span><i class="swatch"></i> Bútorlap</span><span><i class="swatch dot"></i> Furatozás</span><span><i class="swatch" style="background:#6598a2;border-color:#406e7b"></i> Hátfal</span><span><span style="width:16px;border-top:2px dashed #ba8357;display:inline-block"></span> Falc</span></div></div></div>
+</section>
+<section class="panel"><div class="panel-head"><h2>Alkatrész-előnézet</h2><span class="mini muted">nem gépi szabásterv</span></div><div class="parts"><table><thead><tr><th>Alkatrész</th><th>Db</th><th>Méret (mm)</th></tr></thead><tbody id="partsRows"></tbody></table></div><div class="footnote">A lapméretek előzetes, szerkezeti méretek. Az élzárás és a megmunkálási ráhagyások még nem részei ennek a mintának, de a hátfal módja már szemléltetve van.</div></section>
+<section class="panel"><div class="panel-body"><h3>Mit fejlesztünk majd tovább?</h3><div class="small muted">Egyedi polchelyek és furatképek finomítása, hátfal pontos szerkezete, kötéselemek, ajtók, fiókok, majd az automatikus átadás a meglévő Gatterka alkatrészlistájának.</div></div></section>
+</div></div>
+</main></div>
+<script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id);
+const val=id=>Number($(id).value);
+const choice=name=>document.querySelector('input[name="'+name+'"]:checked').value;
+const clamp=(x,min,max)=>Math.max(min,Math.min(max,x));
+const fmt=n=>Number.isFinite(n)?(Math.round(n*10)/10).toLocaleString('hu-HU',{maximumFractionDigits:1}):'–';
+// null: automatikusan kiosztott hézag, szám: felhasználó által rögzített hézag.
+let fixedGaps=[];
+let shelfBackOverrides=[];
+let shelfDepthOverrides=[];
+let shelfAngles=[];
+const DEFAULTS={w:600,h:2000,d:450,t:18,count:5,frontSetback:0,raster:32,holes:3,rabbetWidth:4,supportInset:50,fullBackSetback:0};
+const safe=(id,min,max)=>clamp(Number.isFinite(val(id))?val(id):DEFAULTS[id]||0,min,max);
+function baseShelfBack(p){
+ // Falcos hát: a falcszélességig; teli hát: hátlapvastagság + hátsó visszaállás.
+ if(p.fullBack)return p.t+p.fullBackSetback;
+ return p.rabbet?p.rabbetWidth:0;
+}
+function manualShelfBackAt(i){const v=shelfBackOverrides[i];return Number.isFinite(v)&&v>=0?v:null;}
+function shelfDepthOverrideAt(i){const v=shelfDepthOverrides[i];return Number.isFinite(v)&&v>=0?v:null;}
+function shelfBackAt(p,i){
+ const depth=shelfDepthOverrideAt(i);
+ if(depth!==null)return Math.max(0,p.d-p.front-depth);
+ const v=manualShelfBackAt(i);
+ return v!==null?v:baseShelfBack(p);
+}
+function shelfAngleAt(i){const v=shelfAngles[i];return Number.isFinite(v)?clamp(v,-25,25):0;}
+function shelfDepthAt(p,i){
+ const v=shelfDepthOverrideAt(i);
+ if(v!==null)return clamp(v,0,Math.max(0,p.d-p.front));
+ return Math.max(0,p.d-p.front-shelfBackAt(p,i));
+}
+function read(){
+ const w=safe('w',200,3000),h=safe('h',300,3500),d=safe('d',150,1500),t=safe('t',8,60);
+ const n=safe('count',0,12)|0;
+ const front=safe('frontSetback',0,200);
+ const hasBottom=$('hasBottom').checked,hasTop=$('hasTop').checked;
+ const bottom=choice('bottom'),top=choice('top'),drilling=choice('drilling');
+ const distribution=drilling==='full'?'equal':choice('distribution');
+ const backType=choice('backType');
+ const rabbet=backType==='rabbet',fullBack=backType==='full',falseBottom=hasBottom&&$('falseBottom').checked;
+ const innerW=Math.max(0,w-2*t),innerH=Math.max(0,h-(hasTop?t:0)-(hasBottom?t:0));
+ const raster=safe('raster',8,200),holes=safe('holes',1,9)|0,rabbetWidth=safe('rabbetWidth',1,30),supportInset=safe('supportInset',0,200),fullBackSetback=safe('fullBackSetback',0,200);
+ const probe={w,h,d,t,n,front,bottom,top,distribution,drilling,backType,rabbet,fullBack,fullBackSetback,falseBottom,hasBottom,hasTop,innerW,innerH,raster,holes,rabbetWidth,supportInset};
+ const shelfDepths=Array.from({length:n},(_,i)=>shelfDepthAt({...probe,rabbetWidth,supportInset,fullBackSetback},i));
+ const shelfD=shelfDepths.length?Math.max(0,Math.min(...shelfDepths)):Math.max(0,d-front-baseShelfBack({...probe,rabbetWidth,supportInset,fullBackSetback}));
+ return {...probe,rabbetWidth,supportInset,fullBackSetback,shelfDepths,shelfD};
+}
+function adjustFixed(p,reset=false){
+ if(reset){fixedGaps=[];shelfBackOverrides=[];shelfDepthOverrides=[];shelfAngles=[];}
+ fixedGaps=Array.from({length:p.n},(_,i)=>Number.isFinite(fixedGaps[i])&&fixedGaps[i]>=0?fixedGaps[i]:null);
+ shelfBackOverrides=Array.from({length:p.n},(_,i)=>Number.isFinite(shelfBackOverrides[i])&&shelfBackOverrides[i]>=0?shelfBackOverrides[i]:null);
+ shelfDepthOverrides=Array.from({length:p.n},(_,i)=>Number.isFinite(shelfDepthOverrides[i])&&shelfDepthOverrides[i]>=0?shelfDepthOverrides[i]:null);
+ shelfAngles=Array.from({length:p.n},(_,i)=>Number.isFinite(shelfAngles[i])?clamp(shelfAngles[i],-25,25):0);
+}
+function calculateGaps(p){
+ // n db polc, n+1 db szabad rés; legfelül is marad egy automatikus rész.
+ const available=Math.max(0,p.innerH-p.n*p.t);
+ const locks=Array.from({length:p.n+1},(_,i)=>i<p.n?fixedGaps[i]:null);
+ let fixed=0,count=0;
+ for(const v of locks){if(v===null)count++;else fixed+=v;}
+ const impossible=fixed>available+0.01;
+ const free=Math.max(0,available-fixed);
+ const eq=count>0?free/count:0;
+ return {gaps:locks.map(v=>v===null?eq:v),available,impossible};
+}
+function equalLevels(p){
+ const free=Math.max(0,p.innerH-p.n*p.t),gap=free/(p.n+1),out=[];
+ for(let i=0;i<p.n;i++)out.push((i+1)*gap+(i+.5)*p.t);
+ return out;
+}
+function rasterLevels(p){
+ // A teljes rasztersor furatának magassága az alsó belső síktól mérve.
+ const r=p.raster,mid=p.t/2;
+ const holes=[];for(let z=r;z<p.innerH-mid;z+=r){if(z>mid)holes.push(z);}
+ if(p.n===0)return [];
+ if(holes.length<p.n)return equalLevels(p);
+ // Az első és utolsó furat közé szétosztjuk a polcokat, kerekített raszterindexekkel.
+ return Array.from({length:p.n},(_,i)=>holes[Math.round((i+1)*(holes.length+1)/(p.n+1)-1)]);
+}
+function positions(p){
+ if(p.drilling==='full')return rasterLevels(p);
+ if(p.distribution!=='manual')return equalLevels(p);
+ const gaps=calculateGaps(p).gaps,levels=[];
+ let y=0;
+ for(let i=0;i<p.n;i++){y+=gaps[i]+p.t/2;levels.push(y);y+=p.t/2;}
+ return levels;
+}
+function updateCustom(p){
+ adjustFixed(p);
+ const {gaps,impossible}=calculateGaps(p);
+ $('manualRows').innerHTML=gaps.slice(0,p.n).map((v,i)=>{
+   const locked=fixedGaps[i]!==null;
+   const label=i===0?'Alul → 1. polc':`${i}. → ${i+1}. polc`;
+   return `<div class="shelf-row"><label for="shelf-${i}">${label}</label><input class="${locked?'locked-value':'auto-value'}" id="shelf-${i}" data-shelf="${i}" aria-label="${label} szabad távolság" type="number" min="0" step="0.1" value="${Math.round(v*10)/10}"><span class="${locked?'locked-tag':'auto-tag'}">${locked?'Egyedi':'Auto'}</span></div>`;
+ }).join('');
+ $('topGapInfo').textContent='Utolsó polc tetejétől a tető/felső sík aljáig (automatikus): '+fmt(gaps[p.n]||0)+' mm';
+ $('manualAlert').textContent=impossible?'A rögzített távolságok összege nagyobb a rendelkezésre álló helyénél. Csökkentsd valamelyik értéket.':'';
+ $('manualAlert').classList.toggle('hidden',!impossible);
+ $('shelfRowsAdvanced').innerHTML=Array.from({length:p.n},(_,i)=>{
+   const back=shelfBackAt(p,i),angle=shelfAngleAt(i),depth=shelfDepthAt(p,i),customBack=shelfBackOverrides[i]!==null,customDepth=shelfDepthOverrides[i]!==null;
+   const mode=customDepth?'Egyedi mélység':(customBack?'Egyedi visszaállás':'Auto hátul: '+fmt(baseShelfBack(p))+' mm');
+   return `<div class="shelf-advanced-row"><label>Polc ${i+1}.<span class="mini-tag">${mode}</span></label><div><label for="shelf-depth-${i}">Polcmélység</label><input id="shelf-depth-${i}" data-shelf-depth="${i}" type="number" min="0" max="${Math.max(0,p.d-p.front)}" step="0.1" placeholder="${fmt(depth)}" value="${customDepth?String(Math.round(depth*10)/10).replace('.',','):''}"></div><div><label for="shelf-back-${i}">Hátsó visszaállás</label><input id="shelf-back-${i}" data-shelf-back="${i}" type="number" min="0" max="200" step="0.1" placeholder="${fmt(back)}" value="${customBack&&!customDepth?String(Math.round(back*10)/10).replace('.',','):''}"></div><div><label for="shelf-angle-${i}">Dőlés (°)</label><input id="shelf-angle-${i}" data-shelf-angle="${i}" type="number" min="-25" max="25" step="0.5" value="${String(Math.round(angle*10)/10).replace('.',',')}"></div></div>`;
+ }).join('')||'<div class="small muted">Nincs polc, ezért nincs egyedi polcbeállítás.</div>';
+}
+function rect(x,y,w,h,fill,stroke='#927755',additional=''){return `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" fill="${fill}" stroke="${stroke}" stroke-width="1" ${additional}/>`;}
+function poly(points,fill,stroke='#8f7552',additional=''){return `<polygon points="${points.map(p=>p.join(',')).join(' ')}" fill="${fill}" stroke="${stroke}" stroke-width="1" ${additional}/>`;}
+function line(x1,y1,x2,y2,stroke='#73877a',dash=''){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="1.1" ${dash?`stroke-dasharray="${dash}"`:''}/>`;}
+function text(x,y,string,size=13,anchor='middle',color='#385542'){return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${color}" font-size="${size}" font-family="Segoe UI,Arial,sans-serif">${string}</text>`;}
+function rect(x,y,w,h,fill,stroke='#927755',additional=''){return `<rect x="${x}" y="${y}" width="${Math.max(0,w)}" height="${Math.max(0,h)}" fill="${fill}" stroke="${stroke}" stroke-width="1" ${additional}/>`;}
+function line(x1,y1,x2,y2,stroke='#73877a',dash=''){return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${stroke}" stroke-width="1.1" ${dash?`stroke-dasharray="${dash}"`:''}/>`;}
+function text(x,y,string,size=13,anchor='middle',color='#385542'){return `<text x="${x}" y="${y}" text-anchor="${anchor}" fill="${color}" font-size="${size}" font-family="Segoe UI,Arial,sans-serif">${string}</text>`;}
+function drawing(p,levels){
+ const s=Math.min(270/p.w,400/p.h),fw=p.w*s,fh=p.h*s,ft=Math.max(2.4,p.t*s);
+ const fx=65+(278-fw)/2,fy=65+(420-fh)/2,bodyRight=fx+fw,bodyBottom=fy+fh;
+ const upperSide=p.hasTop&&p.top==='full'?ft:0,lowerSide=p.hasBottom&&p.bottom==='full'?ft:0;
+ const innerBottom=bodyBottom-(p.hasBottom?ft:0),innerTop=fy+(p.hasTop?ft:0);
+ let svg=`<rect x="0" y="0" width="720" height="570" fill="transparent"/>`+text(205,31,'ELÖLNÉZET',13,'middle','#336345')+text(539,31,'OLDALNÉZET',13,'middle','#336345');
+ svg+=rect(fx,fy,fw,fh,'#f1e6d3');
+ if(p.backType!=='none')svg+=rect(fx+ft,fy+(p.hasTop?ft:0),Math.max(0,fw-2*ft),Math.max(0,fh-(p.hasTop?ft:0)-(p.hasBottom?ft:0)),
+ p.fullBack?'#b6d7da':'#d1e5e6','#86aeb6');
+ svg+=rect(fx,fy+upperSide,ft,fh-upperSide-lowerSide,'#c3a37c')+rect(bodyRight-ft,fy+upperSide,ft,fh-upperSide-lowerSide,'#c3a37c');
+ if(p.hasTop)svg+=rect(fx+(p.top==='between'?ft:0),fy,fw-(p.top==='between'?2*ft:0),ft,'#b9996c');
+ if(p.hasBottom)svg+=rect(fx+(p.bottom==='between'?ft:0),bodyBottom-ft,fw-(p.bottom==='between'?2*ft:0),ft,'#b9996c');
+ if(p.hasBottom&&p.falseBottom){svg+=rect(fx-0.5*s,bodyBottom+4,fw+s,ft,'#b28e5e');svg+=text(fx+fw/2,bodyBottom+ft+21,'Pótfenék (+1 mm)',10);}
+ const valid=[];
+ for(let i=0;i<levels.length;i++){
+   const z=levels[i];
+   if(!Number.isFinite(z)||z<p.t/2||z>p.innerH-p.t/2)continue;
+   valid.push(z);
+   const cy=innerBottom-z*s;
+   svg+=rect(fx+ft,cy-ft/2,fw-2*ft,ft,'#bfa077');
+ }
+ let low=innerBottom;
+ const bounds=valid.slice().sort((a,b)=>a-b);
+ for(let i=0;i<=bounds.length;i++){
+   const upper=i<bounds.length?innerBottom-(bounds[i]+p.t/2)*s:innerTop;
+   const gap=Math.max(0,(low-upper)/s);
+   if(low-upper>=12){const yy=(low+upper)/2;svg+=line(fx+fw/2-14,yy,fx+fw/2+14,yy,'#9fb9a3');svg+=`<rect x="${fx+fw/2-31}" y="${yy-10}" width="62" height="18" rx="5" fill="#f9fcf8" fill-opacity=".94"/>`;svg+=text(fx+fw/2,yy+3,fmt(gap)+' mm',10,'middle','#245a3a');}
+   if(i<bounds.length)low=innerBottom-(bounds[i]+p.t/2)*s;
+ }
+ svg+=line(fx,bodyBottom+31,bodyRight,bodyBottom+31)+line(fx,bodyBottom+23,fx,bodyBottom+39)+line(bodyRight,bodyBottom+23,bodyRight,bodyBottom+39);
+ svg+=text(fx+fw/2,bodyBottom+49,fmt(p.w)+' mm',12);
+ svg+=line(fx-26,fy,fx-26,bodyBottom)+line(fx-34,fy,fx-18,fy)+line(fx-34,bodyBottom,fx-18,bodyBottom);
+ svg+=`<text transform="translate(${fx-39},${fy+fh/2}) rotate(-90)" text-anchor="middle" fill="#385542" font-size="12" font-family="Segoe UI,Arial">${fmt(p.h)} mm</text>`;
+ const sd=Math.min(170/p.d,1.05),sideW=p.d*sd,sideX=445+(220-sideW)/2,sideY=fy,sideHeight=fh;
+ svg+=rect(sideX,sideY,sideW,sideHeight,'#f1e6d3');
+ svg+=rect(sideX,sideY+upperSide,sideW,Math.max(0,sideHeight-upperSide-lowerSide),'#cfb48d','none',`fill-opacity=".25"`);
+ if(p.hasTop)svg+=rect(sideX,sideY,sideW,ft,'#b9996c');
+ if(p.hasBottom)svg+=rect(sideX,sideY+sideHeight-ft,sideW,ft,'#b9996c');
+ for(let i=0;i<valid.length;i++){
+   const z=valid[i],yy=innerBottom-z*s,frontX=sideX+p.front*sd,backX=sideX+(p.d-shelfBackAt(p,i))*sd,depthPx=Math.max(0,backX-frontX),delta=-Math.tan(shelfAngleAt(i)*Math.PI/180)*depthPx;
+   svg+=poly([[frontX,yy-ft/2],[backX,yy-ft/2+delta],[backX,yy+ft/2+delta],[frontX,yy+ft/2]],'#bfa077','#8e7454');
+   if(Math.abs(shelfAngleAt(i))>0.1)svg+=text(backX+10,yy+delta-4,fmt(shelfAngleAt(i))+'°',9,'start','#6f756d');
+ }
+ if(p.hasBottom&&p.falseBottom)svg+=rect(sideX,sideY+sideHeight+4,sideW,ft,'#b28e5e');
+ if(p.fullBack){
+   // Rear face = d - setback; the material thickness extends toward the cabinet FRONT.
+   const backFace=sideX+(p.d-p.fullBackSetback)*sd;
+   const frontFace=backFace-p.t*sd;
+   svg+=rect(frontFace,sideY+(p.hasTop?ft:0),Math.max(2,p.t*sd),Math.max(0,sideHeight-(p.hasTop?ft:0)-(p.hasBottom?ft:0)),'#6598a2','#406e7b');
+   const yy=sideY+sideHeight/2;
+   svg+=line(backFace,yy-10,backFace,yy+10,'#406e7b');
+   svg+=line(backFace,yy,sideX+sideW,yy,'#406e7b');
+   svg+=text((backFace+sideX+sideW)/2,yy-14,fmt(p.fullBackSetback)+' mm',10,'middle','#2e6c7a');
+ }
+ if(p.rabbet){
+   const rbX=sideX+sideW-p.rabbetWidth*sd;
+   svg+=rect(rbX,sideY+(p.hasTop?ft:0),Math.max(1.5,p.rabbetWidth*sd),
+      Math.max(0,sideHeight-(p.hasTop?ft:0)-(p.hasBottom?ft:0)),'#80b0b8','#406e7b');
+   svg+=line(rbX,sideY,rbX,sideY+sideHeight,'#ba8357','5,4');
+   svg+=text(Math.max(sideX+20,rbX-22),sideY+sideHeight/2-13,fmt(p.rabbetWidth)+' mm',10,'middle','#2e6c7a');
+ }
+ if(p.drilling!=='fixed'){
+   if(p.drilling==='full'){
+     for(let z=p.raster;z<p.innerH-p.t/2;z+=p.raster){
+       const cy=innerBottom-z*s,rr=1.75;
+       const frontHole=Math.max(sideX+8,sideX+(p.front+p.supportInset)*sd);
+       const rearHole=Math.min(sideX+sideW-8,sideX+sideW-(baseShelfBack(p)+p.supportInset)*sd);
+       svg+=`<circle cx="${frontHole}" cy="${cy}" r="${rr}" fill="#5c8870"/><circle cx="${rearHole}" cy="${cy}" r="${rr}" fill="#5c8870"/>`;
+     }
+   }else{
+     for(let i=0;i<valid.length;i++){
+       if(Math.abs(shelfAngleAt(i))>0.01)continue;
+       const z=valid[i],frontHole=Math.max(sideX+8,sideX+(p.front+p.supportInset)*sd),rearHole=Math.min(sideX+sideW-8,sideX+sideW-(shelfBackAt(p,i)+p.supportInset)*sd);
+       for(let j=0;j<p.holes;j++){
+         const zz=z+(j-(p.holes-1)/2)*p.raster;if(zz<=0||zz>=p.innerH)continue;
+         const cy=innerBottom-zz*s,rr=2.35;
+         svg+=`<circle cx="${frontHole}" cy="${cy}" r="${rr}" fill="#5c8870"/><circle cx="${rearHole}" cy="${cy}" r="${rr}" fill="#5c8870"/>`;
+       }
+     }
+   }
+ }
+ svg+=line(sideX,bodyBottom+31,sideX+sideW,bodyBottom+31)+line(sideX,bodyBottom+23,sideX,bodyBottom+39)+line(sideX+sideW,bodyBottom+23,sideX+sideW,bodyBottom+39);
+ svg+=text(sideX+sideW/2,bodyBottom+49,fmt(p.d)+' mm',12);
+ return svg;
+}
+// Választható / szabadon forgatható elölről induló 3D nézet.
+// A kamera elölnézetnél az y=0 oldalon áll, ezért a nyitott szekrény eleje néz felénk.
+let viewYaw=-32, viewElev=25;
+const CAMERA_PRESETS={
+ 'front-left':[-32,25,'Elöl – bal'],
+ 'front-right':[32,25,'Elöl – jobb']
+};
+function isoDrawing(p,levels){
+ // A szoftveres Z-puffer minden képpontnál eldönti, melyik TÖMÖR bútorlap
+ // van a kamerához legközelebb. Nincs réteg- vagy sorrendhiba forgatáskor.
+ const canvas=$('isoDrawing'),ctx=canvas.getContext('2d',{alpha:false});
+ if(!ctx)return;
+ const W=520,H=570;
+ const img=ctx.createImageData(W,H),px=img.data;
+ const zbuf=new Float32Array(W*H);zbuf.fill(-Infinity);
+ for(let k=0;k<W*H;k++){
+   const i=4*k;px[i]=244;px[i+1]=247;px[i+2]=242;px[i+3]=255;
+ }
+ const yaw=viewYaw*Math.PI/180,elev=viewElev*Math.PI/180;
+ const c=Math.cos(yaw),si=Math.sin(yaw),ce=Math.cos(elev),se=Math.sin(elev);
+ const sx=Math.min(190/p.w,.46),sy=Math.min(145/p.d,.40),sz=Math.min(318/p.h,.2);
+ function project(v){
+   const xx=(v[0]-p.w/2)*sx,yy=(v[1]-p.d/2)*sy,zz=(v[2]-p.h/2)*sz;
+   const horiz=xx*c+yy*si,front=xx*si-yy*c;
+   return [260+horiz,279-zz*ce+front*se,front*ce+zz*se];
+ }
+ const rgb=hex=>[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5),16),parseInt(hex.slice(5,7),16)];
+ const material={top:rgb('#dbbd96'),front:rgb('#b89265'),back:rgb('#ab8358'),left:rgb('#c19e72'),right:rgb('#b28c61'),bottom:rgb('#94724f')};
+ const backMat={top:rgb('#a0cad0'),front:rgb('#69a3ad'),back:rgb('#5b929b'),left:rgb('#82b3bc'),right:rgb('#71a5ae'),bottom:rgb('#4b7e88')};
+ const shelfMat={top:rgb('#d5b18a'),front:rgb('#a47b4d'),back:rgb('#987044'),left:rgb('#b58f61'),right:rgb('#b58f61'),bottom:rgb('#8f6a40')};
+ function triangle(v0,v1,v2,color){
+   const a=project(v0),b=project(v1),d=project(v2);
+   const den=(b[1]-d[1])*(a[0]-d[0])+(d[0]-b[0])*(a[1]-d[1]);
+   if(Math.abs(den)<.000001)return;
+   const minx=Math.max(0,Math.floor(Math.min(a[0],b[0],d[0]))),maxx=Math.min(W-1,Math.ceil(Math.max(a[0],b[0],d[0])));
+   const miny=Math.max(0,Math.floor(Math.min(a[1],b[1],d[1]))),maxy=Math.min(H-1,Math.ceil(Math.max(a[1],b[1],d[1])));
+   for(let y=miny;y<=maxy;y++)for(let x=minx;x<=maxx;x++){
+     const w0=((b[1]-d[1])*(x+.5-d[0])+(d[0]-b[0])*(y+.5-d[1]))/den;
+     if(w0<-.000001)continue;
+     const w1=((d[1]-a[1])*(x+.5-d[0])+(a[0]-d[0])*(y+.5-d[1]))/den;
+     const w2=1-w0-w1;
+     if(w1<-.000001||w2<-.000001)continue;
+     const z=w0*a[2]+w1*b[2]+w2*d[2];const ii=y*W+x;
+     if(z<=zbuf[ii])continue;
+     zbuf[ii]=z;
+     const j=ii*4;px[j]=color[0];px[j+1]=color[1];px[j+2]=color[2];
+   }
+ }
+ function quad(a,b,c,d,color){triangle(a,b,c,color);triangle(a,c,d,color);}
+ function hexa(vertices,colors){
+   // 8 csúcs: elöl-alul bal/jobb, hátul-alul bal/jobb, elöl-felül, hátul-felül.
+   const v=vertices;
+   quad(v[4],v[5],v[7],v[6],colors.top);
+   quad(v[0],v[1],v[5],v[4],colors.front);
+   quad(v[3],v[2],v[6],v[7],colors.back);
+   quad(v[2],v[0],v[4],v[6],colors.left);
+   quad(v[1],v[3],v[7],v[5],colors.right);
+   quad(v[2],v[3],v[1],v[0],colors.bottom);
+ }
+ function board(x1,x2,y1,y2,z1,z2,colors=material){
+   hexa([[x1,y1,z1],[x2,y1,z1],[x1,y2,z1],[x2,y2,z1],
+         [x1,y1,z2],[x2,y1,z2],[x1,y2,z2],[x2,y2,z2]],colors);
+ }
+ // Falcos vagy teljes hát: mindkettő színezett tömör test.
+ if(p.fullBack){
+   const bottom=p.hasBottom?p.t:0,top=p.hasTop?p.h-p.t:p.h;
+   const rear=Math.max(0,p.d-p.fullBackSetback);
+   board(p.t,p.w-p.t,Math.max(0,rear-p.t),rear,bottom,top,backMat);
+ }else if(p.rabbet){
+   const bottom=p.hasBottom?p.t:0,top=p.hasTop?p.h-p.t:p.h;
+   board(p.t,p.w-p.t,Math.max(0,p.d-p.rabbetWidth),p.d,bottom,top,backMat);
+ }
+ for(let i=0;i<levels.length;i++){
+   const z=levels[i];if(!Number.isFinite(z))continue;
+   const depth=shelfDepthAt(p,i),back=shelfBackAt(p,i),angle=shelfAngleAt(i);
+   // Ugyanaz a lejtés mint a 2D oldalsó nézetben: + fok esetén hátul lejjebb.
+   const tilt=-Math.tan(angle*Math.PI/180)*depth;
+   const x1=p.t,x2=p.w-p.t,y1=p.front,y2=Math.max(y1,p.d-back),lo=z-p.t/2,hi=z+p.t/2;
+   hexa([[x1,y1,lo],[x2,y1,lo],[x1,y2,lo+tilt],[x2,y2,lo+tilt],
+         [x1,y1,hi],[x2,y1,hi],[x1,y2,hi+tilt],[x2,y2,hi+tilt]],shelfMat);
+ }
+ if(p.hasBottom){const x1=p.bottom==='between'?p.t:0,x2=p.bottom==='between'?p.w-p.t:p.w;board(x1,x2,0,p.d,0,p.t);}
+ if(p.hasBottom&&p.falseBottom)board(-.5,p.w+.5,0,p.d,-p.t,0);
+ if(p.hasTop){const x1=p.top==='between'?p.t:0,x2=p.top==='between'?p.w-p.t:p.w;board(x1,x2,0,p.d,p.h-p.t,p.h);}
+ // Oldallapok mindig megvannak; a Z-puffer takarja az oldal mögötti polcokat.
+ board(0,p.t,0,p.d,0,p.h);
+ board(p.w-p.t,p.w,0,p.d,0,p.h);
+ ctx.putImageData(img,0,0);
+ ctx.font='700 14px Segoe UI,Arial,sans-serif';ctx.textAlign='center';ctx.fillStyle='#336345';
+ ctx.fillText('FORGATHATÓ 3D SZEKRÉNY · TÖMÖR LAPOK',260,30);
+ ctx.font='11px Segoe UI,Arial,sans-serif';ctx.fillStyle='#718475';
+ ctx.fillText(`Nézet: ${$('viewName').textContent} · felülről ${fmt(viewElev)}°`,260,546);
+}
+function set3DView(name){
+ if(name==='reset')name='front-left';
+ const preset=CAMERA_PRESETS[name];if(!preset)return;
+ [viewYaw,viewElev]=preset;
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===name));
+ $('viewName').textContent=preset[2];
+ render();
+}
+function install3DRotation(){
+ const el=$('isoDrawing');let dragging=false,lastX=0,lastY=0;
+ el.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;dragging=true;lastX=e.clientX;lastY=e.clientY;el.classList.add('dragging');el.setPointerCapture?.(e.pointerId);});
+ el.addEventListener('pointermove',e=>{
+   if(!dragging)return;
+   const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;
+   viewYaw=((viewYaw-dx*.5+180)%360+360)%360-180;
+   viewElev=clamp(viewElev+dy*.35,8,85);
+   document.querySelectorAll('[data-view]').forEach(b=>b.classList.remove('active'));
+   $('viewName').textContent='Egyedi nézet';
+   render();
+ });
+ const stop=e=>{dragging=false;el.classList.remove('dragging');try{if(el.hasPointerCapture?.(e.pointerId))el.releasePointerCapture(e.pointerId);}catch{}};
+ el.addEventListener('pointerup',stop);el.addEventListener('pointercancel',stop);
+ document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>set3DView(b.dataset.view)));
+}
+function updateParts(p){
+ const sideH=p.h-(p.hasTop&&p.top==='full'?p.t:0)-(p.hasBottom&&p.bottom==='full'?p.t:0);
+ const topW=p.top==='full'?p.w:p.innerW;
+ const bottomW=p.bottom==='full'?p.w:p.innerW;
+ const rows=[['Oldallap',2,`${fmt(sideH)} × ${fmt(p.d)}`]];
+ if(p.hasTop)rows.push(['Tető',1,`${fmt(topW)} × ${fmt(p.d)}`]);
+ if(p.hasBottom)rows.push(['Fenék',1,`${fmt(bottomW)} × ${fmt(p.d)}`]);
+ if(p.hasBottom&&p.falseBottom)rows.push(['Pótfenék',1,`${fmt(p.w+1)} × ${fmt(p.d)}`]);
+ if(p.fullBack)rows.push(['Teli hátlap',1,`${fmt(p.innerW)} × ${fmt(p.innerH)} × ${fmt(p.t)}`]);
+ if(p.rabbet)rows.push(['Falcos hátlap (vázlat)',1,`${fmt(p.innerW)} × ${fmt(p.innerH)} × ${fmt(p.rabbetWidth)}`]);
+ if(p.n){const depthMin=Math.min(...p.shelfDepths),depthMax=Math.max(...p.shelfDepths);rows.push(['Polc',p.n,depthMin===depthMax?`${fmt(p.innerW)} × ${fmt(depthMin)}`:`${fmt(p.innerW)} × ${fmt(depthMin)}–${fmt(depthMax)}`]);}
+ $('partsRows').innerHTML=rows.map(row=>`<tr><td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td></tr>`).join('');
+}
+function render(){
+ const p=read();adjustFixed(p);
+ $('bottomSetup').classList.toggle('hidden',!p.hasBottom);
+ if(!p.hasBottom)$('falseBottom').checked=false;
+ $('falseBottomSetup').classList.toggle('hidden',!p.hasBottom);
+ $('topSetup').classList.toggle('hidden',!p.hasTop);
+ $('distributionSetup').classList.toggle('hidden',p.drilling==='full');
+ $('manualBox').classList.toggle('hidden',p.distribution!=='manual'||p.n===0);
+ $('drillSettings').classList.toggle('hidden',p.drilling==='fixed');
+ $('holesWrap').classList.toggle('hidden',p.drilling!=='local');
+ $('rabbetSettings').classList.toggle('hidden',!p.rabbet);
+ $('fullBackSettings').classList.toggle('hidden',!p.fullBack);
+ $('rabbetDepth').value=fmt(Math.max(0,p.t-5))+' mm';
+ $('backThickness').value=fmt(p.t)+' mm';
+ $('backDimensionInfo').textContent=p.fullBack
+ ?`Teli hátlap: ${fmt(p.innerW)} × ${fmt(p.innerH)} × ${fmt(p.t)} mm · hátsó visszaállás ${fmt(p.fullBackSetback)} mm · polcok hátsó alaphelyzete ${fmt(baseShelfBack(p))} mm`
+ :(p.rabbet
+ ?`Falcos hát: ${fmt(p.rabbetWidth)} mm falc; a hátlap rajzi vastagsága szemléltető.`
+ :'Nincs hátfal: a polcok hátul alapból az oldallap hátsó síkjáig érnek.');
+ $('backPrinciple').value=p.fullBack?`Automatikus: ${fmt(p.t)} + ${fmt(p.fullBackSetback)} = ${fmt(baseShelfBack(p))} mm`:(p.rabbet?`Automatikus: ${fmt(p.rabbetWidth)} mm (falcig)`:'Automatikus: 0 mm (oldal hátuljáig)');
+ updateCustom(p);
+ const pos=positions(p);
+ $('drawing').innerHTML=drawing(p,pos);isoDrawing(p,pos);updateParts(p);
+ let warning='';if(Math.min(...(p.shelfDepths.length?p.shelfDepths:[p.shelfD]))<=0)warning='A polc mélysége nem lehet nulla vagy negatív.';
+ if(p.innerW<=0||p.innerH-p.n*p.t<0)warning='A bútor túl kicsi a választott polcokhoz vagy az anyagvastagsághoz.';
+ if(p.drilling==='full'&&Math.floor((p.innerH-p.t/2-0.001)/p.raster)<p.n)warning='A megadott raszteren nincs elegendő furat minden polchoz.';
+ if(p.distribution==='manual'&&calculateGaps(p).impossible)warning='A rögzített polctávolságok nagyobbak a rendelkezésre álló helyénél.';
+ if(p.drilling!=='fixed'&&Array.from({length:p.n},(_,i)=>Math.abs(shelfAngleAt(i))>0.01).some(Boolean))warning='A döntött polcok fixen fúrtként kezelődnek, ezért azokhoz nem rajzolunk polctartó furatot.';
+ $('manualAlert').textContent=warning;$('manualAlert').classList.toggle('hidden',!warning);
+}
+function reset(){
+ for(const [k,v] of Object.entries(DEFAULTS))$(k).value=v;
+ for(const [name,value] of Object.entries({bottom:'between',top:'between',distribution:'equal',drilling:'fixed',backType:'rabbet'}))document.querySelector(`input[name="${name}"][value="${value}"]`).checked=true;
+ $('falseBottom').checked=false;$('hasBottom').checked=true;$('hasTop').checked=true;
+ fixedGaps=[];shelfBackOverrides=[];shelfDepthOverrides=[];shelfAngles=[];render();
+}
+// Eseménykezelés delegálással: a polctávolság beírásakor az automatikus mezők megőrzik a helyüket.
+document.querySelector('.controls').addEventListener('input',e=>{
+ const el=e.target;
+ if(el.matches('[data-shelf]')){
+   const i=Number(el.dataset.shelf);
+   if(el.value.trim()==='')fixedGaps[i]=null;
+   else{const num=Number(el.value.replace(',','.'));if(Number.isFinite(num)&&num>=0)fixedGaps[i]=num;}
+   render();
+   const renewed=$('shelf-'+i);if(renewed)renewed.focus({preventScroll:true});
+   return;
+ }
+ if(el.matches('[data-shelf-depth]')){
+   const i=Number(el.dataset.shelfDepth);
+   if(el.value.trim()==='')shelfDepthOverrides[i]=null;
+   else{const num=Number(el.value.replace(',','.'));if(Number.isFinite(num)&&num>=0)shelfDepthOverrides[i]=num;}
+   render();
+   const renewed=$('shelf-depth-'+i);if(renewed)renewed.focus({preventScroll:true});
+   return;
+ }
+ if(el.matches('[data-shelf-back]')){
+   const i=Number(el.dataset.shelfBack);
+   if(el.value.trim()==='')shelfBackOverrides[i]=null;
+   else{const num=Number(el.value.replace(',','.'));if(Number.isFinite(num)&&num>=0)shelfBackOverrides[i]=num;}
+   render();
+   const renewed=$('shelf-back-'+i);if(renewed)renewed.focus({preventScroll:true});
+   return;
+ }
+ if(el.matches('[data-shelf-angle]')){
+   const i=Number(el.dataset.shelfAngle);
+   const num=Number(el.value.replace(',','.'));
+   shelfAngles[i]=Number.isFinite(num)?clamp(num,-25,25):0;
+   render();
+   const renewed=$('shelf-angle-'+i);if(renewed)renewed.focus({preventScroll:true});
+   return;
+ }
+ render();
+});
+document.querySelector('.controls').addEventListener('change',e=>{
+ if(e.target.matches('[data-shelf]'))return;
+ if(e.target.name==='drilling'&&e.target.value==='full'){
+   document.querySelector('input[name="distribution"][value="equal"]').checked=true;
+ }
+ render();
+});
+$('plus').addEventListener('click',()=>{$('count').value=Math.min(12,safe('count',0,12)+1);render();});
+$('minus').addEventListener('click',()=>{$('count').value=Math.max(0,safe('count',0,12)-1);render();});
+$('clearLocks').addEventListener('click',()=>{fixedGaps=[];render();});
+$('reset').addEventListener('click',reset);
+install3DRotation();
+render();
+})();
+</script>
+
+<script>
+(function(){
+ const ids=['w','h','d','t','count','frontSetback','supportInset','raster','holes','rabbetWidth','fullBackSetback','hasBottom','falseBottom','hasTop'];
+ function snapshot(){
+  const inputs={};for(const id of ids){const e=document.getElementById(id);if(e)inputs[id]=e.type==='checkbox'?e.checked:e.value;}
+  const radios={};for(const e of document.querySelectorAll('input[type="radio"]:checked'))if(e.name)radios[e.name]=e.value;
+  const custom={};for(const e of document.querySelectorAll('[data-shelf],[data-shelf-depth],[data-shelf-back],[data-shelf-angle]')){
+   const key=e.hasAttribute('data-shelf')?'gap-'+e.dataset.shelf:e.hasAttribute('data-shelf-depth')?'depth-'+e.dataset.shelfDepth:e.hasAttribute('data-shelf-back')?'back-'+e.dataset.shelfBack:'angle-'+e.dataset.shelfAngle;
+   custom[key]=e.value;
+  }
+  return {inputs,radios,custom};
+ }
+ function put(id,value){const e=document.getElementById(id);if(!e||value==null)return;if(e.type==='checkbox')e.checked=Boolean(value);else e.value=String(value);e.dispatchEvent(new Event('change',{bubbles:true}));}
+ function apply(msg){
+  const cfg=msg.design||{};
+  for(const [name,value] of Object.entries(cfg.radios||{})){const el=Array.from(document.querySelectorAll('input[type="radio"]')).find(x=>x.name===name&&x.value===value);if(el){el.checked=true;el.dispatchEvent(new Event('change',{bubbles:true}));}}
+  for(const [id,value] of Object.entries(cfg.inputs||{}))if(!['w','h','d','t'].includes(id))put(id,value);
+  const dims=msg.dims||{};for(const id of ['w','h','d','t'])if(dims[id]!=null)put(id,dims[id]);
+  for(const [key,value] of Object.entries(cfg.custom||{})){const match=/^(gap|depth|back|angle)-(\d+)$/.exec(key);if(!match)continue;const attr={gap:'data-shelf',depth:'data-shelf-depth',back:'data-shelf-back',angle:'data-shelf-angle'}[match[1]];const el=document.querySelector('['+attr+'="'+match[2]+'"]');if(el&&value!==''){el.value=value;el.dispatchEvent(new Event('input',{bubbles:true}));}}
+ }
+ let quiet=false,last='';
+ window.addEventListener('message',e=>{if(e.source!==window.parent||!e.data||e.data.type!=='gatterka-designer-init')return;quiet=true;apply(e.data);quiet=false;last=JSON.stringify(snapshot());});
+ let timer;function notify(){if(quiet||window.parent===window)return;const data=snapshot(),json=JSON.stringify(data);if(json===last)return;last=json;window.parent.postMessage({type:'gatterka-designer-save',design:data},'*');}
+ document.addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(notify,200);});
+ document.addEventListener('change',()=>{clearTimeout(timer);timer=setTimeout(notify,200);});
+ if(window.parent!==window)window.parent.postMessage({type:'gatterka-designer-ready'},'*');
+})();
+</script>
+</body>
+</html>
