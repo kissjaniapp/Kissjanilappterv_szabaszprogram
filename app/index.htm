@@ -501,7 +501,7 @@
     const base=materialCatalog.find(m=>m.id===f?.materialId);
     const selected=own||base;
     return {color:String(selected?.color||part?.materialColor||f.materialColor||'Freya').trim(),
-      thickness:Number(selected?.thickness??f.t??18),
+      thickness:Number((part?.fusionGenerated&&!own&&Number(part.fusionThickness)>0)?part.fusionThickness:(selected?.thickness??f.t??18)),
       name:selected?.color||'Korábbi mentett anyag'};
   }
   function materialOptions(part,f){
@@ -1527,11 +1527,11 @@
           <div class="tiny muted" style="margin-top:7px">Nyisd meg az F3D modellt a Fusionban, futtasd a fusion/GatterkaFusionExport.py szkriptet, és az elkészült JSON fájlt töltsd ide. Az F3D közvetlen böngészős feldolgozása nem támogatott.</div>
           ${fusionImportPreview(f)}
         </section>
-        ${f.dxfDrawings?.front||f.dxfDrawings?.side?
-        `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · DXF rajzból</div></div><div class="panel-body">
-        <div class="tiny muted">A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg; az élő szekrényrajz DXF üzemmódban nem látható.</div>
+        ${f.dxfDrawings?.front||f.dxfDrawings?.side||f.fusionImport?.parts?.length?
+        `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · ${f.fusionImport?.parts?.length?'Fusion 3D modellből':'DXF rajzból'}</div></div><div class="panel-body">
+        <div class="tiny muted">${f.fusionImport?.parts?.length?'Fusion 3D import: a méreteket a szilárdtestek befoglaló méretei alapján olvassuk. A CNC-geometria még nincs ellenőrizve.':'A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg.'}</div>
         <table style="width:100%;margin-top:10px"><thead><tr><th>Alkatrész</th><th>Méret (mm)</th><th>Darabszám</th></tr></thead><tbody class="gatterka-dxf-parts-live">
-        ${dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p)).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
+        ${(f.fusionImport?.parts?.length?(f.fusionImport.groups||[]).map(g=>({name:g.name,a:g.dimensions[0],b:g.dimensions[1],qty:g.indices.length})):dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p))).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
         </tbody></table></div></section>`:
         `<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="${h(f.id)}" style="grid-column:1/-1;padding:12px">
           <div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A korábbi sémás ábra helyén. A beállítások az aktuális bútorhoz mentődnek.</div></div></div>
