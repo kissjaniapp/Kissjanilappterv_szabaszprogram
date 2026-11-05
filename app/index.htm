@@ -2820,49 +2820,100 @@
   }
   // Standalone 3MF/ZIP reader. No network dependency or external ZIP service.
   async function threeMfZipModel(file){
+    // Fusion's 3MF export can use ZIP64 even for small models.
     const buffer=await file.arrayBuffer(),bytes=new Uint8Array(buffer),view=new DataView(buffer);
     if(bytes.length>20*1024*1024)throw Error('A 3MF legfeljebb 20 MB lehet.');
-    const u16=i=>view.getUint16(i,true),u32=i=>view.getUint32(i,true);
+    const valid=(i,n)=>Number.isSafeInteger(i)&&i>=0&&i+n<=bytes.length;
+    const u16=i=>{if(!valid(i,2))throw Error('Sérült ZIP fájlbejegyzés.');return view.getUint16(i,true);};
+    const u32=i=>{if(!valid(i,4))throw Error('Sérült ZIP fájlbejegyzés.');return view.getUint32(i,true);};
+    const u64=i=>{
+      if(!valid(i,8))throw Error('Sérült ZIP64 fájlbejegyzés.');
+      const value=BigInt(u32(i))+(BigInt(u32(i+4))<<32n);
+      if(value>BigInt(Number.MAX_SAFE_INTEGER))throw Error('Túl nagy ZIP64 fájlméret.');
+      return Number(value);
+    };
     let eocd=-1;
     for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)
       if(u32(i)===0x06054b50){eocd=i;break;}
     if(eocd<0)throw Error('A fájl nem érvényes ZIP/3MF.');
-    const count=u16(eocd+10),central=u32(eocd+16),total=u32(eocd+12);
-    if(count>500||central+total>bytes.length)throw Error('Sérült vagy túl nagy 3MF fájltábla.');
+    let count=u16(eocd+10),central=u32(eocd+16),total=u32(eocd+12);
+    if(count===0xffff||central===0xffffffff||total===0xffffffff){
+      const locator=eocd-20;
+      if(!valid(locator,20)||u32(locator)!==0x07064b50)
+        throw Error('Hiányzik a Fusion ZIP64 fájltábla-azonosító.');
+      const zip64=u64(locator+8);
+      if(!valid(zip64,56)||u32(zip64)!==0x06064b50)
+        throw Error('Hibás Fusion ZIP64 fájltábla.');
+      count=u64(zip64+32);total=u64(zip64+40);central=u64(zip64+48);
+    }
+    if(count<1||count>500||!valid(central,total))
+      throw Error('Sérült vagy túl nagy 3MF fájltábla.');
     const decoder=new TextDecoder('utf-8');
     let cursor=central,entry=null;
     for(let i=0;i<count;i++){
-      if(cursor+46>bytes.length||u32(cursor)!==0x02014b50)throw Error('Hibás 3MF fájlbejegyzés.');
-      const method=u16(cursor+10),comp=u32(cursor+20),size=u32(cursor+24),
-        len=u16(cursor+28),extra=u16(cursor+30),comment=u16(cursor+32),
-        offset=u32(cursor+42);
-      if(cursor+46+len+extra+comment>bytes.length)throw Error('Sérült 3MF bejegyzés.');
+      if(!valid(cursor,46)||u32(cursor)!==0x02014b50)throw Error('Hibás 3MF fájlbejegyzés.');
+      const method=u16(cursor+10),crc=u32(cursor+16);
+      let comp=u32(cursor+20),size=u32(cursor+24),offset=u32(cursor+42);
+      const len=u16(cursor+28),extra=u16(cursor+30),comment=u16(cursor+32);
+      if(!valid(cursor,46+len+extra+comment))throw Error('Sérült 3MF bejegyzés.');
+      if(comp===0xffffffff||size===0xffffffff||offset===0xffffffff){
+        let pos=cursor+46+len,found=false;
+        const end=pos+extra;
+        while(pos+4<=end){
+          const kind=u16(pos),length=u16(pos+2),start=pos+4;
+          if(start+length>end)throw Error('Sérült ZIP64 extra adat.');
+          if(kind===0x0001){
+            let at=start;
+            if(size===0xffffffff){if(at+8>start+length)throw Error('Hiányzó ZIP64 méret.');size=u64(at);at+=8;}
+            if(comp===0xffffffff){if(at+8>start+length)throw Error('Hiányzó ZIP64 tömörített méret.');comp=u64(at);at+=8;}
+            if(offset===0xffffffff){if(at+8>start+length)throw Error('Hiányzó ZIP64 cím.');offset=u64(at);at+=8;}
+            found=true;break;
+          }
+          pos=start+length;
+        }
+        if(!found)throw Error('Hiányzik a ZIP64 bejegyzés mérete.');
+      }
       const name=decoder.decode(bytes.slice(cursor+46,cursor+46+len));
-      if(name.toLowerCase().endsWith('.model')&&name.startsWith('3D/')&&!entry)
-        entry={name,method,comp,size,offset};
+      if(name.toLowerCase().startsWith('3d/')&&name.toLowerCase().endsWith('.model')&&!entry)
+        entry={name,method,crc,comp,size,offset};
       cursor+=46+len+extra+comment;
     }
     if(!entry)throw Error('Nem található 3MF modell (3D/*.model).');
     if(entry.size>15*1024*1024||entry.comp>15*1024*1024)
       throw Error('A 3MF modell túl nagy.');
     const start=entry.offset;
-    if(start+30>bytes.length||u32(start)!==0x04034b50)throw Error('Sérült 3MF fejléc.');
+    if(!valid(start,30)||u32(start)!==0x04034b50)throw Error('Sérült 3MF fejléc.');
     const begin=start+30+u16(start+26)+u16(start+28);
-    if(begin+entry.comp>bytes.length)throw Error('Sérült 3MF tömörítés.');
+    if(!valid(begin,entry.comp))throw Error('Sérült 3MF tömörítés.');
     const data=bytes.slice(begin,begin+entry.comp);
     let uncompressed;
     if(entry.method===0)uncompressed=data;
     else if(entry.method===8){
-      if(typeof DecompressionStream==='undefined')throw Error('A böngésző nem támogatja a 3MF kicsomagolását.');
+      if(typeof DecompressionStream==='undefined')
+        throw Error('A böngésző nem támogatja a 3MF kicsomagolását.');
       try{
         const stream=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
         uncompressed=new Uint8Array(await new Response(stream).arrayBuffer());
-      }catch{throw Error('A 3MF kicsomagolása sikertelen; próbáld meg a Chrome legfrissebb verziójával.');}
+      }catch{
+        // Fallback: gzip accepts the ZIP's original raw DEFLATE stream.
+        // The ZIP central directory already provides the required CRC32 and size.
+        try{
+          const wrapped=new Uint8Array(10+data.length+8);
+          wrapped.set([31,139,8,0,0,0,0,0,0,3],0);
+          wrapped.set(data,10);
+          const trailer=new DataView(wrapped.buffer);
+          trailer.setUint32(wrapped.length-8,entry.crc,true);
+          trailer.setUint32(wrapped.length-4,entry.size>>>0,true);
+          const stream=new Blob([wrapped]).stream().pipeThrough(new DecompressionStream('gzip'));
+          uncompressed=new Uint8Array(await new Response(stream).arrayBuffer());
+        }catch{throw Error('A Fusion 3MF tömörítését nem sikerült kibontani.');}
+      }
     }else throw Error('Nem támogatott ZIP tömörítés: '+entry.method);
     if(uncompressed.length!==entry.size||uncompressed.length>15*1024*1024)
       throw Error('A 3MF kibontott modellmérete érvénytelen.');
     return decoder.decode(uncompressed);
   }
+
   function threeMfParse(xmlText){
     const xml=new DOMParser().parseFromString(xmlText,'application/xml');
     if(xml.querySelector('parsererror')||xml.documentElement.localName!=='model')
