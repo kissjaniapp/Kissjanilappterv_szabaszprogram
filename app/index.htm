@@ -504,6 +504,31 @@
     const hCount=x,rCount=y;
     return [hCount?hCount+'Hresz':'',rCount?rCount+'Rresz':''].filter(Boolean).join('-');
   }
+  function cleanFilingForAbs(part){
+    const abs=partEdgeThicknesses(part),filing=part.filingSides||{};
+    const corrected=Object.fromEntries(allPartSides.map(side=>[side,!!filing[side]&&abs[side]===2]));
+    const changed=allPartSides.some(side=>!!filing[side]!==corrected[side]);
+    if(changed)part.filingSides=corrected;
+    return changed;
+  }
+  // H = X-szaliranyu hosszu el, R = Y-keresztiranyu rovid el.
+  function partEdgeLabel(part){
+    const abs=partEdgeThicknesses(part),filing=part.filingSides||{},chunks=[];
+    for(const [sides,letter] of [[['x1','x2'],'H'],[['y1','y2'],'R']]){
+      const groups=[];
+      for(const side of sides){
+        const thickness=abs[side];
+        if(thickness!==2&&thickness!==0.4)continue;
+        const filed=thickness===2&&!!filing[side];
+        const group=groups.find(g=>g.thickness===thickness&&g.filed===filed);
+        if(group)group.count++;
+        else groups.push({thickness,filed,count:1});
+      }
+      for(const group of groups)
+        chunks.push(group.count+letter+(group.filed?'resz':'')+' '+String(group.thickness).replace('.',',')+'mm');
+    }
+    return chunks.join(' ');
+  }
   let loaded=null;
   try { loaded=parse(localStorage.getItem('lapterv-project-v2')); } catch { /* Egyes file:// böngészők letilthatják a tárhelyet. */ }
   const state = loaded && Array.isArray(loaded.furnitures) && Array.isArray(loaded.boards) ? loaded : defaultState();
