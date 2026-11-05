@@ -2937,20 +2937,16 @@
     return visible;
   }
 
-  function dxfEffectiveRectangle(f,rect){
-    const target=dxfScaledRect(f,rect,'front');
-    const slot=dxfSlotForRect(f,rect.id);
+  function dxfEffectiveRectangle(f,r){
+    const target=dxfScaledRect(f,r,'front'),plate=dxfPlate(r),slot=dxfSlotForRect(f,r.id);
     const part=slot&&(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
-    if(!part)return target;
+    if(!plate||!part)return target;
     try{
-      const thickness=materialForPart(part,f).thickness;
-      const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
-      const width=calcPartFormula(part.a,vars,f,part,'x');
-      const height=calcPartFormula(part.b,vars,f,part,'y');
-      if(width>0&&height>0&&Number.isFinite(width)&&Number.isFinite(height))
-        return {...target,w:width,h:height,maxX:target.minX+width,maxY:target.minY+height};
-    }catch{}
-    return target;
+      const vars={W:+f.w,H:+f.ht,D:+f.d,T:materialForPart(part,f).thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
+      const len=calcPartFormula(part.a,vars,f,part,'x');
+      if(!Number.isFinite(len)||len<=0)return target;
+      return plate.horizontal?{...target,w:len,maxX:target.minX+len}:{...target,h:len,maxY:target.minY+len};
+    }catch{return target;}
   }
   function dxfPreview(f){
     const drawings=f?.dxfDrawings||{};
