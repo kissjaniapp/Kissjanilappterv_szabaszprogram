@@ -1588,7 +1588,9 @@
       warning+empty+panel+
       '<div class="section-bottom"><strong>'+nfmt(summary.total)+' db kerül a szabásba</strong>'+
       '<div class="actions"><button class="btn" data-action="download-workshop-copy-png">↓ Műhely példány PNG</button><button class="btn" data-action="page" data-page="parts">← Vissza</button>'+
-      '<button class="btn primary" data-action="page" data-page="stock" title="Anyagkészlet megnyitása">Anyagkészlet →</button></div></div>';
+      '<button class="btn primary" data-action="page" data-page="stock"'+
+      (enabled?'':' disabled title="Előbb javítsd az alkatrészhibákat"')+
+      '>Anyagkészlet →</button></div></div>';
   }
   function materialEditorView(){
     return materialsAndRemnantsView(true);
