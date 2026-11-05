@@ -448,7 +448,7 @@
   }
   const allPartSides=['x1','x2','y1','y2'];
   function partEdgeThicknesses(part){
-    const enabled=sidesFromCode(part.edge);
+    const enabled=part.edgeThicknesses&&part.edgeSides?part.edgeSides:sidesFromCode(part.edge);
     const stored=part.edgeThicknesses||{};
     const defaultThickness=[2,0.4].includes(Number(part.edgeThickness))?Number(part.edgeThickness):2;
     return Object.fromEntries(allPartSides.map(side=>{
@@ -478,10 +478,11 @@
     // Swap the user-defined X/Y grain direction, not the cutting algorithm.
     // Edge banding and filing follow their original physical edges.
     const abs=partEdgeThicknesses(part);
+    const before=part.edgeThicknesses&&part.edgeSides?part.edgeSides:sidesFromCode(part.edge);
     [part.a,part.b]=[part.b,part.a];
     const edge=String(part.edge||'0-0').match(/^([012])-([012])$/);
     if(edge)part.edge=edge[2]+'-'+edge[1];
-    part.edgeSides=sidesFromCode(part.edge);
+    part.edgeSides={x1:!!before.y1,x2:!!before.y2,y1:!!before.x1,y2:!!before.x2};
     part.edgeThicknesses={x1:abs.y1,x2:abs.y2,y1:abs.x1,y2:abs.x2};
     const sides=part.filingSides||{};
     part.filingSides={x1:!!sides.y1,x2:!!sides.y2,y1:!!sides.x1,y2:!!sides.x2};
@@ -1431,7 +1432,7 @@
           if(![2,0.4].includes(edgeThickness))throw Error('Csak 2 vagy 0,4 mm-es élzáró választható');
           // Helyi kiszámítás, hogy a régi, külön tesztelt szabászati
           // képlet és a négyélű új ABS is önállóan működjön.
-          const enabledSides={
+          const enabledSides=part.edgeThicknesses&&part.edgeSides?part.edgeSides:{
             x1:Number(match[1])>=1,x2:Number(match[1])===2,
             y1:Number(match[2])>=1,y2:Number(match[2])===2
           };
@@ -5585,8 +5586,8 @@
         const previous=partEdgeThicknesses(target);
         previous[el.dataset.side]=thickness;
         target.edgeThicknesses=previous;
-        target.edge=codeFromSides(Object.fromEntries(allPartSides.map(side=>[side,previous[side]>0])));
-        target.edgeSides=sidesFromCode(target.edge);
+        target.edgeSides=Object.fromEntries(allPartSides.map(side=>[side,previous[side]>0]));
+        target.edge=codeFromSides(target.edgeSides);
         if(thickness===2){target.mill=true;target.millDepth??=1;}
         if(!allPartSides.some(side=>previous[side]===2))target.mill=false;
       }else if(scope==='part'&&key==='edgeSide'){
