@@ -5281,6 +5281,9 @@
       }
       syncCustomParameterParts(f);result=null;
       refreshCustomRuleStatuses(f);refreshLiveFormulaValues();
+      // A polc paraméter átnevezésekor az élő szekrénytervező menüje azonnal frissül.
+      const frame=document.querySelector('.gatterka-cabinet-inline-frame');
+      if(frame)applyCabinetShelfPolicy(frame,f);
       save();return; // A Tab minden képletmezőn és legördülőn továbblép.
     
     }
