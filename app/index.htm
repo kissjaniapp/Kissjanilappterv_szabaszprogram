@@ -1335,7 +1335,24 @@
       '<div class="mini-info top-gap">A szériákat csak a Bútorválasztóban módosítod. A kiválasztott bútor a munkában külön testreszabható. A meglévő munkák és helyi mentések megmaradnak.</div>';
   }
   function showNotice(s){notice=s;render();}
-  function getFurniture(){return state.furnitures.find(f=>f.id===state.selectedFurniture) || state.furnitures[0];}
+  function threeMfSideName(names){
+    const normalized=(names||[]).map(name=>String(name||'').normalize('NFD')
+      .replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[_\s-]+/g,''));
+    // Keep the original user's noun: "Oldal" stays Oldal; "Oldallap" stays Oldallap.
+    return normalized.length===2&&normalized.every(name=>name.endsWith('oldallap'))?'Oldallap':'Oldal';
+  }
+  function normalizeImportedSideNames(f){
+    // Upgrade old generated UI labels without changing individual original 3MF body names.
+    for(let index=0;index<(f?.threeMfImport?.groups||[]).length;index++){
+      const group=f.threeMfImport.groups[index];
+      if(!group.combinedSides||!Array.isArray(group.originalNames))continue;
+      const name=threeMfSideName(group.originalNames);
+      if(['Oldallap (bal + jobb)','Oldal (bal + jobb)'].includes(group.name))group.name=name;
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
+      if(part&&['Oldallap (bal + jobb)','Oldal (bal + jobb)'].includes(part.name))part.name=name;
+    }
+  }
+  function getFurniture(){const f=state.furnitures.find(f=>f.id===state.selectedFurniture) || state.furnitures[0];if(f)normalizeImportedSideNames(f);return f;}
   function numField(scope,id,key,val,min=0,max=99999){return `<div class="unit"><label>${h(key)}</label><div class="input-unit"><input type="number" data-scope="${scope}" data-id="${id}" data-key="${val[0]}" value="${h(val[1])}" min="${min}" max="${max}" step="1"><span>mm</span></div></div>`;}
 
   // Expression parser: only numbers, W H D T S, + - * / and parentheses are accepted.
@@ -1396,6 +1413,7 @@
   function getParts(){
     let rows=[],errors=[];
     for(const f of state.furnitures){
+      normalizeImportedSideNames(f);
       // Migráció csak a régi, beágyazott paraméteres alkatrészeknél kell.
       // Az egyszerű alkatrészlista az eddigi kiszámítóval is működőképes.
       if(Array.isArray(f.customParameters)&&f.customParameters.some(rule=>
@@ -3320,7 +3338,7 @@
     const l=left[0],r=right[0];
     if(!l.dimensions.every((d,i)=>Math.abs(d-r.dimensions[i])<.05))return groups;
     const first=Math.min(groups.indexOf(l),groups.indexOf(r));
-    const merged={name:'Oldallap (bal + jobb)',dimensions:l.dimensions.slice(),
+    const merged={name:threeMfSideName([l.name,r.name]),dimensions:l.dimensions.slice(),
       indices:[...l.indices,...r.indices],combinedSides:true,
       originalNames:[l.name,r.name]};
     const remaining=groups.filter(g=>g!==l&&g!==r);
