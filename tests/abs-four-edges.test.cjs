@@ -55,6 +55,19 @@ test('szálirány megfordításakor a négy külön ABS-vastagság követi a fiz
   assert.equal(part.edgeThicknesses.x1,2);
 });
 
+test('egyedül az X2 hosszú él is lehet 0,4 mm-es, és forgatás után Y2 marad',()=>{
+  const part={a:'1000',b:'500',edge:'1-0',edgeThickness:2,
+    edgeSides:{x1:false,x2:true,y1:false,y2:false},
+    edgeThicknesses:{x1:0,x2:.4,y1:0,y2:0},filingSides:{}};
+  assert.equal(support.partEdgeThicknesses(part).x1,0);
+  assert.equal(support.partEdgeThicknesses(part).x2,.4);
+  support.swapPartGrainAxes(part);
+  assert.equal(part.edge,'0-1');
+  assert.equal(part.edgeSides.y1,false);
+  assert.equal(part.edgeSides.y2,true);
+  assert.equal(support.partEdgeThicknesses(part).y2,.4);
+});
+
 test('3MF bal és jobb oldallap egy közös szabászati tétel, de megmarad a két testazonosító',()=>{
   const fn=vm.runInNewContext('('+slice('function threeMfCombinedCuttingGroups(','  function threeMfApplyImport(').trim()+')',{
     String,Array,Math,Object
