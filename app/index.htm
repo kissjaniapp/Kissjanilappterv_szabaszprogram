@@ -1587,9 +1587,7 @@
       warning+empty+panel+
       '<div class="section-bottom"><strong>'+nfmt(summary.total)+' db kerül a szabásba</strong>'+
       '<div class="actions"><button class="btn" data-action="download-workshop-copy-png">↓ Műhely példány PNG</button><button class="btn" data-action="page" data-page="parts">← Vissza</button>'+
-      '<button class="btn primary" data-action="page" data-page="stock"'+
-      (enabled?'':' disabled title="Előbb javítsd az alkatrészhibákat"')+
-      '>Anyagkészlet →</button></div></div>';
+      '<button class="btn primary" data-action="page" data-page="stock" title="Anyagkészlet megnyitása">Anyagkészlet →</button></div></div>';
   }
   function materialEditorView(){
     return materialsAndRemnantsView(true);
@@ -3106,6 +3104,23 @@
     if(el.hasAttribute('data-dxf-name'))slot.name=el.value;
     else slot.qty=Math.max(1,Math.min(999,Math.round(Number(el.value)||1)));
     syncDxfParts(f);refreshDxfPartsPreview(f);save();
+  });
+
+  document.addEventListener('click',event=>{
+    const button=event.target.closest('[data-dxf-swap]');if(!button)return;
+    event.preventDefault();
+    const f=getFurniture(),id=button.dataset.dxfSwap,row=button.closest('[data-dxf-slot-row]');
+    if(!f||!row)return;
+    const a=row.querySelector('[data-dxf-dimension="a"]')?.value;
+    const b=row.querySelector('[data-dxf-dimension="b"]')?.value;
+    setDxfDimensions(f,id,b,a);
+  });
+  document.addEventListener('change',event=>{
+    const input=event.target.closest('[data-dxf-dimension]');if(!input)return;
+    const f=getFurniture(),row=input.closest('[data-dxf-slot-row]');if(!f||!row)return;
+    const a=row.querySelector('[data-dxf-dimension="a"]')?.value;
+    const b=row.querySelector('[data-dxf-dimension="b"]')?.value;
+    setDxfDimensions(f,input.dataset.dxfSlot,a,b);
   });
   document.addEventListener('click',e=>{
     if(e.target.closest('[data-action="cabinet-dxf-choose"]')){e.preventDefault();document.getElementById('gatterka-dxf-file')?.click();}
