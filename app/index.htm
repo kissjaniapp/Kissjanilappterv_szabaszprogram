@@ -1261,6 +1261,7 @@
     state.furnitures.push(f);state.selectedFurniture=f.id;
     currentProjectId=uuid();
     library.push({id:currentProjectId,createdAt:Date.now(),updatedAt:Date.now(),data:JSON.parse(JSON.stringify(state))});
+    state.designMode=null;state.active='mode';
     projectScreen='editor';result=null;notice='';render();
   }
   function openSavedProject(id,furnitureId){
@@ -1274,7 +1275,7 @@
     if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='auto';
   if(['machine','rows'].includes(state.layoutMode))state.layoutMode='auto';
     state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
-    state.active='furniture';currentProjectId=entry.id;projectScreen='editor';
+    state.active=state.designMode==='parts'?'parts':'furniture';currentProjectId=entry.id;projectScreen='editor';
     result=null;notice='';render();
   }
   function projectLibraryView(){
@@ -1403,13 +1404,19 @@
     return `<section class="intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></section>`;
   }
   function steps(){
-    const panels=[['library','01','Bútorválasztó','Mappák, szériák'],['furniture','02','Bútor adatai','Paraméterek'],
-      ['parts','03','Alkatrészek','Méretképletek'],
-      ['parts-review','04','Alkatrész-összesítő','Méret, élzárás'],
-      ['stock','05','Anyagkészlet','Táblák, fűrészlap'],
-      ['nesting','06','Szabásterv','Méretezett rajz'],['labels','07','Matricák','Választható'],
-      ['save','08','Mentés','xMix + xPrg']];
-    return `<div class="steps">${panels.map(([id,num,title,sub])=>`<button class="step ${(id==='library'?projectScreen==='library':projectScreen!=='library'&&state.active===id)?'active':''}" data-action="${id==='library'?'library-home':'page'}" ${id==='library'?'':`data-page="${id}"`}><span class="step-number">${num}</span><span><div class="step-name">${title}</div><div class="step-sub">${sub}</div></span></button>`).join('')}</div>`;
+    const panels=[['library','Bútorválasztó','Mappák, szériák'],
+      ['mode','Munkamód','Tervezés vagy szabás'],
+      ['furniture','Bútor adatai','Paraméterek'],
+      ['parts','Alkatrészek','Méretképletek'],
+      ['parts-review','Alkatrész-összesítő','Méret, élzárás'],
+      ['stock','Anyagkészlet','Táblák, fűrészlap'],
+      ['nesting','Szabásterv','Méretezett rajz'],['labels','Matricák','Választható'],
+      ['save','Mentés','xMix + xPrg']].filter(([id])=>id!=='furniture'||designWorkflowMode()!=='parts');
+    return '<div class="steps">'+panels.map(([id,title,sub],index)=>
+      '<button class="step '+((id==='library'?projectScreen==='library':projectScreen!=='library'&&state.active===id)?'active':'')+
+      '" data-action="'+(id==='library'?'library-home':id==='mode'?'workflow-choice':'page')+'" '+
+      (['library','mode'].includes(id)?'':'data-page="'+id+'"')+'><span class="step-number">'+String(index+1).padStart(2,'0')+
+      '</span><span><div class="step-name">'+title+'</div><div class="step-sub">'+sub+'</div></span></button>').join('')+'</div>';
   }
   function renderNav(){ $('#top-steps').innerHTML=steps(); }
   function cabinet(f){
@@ -1589,8 +1596,9 @@
     if(stage==='parts'){
       return intro('03 / ALKATRÉSZEK','Alkatrészek megadása',
         'Az összes kijelölt bútor alkatrészeit itt egy közös listában szerkesztheted; a közös szabásterv ezekből készül.',
-        `<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>`)+
-        (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3><button class="btn primary" data-action="page" data-page="furniture">Bútor adatai →</button></div>')+
+        `\${designWorkflowMode()==='parts'?'<button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>':'<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>'}`)+
+        (designWorkflowMode()==='parts'&&f?threeMfUploadBlock(f):'')+
+        (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3></div>')+
         `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek.</span></div>`+warning;
     }
     return intro('02 / BÚTOR ADATAI','Bútor megadása',
@@ -3788,12 +3796,12 @@
         '<button class="btn" data-action="series-home">← Szériák</button>'+
         '<strong>Széria szerkesztése · önálló sablon</strong>'+
         '<button class="btn primary" data-action="save-series">💾 Széria mentése</button></div>'+
-        (state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():
+        (state.active==='mode'?modeChoiceView():state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():
          state.active==='stock'?stockPage():state.active==='nesting'?nestingView():
          state.active==='labels'?labelsPage():state.active==='save'?savePage():materialsPage());
       mountCabinetDesigner();mountThreeMfViews();return;
     }
-    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();mountThreeMfViews();}
+    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='mode'?modeChoiceView():state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();mountThreeMfViews();}
   function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
@@ -4964,13 +4972,23 @@
         render();
       }
     }
+    else if(action==='choose-workflow-mode'){
+      if(!['design','parts'].includes(el.dataset.mode))return;
+      state.designMode=el.dataset.mode;
+      state.active=el.dataset.mode==='parts'?'parts':'furniture';
+      notice='';render();window.scrollTo({top:0,behavior:'smooth'});
+    }
+    else if(action==='workflow-choice'){
+      state.active='mode';notice='';render();window.scrollTo({top:0,behavior:'smooth'});
+    }
     else if(action==='page'){
       if(projectScreen==='library'){
         const latest=library.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];
         if(latest)openSavedProject(latest.id);
         else freshProject();
       }
-      state.active=el.dataset.page;notice='';render();window.scrollTo({top:0,behavior:'smooth'});
+      state.active=designWorkflowMode()==='parts'&&el.dataset.page==='furniture'?'parts':el.dataset.page;
+      notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='new-furniture'){const f=createBaseFurniture();state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
     else if(action==='previous-selected-furniture'||action==='next-selected-furniture'){
