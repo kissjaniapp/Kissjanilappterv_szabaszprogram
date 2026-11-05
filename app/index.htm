@@ -3087,6 +3087,10 @@
         h:Math.max(.001,views.front.box.maxY-views.front.box.minY),
         d:views.side?Math.max(.001,views.side.box.maxX-views.side.box.minX):Number(f.d)||450
       };
+      // A DXF mm-ben készült: a betöltött méretek az új kiinduló külméretek.
+      f.w=Math.round(f.dxfReferenceDims.w*100)/100;
+      f.ht=Math.round(f.dxfReferenceDims.h*100)/100;
+      if(views.side)f.d=Math.round(f.dxfReferenceDims.d*100)/100;
       f.dxfSlots=[];f.dxfSelectedRect=null;
       pendingDxfSlot=null;pendingDxfRect=null;
       ensureDxfSlots(f);syncDxfParts(f);
