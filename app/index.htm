@@ -2869,14 +2869,14 @@
       const cv=(x,y)=>[ox+(x-box.minX)*scale,440-oy-(y-box.minY)*scale];
       const lines=(view==='front'?dxfVisibleSegments(d,f):d.lines).map(([x1,y1,x2,y2])=>{
         const a=cv(x1,y1),b=cv(x2,y2);
-        return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#518779" stroke-width="1.3"/>';
+        return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#518779" stroke-width="0.65"/>';
       }).join('');
       const overlays=view==='front'?(d.rectangles||[]).filter(rect=>{
         const status=dxfRectIfStatus(f,rect);
         return status.active||!!status.error;
       }).map(rect=>{
         const a=cv(rect.minX,rect.maxY),w=rect.w*scale,h=rect.h*scale,selectedRect=rect.id===selected;
-        return '<rect data-dxf-rect="'+hAttr(rect.id)+'" x="'+a[0]+'" y="'+a[1]+'" width="'+w+'" height="'+h+'" fill="'+(selectedRect?'#f9b54d':'#5dc5bb')+'" fill-opacity="'+(selectedRect?'.40':'.15')+'" stroke="'+(selectedRect?'#eb7d12':'#3b9b8a')+'" stroke-width="'+(selectedRect?'3.5':'2')+'" style="cursor:pointer" tabindex="0" role="button" aria-label="DXF alkatrész, '+rect.w+' × '+rect.h+' mm"></rect>';
+        return '<rect data-dxf-rect="'+hAttr(rect.id)+'" x="'+a[0]+'" y="'+a[1]+'" width="'+w+'" height="'+h+'" fill="'+(selectedRect?'#f9b54d':'#5dc5bb')+'" fill-opacity="'+(selectedRect?'.40':'.15')+'" stroke="'+(selectedRect?'#eb7d12':'#3b9b8a')+'" stroke-width="'+(selectedRect?'1.65':'0.85')+'" style="cursor:pointer" tabindex="0" role="button" aria-label="DXF alkatrész, '+rect.w+' × '+rect.h+' mm"></rect>';
       }).join(''):'';
       return '<div class="gatterka-dxf-view" style="min-width:0"><strong>'+title+': '+h(d.name)+'</strong> <span class="tiny muted">'+d.count+' szakasz</span><svg viewBox="0 0 730 440" role="img" aria-label="'+title+' DXF rajz" style="width:100%;height:auto;border:1px solid #869b8f;border-radius:9px;max-height:440px;background:var(--bg)">'+lines+overlays+'</svg>'+(view==='front'?'<div class="tiny muted">Kattints egy téglalapra: narancssárgával megjelölöm. Minden felismerhető négyszögnek egy alkatrészhely jár.</div>':'')+'</div>';
     }).join('');
