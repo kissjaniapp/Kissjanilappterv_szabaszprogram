@@ -1474,6 +1474,13 @@
           <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
         </div>
         ${customParametersPanel(f)}
+        <section class="panel gatterka-dxf-card" style="padding:13px;grid-column:1/-1">
+          <div class="toolbar"><strong>📐 DXF rajz feltöltése</strong>
+          <select id="gatterka-dxf-view" aria-label="DXF rajz nézete"><option value="front">Elölnézet</option><option value="side">Oldalnézet</option></select>
+          <button type="button" class="btn" data-action="cabinet-dxf-choose">📁 DXF kiválasztása a gépről</button>
+          <input id="gatterka-dxf-file" type="file" accept=".dxf" style="display:none"></div>
+          ${dxfPreview(f)}
+        </section>
         <section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="${h(f.id)}" style="grid-column:1/-1;padding:12px">
           <div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A korábbi sémás ábra helyén. A beállítások az aktuális bútorhoz mentődnek.</div></div></div>
           <iframe class="gatterka-cabinet-inline-frame" title="Beépített Gatterka szekrénytervező" loading="eager" style="width:100%;height:1100px;min-height:690px;border:0;border-radius:10px;background:#f3f6f2;display:block"></iframe>
@@ -2688,6 +2695,81 @@
         text:themeSettings.colors.text,button:themeSettings.colors.button,
         surface:themeSettings.base==='dark'?'#25342d':'#ffffff'}},'*');
   }
+
+  function parseCabinetDxf(source){
+    if(source.length>5*1024*1024)throw Error('Legfeljebb 5 MB-os DXF tölthető be.');
+    if(source.indexOf(String.fromCharCode(0))>=0)throw Error('Bináris DXF helyett ASCII DXF formátumban mentsd a rajzot.');
+    const lines=source.replaceAll(String.fromCharCode(13),'').split(String.fromCharCode(10)),shapes=[];
+    let index=0;
+    while(index+1<lines.length&&shapes.length<2000){
+      const code=lines[index++].trim(),value=(lines[index++]||'').trim();
+      if(code!=='0'||(value!=='LINE'&&value!=='LWPOLYLINE'))continue;
+      const groups=[];
+      while(index+1<lines.length&&lines[index].trim()!=='0'&&groups.length<12000)groups.push([lines[index++].trim(),(lines[index++]||'').trim()]);
+      const get=k=>Number(groups.find(g=>g[0]===k)?.[1]);
+      if(value==='LINE'){
+        const segment=[get('10'),get('20'),get('11'),get('21')];
+        if(segment.every(Number.isFinite))shapes.push(segment);
+      }else{
+        const pts=[];let x=null;
+        for(const [code,v] of groups){
+          if(code==='10')x=Number(v);
+          if(code==='20'&&x!==null){const y=Number(v);if(Number.isFinite(x)&&Number.isFinite(y))pts.push([x,y]);x=null;}
+        }
+        for(let j=1;j<pts.length;j++)shapes.push([...pts[j-1],...pts[j]]);
+        if((Number(groups.find(g=>g[0]==='70')?.[1]||0)&1)&&pts.length>2)shapes.push([...pts[pts.length-1],...pts[0]]);
+      }
+    }
+    if(!shapes.length)throw Error('Nem található LINE / LWPOLYLINE rajzelem.');
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    for(const [x1,y1,x2,y2] of shapes){minX=Math.min(minX,x1,x2);minY=Math.min(minY,y1,y2);maxX=Math.max(maxX,x1,x2);maxY=Math.max(maxY,y1,y2);}
+    return {lines:shapes,box:{minX,minY,maxX,maxY},count:shapes.length};
+  }
+  function dxfPreview(f){
+    return '<div class="gatterka-dxf-preview">'+[['front','Elölnézet'],['side','Oldalnézet']].map(([kind,label])=>{
+      const d=f?.dxfDrawings?.[kind];
+      if(!d)return '<span class="tiny muted">'+label+': nincs feltöltött DXF. </span>';
+      const box=d.box,spanX=Math.max(.001,box.maxX-box.minX),spanY=Math.max(.001,box.maxY-box.minY);
+      const scale=Math.min(460/spanX,230/spanY),ox=(500-spanX*scale)/2,oy=(270-spanY*scale)/2;
+      const lines=d.lines.map(([x1,y1,x2,y2])=>'<line x1="'+(ox+(x1-box.minX)*scale)+'" y1="'+(270-oy-(y1-box.minY)*scale)+'" x2="'+(ox+(x2-box.minX)*scale)+'" y2="'+(270-oy-(y2-box.minY)*scale)+'" stroke="#389b82" stroke-width="1.4"/>').join('');
+      return '<div style="margin-top:10px"><strong>'+label+': '+h(d.name)+'</strong><span class="tiny muted"> ('+d.count+' szakasz)</span><svg viewBox="0 0 500 270" style="width:100%;max-height:320px;border:1px solid #9aaca0;border-radius:8px">'+lines+'</svg></div>';
+    }).join('')+'<div class="tiny muted">A DXF előnézet a bútorhoz mentődik; az automatikus alkatrész-felismerés külön hozzárendelést igényel. A rajzot még nem tekintjük gyártási szabástervnek.</div></div>';
+  }
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-action="cabinet-dxf-choose"]')){e.preventDefault();document.getElementById('gatterka-dxf-file')?.click();}
+  });
+  document.addEventListener('change',async e=>{
+    if(e.target.id!=='gatterka-dxf-file')return;
+    const file=e.target.files?.[0],f=getFurniture(),view=document.getElementById('gatterka-dxf-view')?.value||'front';
+    if(!file||!f)return;
+    try{
+      const data=parseCabinetDxf(await file.text());
+      f.dxfDrawings=f.dxfDrawings||{};f.dxfDrawings[view]={...data,name:file.name};
+      save();result=null;render();
+    }catch(err){showNotice('DXF hiba: '+err.message);}
+    e.target.value='';
+  });
+
+  function syncCabinetDesignerParts(f,records){
+    if(!Array.isArray(records)||records.length>100)return;
+    if(!Array.isArray(f.parts))f.parts=[];
+    const seen=new Set();
+    for(const row of records){
+      if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,45}$/.test(row.key)||row.ready===false)continue;
+      const a=Number(row.a),b=Number(row.b),q=Number(row.qty);
+      if(![a,b,q].every(Number.isFinite)||a<=0||b<=0||q<1||a>10000||b>10000||q>100)continue;
+      seen.add(row.key);
+      let part=f.parts.find(p=>p.cabinetDesignKey===row.key);
+      if(part){part.a=String(a);part.b=String(b);part.q=String(q);}
+      else f.parts.push({id:uuid(),cabinetDesignKey:row.key,
+        name:String(row.name||row.key).slice(0,100),a:String(a),b:String(b),q:String(q),
+        edge:'0-0',edgeSides:sidesFromCode('0-0'),
+        filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
+        mill:true,millDepth:1,rot:false,grainRequired:true,materialId:'',materialColor:''});
+    }
+    f.parts=f.parts.filter(p=>!p.cabinetDesignKey||seen.has(p.cabinetDesignKey));
+    result=null;
+  }
   function cabinetDesignerDims(f){
     return {w:f.w,h:f.ht,d:f.d,t:materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18};
   }
@@ -2722,7 +2804,10 @@
       syncCabinetDesignerTheme();
     }else if(event.data.type==='gatterka-designer-save'&&event.data.design&&typeof event.data.design==='object'){
       f.cabinetDesign=event.data.design;
+      if(Array.isArray(event.data.design.parts))syncCabinetDesignerParts(f,event.data.design.parts);
       save();
+    }else if(event.data.type==='gatterka-cabinet-parts-draft'&&event.data.payload?.schema==='gatterka-cabinet-parts-preview-v1'){
+      syncCabinetDesignerParts(f,event.data.payload.parts);save();
     }
   });
   function render(){
