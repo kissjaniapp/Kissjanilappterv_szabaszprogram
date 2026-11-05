@@ -1519,6 +1519,14 @@
           <input id="gatterka-dxf-file" type="file" accept=".dxf" style="display:none"></div>
           ${dxfPreview(f)}
         </section>
+        <section class="panel gatterka-fusion-card" style="padding:13px;grid-column:1/-1">
+          <div class="toolbar"><strong>🧊 Fusion 360 – 3D szilárdtestek</strong>
+            <button type="button" class="btn" data-action="cabinet-fusion-choose">📁 Fusion 3D-adatok importálása (JSON)</button>
+            <input id="gatterka-fusion-file" type="file" accept=".json,.f3d" style="display:none">
+          </div>
+          <div class="tiny muted" style="margin-top:7px">Nyisd meg az F3D modellt a Fusionban, futtasd a fusion/GatterkaFusionExport.py szkriptet, és az elkészült JSON fájlt töltsd ide. Az F3D közvetlen böngészős feldolgozása nem támogatott.</div>
+          ${fusionImportPreview(f)}
+        </section>
         ${f.dxfDrawings?.front||f.dxfDrawings?.side?
         `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · DXF rajzból</div></div><div class="panel-body">
         <div class="tiny muted">A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg; az élő szekrényrajz DXF üzemmódban nem látható.</div>
@@ -2782,6 +2790,82 @@
     }
     return [...candidates.values()].sort((a,b)=>b.maxY-a.maxY||a.minX-b.minX||a.minY-b.minY).slice(0,150);
   }
+  function fusionImportPreview(f){
+    const model=f?.fusionImport;
+    if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Még nincs Fusionból importált alkatrész. Az export minden példány 3D kezdőpontját, tengelyeit és forgatási mátrixát külön megőrzi.</div>';
+    const groups=(model.groups||[]);
+    const rows=groups.map(group=>'<tr><td>'+h(group.name)+'</td><td>'+nfmt(group.dimensions[0])+' × '+nfmt(group.dimensions[1])+' × '+nfmt(group.dimensions[2])+'</td><td>'+group.indices.length+' db</td></tr>').join('');
+    const instances=model.parts.map((p,i)=>{
+      const axes=p.axes||{};
+      const fmt=v=>Array.isArray(v)?v.map(n=>nfmt(Number(n))).join('; '):'—';
+      return '<tr><td>'+h(p.name)+'</td><td>'+h(p.occurrence||'Root')+'</td><td>'+fmt(p.originMm)+'</td><td>'+fmt(axes.length)+'</td><td>'+fmt(axes.width)+'</td><td>'+fmt(axes.thickness)+'</td></tr>';
+    }).join('');
+    return '<div class="mini-info" style="margin-top:10px"><strong>'+h(model.designName||'Fusion modell')+'</strong> · '+model.parts.length+' testpéldány · '+groups.length+' alkatrészsor · mm. A kezdőpont a test helyi befoglalódobozának minimum sarka a Fusion összeállítás világkoordinátáiban.</div>'+
+      '<div class="tiny muted" style="margin:8px 0">Az importált méretek tengelyirányú befoglalóméretek; nem helyettesítik a CNC megmunkálás ellenőrzött kontúrját, furatait és szerszámpályáit.</div>'+
+      '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>H × Sz × V (mm)</th><th>Darab</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      '<details style="margin-top:10px"><summary>3D pozíciók és alkatrésztengelyek (mm / egységvektor)</summary><div class="table-wrap"><table><thead><tr><th>Test</th><th>Komponens-útvonal</th><th>X0; Y0; Z0</th><th>Hossz tengelye</th><th>Szélesség tengelye</th><th>Vastagság tengelye</th></tr></thead><tbody>'+instances+'</tbody></table></div></details>';
+  }
+  function importFusionGeometry(text,f){
+    let data;
+    try{data=JSON.parse(text);}catch{throw Error('Hibás JSON. A Fusionban készített Gatterka exportot töltsd fel.');}
+    if(data?.schema!=='gatterka-fusion-v1'||data.units!=='mm'||!Array.isArray(data.parts))
+      throw Error('Nem támogatott Fusion export. Gatterka Fusion v1 JSON szükséges, milliméterben.');
+    if(!data.parts.length||data.parts.length>100)throw Error('1 és 100 közötti szilárdtestpéldányt tartalmazhat az import.');
+    const validVec=a=>Array.isArray(a)&&a.length===3&&a.every(x=>typeof x==='number'&&Number.isFinite(x)&&Math.abs(x)<1e8);
+    const parts=data.parts.map((entry,index)=>{
+      const dims=entry?.dimensions;
+      if(!validVec(dims)||dims.some(d=>d<=0||d>10000)||!validVec(entry.originMm)||
+        !entry.axes||!['length','width','thickness'].every(axis=>validVec(entry.axes[axis]))||
+        !Array.isArray(entry.transform)||entry.transform.length!==4||
+        !entry.transform.every(row=>Array.isArray(row)&&row.length===4&&row.every(Number.isFinite)))
+        throw Error('Hibás koordináta vagy méret a '+(index+1)+'. szilárdtestnél.');
+      if(entry.geometryBasis!=='local-axis-aligned-bounding-box'||entry.machiningVerified!==false)
+        throw Error('Nem támogatott vagy ellenőrizetlen Fusion geometria a '+(index+1)+'. testnél.');
+      return {
+        id:String(entry.id||index).slice(0,200),name:String(entry.name||entry.bodyName||'Alkatrész').slice(0,100),
+        occurrence:String(entry.occurrence||'Root').slice(0,500),
+        dimensions:dims.slice(),originMm:entry.originMm.slice(),
+        axes:{length:entry.axes.length.slice(),width:entry.axes.width.slice(),thickness:entry.axes.thickness.slice()},
+        transform:entry.transform.map(row=>row.slice()),
+        geometryBasis:'local-axis-aligned-bounding-box',machiningVerified:false
+      };
+    });
+    const groups=[];
+    for(let i=0;i<parts.length;i++){
+      const p=parts[i],key=p.name.toLocaleLowerCase('hu');
+      const same=groups.find(g=>g.name.toLocaleLowerCase('hu')===key&&
+        g.dimensions.every((v,j)=>Math.abs(v-p.dimensions[j])<.05));
+      if(same)same.indices.push(i);
+      else groups.push({name:p.name,dimensions:p.dimensions.slice(),indices:[i]});
+    }
+    // Apply only after the complete file passed validation.
+    f.parts=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').startsWith('fusion-'));
+    // DXF and Fusion are separate alternative import routes; never mix derived parts.
+    f.parts=f.parts.filter(p=>!String(p.cabinetDesignKey||'').startsWith('dxf-'));
+    f.dxfDrawings={};f.dxfSlots=[];f.dxfSelectedRect=null;
+    f.fusionImport={schema:'gatterka-fusion-v1',designName:String(data.designName||'Fusion modell').slice(0,150),
+      coordinateSystem:'fusion-design-world',parts,groups};
+    const maxDim=[0,0,0],minOrigin=[Infinity,Infinity,Infinity],maxOrigin=[-Infinity,-Infinity,-Infinity];
+    for(const p of parts)for(let i=0;i<3;i++){
+      minOrigin[i]=Math.min(minOrigin[i],p.originMm[i]);maxOrigin[i]=Math.max(maxOrigin[i],p.originMm[i]);
+      maxDim[i]=Math.max(maxDim[i],p.dimensions[i]);
+    }
+    // Avoid assuming the Fusion world's axes are furniture width, height and depth.
+    // Furniture dimensions stay under user control; imported parts use fixed mm dimensions.
+    for(let i=0;i<groups.length;i++){
+      const group=groups[i],existingKey='fusion-'+(i+1);
+      const [a,b,t]=group.dimensions;
+      f.parts.push({id:uuid(),cabinetDesignKey:existingKey,name:group.name,
+        a:String(a),b:String(b),q:String(group.indices.length),
+        fusionThickness:t,fusionInstances:group.indices.slice(),fusionGenerated:true,
+        edge:'0-0',edgeSides:sidesFromCode('0-0'),
+        filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
+        mill:false,millDepth:1,rot:false,grainRequired:false,materialId:'',materialColor:''});
+    }
+    result=null;
+    return {parts:parts.length,groups:groups.length};
+  }
+
   function dxfBox(lines){
     let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
     for(const [x1,y1,x2,y2] of lines){
@@ -3242,12 +3326,30 @@
   document.addEventListener('click',e=>{
     if(e.target.closest('[data-action="cabinet-dxf-choose"]')){e.preventDefault();document.getElementById('gatterka-dxf-file')?.click();}
   });
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-action="cabinet-fusion-choose"]')){e.preventDefault();document.getElementById('gatterka-fusion-file')?.click();}
+  });
+  document.addEventListener('change',async e=>{
+    if(e.target.id!=='gatterka-fusion-file')return;
+    const file=e.target.files?.[0],f=getFurniture();
+    if(!file||!f)return;
+    try{
+      if(!file.name.toLowerCase().endsWith('.json'))
+        throw Error('Az F3D fájlt a Fusion API exportálóval JSON formátumba kell exportálni. Lásd: fusion/GatterkaFusionExport.py');
+      if(file.size>4*1024*1024)throw Error('A Fusion JSON export legfeljebb 4 MB lehet.');
+      const report=importFusionGeometry(await file.text(),f);
+      save();render();
+      showNotice('Fusion import kész: '+report.parts+' 3D testpéldány, '+report.groups+' alkatrészsor. CNC-kódot még nem készít.');
+    }catch(err){showNotice('Fusion import hiba: '+err.message);}
+    e.target.value='';
+  });
   document.addEventListener('change',async e=>{
     if(e.target.id!=='gatterka-dxf-file')return;
     const file=e.target.files?.[0],f=getFurniture();
     if(!file||!f)return;
     try{
       const data=parseCabinetDxf(await file.text()),views=splitDxfViews(data);
+      f.fusionImport=null;f.parts=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').startsWith('fusion-'));
       f.dxfDrawings={front:{...views.front,name:file.name},side:views.side?{...views.side,name:file.name}:null};
       f.dxfReferenceDims={
         w:Math.max(.001,views.front.box.maxX-views.front.box.minX),
