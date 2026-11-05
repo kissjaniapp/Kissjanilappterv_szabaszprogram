@@ -3111,45 +3111,79 @@
       });
     }
     function draw(canvas){
-      const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');if(!ctx)return;
+      const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');
+      if(!ctx)return;
       const W=canvas.width,H=canvas.height;
-      ctx.clearRect(0,0,W,H);ctx.fillStyle='#f6f9f5';ctx.fillRect(0,0,W,H);
       const project=p=>threeMfProjectPoint(p,type,state3d.azimuth,state3d.elevation);
       const hide=type==='side'&&!state3d.showNearSide?threeMfNearSideIndex(model.parts):-1;
-      const all=[],faces=[],pal=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#d2ad7c','#a8a7c8','#76a6a6'];
-      const selected=Number(state3d.selectedGroup);
-      for(let i=0;i<model.parts.length;i++){
-        if(i===hide)continue;
-        const active=selected<0||model.groups[selected]?.indices.includes(i);
-        for(const g of threeMfPlanarFaces(model.parts[i].previewTriangles||[],project)){
-          faces.push({g,color:active?pal[i%pal.length]:'#e6eae7'});
-          for(const tri of g.triangles)for(const p of tri)all.push(p);
-        }
-      }
-      if(!all.length)return;
+      const palette=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#a8a7c8','#76a6a6','#c9a68d'];
+      const selected=Number(state3d.selectedGroup),faces=[];
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-      for(const p of all){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
-      const scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY))*(type==='three'?state3d.zoom:1);
-      const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
-      const pos=p=>[W/2+(p[0]-cx)*scale,H/2+(p[1]-cy)*scale];
-      faces.sort((a,b)=>a.g.depth-b.g.depth);
-      for(const {g,color} of faces){
-        ctx.fillStyle=color;
-        for(const tri of g.triangles){
-          const points=tri.map(pos);
-          ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
-          ctx.lineTo(points[1][0],points[1][1]);ctx.lineTo(points[2][0],points[2][1]);
-          ctx.closePath();ctx.fill();
+      let surfaceId=0;
+      for(let partIndex=0;partIndex<model.parts.length;partIndex++){
+        if(partIndex===hide)continue;
+        const part=model.parts[partIndex];
+        const active=selected<0||model.groups[selected]?.indices.includes(partIndex);
+        const groups=threeMfPlanarFaces(part.previewTriangles||[],project);
+        for(const group of groups){
+          const base=active?palette[partIndex%palette.length]:'#e6eae7';
+          const normal=group.normal;
+          const shade=type==='three'?.82+.18*Math.abs(normal[2]):.94;
+          const rgb=[1,3,5].map(i=>Math.max(0,Math.min(255,Math.round(parseInt(base.slice(i,i+2),16)*shade))));
+          surfaceId++;
+          for(const vertices of group.triangles){
+            for(const p of vertices){
+              minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+              minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);
+            }
+            faces.push({vertices,rgb,surfaceId});
+          }
         }
-        // Stroke only the real face perimeter, never the shared coplanar diagonal.
-        ctx.beginPath();ctx.strokeStyle='rgba(48,72,61,.58)';ctx.lineWidth=.95;
-        for(const edge of g.edges.values()){
-          if(edge.count!==1)continue;
-          const [p,q]=edge.ends.map(pos);
-          ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);
-        }
-        ctx.stroke();
       }
+      const image=ctx.createImageData(W,H),data=image.data;
+      for(let i=0;i<data.length;i+=4){data[i]=246;data[i+1]=249;data[i+2]=245;data[i+3]=255;}
+      if(!faces.length){ctx.putImageData(image,0,0);return;}
+      const scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY))*
+        (type==='three'?state3d.zoom:1);
+      const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+      const depth=new Float32Array(W*H),faceAt=new Int32Array(W*H);
+      depth.fill(-Infinity);
+      for(const face of faces){
+        const v=face.vertices.map(p=>[W/2+(p[0]-cx)*scale,H/2+(p[1]-cy)*scale,p[2]]);
+        const x0=v[0][0],y0=v[0][1],x1=v[1][0],y1=v[1][1],x2=v[2][0],y2=v[2][1];
+        const den=(y1-y2)*(x0-x2)+(x2-x1)*(y0-y2);
+        if(Math.abs(den)<.000001)continue;
+        const lowX=Math.max(0,Math.floor(Math.min(x0,x1,x2))),highX=Math.min(W-1,Math.ceil(Math.max(x0,x1,x2)));
+        const lowY=Math.max(0,Math.floor(Math.min(y0,y1,y2))),highY=Math.min(H-1,Math.ceil(Math.max(y0,y1,y2)));
+        for(let y=lowY;y<=highY;y++){
+          const py=y+.5;
+          for(let x=lowX;x<=highX;x++){
+            const px=x+.5;
+            const a=((y1-y2)*(px-x2)+(x2-x1)*(py-y2))/den;
+            const b=((y2-y0)*(px-x2)+(x0-x2)*(py-y2))/den;
+            const c=1-a-b;
+            if(a<-.000001||b<-.000001||c<-.000001)continue;
+            const z=a*v[0][2]+b*v[1][2]+c*v[2][2],index=y*W+x;
+            if(z<=depth[index]+.00001)continue;
+            depth[index]=z;faceAt[index]=face.surfaceId;
+            const offset=index*4;
+            data[offset]=face.rgb[0];data[offset+1]=face.rgb[1];data[offset+2]=face.rgb[2];
+          }
+        }
+      }
+      // Only boundaries between visible solid faces are outlined. Hidden faces
+      // never contribute, so even interpenetrating 3MF panels stay fully opaque.
+      for(let y=1;y<H-1;y++)for(let x=1;x<W-1;x++){
+        const index=y*W+x,id=faceAt[index];
+        if(!id)continue;
+        if(id!==faceAt[index+1]||id!==faceAt[index+W]){
+          const offset=index*4;
+          data[offset]=Math.round(data[offset]*.54);
+          data[offset+1]=Math.round(data[offset+1]*.56);
+          data[offset+2]=Math.round(data[offset+2]*.58);
+        }
+      }
+      ctx.putImageData(image,0,0);
     }
     for(const c of canvases)draw(c);
     const orbit=canvases.find(x=>x.dataset['3mfView']==='three');
@@ -3161,8 +3195,8 @@
     });
     orbit.addEventListener('pointermove',e=>{
       if(!dragging)return;
-      state3d.azimuth+=(e.clientX-lastX)*.009;
-      state3d.elevation=Math.max(-1.48,Math.min(1.48,state3d.elevation+(e.clientY-lastY)*.009));
+      state3d.azimuth-=(e.clientX-lastX)*.009;
+      state3d.elevation=Math.max(-1.48,Math.min(1.48,state3d.elevation-(e.clientY-lastY)*.009));
       lastX=e.clientX;lastY=e.clientY;draw(orbit);
     });
     orbit.addEventListener('pointerup',()=>{dragging=false;});
@@ -3189,7 +3223,7 @@
       threeMfInstances:g.indices.slice(),
       edge:'0-0',edgeSides:sidesFromCode('0-0'),
       filingSides:{x1:false,x2:false,y1:false,y2:false},
-      edgeThickness:2,mill:false,millDepth:1,rot:false,grainRequired:false,
+      edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:false,
       materialId:'',materialColor:''
     }));
     f.parts=[...unrelated,...created];
