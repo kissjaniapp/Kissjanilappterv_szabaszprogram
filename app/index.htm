@@ -2874,7 +2874,7 @@
     const identity=[1,0,0,0,1,0,0,0,1,0,0,0];
     const decodeTransform=value=>{
       if(!value)return identity;
-      const nums=value.trim().split(/\\s+/).map(Number);
+      const nums=value.trim().split(/\s+/).map(Number);
       if(nums.length!==12||nums.some(n=>!Number.isFinite(n)))throw Error('Érvénytelen 3MF transzformáció.');
       return nums;
     };
