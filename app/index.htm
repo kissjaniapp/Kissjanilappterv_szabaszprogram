@@ -1413,7 +1413,7 @@
   function getParts(){
     let rows=[],errors=[];
     for(const f of state.furnitures){
-      normalizeImportedSideNames(f);
+      if(typeof normalizeImportedSideNames==='function')normalizeImportedSideNames(f);
       // Migráció csak a régi, beágyazott paraméteres alkatrészeknél kell.
       // Az egyszerű alkatrészlista az eddigi kiszámítóval is működőképes.
       if(Array.isArray(f.customParameters)&&f.customParameters.some(rule=>
