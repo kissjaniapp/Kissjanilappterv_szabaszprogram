@@ -1596,8 +1596,8 @@
     if(stage==='parts'){
       return intro('03 / ALKATRÉSZEK','Alkatrészek megadása',
         'Az összes kijelölt bútor alkatrészeit itt egy közös listában szerkesztheted; a közös szabásterv ezekből készül.',
-        `\${designWorkflowMode()==='parts'?'<button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>':'<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>'}`)+
-        (designWorkflowMode()==='parts'&&f?threeMfUploadBlock(f):'')+
+        `${designWorkflowMode()==='parts'?'<button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>':'<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>'}`)+
+        (designWorkflowMode()==='parts'&&f?threeMfUploadBlock(f)+(f.threeMfImport?.parts?.length?threeMfImportPreview(f):''):'')+
         (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3></div>')+
         `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek.</span></div>`+warning;
     }
@@ -3082,6 +3082,19 @@
       materialId:'',materialColor:''
     }));
     f.parts=[...unrelated,...created];
+    // This 3MF has world-X as width, world-Y as depth, world-Z as height.
+    // Set only the cabinet overview dimensions; individual sheet dimensions are untouched.
+    let minimum=[Infinity,Infinity,Infinity],maximum=[-Infinity,-Infinity,-Infinity];
+    for(const part of data.parts){
+      for(let axis=0;axis<3;axis++){
+        minimum[axis]=Math.min(minimum[axis],part.originMm[axis]);
+        maximum[axis]=Math.max(maximum[axis],part.originMm[axis]+part.axisBoundsMm[axis]);
+      }
+    }
+    const spans=maximum.map((v,i)=>Math.round((v-minimum[i])*100)/100);
+    if(spans.every(x=>Number.isFinite(x)&&x>0&&x<=10000)){
+      f.w=spans[0];f.ht=spans[2];f.d=spans[1];
+    }
     f.threeMfImport=data;f.fusionImport=null;f.fusionParameters=[];
     f.dxfDrawings={};f.dxfSlots=[];f.dxfSelectedRect=null;
     result=null;
@@ -3752,6 +3765,26 @@
   function cabinetDesignerDims(f){
     return {w:f.w,h:f.ht,d:f.d,t:materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18};
   }
+  function hasPolcParameter(f){
+    return (f?.customParameters||[]).some(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
+  }
+  function applyCabinetShelfPolicy(frame,f){
+    try{
+      const doc=frame.contentDocument;if(!doc)return;
+      const title=Array.from(doc.querySelectorAll('h2')).find(x=>x.textContent?.toLocaleLowerCase('hu-HU').includes('polcok'));
+      const section=title?.closest('section.panel');if(!section)return;
+      const visible=hasPolcParameter(f);
+      section.style.display=visible?'':'none';
+      if(!visible){
+        const count=doc.getElementById('count');
+        if(count&&Number(count.value)!==0){
+          count.value='0';
+          count.dispatchEvent(new Event('change',{bubbles:true}));
+          count.dispatchEvent(new Event('input',{bubbles:true}));
+        }
+      }
+    }catch(error){console.warn('Polc-paraméter szinkron hiba:',error);}
+  }
   function mountCabinetDesigner(){
     const slot=document.querySelector('.gatterka-cabinet-inline');
     if(!slot)return;
@@ -3781,12 +3814,14 @@
     if(event.data.type==='gatterka-designer-ready'){
       frame.contentWindow.postMessage({type:'gatterka-designer-init',dims:cabinetDesignerDims(f),design:f.cabinetDesign||null},'*');
       syncCabinetDesignerTheme();
+      // The initial design is loaded asynchronously by the iframe; apply the policy afterward.
+      setTimeout(()=>applyCabinetShelfPolicy(frame,f),120);
     }else if(event.data.type==='gatterka-designer-save'&&event.data.design&&typeof event.data.design==='object'){
       f.cabinetDesign=event.data.design;
-      if(!f.dxfDrawings?.front&&Array.isArray(event.data.design.parts))syncCabinetDesignerParts(f,event.data.design.parts);
+      if(!f.threeMfImport?.parts?.length&&!f.dxfDrawings?.front&&Array.isArray(event.data.design.parts))syncCabinetDesignerParts(f,event.data.design.parts);
       save();
     }else if(event.data.type==='gatterka-cabinet-parts-draft'&&event.data.payload?.schema==='gatterka-cabinet-parts-preview-v1'){
-      if(!f.dxfDrawings?.front)syncCabinetDesignerParts(f,event.data.payload.parts);save();
+      if(!f.threeMfImport?.parts?.length&&!f.dxfDrawings?.front)syncCabinetDesignerParts(f,event.data.payload.parts);save();
     }
   });
   function render(){
