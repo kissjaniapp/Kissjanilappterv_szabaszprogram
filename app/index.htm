@@ -1535,11 +1535,19 @@
           <div class="tiny muted" style="margin-top:7px">Nyisd meg az F3D modellt a Fusionban, futtasd a fusion/GatterkaFusionExport.py szkriptet, és az elkészült JSON fájlt töltsd ide. Az F3D közvetlen böngészős feldolgozása nem támogatott.</div>
           ${fusionImportPreview(f)}
         </section>
-        ${f.dxfDrawings?.front||f.dxfDrawings?.side||f.fusionImport?.parts?.length?
-        `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · ${f.fusionImport?.parts?.length?'Fusion 3D modellből':'DXF rajzból'}</div></div><div class="panel-body">
-        <div class="tiny muted">${f.fusionImport?.parts?.length?'Fusion 3D import: a méreteket a szilárdtestek befoglaló méretei alapján olvassuk. A CNC-geometria még nincs ellenőrizve.':'A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg.'}</div>
+        <section class="panel gatterka-3mf-card" style="padding:13px;grid-column:1/-1">
+          <div class="toolbar"><strong>📦 3MF alkatrészimport</strong>
+            <button type="button" class="btn" data-action="cabinet-3mf-choose">📁 3MF fájl betöltése</button>
+            <input id="gatterka-3mf-file" type="file" accept=".3mf" style="display:none">
+          </div>
+          <div class="tiny muted" style="margin-top:7px">3MF-ből közvetlenül beolvassuk az objektumneveket, hosszúságot, szélességet, vastagságot és darabszámot. Az import megjelenik az Alkatrészek oldalon is. A 3MF nem tartalmaz Fusion-paraméterképleteket.</div>
+          ${threeMfImportPreview(f)}
+        </section>
+        ${f.dxfDrawings?.front||f.dxfDrawings?.side||f.fusionImport?.parts?.length||f.threeMfImport?.parts?.length?
+        `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · ${f.threeMfImport?.parts?.length?'3MF modellből':f.fusionImport?.parts?.length?'Fusion 3D modellből':'DXF rajzból'}</div></div><div class="panel-body">
+        <div class="tiny muted">${f.threeMfImport?.parts?.length?'3MF import: a méretek a háló befoglaló méretei.':'A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg.'}</div>
         <table style="width:100%;margin-top:10px"><thead><tr><th>Alkatrész</th><th>Méret (mm)</th><th>Darabszám</th></tr></thead><tbody class="gatterka-dxf-parts-live">
-        ${(f.fusionImport?.parts?.length?(f.fusionImport.groups||[]).map(g=>({name:g.name,a:g.dimensions[0],b:g.dimensions[1],qty:g.indices.length})):dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p))).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
+        ${(f.threeMfImport?.parts?.length?(f.threeMfImport.groups||[]).map(g=>({name:g.name,a:g.dimensions[0],b:g.dimensions[1],qty:g.indices.length})):f.fusionImport?.parts?.length?(f.fusionImport.groups||[]).map(g=>({name:g.name,a:g.dimensions[0],b:g.dimensions[1],qty:g.indices.length})):dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p))).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
         </tbody></table></div></section>`:
         `<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="${h(f.id)}" style="grid-column:1/-1;padding:12px">
           <div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A korábbi sémás ábra helyén. A beállítások az aktuális bútorhoz mentődnek.</div></div></div>
