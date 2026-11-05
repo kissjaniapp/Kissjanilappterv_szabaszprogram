@@ -59,6 +59,42 @@ def export_body(body, name, component_name, occurrence_path, matrix):
         "operations": []
     }
 
+def extract_parameters(design):
+    params = []
+    manager = design.unitsManager
+    for param in design.userParameters:
+        unit = str(param.unit or "")
+        expression = str(param.expression or "")
+        item = {
+            "name": str(param.name),
+            "unit": unit,
+            "expression": expression,
+            "comment": str(param.comment or ""),
+            "type": "text" if unit.lower() == "text" else "number"
+        }
+        if item["type"] == "text":
+            item["textValue"] = str(param.textValue)
+        else:
+            internal = float(param.value)
+            if unit.lower() in ("mm", "cm", "m", "in", "ft"):
+                item["dimension"] = "length"
+                item["value"] = round(float(manager.convert(internal, "cm", "mm")), 6)
+                item["normalizedUnit"] = "mm"
+            elif unit.lower() in ("deg", "rad"):
+                item["dimension"] = "angle"
+                item["value"] = round(float(manager.convert(internal, "rad", "deg")), 6)
+                item["normalizedUnit"] = "deg"
+            elif unit == "":
+                item["dimension"] = "unitless"
+                item["value"] = round(internal, 8)
+                item["normalizedUnit"] = ""
+            else:
+                item["dimension"] = "other"
+                item["value"] = round(internal, 8)
+                item["normalizedUnit"] = "fusion-internal"
+        params.append(item)
+    return params
+
 def run(context):
     ui = None
     try:
@@ -101,7 +137,7 @@ def run(context):
             "designName": root.name,
             "exportedAt": datetime.now(timezone.utc).isoformat(),
             "coordinateSystem": "fusion-design-world",
-            "parts": records
+            "parts": records,\n            "parameters": extract_parameters(design)
         }
         target = dialog.filename
         if not target.lower().endswith(".json"):
