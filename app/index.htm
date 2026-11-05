@@ -842,6 +842,14 @@
     const matches=(f?.customParameters||[]).filter(p=>
       String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle&&needle);
     if(!matches.length&&needle==='munkalap')return worktopFlag(f);
+    if(!matches.length){
+      const imported=(f?.fusionParameters||[]).filter(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle);
+      if(imported.length===1&&imported[0].type==='number'&&
+        ['length','unitless'].includes(imported[0].dimension)&&Number.isFinite(imported[0].value))
+        return imported[0].value;
+      if(imported.length>1)throw Error('Nem egyértelmű Fusion-paraméter: '+name);
+      if(imported.length===1)throw Error('A Fusion-paraméter nem hosszúság vagy egység nélküli szám: '+name);
+    }
     if(!matches.length)throw Error('Ismeretlen bútorparaméter: '+name);
     if(matches.length>1)throw Error('Nem egyértelmű bútorparaméter: '+name);
     const rule=matches[0],id='parameter:'+rule.id;
@@ -2798,6 +2806,18 @@
     const yaw=Math.abs(cp)>1e-7?Math.atan2(r[1][0],r[0][0]):Math.atan2(-r[0][1],r[1][1]);
     return [roll,pitch,yaw].map(v=>Math.round(v*180/Math.PI*100)/100);
   }
+  function fusionParametersPreview(f){
+    const params=f?.fusionParameters||[];
+    if(!params.length)return '';
+    const rows=params.map(param=>{
+      const value=param.type==='text'?h(param.textValue||''):nfmt(param.value)+' '+h(param.normalizedUnit||'');
+      const supported=param.type==='number'&&['length','unitless'].includes(param.dimension);
+      return '<tr><td>'+h(param.name)+'</td><td>'+value+'</td><td>'+h(param.expression||'')+'</td><td>'+h(param.unit||'egység nélküli')+'</td><td>'+(supported?'[ '+h(param.name)+' ]':'Csak referencia')+'</td></tr>';
+    }).join('');
+    return '<details style="margin-top:10px" open><summary><strong>Fusion-paraméterek ('+params.length+')</strong></summary>'+
+      '<div class="tiny muted" style="margin:8px 0">A Fusion eredeti képlete és kiszámított értéke külön megmarad. A hosszúsági és egység nélküli számok a Gatterka képleteiben [ParaméterNév] formában hivatkozhatók. A geometria az export pillanatában rögzített.</div>'+
+      '<div class="table-wrap"><table><thead><tr><th>Név</th><th>Érték</th><th>Fusion képlet</th><th>Eredeti egység</th><th>Gatterka-hivatkozás</th></tr></thead><tbody>'+rows+'</tbody></table></div></details>';
+  }
   function fusionImportPreview(f){
     const model=f?.fusionImport;
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Még nincs Fusionból importált alkatrész. Az export minden példány 3D kezdőpontját, tengelyeit és forgatási mátrixát külön megőrzi.</div>';
@@ -2811,6 +2831,7 @@
     return '<div class="mini-info" style="margin-top:10px"><strong>'+h(model.designName||'Fusion modell')+'</strong> · '+model.parts.length+' testpéldány · '+groups.length+' alkatrészsor · mm. A kezdőpont a test helyi befoglalódobozának minimum sarka a Fusion összeállítás világkoordinátáiban.</div>'+
       '<div class="tiny muted" style="margin:8px 0">Az importált méretek tengelyirányú befoglalóméretek; nem helyettesítik a CNC megmunkálás ellenőrzött kontúrját, furatait és szerszámpályáit.</div>'+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>H × Sz × V (mm)</th><th>Darab</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
+      fusionParametersPreview(f)+
       '<details style="margin-top:10px"><summary>3D pozíciók és alkatrésztengelyek (mm / egységvektor)</summary><div class="table-wrap"><table><thead><tr><th>Test</th><th>Komponens-útvonal</th><th>X0; Y0; Z0</th><th>Forgatás X°; Y°; Z°</th><th>Hossz tengelye</th><th>Szélesség tengelye</th><th>Vastagság tengelye</th></tr></thead><tbody>'+instances+'</tbody></table></div></details>';
   }
   function importFusionGeometry(text,f){
@@ -2846,7 +2867,29 @@
       if(same)same.indices.push(i);
       else groups.push({name:p.name,dimensions:p.dimensions.slice(),indices:[i]});
     }
+    // Preserve both the original Fusion expressions and their evaluated snapshot.
+    const rawParameters=data.parameters==null?[]:data.parameters;
+    if(!Array.isArray(rawParameters)||rawParameters.length>500)
+      throw Error('Túl sok vagy hibás Fusion-paraméter.');
+    const usedNames=new Set();
+    const parameters=rawParameters.map((p,i)=>{
+      const name=String(p?.name||'').trim(),unit=String(p?.unit||'').slice(0,30);
+      if(!name||name.length>100||usedNames.has(name.toLocaleLowerCase('hu-HU')))
+        throw Error('Hiányzó vagy duplikált Fusion-paraméternév a '+(i+1)+'. sorban.');
+      usedNames.add(name.toLocaleLowerCase('hu-HU'));
+      const type=p.type==='text'?'text':'number';
+      const dimension=String(p.dimension||'other');
+      const value=type==='number'?Number(p.value):null;
+      if(type==='number'&&(!Number.isFinite(value)||Math.abs(value)>1e9))
+        throw Error('Érvénytelen Fusion-paraméterérték: '+name);
+      return {name,unit,type,dimension,value,
+        normalizedUnit:String(p.normalizedUnit||'').slice(0,30),
+        expression:String(p.expression||'').slice(0,500),
+        comment:String(p.comment||'').slice(0,500),
+        textValue:type==='text'?String(p.textValue||'').slice(0,500):''};
+    });
     // Apply only after the complete file passed validation.
+    f.fusionParameters=parameters;
     f.parts=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').startsWith('fusion-'));
     // DXF and Fusion are separate alternative import routes; never mix derived parts.
     f.parts=f.parts.filter(p=>!String(p.cabinetDesignKey||'').startsWith('dxf-'));
