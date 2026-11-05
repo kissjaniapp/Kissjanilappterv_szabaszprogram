@@ -1437,6 +1437,11 @@
     if(area)area.textContent=nfmt(summary.rows.reduce((sum,r)=>sum+(r.originalA||0)*(r.originalB||0)*(r.qty||0),0)/1e6)+' m² kész alkatrészterület · összes bútor';
     const drawing=document.querySelector('[data-live-cabinet]');
     if(drawing&&drawing.classList.contains('gatterka-cabinet-inline'))syncCabinetDesignerDimensions();
+    const dxfFurniture=getFurniture();
+    if(dxfFurniture?.dxfDrawings?.front&&document.querySelector('.gatterka-dxf-card')){
+      updateDxfPreviewDom(dxfFurniture);
+      refreshDxfPartsPreview(dxfFurniture);
+    }
   }
   let liveNestingTimer=null;
   function scheduleLiveNesting(){
@@ -1485,7 +1490,7 @@
         `<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div class="panel-title">Alkatrész-előnézet · DXF rajzból</div></div><div class="panel-body">
         <div class="tiny muted">A DXF-felismert négyszögekhez kitöltött alkatrészek jelennek meg; az élő szekrényrajz DXF üzemmódban nem látható.</div>
         <table style="width:100%;margin-top:10px"><thead><tr><th>Alkatrész</th><th>Méret (mm)</th><th>Darabszám</th></tr></thead><tbody class="gatterka-dxf-parts-live">
-        ${dxfPartRecords(f).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
+        ${dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p)).map(p=>`<tr><td>${h(p.name)}</td><td>${nfmt(p.a)} × ${nfmt(p.b)}</td><td>${nfmt(p.qty)}</td></tr>`).join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>'}
         </tbody></table></div></section>`:
         `<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="${h(f.id)}" style="grid-column:1/-1;padding:12px">
           <div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A korábbi sémás ábra helyén. A beállítások az aktuális bútorhoz mentődnek.</div></div></div>
@@ -2795,6 +2800,61 @@
       if(part){part.name=row.name;part.dxfGenerated=true;}
     }
   }
+
+  // Az IF logika ugyanazt a kiértékelőt használja, mint az Alkatrészek oldal.
+  // Hibás IF-et nem rejtünk el csendben; csak a bizonyíthatóan HAMIS
+  // feltételhez tartozó DXF geometria tűnik el.
+  function dxfRectIfStatus(f,rect){
+    const slot=(f?.dxfSlots||[]).find(item=>item.rectId===rect.id);
+    const part=slot&&(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
+    if(!part||!String(part.ifCondition||'').trim())return {active:true,error:''};
+    return partIfState(part,f,materialForPart(part,f).thickness);
+  }
+  function dxfPartIfVisible(f,record){
+    const part=(f?.parts||[]).find(p=>p.cabinetDesignKey===record.key);
+    if(!part)return true;
+    const status=partIfState(part,f,materialForPart(part,f).thickness);
+    return status.active||!!status.error;
+  }
+  // Szakaszonként megnézzük, mely téglalapok határához tartozik.
+  // Ha egy él közös, és legalább egy hozzá tartozó alkatrész aktív,
+  // akkor megmarad. Ha csak hamis IF-ű elemek éle, eltűnik.
+  function dxfVisibleSegments(drawing,f){
+    if(!drawing?.rectangles?.length)return drawing?.lines||[];
+    const rectangles=drawing.rectangles,eps=.025;
+    const active=new Map(rectangles.map(r=>[r.id,dxfRectIfStatus(f,r).active||!!dxfRectIfStatus(f,r).error]));
+    const near=(a,b)=>Math.abs(a-b)<=eps;
+    const inside=(x,a,b)=>x>=a-eps&&x<=b+eps;
+    const visible=[];
+    for(const line of drawing.lines||[]){
+      let [x1,y1,x2,y2]=line;
+      const horizontal=near(y1,y2)&&!near(x1,x2);
+      const vertical=near(x1,x2)&&!near(y1,y2);
+      if(!horizontal&&!vertical){visible.push(line);continue;}
+      const axis=horizontal?'x':'y',c=horizontal?y1:x1;
+      const start=horizontal?x1:y1,end=horizontal?x2:y2;
+      const lo=Math.min(start,end),hi=Math.max(start,end);
+      const split=[lo,hi];
+      for(const r of rectangles){
+        const onBoundary=horizontal?(near(c,r.minY)||near(c,r.maxY)):(near(c,r.minX)||near(c,r.maxX));
+        if(!onBoundary)continue;
+        const a=horizontal?r.minX:r.minY,b=horizontal?r.maxX:r.maxY;
+        if(a>lo+eps&&a<hi-eps)split.push(a);
+        if(b>lo+eps&&b<hi-eps)split.push(b);
+      }
+      split.sort((a,b)=>a-b);
+      for(let k=1;k<split.length;k++){
+        const a=split[k-1],b=split[k],mid=(a+b)/2;
+        if(b-a<=eps)continue;
+        const owners=rectangles.filter(r=>horizontal?
+          (near(c,r.minY)||near(c,r.maxY))&&inside(mid,r.minX,r.maxX):
+          (near(c,r.minX)||near(c,r.maxX))&&inside(mid,r.minY,r.maxY));
+        if(owners.length&&owners.every(r=>!active.get(r.id)))continue;
+        visible.push(horizontal?[a,c,b,c]:[c,a,c,b]);
+      }
+    }
+    return visible;
+  }
   function dxfPreview(f){
     const drawings=f?.dxfDrawings||{};
     const views=[['front','Elölnézet'],['side','Oldalnézet']];
@@ -2807,11 +2867,14 @@
       const box=d.box,spanX=Math.max(.001,box.maxX-box.minX),spanY=Math.max(.001,box.maxY-box.minY);
       const scale=Math.min(670/spanX,400/spanY),ox=(730-spanX*scale)/2,oy=(440-spanY*scale)/2;
       const cv=(x,y)=>[ox+(x-box.minX)*scale,440-oy-(y-box.minY)*scale];
-      const lines=d.lines.map(([x1,y1,x2,y2])=>{
+      const lines=(view==='front'?dxfVisibleSegments(d,f):d.lines).map(([x1,y1,x2,y2])=>{
         const a=cv(x1,y1),b=cv(x2,y2);
         return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="#518779" stroke-width="1.3"/>';
       }).join('');
-      const overlays=view==='front'?(d.rectangles||[]).map(rect=>{
+      const overlays=view==='front'?(d.rectangles||[]).filter(rect=>{
+        const status=dxfRectIfStatus(f,rect);
+        return status.active||!!status.error;
+      }).map(rect=>{
         const a=cv(rect.minX,rect.maxY),w=rect.w*scale,h=rect.h*scale,selectedRect=rect.id===selected;
         return '<rect data-dxf-rect="'+hAttr(rect.id)+'" x="'+a[0]+'" y="'+a[1]+'" width="'+w+'" height="'+h+'" fill="'+(selectedRect?'#f9b54d':'#5dc5bb')+'" fill-opacity="'+(selectedRect?'.40':'.15')+'" stroke="'+(selectedRect?'#eb7d12':'#3b9b8a')+'" stroke-width="'+(selectedRect?'3.5':'2')+'" style="cursor:pointer" tabindex="0" role="button" aria-label="DXF alkatrész, '+rect.w+' × '+rect.h+' mm"></rect>';
       }).join(''):'';
@@ -2822,6 +2885,8 @@
     const rows=slots.map((slot,index)=>{
       const rect=rects.find(x=>x.id===slot.rectId);
       const highlight=slot.rectId===selected;
+      const ifState=rect?dxfRectIfStatus(f,rect):{active:true,error:''};
+      const ifLabel=ifState.error?' · IF hiba':ifState.active?'':' · IF hamis, nem látszik a rajzon';
       return '<div class="gatterka-dxf-slot" data-dxf-slot-row="'+h(slot.id)+'" style="display:grid;grid-template-columns:minmax(145px,1fr) minmax(90px,1fr) 85px minmax(110px,1fr);align-items:center;gap:9px;padding:8px;background:'+(highlight?'rgba(235,125,18,.12)':'transparent')+';border-radius:8px;border:1px solid '+(highlight?'#eb7d12':'#a6b7ac')+';margin-top:6px"><span><strong>Alkatrész '+(index+1)+'</strong></span><input data-dxf-name="'+h(slot.id)+'" aria-label="Alkatrész neve '+(index+1)+'" placeholder="Alkatrész neve" value="'+h(slot.name)+'"><input data-dxf-qty="'+h(slot.id)+'" aria-label="Darabszám '+(index+1)+'" type="number" min="1" max="999" step="1" value="'+slot.qty+'"><span class="num">'+(rect?nfmt(rect.w)+' × '+nfmt(rect.h)+' mm':'—')+'</span></div>';
     }).join('');
     const info=rects.length?'Felismerve: <strong>'+rects.length+' négyszög</strong>. Ugyanennyi alkatrészhely készült; a DXF koordinátáiból számolt méretek milliméterben értendők.':'Az előlnézeten még nincs felismerhető zárt téglalap. A jelenlegi felismerő tengelyekkel párhuzamos LINE / LWPOLYLINE négyszögeket támogat.';
@@ -2837,7 +2902,7 @@
   function refreshDxfPartsPreview(f){
     const table=document.querySelector('.gatterka-dxf-parts-live');
     if(!table)return;
-    const records=dxfPartRecords(f);
+    const records=dxfPartRecords(f).filter(p=>dxfPartIfVisible(f,p));
     table.innerHTML=records.map(p=>'<tr><td>'+h(p.name)+'</td><td>'+nfmt(p.a)+' × '+nfmt(p.b)+'</td><td>'+nfmt(p.qty)+'</td></tr>').join('')||'<tr><td colspan="3">Még nincs elnevezett alkatrész.</td></tr>';
   }
   document.addEventListener('click',event=>{
