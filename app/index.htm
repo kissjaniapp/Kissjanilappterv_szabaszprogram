@@ -2863,8 +2863,17 @@
       const axis=plate?.horizontal?'W':'H',baseline=plate?.horizontal?f.dxfReferenceDims?.w:f.dxfReferenceDims?.h;
       const formulaA=slot.dimA??(axis+'*'+((plate?.long||rect.w)/(baseline||1)).toFixed(8));
       const formulaB=slot.dimB??(depth?'D*'+(depth/(f.dxfReferenceDims?.d||depth)).toFixed(8):'');
-      return [{key:'dxf-'+slot.id,name,a:plate?.long||rect.w,b:depth||0,
-        qty:slot.rectIds.length,ready:!!plate&&!!formulaB,formulaA,formulaB,thickness:plate?.thin}];
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
+      const vars={W:+f.w,H:+f.ht,D:+f.d,T:Number(f.t)||18,S:effectiveShelves(f),O:effectiveDivider(f)};
+      const value=(formula,fallback,axis)=>{
+        try{const n=calcPartFormula(formula,vars,f,part||{},axis);return Number.isFinite(n)&&n>0?n:fallback;}
+        catch{return fallback;}
+      };
+      const x=value(part?.a||formulaA,(plate?.long||rect.w), 'x');
+      const y=value(part?.b||formulaB,depth||0, 'y');
+      return [{key:'dxf-'+slot.id,name,a:Math.round(x*100)/100,b:Math.round(y*100)/100,
+        qty:slot.rectIds.length,ready:!!plate&&!!formulaB&&y>0,
+        formulaA,formulaB,thickness:plate?.thin}];
     });
   }
   function syncDxfParts(f){
@@ -2909,43 +2918,6 @@
   // Szakaszonként megnézzük, mely téglalapok határához tartozik.
   // Ha egy él közös, és legalább egy hozzá tartozó alkatrész aktív,
   // akkor megmarad. Ha csak hamis IF-ű elemek éle, eltűnik.
-  function dxfVisibleSegments(drawing,f){
-    if(!drawing?.rectangles?.length)return drawing?.lines||[];
-    const rectangles=drawing.rectangles,eps=.025;
-    const active=new Map(rectangles.map(r=>[r.id,dxfRectIfStatus(f,r).active||!!dxfRectIfStatus(f,r).error]));
-    const near=(a,b)=>Math.abs(a-b)<=eps;
-    const inside=(x,a,b)=>x>=a-eps&&x<=b+eps;
-    const visible=[];
-    for(const line of drawing.lines||[]){
-      let [x1,y1,x2,y2]=line;
-      const horizontal=near(y1,y2)&&!near(x1,x2);
-      const vertical=near(x1,x2)&&!near(y1,y2);
-      if(!horizontal&&!vertical){visible.push(line);continue;}
-      const axis=horizontal?'x':'y',c=horizontal?y1:x1;
-      const start=horizontal?x1:y1,end=horizontal?x2:y2;
-      const lo=Math.min(start,end),hi=Math.max(start,end);
-      const split=[lo,hi];
-      for(const r of rectangles){
-        const onBoundary=horizontal?(near(c,r.minY)||near(c,r.maxY)):(near(c,r.minX)||near(c,r.maxX));
-        if(!onBoundary)continue;
-        const a=horizontal?r.minX:r.minY,b=horizontal?r.maxX:r.maxY;
-        if(a>lo+eps&&a<hi-eps)split.push(a);
-        if(b>lo+eps&&b<hi-eps)split.push(b);
-      }
-      split.sort((a,b)=>a-b);
-      for(let k=1;k<split.length;k++){
-        const a=split[k-1],b=split[k],mid=(a+b)/2;
-        if(b-a<=eps)continue;
-        const owners=rectangles.filter(r=>horizontal?
-          (near(c,r.minY)||near(c,r.maxY))&&inside(mid,r.minX,r.maxX):
-          (near(c,r.minX)||near(c,r.maxX))&&inside(mid,r.minY,r.maxY));
-        if(owners.length&&owners.every(r=>!active.get(r.id)))continue;
-        visible.push(horizontal?[a,c,b,c]:[c,a,c,b]);
-      }
-    }
-    return visible;
-  }
-
   function dxfEffectiveRectangle(f,r){
     const target=dxfScaledRect(f,r,'front'),plate=dxfPlate(r),slot=dxfSlotForRect(f,r.id);
     const part=slot&&(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+slot.id);
@@ -2954,7 +2926,9 @@
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:materialForPart(part,f).thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       const len=calcPartFormula(part.a,vars,f,part,'x');
       if(!Number.isFinite(len)||len<=0)return target;
-      return plate.horizontal?{...target,w:len,maxX:target.minX+len}:{...target,h:len,maxY:target.minY+len};
+      return plate.horizontal?
+        {...target,w:len,h:plate.thin,maxX:target.minX+len,maxY:target.minY+plate.thin}:
+        {...target,w:plate.thin,h:len,maxX:target.minX+plate.thin,maxY:target.minY+len};
     }catch{return target;}
   }
   function dxfPreview(f){
@@ -3130,7 +3104,10 @@
     const f=getFurniture(),slot=f?.dxfSlots?.find(x=>x.id===e.dataset.dxfSide);if(!slot)return;
     slot.sideRectId=e.value||null;
     const p=f.parts.find(x=>x.cabinetDesignKey==='dxf-'+slot.id);
-    if(p&&!slot.dimB)p.dxfFormulaInitialized=false;
+    if(p&&!slot.dimB){
+      const side=f.dxfDrawings.side?.rectangles.find(x=>x.id===slot.sideRectId);
+      if(side){p.b='D*'+(side.w/f.dxfReferenceDims.d).toFixed(8);p.dxfFormulaVersion=2;}
+    }
     syncDxfParts(f);save();updateDxfPreviewDom(f);refreshDxfPartsPreview(f);
   });
   document.addEventListener('click',event=>{
