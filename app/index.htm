@@ -3028,13 +3028,66 @@
         '</select></div>'+
         '<div class="gatterka-3mf-views">'+
           '<div class="gatterka-3mf-view"><strong>Elölnézet · X / Z</strong><canvas data-3mf-view="front" aria-label="3MF elölnézet" width="680" height="350"></canvas></div>'+
-          '<div class="gatterka-3mf-view"><strong>Oldalnézet · Y / Z</strong><canvas data-3mf-view="side" aria-label="3MF oldalnézet" width="680" height="350"></canvas></div>'+
+          '<div class="gatterka-3mf-view"><div class="toolbar" style="justify-content:space-between;gap:8px"><strong>Oldalnézet · Y / Z</strong><label style="display:inline-flex;align-items:center;gap:6px;font-size:12px"><input type="checkbox" data-3mf-side-panel style="width:auto"> Közeli oldallap megjelenítése</label></div><canvas data-3mf-view="side" aria-label="3MF oldalnézet" width="680" height="350"></canvas></div>'+
           '<div class="gatterka-3mf-view gatterka-3mf-view-3d"><div class="toolbar"><strong>3D nézet · forgatható</strong><button type="button" class="btn sm" data-action="3mf-reset-view">↻ Nézet visszaállítása</button></div><canvas data-3mf-view="three" aria-label="3MF 3D nézet, egérrel forgatható" width="680" height="420"></canvas><div class="tiny muted">Forgatás: bal egérgombbal húzás · Nagyítás: egérgörgő</div></div>'+
         '</div>':
         '<div class="tiny muted">Ehhez a régi importhoz nincs eltárolt háromszögháló. Töltsd be újra a 3MF fájlt a három nézethez.</div>')+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
 
+
+  function threeMfProjectPoint(p,type,a=-.62,e=.45){
+    const [x,y,z]=p;
+    if(type==='front')return [x,z,-y];
+    if(type==='side')return [y,z,-x];
+    const ca=Math.cos(a),sa=Math.sin(a),ce=Math.cos(e),se=Math.sin(e);
+    return [ca*x+sa*y,sa*se*x-ca*se*y-ce*z,sa*ce*x-ca*ce*y+se*z];
+  }
+  function threeMfNearSideIndex(parts){
+    const valid=parts.filter(p=>Array.isArray(p.originMm)&&Array.isArray(p.axisBoundsMm));
+    if(!valid.length)return -1;
+    const xMin=Math.min(...valid.map(p=>p.originMm[0]));
+    const yMin=Math.min(...valid.map(p=>p.originMm[1]));
+    const yMax=Math.max(...valid.map(p=>p.originMm[1]+p.axisBoundsMm[1]));
+    const zMin=Math.min(...valid.map(p=>p.originMm[2]));
+    const zMax=Math.max(...valid.map(p=>p.originMm[2]+p.axisBoundsMm[2]));
+    const options=[];
+    for(let i=0;i<parts.length;i++){
+      const p=parts[i];if(!Array.isArray(p.originMm)||!Array.isArray(p.axisBoundsMm))continue;
+      const [dx,dy,dz]=p.axisBoundsMm,t=p.dimensions?.[2]||18;
+      if(Math.abs(p.originMm[0]-xMin)>Math.max(1,t*.12)||
+        dx>Math.max(45,t*1.6)||dy<(yMax-yMin)*.45||dz<(zMax-zMin)*.45)continue;
+      options.push({index:i,area:dy*dz});
+    }
+    options.sort((a,b)=>b.area-a.area);
+    return options[0]?.index??-1;
+  }
+  function threeMfPlanarFaces(triangles,project){
+    const groups=[],key=p=>p.map(n=>Math.round(n*100)/100).join(',');
+    for(const face of triangles){
+      if(!Array.isArray(face)||face.length!==9||face.some(n=>!Number.isFinite(n)))continue;
+      const points=[face.slice(0,3),face.slice(3,6),face.slice(6,9)];
+      const v=points[1].map((n,i)=>n-points[0][i]),w=points[2].map((n,i)=>n-points[0][i]);
+      let normal=[v[1]*w[2]-v[2]*w[1],v[2]*w[0]-v[0]*w[2],v[0]*w[1]-v[1]*w[0]];
+      const length=Math.hypot(...normal);if(length<1e-9)continue;
+      normal=normal.map(x=>x/length);
+      if(normal.find(x=>Math.abs(x)>1e-7)<0)normal=normal.map(x=>-x);
+      const offset=normal.reduce((sum,n,i)=>sum+n*points[0][i],0);
+      let group=groups.find(g=>Math.abs(g.offset-offset)<.025&&g.normal.reduce((sum,n,i)=>sum+n*normal[i],0)>.99999);
+      if(!group){group={normal,offset,triangles:[],edges:new Map(),depth:0,count:0};groups.push(group);}
+      const projected=points.map(project);
+      group.triangles.push(projected);
+      group.depth+=projected.reduce((sum,p)=>sum+p[2],0)/3;group.count++;
+      for(let i=0;i<3;i++){
+        const p=points[i],q=points[(i+1)%3],kp=key(p),kq=key(q);
+        const edgeKey=kp<kq?kp+'|'+kq:kq+'|'+kp,existing=group.edges.get(edgeKey);
+        if(existing)existing.count++;
+        else group.edges.set(edgeKey,{count:1,ends:[project(p),project(q)]});
+      }
+    }
+    for(const g of groups)g.depth/=g.count;
+    return groups;
+  }
   const threeMfViewStates=new Map();
   function mountThreeMfViews(){
     const canvases=Array.from(document.querySelectorAll('canvas[data-3mf-view]'));
@@ -3042,99 +3095,86 @@
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
     const id=String(furniture.id);
-    if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-0.72,elevation:0.55,zoom:1,selectedGroup:-1});
+    if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-.62,elevation:.45,zoom:1,selectedGroup:-1,showNearSide:false});
     const state3d=threeMfViewStates.get(id);
     const select=document.querySelector('[data-3mf-highlight]');
     if(select){
       select.value=String(state3d.selectedGroup??-1);
-      select.addEventListener('change',()=>{
-        state3d.selectedGroup=Number(select.value);
-        for(const canvas of canvases)draw(canvas);
+      select.addEventListener('change',()=>{state3d.selectedGroup=Number(select.value);for(const c of canvases)draw(c);});
+    }
+    const sideToggle=document.querySelector('[data-3mf-side-panel]');
+    if(sideToggle){
+      sideToggle.checked=!!state3d.showNearSide;
+      sideToggle.addEventListener('change',()=>{
+        state3d.showNearSide=sideToggle.checked;
+        for(const c of canvases.filter(x=>x.dataset['3mfView']==='side'))draw(c);
       });
     }
     function draw(canvas){
-      const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');
-      if(!ctx)return;
+      const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');if(!ctx)return;
       const W=canvas.width,H=canvas.height;
       ctx.clearRect(0,0,W,H);ctx.fillStyle='#f6f9f5';ctx.fillRect(0,0,W,H);
-      const az=state3d.azimuth,el=state3d.elevation;
-      const project=p=>{
-        if(type==='front')return [p[0],-p[2],p[1]];
-        if(type==='side')return [p[1],-p[2],-p[0]];
-        const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
-        return [ca*p[0]+sa*p[1],-se*sa*p[0]+se*ca*p[1]+ce*p[2],
-          -ce*sa*p[0]+ce*ca*p[1]-se*p[2]];
-      };
-      const faces=[],unique=[];
-      const pal=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#d2ad7c','#a8a7c8','#76a6a6'];
-      for(let pi=0;pi<model.parts.length;pi++){
-        const part=model.parts[pi],triangles=part.previewTriangles||[];
-        for(const face of triangles){
-          if(!Array.isArray(face)||face.length!==9||face.some(v=>!Number.isFinite(v)))continue;
-          const vertices=[project(face.slice(0,3)),project(face.slice(3,6)),project(face.slice(6,9))];
-          unique.push(...vertices);
-          const normal=[(vertices[1][0]-vertices[0][0])*(vertices[2][1]-vertices[0][1])-
-            (vertices[1][1]-vertices[0][1])*(vertices[2][0]-vertices[0][0])];
-          const group=Number(state3d.selectedGroup);
-          const active=group<0||model.groups[group]?.indices.includes(pi);
-          faces.push({vertices,depth:vertices.reduce((sum,p)=>sum+p[2],0)/3,
-            shade:normal[0]>=0?0.83:1,base:active?pal[pi%pal.length]:'#e6eae7'});
+      const project=p=>threeMfProjectPoint(p,type,state3d.azimuth,state3d.elevation);
+      const hide=type==='side'&&!state3d.showNearSide?threeMfNearSideIndex(model.parts):-1;
+      const all=[],faces=[],pal=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#d2ad7c','#a8a7c8','#76a6a6'];
+      const selected=Number(state3d.selectedGroup);
+      for(let i=0;i<model.parts.length;i++){
+        if(i===hide)continue;
+        const active=selected<0||model.groups[selected]?.indices.includes(i);
+        for(const g of threeMfPlanarFaces(model.parts[i].previewTriangles||[],project)){
+          faces.push({g,color:active?pal[i%pal.length]:'#e6eae7'});
+          for(const tri of g.triangles)for(const p of tri)all.push(p);
         }
       }
-      if(!unique.length)return;
+      if(!all.length)return;
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
-      for(const p of unique){
-        minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
-        minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);
-      }
-      const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
-      const scale=Math.min((W-48)/spanX,(H-48)/spanY)*(type==='three'?state3d.zoom:1);
+      for(const p of all){minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);}
+      const scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY))*(type==='three'?state3d.zoom:1);
       const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
       const pos=p=>[W/2+(p[0]-cx)*scale,H/2+(p[1]-cy)*scale];
-      // Painter's order, far triangles first.
-      faces.sort((a,b)=>a.depth-b.depth);
-      for(const face of faces){
-        const points=face.vertices.map(pos);
-        ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
-        ctx.lineTo(points[1][0],points[1][1]);ctx.lineTo(points[2][0],points[2][1]);ctx.closePath();
-        ctx.fillStyle=face.base;ctx.fill();
-        ctx.lineWidth=0.65;ctx.strokeStyle='rgba(33,65,52,.45)';ctx.stroke();
-        if(face.shade<1){
-          ctx.fillStyle='rgba(22,55,46,.08)';ctx.fill();
+      faces.sort((a,b)=>a.g.depth-b.g.depth);
+      for(const {g,color} of faces){
+        ctx.fillStyle=color;
+        for(const tri of g.triangles){
+          const points=tri.map(pos);
+          ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+          ctx.lineTo(points[1][0],points[1][1]);ctx.lineTo(points[2][0],points[2][1]);
+          ctx.closePath();ctx.fill();
         }
+        // Stroke only the real face perimeter, never the shared coplanar diagonal.
+        ctx.beginPath();ctx.strokeStyle='rgba(48,72,61,.58)';ctx.lineWidth=.95;
+        for(const edge of g.edges.values()){
+          if(edge.count!==1)continue;
+          const [p,q]=edge.ends.map(pos);
+          ctx.moveTo(p[0],p[1]);ctx.lineTo(q[0],q[1]);
+        }
+        ctx.stroke();
       }
     }
-    for(const canvas of canvases)draw(canvas);
-    const orbit=canvases.find(canvas=>canvas.dataset['3mfView']==='three');
+    for(const c of canvases)draw(c);
+    const orbit=canvases.find(x=>x.dataset['3mfView']==='three');
     if(!orbit||orbit.dataset.bound==='1')return;
     orbit.dataset.bound='1';
-    let dragging=false,previousX=0,previousY=0;
-    orbit.addEventListener('pointerdown',event=>{
-      if(event.button!==0)return;
-      dragging=true;previousX=event.clientX;previousY=event.clientY;
-      orbit.setPointerCapture(event.pointerId);
+    let dragging=false,lastX=0,lastY=0;
+    orbit.addEventListener('pointerdown',e=>{
+      if(e.button!==0)return;dragging=true;lastX=e.clientX;lastY=e.clientY;orbit.setPointerCapture(e.pointerId);
     });
-    orbit.addEventListener('pointermove',event=>{
+    orbit.addEventListener('pointermove',e=>{
       if(!dragging)return;
-      const dx=event.clientX-previousX,dy=event.clientY-previousY;
-      previousX=event.clientX;previousY=event.clientY;
-      state3d.azimuth+=dx*.009;
-      state3d.elevation=Math.max(-1.48,Math.min(1.48,state3d.elevation+dy*.009));
-      draw(orbit);
+      state3d.azimuth+=(e.clientX-lastX)*.009;
+      state3d.elevation=Math.max(-1.48,Math.min(1.48,state3d.elevation+(e.clientY-lastY)*.009));
+      lastX=e.clientX;lastY=e.clientY;draw(orbit);
     });
-    const stop=()=>{dragging=false;};
-    orbit.addEventListener('pointerup',stop);
-    orbit.addEventListener('pointercancel',stop);
-    orbit.addEventListener('wheel',event=>{
-      event.preventDefault();
-      state3d.zoom=Math.max(.45,Math.min(4,state3d.zoom*Math.exp(-event.deltaY*.001)));
-      draw(orbit);
+    orbit.addEventListener('pointerup',()=>{dragging=false;});
+    orbit.addEventListener('pointercancel',()=>{dragging=false;});
+    orbit.addEventListener('wheel',e=>{
+      e.preventDefault();state3d.zoom=Math.max(.45,Math.min(4,state3d.zoom*Math.exp(-e.deltaY*.001)));draw(orbit);
     },{passive:false});
-    const reset=document.querySelector('[data-action="3mf-reset-view"]');
-    reset?.addEventListener('click',()=>{
-      state3d.azimuth=-.72;state3d.elevation=.55;state3d.zoom=1;draw(orbit);
+    document.querySelector('[data-action="3mf-reset-view"]')?.addEventListener('click',()=>{
+      state3d.azimuth=-.62;state3d.elevation=.45;state3d.zoom=1;draw(orbit);
     });
   }
+
   function threeMfApplyImport(f,data){
     // Preserve hand-entered parts; replace only records originating from 3D imports.
     // An older procedural cabinet drawing may have generated parts before the 3MF upload.
