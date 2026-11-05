@@ -2973,6 +2973,94 @@
         '<div class="tiny muted">Ehhez a régi importhoz nincs eltárolt háromszögháló. Töltsd be újra a 3MF fájlt a három nézethez.</div>')+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
   }
+
+  const threeMfViewStates=new Map();
+  function mountThreeMfViews(){
+    const canvases=Array.from(document.querySelectorAll('canvas[data-3mf-view]'));
+    if(!canvases.length)return;
+    const furniture=getFurniture(),model=furniture?.threeMfImport;
+    if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
+    const id=String(furniture.id);
+    if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-0.72,elevation:0.55,zoom:1});
+    const state3d=threeMfViewStates.get(id);
+    function draw(canvas){
+      const type=canvas.dataset['3mfView'],ctx=canvas.getContext('2d');
+      if(!ctx)return;
+      const W=canvas.width,H=canvas.height;
+      ctx.clearRect(0,0,W,H);ctx.fillStyle='#f6f9f5';ctx.fillRect(0,0,W,H);
+      const az=state3d.azimuth,el=state3d.elevation;
+      const project=p=>{
+        if(type==='front')return [p[0],-p[2],p[1]];
+        if(type==='side')return [p[1],-p[2],-p[0]];
+        const ca=Math.cos(az),sa=Math.sin(az),ce=Math.cos(el),se=Math.sin(el);
+        return [ca*p[0]+sa*p[1],-se*sa*p[0]+se*ca*p[1]+ce*p[2],
+          -ce*sa*p[0]+ce*ca*p[1]-se*p[2]];
+      };
+      const faces=[],unique=[];
+      const pal=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#d2ad7c','#a8a7c8','#76a6a6'];
+      for(let pi=0;pi<model.parts.length;pi++){
+        const part=model.parts[pi],triangles=part.previewTriangles||[];
+        for(const face of triangles){
+          if(!Array.isArray(face)||face.length!==9||face.some(v=>!Number.isFinite(v)))continue;
+          const vertices=[project(face.slice(0,3)),project(face.slice(3,6)),project(face.slice(6,9))];
+          unique.push(...vertices);
+          const normal=[(vertices[1][0]-vertices[0][0])*(vertices[2][1]-vertices[0][1])-
+            (vertices[1][1]-vertices[0][1])*(vertices[2][0]-vertices[0][0])];
+          faces.push({vertices,depth:vertices.reduce((sum,p)=>sum+p[2],0)/3,
+            shade:normal[0]>=0?0.83:1,base:pal[pi%pal.length]});
+        }
+      }
+      if(!unique.length)return;
+      const minX=Math.min(...unique.map(p=>p[0])),maxX=Math.max(...unique.map(p=>p[0]));
+      const minY=Math.min(...unique.map(p=>p[1])),maxY=Math.max(...unique.map(p=>p[1]));
+      const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
+      const scale=Math.min((W-48)/spanX,(H-48)/spanY)*(type==='three'?state3d.zoom:1);
+      const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+      const pos=p=>[W/2+(p[0]-cx)*scale,H/2+(p[1]-cy)*scale];
+      // Painter's order, far triangles first.
+      faces.sort((a,b)=>a.depth-b.depth);
+      for(const face of faces){
+        const points=face.vertices.map(pos);
+        ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);
+        ctx.lineTo(points[1][0],points[1][1]);ctx.lineTo(points[2][0],points[2][1]);ctx.closePath();
+        ctx.fillStyle=face.base;ctx.fill();
+        ctx.lineWidth=0.65;ctx.strokeStyle='rgba(33,65,52,.45)';ctx.stroke();
+        if(face.shade<1){
+          ctx.fillStyle='rgba(22,55,46,.08)';ctx.fill();
+        }
+      }
+    }
+    for(const canvas of canvases)draw(canvas);
+    const orbit=canvases.find(canvas=>canvas.dataset['3mfView']==='three');
+    if(!orbit||orbit.dataset.bound==='1')return;
+    orbit.dataset.bound='1';
+    let dragging=false,previousX=0,previousY=0;
+    orbit.addEventListener('pointerdown',event=>{
+      if(event.button!==0)return;
+      dragging=true;previousX=event.clientX;previousY=event.clientY;
+      orbit.setPointerCapture(event.pointerId);
+    });
+    orbit.addEventListener('pointermove',event=>{
+      if(!dragging)return;
+      const dx=event.clientX-previousX,dy=event.clientY-previousY;
+      previousX=event.clientX;previousY=event.clientY;
+      state3d.azimuth+=dx*.009;
+      state3d.elevation=Math.max(-1.48,Math.min(1.48,state3d.elevation+dy*.009));
+      draw(orbit);
+    });
+    const stop=()=>{dragging=false;};
+    orbit.addEventListener('pointerup',stop);
+    orbit.addEventListener('pointercancel',stop);
+    orbit.addEventListener('wheel',event=>{
+      event.preventDefault();
+      state3d.zoom=Math.max(.45,Math.min(4,state3d.zoom*Math.exp(-event.deltaY*.001)));
+      draw(orbit);
+    },{passive:false});
+    const reset=document.querySelector('[data-action="3mf-reset-view"]');
+    reset?.addEventListener('click',()=>{
+      state3d.azimuth=-.72;state3d.elevation=.55;state3d.zoom=1;draw(orbit);
+    });
+  }
   function threeMfApplyImport(f,data){
     // Preserve hand-entered parts; replace only records originating from 3D imports.
     const unrelated=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').match(/^(?:3mf|fusion|dxf)-/));
@@ -3705,9 +3793,9 @@
         (state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():
          state.active==='stock'?stockPage():state.active==='nesting'?nestingView():
          state.active==='labels'?labelsPage():state.active==='save'?savePage():materialsPage());
-      mountCabinetDesigner();return;
+      mountCabinetDesigner();mountThreeMfViews();return;
     }
-    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();}
+    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();mountThreeMfViews();}
   function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
