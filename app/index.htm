@@ -1674,12 +1674,13 @@
       lastFurniture=f.id;
       const edge=h(r.edge||'0-0');
       const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
-      const abs=r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
+      const abs=partAbsSummary(part);
       const marked=(number,count)=>'<span class="dimension-printed"><span class="dimension-number">'+
         nfmt(number)+'</span><span aria-hidden="true" class="dimension-mark-slot mark-'+count+'"></span></span>';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
         '<td class="num">'+marked(r.originalA,dimensionUnderline(part,'a'))+
-        ' × '+marked(r.originalB,dimensionUnderline(part,'b'))+' mm</td>'+
+        ' × '+marked(r.originalB,dimensionUnderline(part,'b'))+' mm'+
+        '<button type="button" class="btn sm ghost" style="margin-left:10px" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Szálirány felcserélése az összes nézetben és a szabászati adatokban">⇄ X/Y</button></td>'+
         '<td class="num">'+nfmt(r.a)+' × '+nfmt(r.b)+' mm</td>'+
         '<td class="num">'+nfmt(r.qty)+' db</td>'+
         '<td>'+edge+'</td><td>'+filing+'</td><td class="abs-value">'+abs+'</td></tr>';
@@ -1703,7 +1704,7 @@
     const panel='<div class="panel"><div class="panel-head"><div>'+
       '<div class="panel-title">Szabásba kerülő alkatrészek</div>'+
       '<div class="panel-sub">Csak a feltétel nélküliek és az igaz IF-es alkatrészek. '+
-      'A táblázat csak olvasható.</div></div></div>'+
+      'A táblázat méretei az alkatrészlistából származnak; a ⇄ X/Y gombbal itt is megfordítható a szálirány.</div></div></div>'+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th>'+
       '<th>Készméret (X × Y)</th><th>Szabásméret (X × Y)</th>'+
       '<th>Darabszám</th><th>Élzárás jelölése</th><th>Reszelés</th><th>ABS vastagság</th></tr></thead><tbody>'+
@@ -3070,7 +3071,12 @@
   function threeMfImportPreview(f){
     const model=f?.threeMfImport;
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
-    const rows=model.groups.map(g=>'<tr><td>'+h(g.name)+'</td><td>'+g.dimensions.map(nfmt).join(' × ')+'</td><td>'+g.indices.length+'</td></tr>').join('');
+    const rows=model.groups.map((g,index)=>{
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
+      const dims=part?[part.a,part.b,part.threeMfThickness]:g.dimensions;
+      const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
+      return '<tr><td>'+h(part?.name||g.name)+'</td><td>'+dims.map(nfmt).join(' × ')+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
+    }).join('');
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
       model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
@@ -5630,6 +5636,13 @@
           const small=el.closest('td')?.querySelector('.tiny');
           if(owner&&small)small.textContent=nfmt(materialForPart(target,owner).thickness)+' mm';
         }
+        if(scope==='part'&&(key==='edgeThickness'||key==='edgeSideThickness')){
+          const row=el.closest('tr'),mill=row?.querySelector('[data-key="mill"]'),
+                depth=row?.querySelector('[data-key="millDepth"]');
+          const anyTwo=allPartSides.some(side=>partEdgeThicknesses(target)[side]===2);
+          if(mill){mill.disabled=!anyTwo;mill.checked=!!target.mill&&anyTwo;}
+          if(depth)depth.disabled=!anyTwo||!target.mill;
+        }
         if(scope==='part'&&key==='edgeThickness'){
           const row=el.closest('tr'),mill=row?.querySelector('[data-key="mill"]'),
                 depth=row?.querySelector('[data-key="millDepth"]');
@@ -5639,6 +5652,9 @@
         if(scope==='furniture'&&key==='materialId'){
           const label=document.querySelector('[data-material-thickness-view="'+target.id+'"]');
           if(label)label.textContent=nfmt(materialCatalog.find(m=>m.id===target.materialId)?.thickness??target.t??18)+' mm';
+        }
+        if(scope==='part'&&['edgeSideThickness','edge','edgeThickness'].includes(key)){
+          result=null;save();render();return;
         }
         refreshLiveFormulaValues();save();return;
       }
