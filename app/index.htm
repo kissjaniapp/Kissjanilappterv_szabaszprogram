@@ -3038,8 +3038,8 @@
 
   function threeMfProjectPoint(p,type,a=-.62,e=.45){
     const [x,y,z]=p;
-    if(type==='front')return [x,z,-y];
-    if(type==='side')return [y,z,-x];
+    if(type==='front')return [x,-z,-y];
+    if(type==='side')return [y,-z,-x];
     const ca=Math.cos(a),sa=Math.sin(a),ce=Math.cos(e),se=Math.sin(e);
     return [ca*x+sa*y,sa*se*x-ca*se*y-ce*z,sa*ce*x-ca*ce*y+se*z];
   }
