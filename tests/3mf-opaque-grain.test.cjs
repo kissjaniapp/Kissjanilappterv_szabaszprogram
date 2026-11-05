@@ -53,15 +53,12 @@ test('3MF 3D rajzolóban a közeli szilárd lap eltakarja a távoli lapot (Z-buf
 });
 
 test('X/Y szálirány megfordítás az élzárást és reszelést is helyesen cseréli',()=>{
-  const start=html.indexOf('function swapPartGrainAxes(');
+  const start=html.indexOf('function sidesFromCode(');
   const end=html.indexOf('  function codeFromSides(',start);
   assert.ok(start>0&&end>start);
-  const swap=vm.runInNewContext('('+html.slice(start,end).trim()+')',{
-    sidesFromCode:code=>{
-      const [x,y]=code.split('-').map(Number);
-      return {x1:x>0,x2:x===2,y1:y>0,y2:y===2};
-    }
-  });
+  // The grain swap intentionally uses the same four-edge ABS helper as the app.
+  const swap=vm.runInNewContext('(function(){'+html.slice(start,end)+
+    ';return swapPartGrainAxes;})()',{});
   const part={a:'964',b:'464',edge:'1-2',filingSides:{x1:true,x2:false,y1:false,y2:true},mill:true,millDepth:1};
   swap(part);
   assert.equal(part.a,'464');
