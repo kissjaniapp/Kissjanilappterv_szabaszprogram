@@ -810,10 +810,38 @@
   // A bútornak vannak önálló, névvel hivatkozható IF-paraméterei.
   // [paraméter neve] minden méret-/darabszámképletben 1 vagy 0 értéket ad.
   // A hivatkozás csak az AKTUÁLIS bútor saját paramétereit keresheti.
+  // Minden projektben létező, alapból rejtett paraméter. Alapértéke 0.
+  // Ha a tulajdonos létrehoz egy saját 'munkalap' paramétert, annak 1-es
+  // értéke kifejezetten engedélyezheti a 38 mm-es munkalapokat.
+  function worktopFlag(f){
+    const matches=(f?.customParameters||[]).filter(p=>
+      String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='munkalap');
+    if(matches.length>1)throw Error('Nem egyértelmű munkalap paraméter');
+    if(matches.length){
+      const value=String(matches[0].value??'').trim();
+      if(!/^[01]$/.test(value))throw Error('A munkalap paraméter értéke csak 0 vagy 1 lehet');
+      return Number(value);
+    }
+    return 0;
+  }
+  function ensureWorktopPartIf(part,thickness){
+    if(!part)return;
+    const current=String(part.ifCondition||'').trim();
+    if(Number(thickness)===38){
+      if(!/(?:^|&&)\s*(?:\[munkalap\]|munkalap)\s*(?:==|=)\s*1\s*(?:&&|$)/i.test(current)){
+        part.ifCondition=current?current+'&&munkalap=1':'munkalap=1';
+        part.autoWorktopIf=true;
+      }
+    }else if(part.autoWorktopIf){
+      part.ifCondition=current.replace(/&&\s*munkalap\s*=\s*1\s*$/i,'').replace(/^munkalap\s*=\s*1$/i,'').trim();
+      part.autoWorktopIf=false;
+    }
+  }
   function namedFurnitureParameter(name,vars,f,visited=[]){
     const needle=String(name||'').trim().toLocaleLowerCase('hu-HU');
     const matches=(f?.customParameters||[]).filter(p=>
       String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle&&needle);
+    if(!matches.length&&needle==='munkalap')return worktopFlag(f);
     if(!matches.length)throw Error('Ismeretlen bútorparaméter: '+name);
     if(matches.length>1)throw Error('Nem egyértelmű bútorparaméter: '+name);
     const rule=matches[0],id='parameter:'+rule.id;
@@ -853,7 +881,8 @@
           const parameters=(f?.customParameters||[]).filter(p=>
             String(p.name||'').trim().toLocaleLowerCase('hu-HU')===
             term.toLocaleLowerCase('hu-HU')&&term);
-          if(parameters.length===1)return namedFurnitureParameter(term,vars,f,visited);
+          if(parameters.length===1||term.toLocaleLowerCase('hu-HU')==='munkalap')
+            return namedFurnitureParameter(term,vars,f,visited);
           if(parameters.length>1)throw Error('Nem egyértelmű bútorparaméter: '+term);
           return calcPartFormula(term,vars,f,
             part||{id:'parameter-definition:'+visited.join(':'),name:'Paraméter'},'if',visited);
@@ -896,6 +925,9 @@
   }
   function partIfState(part,f,thickness){
     try{
+      ensureWorktopPartIf(part,thickness);
+      // A munkalap-engedély akkor is kötelező, ha az egyéni IF-ben OR szerepel.
+      if(Number(thickness)===38&&worktopFlag(f)!==1)return {active:false,error:''};
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,
         S:effectiveShelves(f),O:effectiveDivider(f)};
       return {active:evaluateFurnitureIf(part.ifCondition,vars,f,part),error:''};
@@ -1307,6 +1339,7 @@
       for(const part of f.parts){
         const material=materialForPart(part,f),thickness=material.thickness;
         vars.T=thickness;
+        ensureWorktopPartIf(part,thickness);
         if(!String(part.name||'').trim()||!String(part.a||'').trim()||!String(part.b||'').trim()||!String(part.q||'').trim()){
           rows.push({furniture:f,part,skipped:true,qty:0});
           continue;
