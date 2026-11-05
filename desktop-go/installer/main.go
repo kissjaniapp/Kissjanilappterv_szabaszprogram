@@ -113,7 +113,9 @@ func stopGatterka(root,local string)error{
   "($_.ExecutablePath -and ($_.ExecutablePath -ieq $exe -or $_.ExecutablePath -ieq $oldExe)) -or "+
   "(($_.Name -ieq 'msedge.exe' -or $_.Name -ieq 'chrome.exe') -and "+
   "$_.CommandLine -and $_.CommandLine.IndexOf($profile,[System.StringComparison]::OrdinalIgnoreCase) -ge 0) "+
-  "} | ForEach-Object {Stop-Process -Id $_.ProcessId -Force -ErrorAction Stop}"
+  "} | ForEach-Object { $pidToStop=[int]$_.ProcessId; "+
+  "try { Stop-Process -Id $pidToStop -Force -ErrorAction Stop } "+
+  "catch { if (Get-Process -Id $pidToStop -ErrorAction SilentlyContinue) { throw } } }"
  cmd:=exec.Command("powershell.exe","-NoProfile","-NonInteractive","-Command",ps)
  cmd.SysProcAttr=&syscall.SysProcAttr{HideWindow:true}
  if out,err:=cmd.CombinedOutput();err!=nil{return fmt.Errorf("Az elozo Gatterka ablak nem zarhato le: %w: %s",err,string(out))}
