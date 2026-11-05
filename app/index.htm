@@ -2992,29 +2992,50 @@
   }
 
 
+
   let pendingDxfSlot=null,pendingDxfRect=null;
+  function dxfPairError(message){
+    const output=document.querySelector('[data-dxf-pair-status]');
+    if(output){output.textContent=message;output.style.color='#b84c39';}
+  }
   function assignDxfRectangle(f,slotId,rectId){
-    if(!f?.dxfDrawings?.front)return;
-    const slots=f.dxfSlots||[],target=slots.find(x=>x.id===slotId),old=slots.find(x=>x.rectId===rectId);
-    if(!target||!old)return;
-    if(target!==old){
-      const previous=target.rectId;target.rectId=rectId;old.rectId=previous;
+    if(!f?.dxfDrawings?.front)return false;
+    ensureDxfSlots(f);
+    const rects=f.dxfDrawings.front.rectangles||[],target=f.dxfSlots.find(x=>x.id===slotId);
+    const source=dxfSlotForRect(f,rectId),incoming=rects.find(x=>x.id===rectId);
+    const existing=rects.find(x=>(target?.rectIds||[]).includes(x.id));
+    if(!target||!source||!incoming)return false;
+    if(existing&&!dxfSameSize(existing,incoming)){
+      dxfPairError('Eltérő DXF-méret! Csak egyező szélességű és magasságú téglalapok társíthatók.');
+      return false;
     }
-    f.dxfSelectedRect=rectId;
-    pendingDxfSlot=null;pendingDxfRect=null;
-    syncDxfParts(f);save();
-    updateDxfPreviewDom(f);refreshDxfPartsPreview(f);
+    if(source!==target){
+      source.rectIds=source.rectIds.filter(id=>id!==rectId);
+      source.rectId=source.rectIds[0]||null;source.qty=source.rectIds.length;
+      target.rectIds.push(rectId);target.rectId=target.rectIds[0];target.qty=target.rectIds.length;
+    }
+    f.dxfSelectedRect=rectId;pendingDxfSlot=null;pendingDxfRect=null;
+    syncDxfParts(f);save();updateDxfPreviewDom(f);refreshDxfPartsPreview(f);
+    return true;
   }
   function chooseDxfSlot(f,id){
-    const slot=(f?.dxfSlots||[]).find(s=>s.id===id);if(!slot)return;
+    ensureDxfSlots(f);
+    const slot=f?.dxfSlots?.find(x=>x.id===id);if(!slot)return;
     if(pendingDxfRect){assignDxfRectangle(f,id,pendingDxfRect);return;}
-    pendingDxfSlot=id;f.dxfSelectedRect=slot.rectId;
-    updateDxfPreviewDom(f);save();
+    pendingDxfSlot=id;f.dxfSelectedRect=slot.rectIds[0]||null;updateDxfPreviewDom(f);save();
   }
   function chooseDxfRectangle(f,id){
     if(pendingDxfSlot){assignDxfRectangle(f,pendingDxfSlot,id);return;}
-    pendingDxfRect=id;f.dxfSelectedRect=id;
-    updateDxfPreviewDom(f);save();
+    pendingDxfRect=id;f.dxfSelectedRect=id;updateDxfPreviewDom(f);save();
+  }
+  function setDxfDimensions(f,id,a,b){
+    const slot=f?.dxfSlots?.find(x=>x.id===id);if(!slot)return false;
+    const values=[String(a??'').trim(),String(b??'').trim()];
+    if(values.some(x=>!x)){dxfPairError('Mindkét mérethez számot vagy képletet kell megadni.');return false;}
+    const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='dxf-'+id);
+    if(part){part.a=values[0];part.b=values[1];part.dxfFormulaInitialized=true;}
+    slot.dimA=values[0];slot.dimB=values[1];
+    result=null;save();updateDxfPreviewDom(f);refreshDxfPartsPreview(f);return true;
   }
   function refreshDxfPartsPreview(f){
     const table=document.querySelector('.gatterka-dxf-parts-live');
