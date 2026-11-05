@@ -281,7 +281,7 @@
     @media(max-width:900px){.gatterka-3mf-views{grid-template-columns:1fr}}
 
   /* The parts table scrolls independently: the labels remain visible while editing rows. */
-  .parts-table-scroll{max-height:min(72vh,840px);overflow:auto;overscroll-behavior:contain;position:relative}
+  .parts-table-scroll{max-height:none;overflow:visible;position:relative}
   .parts-table-scroll table{border-collapse:separate;border-spacing:0}
   .parts-table-scroll thead th{position:sticky;top:0;z-index:5;background:var(--surface,#20382f);box-shadow:0 2px 0 rgba(114,159,133,.45)}
   .part-xy-fields{display:grid;grid-template-columns:minmax(110px,1fr) minmax(110px,1fr);gap:12px;position:relative;padding-top:24px;align-items:start;min-width:270px}
@@ -289,7 +289,7 @@
   .part-xy-fields .expr-cell{max-width:100%}
   .part-xy-fields .expr{width:100%;min-width:0}
 
-  .edge-thickness-four{display:grid;grid-template-columns:repeat(2,minmax(63px,1fr));gap:5px;min-width:156px}
+  .edge-thickness-four{display:grid;grid-template-columns:repeat(2,minmax(63px,1fr));grid-template-rows:repeat(2,auto);grid-auto-flow:column;gap:7px 9px;min-width:156px}
   .edge-thickness-four label{font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:space-between;gap:3px;white-space:nowrap}
   .edge-thickness-four select{font-size:11px;width:75px;padding:5px 2px}
   </style>
@@ -3212,9 +3212,34 @@
       const image=ctx.createImageData(W,H),data=image.data;
       for(let i=0;i<data.length;i+=4){data[i]=246;data[i+1]=249;data[i+2]=245;data[i+3]=255;}
       if(!faces.length){ctx.putImageData(image,0,0);return;}
-      const scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY))*
-        (type==='three'?state3d.zoom:1);
-      const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
+      // The 3D viewport uses a rotation-independent model bounding sphere.
+      // Re-fitting the projected bounds on each pointer move looked like zooming.
+      let scale,cx,cy;
+      if(type==='three'){
+        const boundsMin=[Infinity,Infinity,Infinity],boundsMax=[-Infinity,-Infinity,-Infinity];
+        for(const part of model.parts){
+          const lo=part.originMm,ext=part.axisBoundsMm;
+          if(!Array.isArray(lo)||!Array.isArray(ext))continue;
+          for(let axis=0;axis<3;axis++){
+            boundsMin[axis]=Math.min(boundsMin[axis],lo[axis]);
+            boundsMax[axis]=Math.max(boundsMax[axis],lo[axis]+ext[axis]);
+          }
+        }
+        if(boundsMin.every(Number.isFinite)&&boundsMax.every(Number.isFinite)){
+          const span=boundsMin.map((lo,i)=>boundsMax[i]-lo);
+          const diameter=Math.max(1,Math.hypot(...span));
+          const worldCenter=boundsMin.map((lo,i)=>(lo+boundsMax[i])/2);
+          const projectedCenter=project(worldCenter);
+          cx=projectedCenter[0];cy=projectedCenter[1];
+          scale=Math.min(W-48,H-48)/diameter*state3d.zoom;
+        }else{
+          cx=(minX+maxX)/2;cy=(minY+maxY)/2;
+          scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY))*state3d.zoom;
+        }
+      }else{
+        cx=(minX+maxX)/2;cy=(minY+maxY)/2;
+        scale=Math.min((W-48)/Math.max(1,maxX-minX),(H-48)/Math.max(1,maxY-minY));
+      }
       const depth=new Float32Array(W*H),faceAt=new Int32Array(W*H);
       depth.fill(-Infinity);
       for(const face of faces){
