@@ -2879,12 +2879,15 @@
     if(!instances.length)throw Error('A 3MF fájlban nincs összeszerelt modell.');
     const number=(x,label)=>{const n=Number(x);if(!Number.isFinite(n)||Math.abs(n)>1e8)
       throw Error('Érvénytelen 3MF koordináta: '+label);return n;};
-    const identity=[1,0,0,0,1,0,0,0,1,0,0,0];
+    const identity=[1,0,0,0,0,1,0,0,0,0,1,0];
     const decodeTransform=value=>{
       if(!value)return identity;
       const nums=value.trim().split(/\s+/).map(Number);
       if(nums.length!==12||nums.some(n=>!Number.isFinite(n)))throw Error('Érvénytelen 3MF transzformáció.');
-      return nums;
+      // 3MF encodes a row-vector 4x3 matrix. Convert to our 3x4 column-vector form.
+      return [nums[0],nums[3],nums[6],nums[9],
+        nums[1],nums[4],nums[7],nums[10],
+        nums[2],nums[5],nums[8],nums[11]];
     };
     const apply=(m,p)=>[
       m[0]*p[0]+m[1]*p[1]+m[2]*p[2]+m[3],
@@ -3011,8 +3014,11 @@
         }
       }
       if(!unique.length)return;
-      const minX=Math.min(...unique.map(p=>p[0])),maxX=Math.max(...unique.map(p=>p[0]));
-      const minY=Math.min(...unique.map(p=>p[1])),maxY=Math.max(...unique.map(p=>p[1]));
+      let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+      for(const p of unique){
+        minX=Math.min(minX,p[0]);maxX=Math.max(maxX,p[0]);
+        minY=Math.min(minY,p[1]);maxY=Math.max(maxY,p[1]);
+      }
       const spanX=Math.max(1,maxX-minX),spanY=Math.max(1,maxY-minY);
       const scale=Math.min((W-48)/spanX,(H-48)/spanY)*(type==='three'?state3d.zoom:1);
       const cx=(minX+maxX)/2,cy=(minY+maxY)/2;
