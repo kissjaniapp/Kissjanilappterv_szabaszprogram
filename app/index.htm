@@ -3082,7 +3082,10 @@
   }
   function threeMfApplyImport(f,data){
     // Preserve hand-entered parts; replace only records originating from 3D imports.
-    const unrelated=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').match(/^(?:3mf|fusion|dxf)-/));
+    // An older procedural cabinet drawing may have generated parts before the 3MF upload.
+    // Keep manually entered parts, but never mix procedural, DXF or Fusion generated parts
+    // into the imported model's part list.
+    const unrelated=(f.parts||[]).filter(p=>!p.cabinetDesignKey);
     const created=data.groups.map((g,i)=>({
       id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
       name:g.name,a:String(Math.round(g.dimensions[0]*100)/100),
@@ -3108,6 +3111,7 @@
     if(spans.every(x=>Number.isFinite(x)&&x>0&&x<=10000)){
       f.w=spans[0];f.ht=spans[2];f.d=spans[1];
     }
+    threeMfViewStates.delete(String(f.id)); // A new file gets its own default viewpoint.
     f.threeMfImport=data;f.fusionImport=null;f.fusionParameters=[];
     f.dxfDrawings={};f.dxfSlots=[];f.dxfSelectedRect=null;
     result=null;
@@ -5023,6 +5027,10 @@
     else if(action==='choose-workflow-mode'){
       if(!['design','parts'].includes(el.dataset.mode))return;
       state.designMode=el.dataset.mode;
+      if(el.dataset.mode==='parts'){
+        const furniture=getFurniture();
+        if(furniture&&!String(furniture.name||'').trim())furniture.name='Alkatrészlista';
+      }
       state.active=el.dataset.mode==='parts'?'parts':'furniture';
       notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
