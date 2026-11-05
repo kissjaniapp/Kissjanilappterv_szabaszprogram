@@ -2790,6 +2790,14 @@
     }
     return [...candidates.values()].sort((a,b)=>b.maxY-a.maxY||a.minX-b.minX||a.minY-b.minY).slice(0,150);
   }
+  function fusionEulerAngles(matrix){
+    // Z-Y-X Euler decomposition of the component-local XYZ frame in world coordinates.
+    const r=matrix,sy=Math.max(-1,Math.min(1,-r[2][0]));
+    const pitch=Math.asin(sy),cp=Math.cos(pitch);
+    const roll=Math.abs(cp)>1e-7?Math.atan2(r[2][1],r[2][2]):0;
+    const yaw=Math.abs(cp)>1e-7?Math.atan2(r[1][0],r[0][0]):Math.atan2(-r[0][1],r[1][1]);
+    return [roll,pitch,yaw].map(v=>Math.round(v*180/Math.PI*100)/100);
+  }
   function fusionImportPreview(f){
     const model=f?.fusionImport;
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Még nincs Fusionból importált alkatrész. Az export minden példány 3D kezdőpontját, tengelyeit és forgatási mátrixát külön megőrzi.</div>';
@@ -2798,12 +2806,12 @@
     const instances=model.parts.map((p,i)=>{
       const axes=p.axes||{};
       const fmt=v=>Array.isArray(v)?v.map(n=>nfmt(Number(n))).join('; '):'—';
-      return '<tr><td>'+h(p.name)+'</td><td>'+h(p.occurrence||'Root')+'</td><td>'+fmt(p.originMm)+'</td><td>'+fmt(axes.length)+'</td><td>'+fmt(axes.width)+'</td><td>'+fmt(axes.thickness)+'</td></tr>';
+      return '<tr><td>'+h(p.name)+'</td><td>'+h(p.occurrence||'Root')+'</td><td>'+fmt(p.originMm)+'</td><td>'+fmt(fusionEulerAngles(p.transform))+'</td><td>'+fmt(axes.length)+'</td><td>'+fmt(axes.width)+'</td><td>'+fmt(axes.thickness)+'</td></tr>';
     }).join('');
     return '<div class="mini-info" style="margin-top:10px"><strong>'+h(model.designName||'Fusion modell')+'</strong> · '+model.parts.length+' testpéldány · '+groups.length+' alkatrészsor · mm. A kezdőpont a test helyi befoglalódobozának minimum sarka a Fusion összeállítás világkoordinátáiban.</div>'+
       '<div class="tiny muted" style="margin:8px 0">Az importált méretek tengelyirányú befoglalóméretek; nem helyettesítik a CNC megmunkálás ellenőrzött kontúrját, furatait és szerszámpályáit.</div>'+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>H × Sz × V (mm)</th><th>Darab</th></tr></thead><tbody>'+rows+'</tbody></table></div>'+
-      '<details style="margin-top:10px"><summary>3D pozíciók és alkatrésztengelyek (mm / egységvektor)</summary><div class="table-wrap"><table><thead><tr><th>Test</th><th>Komponens-útvonal</th><th>X0; Y0; Z0</th><th>Hossz tengelye</th><th>Szélesség tengelye</th><th>Vastagság tengelye</th></tr></thead><tbody>'+instances+'</tbody></table></div></details>';
+      '<details style="margin-top:10px"><summary>3D pozíciók és alkatrésztengelyek (mm / egységvektor)</summary><div class="table-wrap"><table><thead><tr><th>Test</th><th>Komponens-útvonal</th><th>X0; Y0; Z0</th><th>Forgatás X°; Y°; Z°</th><th>Hossz tengelye</th><th>Szélesség tengelye</th><th>Vastagság tengelye</th></tr></thead><tbody>'+instances+'</tbody></table></div></details>';
   }
   function importFusionGeometry(text,f){
     let data;
