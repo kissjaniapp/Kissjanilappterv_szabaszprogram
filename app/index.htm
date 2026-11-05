@@ -501,7 +501,7 @@
     const base=materialCatalog.find(m=>m.id===f?.materialId);
     const selected=own||base;
     return {color:String(selected?.color||part?.materialColor||f.materialColor||'Freya').trim(),
-      thickness:Number((part?.fusionGenerated&&!own&&Number(part.fusionThickness)>0)?part.fusionThickness:(selected?.thickness??f.t??18)),
+      thickness:Number(((part?.fusionGenerated||part?.threeMfGenerated)&&!own&&Number(part.fusionThickness??part.threeMfThickness)>0)?(part.fusionThickness??part.threeMfThickness):(selected?.thickness??f.t??18)),
       name:selected?.color||'Korábbi mentett anyag'};
   }
   function materialOptions(part,f){
@@ -2806,6 +2806,166 @@
     }
     return [...candidates.values()].sort((a,b)=>b.maxY-a.maxY||a.minX-b.minX||a.minY-b.minY).slice(0,150);
   }
+  // Standalone 3MF/ZIP reader. No network dependency or external ZIP service.
+  async function threeMfZipModel(file){
+    const buffer=await file.arrayBuffer(),bytes=new Uint8Array(buffer),view=new DataView(buffer);
+    if(bytes.length>20*1024*1024)throw Error('A 3MF legfeljebb 20 MB lehet.');
+    const u16=i=>view.getUint16(i,true),u32=i=>view.getUint32(i,true);
+    let eocd=-1;
+    for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--)
+      if(u32(i)===0x06054b50){eocd=i;break;}
+    if(eocd<0)throw Error('A fájl nem érvényes ZIP/3MF.');
+    const count=u16(eocd+10),central=u32(eocd+16),total=u32(eocd+12);
+    if(count>500||central+total>bytes.length)throw Error('Sérült vagy túl nagy 3MF fájltábla.');
+    const decoder=new TextDecoder('utf-8');
+    let cursor=central,entry=null;
+    for(let i=0;i<count;i++){
+      if(cursor+46>bytes.length||u32(cursor)!==0x02014b50)throw Error('Hibás 3MF fájlbejegyzés.');
+      const method=u16(cursor+10),comp=u32(cursor+20),size=u32(cursor+24),
+        len=u16(cursor+28),extra=u16(cursor+30),comment=u16(cursor+32),
+        offset=u32(cursor+42);
+      if(cursor+46+len+extra+comment>bytes.length)throw Error('Sérült 3MF bejegyzés.');
+      const name=decoder.decode(bytes.slice(cursor+46,cursor+46+len));
+      if(name.toLowerCase().endsWith('.model')&&name.startsWith('3D/')&&!entry)
+        entry={name,method,comp,size,offset};
+      cursor+=46+len+extra+comment;
+    }
+    if(!entry)throw Error('Nem található 3MF modell (3D/*.model).');
+    if(entry.size>15*1024*1024||entry.comp>15*1024*1024)
+      throw Error('A 3MF modell túl nagy.');
+    const start=entry.offset;
+    if(start+30>bytes.length||u32(start)!==0x04034b50)throw Error('Sérült 3MF fejléc.');
+    const begin=start+30+u16(start+26)+u16(start+28);
+    if(begin+entry.comp>bytes.length)throw Error('Sérült 3MF tömörítés.');
+    const data=bytes.slice(begin,begin+entry.comp);
+    let uncompressed;
+    if(entry.method===0)uncompressed=data;
+    else if(entry.method===8){
+      if(typeof DecompressionStream==='undefined')throw Error('A böngésző nem támogatja a 3MF kicsomagolását.');
+      try{
+        const stream=new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        uncompressed=new Uint8Array(await new Response(stream).arrayBuffer());
+      }catch{throw Error('A 3MF kicsomagolása sikertelen; próbáld meg a Chrome legfrissebb verziójával.');}
+    }else throw Error('Nem támogatott ZIP tömörítés: '+entry.method);
+    if(uncompressed.length!==entry.size||uncompressed.length>15*1024*1024)
+      throw Error('A 3MF kibontott modellmérete érvénytelen.');
+    return decoder.decode(uncompressed);
+  }
+  function threeMfParse(xmlText){
+    const xml=new DOMParser().parseFromString(xmlText,'application/xml');
+    if(xml.querySelector('parsererror')||xml.documentElement.localName!=='model')
+      throw Error('Sérült 3MF XML modell.');
+    const children=(node,name)=>Array.from(node?.children||[]).filter(x=>x.localName===name);
+    const first=(node,name)=>children(node,name)[0]||null;
+    const unit=String(xml.documentElement.getAttribute('unit')||'millimeter').toLowerCase();
+    const unitScale={millimeter:1,centimeter:10,meter:1000,inch:25.4,foot:304.8,micron:.001}[unit];
+    if(!unitScale)throw Error('Nem támogatott 3MF mértékegység: '+unit);
+    const resources=first(xml.documentElement,'resources');
+    const definitions=new Map();
+    for(const object of children(resources,'object')){
+      const id=object.getAttribute('id');
+      if(id)definitions.set(id,object);
+    }
+    const build=first(xml.documentElement,'build');
+    const instances=children(build,'item');
+    if(!instances.length)throw Error('A 3MF fájlban nincs összeszerelt modell.');
+    const number=(x,label)=>{const n=Number(x);if(!Number.isFinite(n)||Math.abs(n)>1e8)
+      throw Error('Érvénytelen 3MF koordináta: '+label);return n;};
+    const identity=[1,0,0,0,1,0,0,0,1,0,0,0];
+    const decodeTransform=value=>{
+      if(!value)return identity;
+      const nums=value.trim().split(/\\s+/).map(Number);
+      if(nums.length!==12||nums.some(n=>!Number.isFinite(n)))throw Error('Érvénytelen 3MF transzformáció.');
+      return nums;
+    };
+    const apply=(m,p)=>[
+      m[0]*p[0]+m[1]*p[1]+m[2]*p[2]+m[3],
+      m[4]*p[0]+m[5]*p[1]+m[6]*p[2]+m[7],
+      m[8]*p[0]+m[9]*p[1]+m[10]*p[2]+m[11]
+    ];
+    const compose=(a,b)=>{
+      const out=[];
+      for(let row=0;row<3;row++){
+        const r=row*4;
+        for(let col=0;col<3;col++)
+          out.push(a[r]*b[col]+a[r+1]*b[4+col]+a[r+2]*b[8+col]);
+        out.push(a[r]*b[3]+a[r+1]*b[7]+a[r+2]*b[11]+a[r+3]);
+      }
+      return out;
+    };
+    const result=[];
+    function visit(id,m,depth,ancestorName,seen){
+      if(depth>12||seen.has(id))throw Error('Körkörös vagy túl mély 3MF komponenshivatkozás.');
+      const object=definitions.get(id);if(!object)throw Error('Hiányzó 3MF objektum: '+id);
+      const name=String(object.getAttribute('name')||ancestorName||('Alkatrész '+id)).slice(0,100);
+      const mesh=first(object,'mesh');
+      if(mesh){
+        const vertices=children(first(mesh,'vertices'),'vertex');
+        if(vertices.length>500000)throw Error('Túl sok 3MF csúcspont.');
+        if(!vertices.length)return;
+        let lo=[Infinity,Infinity,Infinity],hi=[-Infinity,-Infinity,-Infinity];
+        for(const vertex of vertices){
+          const xyz=['x','y','z'].map(k=>number(vertex.getAttribute(k),k));
+          const p=apply(m,xyz);
+          for(let k=0;k<3;k++){lo[k]=Math.min(lo[k],p[k]);hi[k]=Math.max(hi[k],p[k]);}
+        }
+        const extents=hi.map((n,k)=>(n-lo[k])*unitScale);
+        const dims=[...extents].sort((a,b)=>b-a);
+        if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
+        if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
+        const rounded=n=>Math.round(n*10000)/10000;
+        result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
+          originMm:lo.map(x=>rounded(x*unitScale)),
+          axisBoundsMm:extents.map(rounded)});
+      }
+      const components=first(object,'components');
+      for(const component of children(components,'component'))
+        visit(component.getAttribute('objectid'),compose(m,decodeTransform(component.getAttribute('transform'))),
+          depth+1,name,new Set([...seen,id]));
+    }
+    for(const item of instances){
+      visit(item.getAttribute('objectid'),decodeTransform(item.getAttribute('transform')),0,'',new Set());
+    }
+    if(!result.length)throw Error('A 3MF-ben nem található mérhető szilárdtestháló.');
+    const groups=[];
+    for(let i=0;i<result.length;i++){
+      const p=result[i],match=groups.find(g=>g.name.toLocaleLowerCase('hu')===p.name.toLocaleLowerCase('hu')&&
+        g.dimensions.every((d,k)=>Math.abs(d-p.dimensions[k])<.05));
+      if(match)match.indices.push(i);
+      else groups.push({name:p.name,dimensions:p.dimensions,indices:[i]});
+    }
+    const title=children(xml.documentElement,'metadata').find(x=>x.getAttribute('name')==='Title')?.textContent;
+    return {schema:'gatterka-3mf-v1',designName:String(title||'3MF modell').slice(0,150),
+      parts:result,groups};
+  }
+  function threeMfImportPreview(f){
+    const model=f?.threeMfImport;
+    if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
+    const rows=model.groups.map(g=>'<tr><td>'+h(g.name)+'</td><td>'+g.dimensions.map(nfmt).join(' × ')+'</td><td>'+g.indices.length+'</td></tr>').join('');
+    return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
+      model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
+      '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+  }
+  function threeMfApplyImport(f,data){
+    // Preserve hand-entered parts; replace only records originating from 3D imports.
+    const unrelated=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').match(/^(?:3mf|fusion|dxf)-/));
+    const created=data.groups.map((g,i)=>({
+      id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
+      name:g.name,a:String(Math.round(g.dimensions[0]*100)/100),
+      b:String(Math.round(g.dimensions[1]*100)/100),
+      threeMfThickness:g.dimensions[2],q:String(g.indices.length),
+      threeMfInstances:g.indices.slice(),
+      edge:'0-0',edgeSides:sidesFromCode('0-0'),
+      filingSides:{x1:false,x2:false,y1:false,y2:false},
+      edgeThickness:2,mill:false,millDepth:1,rot:false,grainRequired:false,
+      materialId:'',materialColor:''
+    }));
+    f.parts=[...unrelated,...created];
+    f.threeMfImport=data;f.fusionImport=null;f.fusionParameters=[];
+    f.dxfDrawings={};f.dxfSlots=[];f.dxfSelectedRect=null;
+    result=null;
+  }
+
   function fusionEulerAngles(matrix){
     // Z-Y-X Euler decomposition of the component-local XYZ frame in world coordinates.
     const r=matrix,sy=Math.max(-1,Math.min(1,-r[2][0]));
@@ -2902,7 +3062,7 @@
     // DXF and Fusion are separate alternative import routes; never mix derived parts.
     f.parts=f.parts.filter(p=>!String(p.cabinetDesignKey||'').startsWith('dxf-'));
     f.dxfDrawings={};f.dxfSlots=[];f.dxfSelectedRect=null;
-    f.fusionImport={schema:'gatterka-fusion-v1',designName:String(data.designName||'Fusion modell').slice(0,150),
+    f.threeMfImport=null;f.fusionImport={schema:'gatterka-fusion-v1',designName:String(data.designName||'Fusion modell').slice(0,150),
       coordinateSystem:'fusion-design-world',parts,groups};
     const maxDim=[0,0,0],minOrigin=[Infinity,Infinity,Infinity],maxOrigin=[-Infinity,-Infinity,-Infinity];
     for(const p of parts)for(let i=0;i<3;i++){
@@ -3388,6 +3548,22 @@
   document.addEventListener('click',e=>{
     if(e.target.closest('[data-action="cabinet-fusion-choose"]')){e.preventDefault();document.getElementById('gatterka-fusion-file')?.click();}
   });
+  document.addEventListener('click',e=>{
+    if(e.target.closest('[data-action="cabinet-3mf-choose"]')){e.preventDefault();document.getElementById('gatterka-3mf-file')?.click();}
+  });
+  document.addEventListener('change',async e=>{
+    if(e.target.id!=='gatterka-3mf-file')return;
+    const file=e.target.files?.[0],f=getFurniture();
+    if(!file||!f)return;
+    try{
+      if(!file.name.toLowerCase().endsWith('.3mf'))throw Error('Csak .3mf fájlt válassz.');
+      const parsed=threeMfParse(await threeMfZipModel(file));
+      threeMfApplyImport(f,parsed);
+      if(!save())throw Error('A projekt mentése nem sikerült. Ellenőrizd a szabad tárhelyet.');
+      showNotice('3MF import kész: '+parsed.parts.length+' test, '+parsed.groups.length+' alkatrészsor. A méretek az Alkatrészek táblázatban is megjelennek.');
+    }catch(err){showNotice('3MF import hiba: '+err.message);}
+    e.target.value='';
+  });
   document.addEventListener('change',async e=>{
     if(e.target.id!=='gatterka-fusion-file')return;
     const file=e.target.files?.[0],f=getFurniture();
@@ -3408,7 +3584,7 @@
     if(!file||!f)return;
     try{
       const data=parseCabinetDxf(await file.text()),views=splitDxfViews(data);
-      f.fusionImport=null;f.parts=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').startsWith('fusion-'));
+      f.fusionImport=null;f.threeMfImport=null;f.fusionParameters=[];f.parts=(f.parts||[]).filter(p=>!String(p.cabinetDesignKey||'').match(/^(?:fusion|3mf)-/));
       f.dxfDrawings={front:{...views.front,name:file.name},side:views.side?{...views.side,name:file.name}:null};
       f.dxfReferenceDims={
         w:Math.max(.001,views.front.box.maxX-views.front.box.minX),
