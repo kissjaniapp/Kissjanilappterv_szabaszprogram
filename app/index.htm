@@ -1429,8 +1429,18 @@
           if(!match)throw Error('Az élzárás formátuma 0-0, 1-0, 0-1, 2-0, 0-2 vagy 2-2 lehet');
           const edgeThickness=part.edgeThickness==null||part.edgeThickness===''?2:pnum(part.edgeThickness);
           if(![2,0.4].includes(edgeThickness))throw Error('Csak 2 vagy 0,4 mm-es élzáró választható');
-          const edgeThicknesses=partEdgeThicknesses(part);
-          const mill=!!part.mill&&allPartSides.some(side=>edgeThicknesses[side]===2);
+          // Helyi kiszámítás, hogy a régi, külön tesztelt szabászati
+          // képlet és a négyélű új ABS is önállóan működjön.
+          const enabledSides={
+            x1:Number(match[1])>=1,x2:Number(match[1])===2,
+            y1:Number(match[2])>=1,y2:Number(match[2])===2
+          };
+          const sideNames=['x1','x2','y1','y2'];
+          const edgeThicknesses=Object.fromEntries(sideNames.map(side=>{
+            const configured=Number(part.edgeThicknesses?.[side]);
+            return [side,enabledSides[side]?([2,0.4].includes(configured)?configured:edgeThickness):0];
+          }));
+          const mill=!!part.mill&&sideNames.some(side=>edgeThicknesses[side]===2);
           const configuredDepth=part.millDepth==null||part.millDepth===''?1:pnum(part.millDepth);
           if(!Number.isFinite(configuredDepth)||configuredDepth<0||configuredDepth>2)throw Error('Az előmarás 0–2 mm között állítható');
           const millDepth=mill?configuredDepth:0;
@@ -1674,7 +1684,8 @@
       lastFurniture=f.id;
       const edge=h(r.edge||'0-0');
       const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
-      const abs=partAbsSummary(part);
+      const abs=part.edgeThicknesses?partAbsSummary(part):
+        r.edge==='0-0'?'—':nfmt(r.edgeThickness)+' mm';
       const marked=(number,count)=>'<span class="dimension-printed"><span class="dimension-number">'+
         nfmt(number)+'</span><span aria-hidden="true" class="dimension-mark-slot mark-'+count+'"></span></span>';
       return header+'<tr><td><strong>'+h(r.resolvedName||part.name)+'</strong></td>'+
