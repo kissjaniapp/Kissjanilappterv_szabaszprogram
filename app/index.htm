@@ -1697,7 +1697,7 @@
       '<div class="panel-sub">A 38 mm-es munkalapok a jegyzékben megmaradnak. Csak a munkalap=1 feltételnél számítanak szabásra.</div></div></div>'+
       '<div class="table-wrap"><table><thead><tr><th>Bútor</th><th>Alkatrész</th><th>X méret</th><th>Y méret</th><th>Db</th><th>Állapot</th></tr></thead><tbody>'+
       heldWorktops.map(r=>'<tr><td>'+h(r.furniture.name)+'</td><td>'+h(r.part.name)+'</td>'+
-        '<td>'+h(r.part.a)+'</td><td>'+h(r.part.b)+'</td><td>'+h(r.part.q)+'</td>'+
+        '<td>'+h(r.part.a)+' <button class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(r.part.id)+'" title="X és Y szálirány felcserélése az összes nézetben">⇄ X/Y</button></td><td>'+h(r.part.b)+'</td><td>'+h(r.part.q)+'</td>'+
         '<td>Nem szabásra · munkalap=0</td></tr>').join('')+'</tbody></table></div></div>':'';
     const empty=included.length?'':'<div class="notice top-gap">'+
       'Nincs szabásba kerülő alkatrész. Ellenőrizd az IF-feltételeket és a darabszámokat.</div>';
@@ -1965,7 +1965,7 @@
       if(r.error)continue;
       for(let i=0;i<r.qty;i++)items.push({name:r.resolvedName||r.part.name,source:r.furniture.name,
         destination:r.furniture.destination||'',materialColor:r.materialColor||r.furniture.materialColor||'',a:r.a,b:r.b,
-        originalA:r.originalA,originalB:r.originalB,edge:r.edge,filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,
+        originalA:r.originalA,originalB:r.originalB,edge:r.edge,filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,edgeThicknesses:r.edgeThicknesses,mill:r.mill,millDepth:r.millDepth,
         thickness:r.thickness,rot:r.rot,number:i+1,uid:r.part.id});
     }
     const sorters=[(a,b)=>b.a*b.b-a.a*a.b || Math.max(b.a,b.b)-Math.max(a.a,a.b),
@@ -2009,7 +2009,7 @@
       items.push({name:r.resolvedName||r.part.name,source:r.furniture.name,
         destination:r.furniture.destination||'',materialColor:r.materialColor||r.furniture.materialColor||'',materialId:r.materialId||'',a:r.a,b:r.b,
         originalA:r.originalA,originalB:r.originalB,edge:r.edge,
-        filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,mill:r.mill,millDepth:r.millDepth,thickness:r.thickness,
+        filingSides:r.part.filingSides,edgeThickness:r.edgeThickness,edgeThicknesses:r.edgeThicknesses,mill:r.mill,millDepth:r.millDepth,thickness:r.thickness,
         rot:r.rot,number:i+1,uid:r.part.id});
     }
     // Régi x/y gépállások és új, táblánként értelmezett hosszú/rövid él.
@@ -3442,7 +3442,7 @@
         fusionThickness:t,fusionInstances:group.indices.slice(),fusionGenerated:true,
         edge:'0-0',edgeSides:sidesFromCode('0-0'),
         filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
-        mill:false,millDepth:1,rot:false,grainRequired:false,materialId:'',materialColor:''});
+        mill:true,millDepth:1,rot:false,grainRequired:true,materialId:'',materialColor:''});
     }
     result=null;
     return {parts:parts.length,groups:groups.length};
@@ -4267,7 +4267,7 @@
       finishedParts:bin.placements.map(p=>({
         section:p.section,name:p.part.name,furniture:p.part.source,number:p.part.number,
         cutX:p.realW,cutY:p.realH,finishedX:p.part.originalA,finishedY:p.part.originalB,
-        edge:p.part.edge,edgeThickness:p.part.edgeThickness,milling:p.part.mill,millingDepth:p.part.millDepth??0,
+        edge:p.part.edge,edgeThickness:p.part.edgeThickness,edgeThicknesses:p.part.edgeThicknesses||null,milling:p.part.mill,millingDepth:p.part.millDepth??0,
         rotated:p.turned,thickness:bin.thickness
       }))
     };
