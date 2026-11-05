@@ -1404,14 +1404,18 @@
     return `<section class="intro"><div><div class="eyebrow">${eyebrow}</div><h1>${title}</h1><p>${desc}</p></div><div class="actions">${actions}</div></section>`;
   }
   function steps(){
+    // Régi munkákhoz a nyolc eredeti oldal marad; a munkamód-választó csak
+    // az új módot már választott projektekben kap külön lépést.
+    // Az önálló CI tesztkörnyezetben is működik, külső helper nélkül.
+    const mode=state.designMode==='parts'?'parts':'design';
     const panels=[['library','Bútorválasztó','Mappák, szériák'],
-      ['mode','Munkamód','Tervezés vagy szabás'],
+      ...(state.designMode? [['mode','Munkamód','Tervezés vagy szabás']]:[]),
       ['furniture','Bútor adatai','Paraméterek'],
       ['parts','Alkatrészek','Méretképletek'],
       ['parts-review','Alkatrész-összesítő','Méret, élzárás'],
       ['stock','Anyagkészlet','Táblák, fűrészlap'],
       ['nesting','Szabásterv','Méretezett rajz'],['labels','Matricák','Választható'],
-      ['save','Mentés','xMix + xPrg']].filter(([id])=>id!=='furniture'||designWorkflowMode()!=='parts');
+      ['save','Mentés','xMix + xPrg']].filter(([id])=>id!=='furniture'||mode!=='parts');
     return '<div class="steps">'+panels.map(([id,title,sub],index)=>
       '<button class="step '+((id==='library'?projectScreen==='library':projectScreen!=='library'&&state.active===id)?'active':'')+
       '" data-action="'+(id==='library'?'library-home':id==='mode'?'workflow-choice':'page')+'" '+
