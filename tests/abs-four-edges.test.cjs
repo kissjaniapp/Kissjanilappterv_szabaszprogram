@@ -70,7 +70,7 @@ test('egyedül az X2 hosszú él is lehet 0,4 mm-es, és forgatás után Y2 mara
 
 test('3MF bal és jobb oldallap egy közös szabászati tétel, de megmarad a két testazonosító',()=>{
   const fn=vm.runInNewContext('('+slice('function threeMfCombinedCuttingGroups(','  function threeMfApplyImport(').trim()+')',{
-    String,Array,Math,Object
+    String,Array,Math,Object,threeMfSideName:names=>names.every(n=>/oldallap$/i.test(n))?'Oldallap':'Oldal'
   });
   const data={groups:[
     {name:'bal-Oldal',indices:[0],dimensions:[754,520,18]},
@@ -81,5 +81,14 @@ test('3MF bal és jobb oldallap egy közös szabászati tétel, de megmarad a k�
   assert.equal(groups.length,2);
   const merged=groups.find(g=>g.combinedSides);
   assert.ok(merged);
+  assert.equal(merged.name,'Oldal');
+  assert.deepEqual(Array.from(merged.originalNames),['bal-Oldal','Jobb_oldal']);
   assert.deepEqual(Array.from(merged.indices),[0,2]);
+});
+
+test('ha mindkét eredeti név oldallap, a megjelenített név Oldallap marad',()=>{
+  const fn=vm.runInNewContext('('+slice('function threeMfCombinedCuttingGroups(','  function threeMfApplyImport(').trim()+')',{String,Array,Math,Object,threeMfSideName:names=>names.every(n=>/oldallap$/i.test(n))?'Oldallap':'Oldal'});
+  const groups=fn({groups:[{name:'Bal_oldallap',dimensions:[754,520,18],indices:[0]},{name:'Jobb_oldallap',dimensions:[754,520,18],indices:[1]}]});
+  assert.equal(groups.length,1);
+  assert.equal(groups[0].name,'Oldallap');
 });
