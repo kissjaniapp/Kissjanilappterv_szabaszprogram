@@ -1603,6 +1603,15 @@
       h(summary.errors[0])+(summary.errors.length>1?
       ' · további hibák: '+(summary.errors.length-1):'')+
       '. Lépj vissza és javítsd a hibát.</div>':'';
+    const heldWorktops=summary.rows.filter(r=>r.skipped&&!r.error&&
+      Number(materialForPart(r.part,r.furniture).thickness)===38);
+    const heldWorktopPanel=heldWorktops.length?
+      '<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Munkalapok · nem kerülnek a szabásba</div>'+
+      '<div class="panel-sub">A 38 mm-es munkalapok a jegyzékben megmaradnak. Csak a munkalap=1 feltételnél számítanak szabásra.</div></div></div>'+
+      '<div class="table-wrap"><table><thead><tr><th>Bútor</th><th>Alkatrész</th><th>X méret</th><th>Y méret</th><th>Db</th><th>Állapot</th></tr></thead><tbody>'+
+      heldWorktops.map(r=>'<tr><td>'+h(r.furniture.name)+'</td><td>'+h(r.part.name)+'</td>'+
+        '<td>'+h(r.part.a)+'</td><td>'+h(r.part.b)+'</td><td>'+h(r.part.q)+'</td>'+
+        '<td>Nem szabásra · munkalap=0</td></tr>').join('')+'</tbody></table></div></div>':'';
     const empty=included.length?'':'<div class="notice top-gap">'+
       'Nincs szabásba kerülő alkatrész. Ellenőrizd az IF-feltételeket és a darabszámokat.</div>';
     const panel='<div class="panel"><div class="panel-head"><div>'+
@@ -1618,7 +1627,7 @@
     return intro('04 / ALKATRÉSZ-ÖSSZESÍTŐ','Alkatrész-összesítő',
       'A szabásba kerülő alkatrészek méretei, élzárása és reszelése. A hamis IF-feltételű sorok kimaradnak.',
       '<button class="btn" data-action="page" data-page="parts">← Alkatrészek</button>')+
-      warning+empty+panel+
+      warning+empty+panel+heldWorktopPanel+
       '<div class="section-bottom"><strong>'+nfmt(summary.total)+' db kerül a szabásba</strong>'+
       '<div class="actions"><button class="btn" data-action="download-workshop-copy-png">↓ Műhely példány PNG</button><button class="btn" data-action="page" data-page="parts">← Vissza</button>'+
       '<button class="btn primary" data-action="page" data-page="stock"'+
