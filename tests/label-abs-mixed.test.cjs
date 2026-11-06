@@ -94,3 +94,16 @@ test('hosszú alkatrésznév teljes egészében szerepel a lejjebb helyezett mat
   assert.ok(svg.includes('szekrény oldallap'));
   assert.ok(svg.indexOf('Különösen')>svg.indexOf('1H 2mm ABS')||!svg.includes('1H 2mm ABS'));
 });
+
+test('matrica: nagyobb rés a méret aláhúzása és az ABS között, a név lent marad',()=>{
+  const svg=label(part({name:'Oldal',originalB:502,b:502,edge:'1-2',
+    edgeSides:{x1:true,x2:false,y1:true,y2:true},
+    edgeThicknesses:{x1:2,x2:0,y1:.4,y2:.4},
+    filingSides:{x1:false,x2:false,y1:true,y2:true}}));
+  const abs=svg.match(/<text x="[^"]+" y="([^"]+)"[^>]*>2R 0,4mm ABS<\/text>/);
+  const name=svg.match(/<text x="[^"]+" y="([^"]+)"[^>]*>Oldal<\/text>/);
+  assert.ok(abs&&name,'ABS és alkatrésznév megjelenik');
+  assert.ok(Number(abs[1])>=15,'ABS a méret alatt, megnövelt távolsággal');
+  assert.ok(Number(name[1])>Number(abs[1])+4,'alkatrésznév továbbra is az alsó mezőben');
+  assert.doesNotMatch(svg,/2Rresz/,'0,4 mm ABS-hez nincs reszelés');
+});
