@@ -3252,7 +3252,7 @@
     if(!canvases.length)return;
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
-    const effectiveParts=threeMfEffectiveGeometry(furniture);
+    const effectiveParts=typeof threeMfEffectiveGeometry==='function'?threeMfEffectiveGeometry(furniture):model.parts;
     const id=String(furniture.id);
     if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-.62,elevation:.45,zoom:1,selectedGroup:-1,showNearSide:false});
     const state3d=threeMfViewStates.get(id);
