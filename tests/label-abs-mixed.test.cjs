@@ -85,3 +85,12 @@ test('964 × 502, 1-2 élzárás: méretenkénti ABS, reszelés csak 502 alatt',
   assert.match(svg,/2Rresz/);
   assert.doesNotMatch(svg,/1Hresz/);
 });
+
+test('hosszú alkatrésznév teljes egészében szerepel a lejjebb helyezett matricán',()=>{
+  const name='Különösen hosszú konyhai felső szekrény oldallap';
+  const svg=label(part({name}));
+  assert.doesNotMatch(svg,/Különösen…|oldallap…/);
+  assert.ok(svg.includes('Különösen hosszú konyhai'));
+  assert.ok(svg.includes('felső szekrény oldallap'));
+  assert.ok(svg.indexOf('Különösen')>svg.indexOf('1H 2mm ABS')||!svg.includes('1H 2mm ABS'));
+});
