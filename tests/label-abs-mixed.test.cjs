@@ -12,7 +12,7 @@ function section(from,to){
   return html.slice(a,b);
 }
 const helpers=section('  function sidesFromCode(','  let loaded=null;');
-const draw=section('  function labelSvgContent(','  const labelPaper=');
+const draw=section('  function labelAxisDetails(','  const labelPaper=');
 const state={furnitures:[]};
 const engine=vm.runInNewContext('(function(){'+helpers+draw+
   ';return {labelSvgContent,partEdgeLabel,cleanFilingForAbs};})()',{
@@ -44,7 +44,9 @@ test('vegyes 1 hosszú 2mm + 2 rövid 0,4mm ABS esetén egyértelmű élcímke',
   const svg=label(part({edge:'1-2',
     edgeSides:{x1:true,x2:false,y1:true,y2:true},
     edgeThicknesses:{x1:2,x2:0,y1:.4,y2:.4}}));
-  assert.match(svg,/1H 2mm 2R 0,4mm/);
+  assert.match(svg,/1H 2mm ABS/);
+  assert.match(svg,/2R 0,4mm ABS/);
+  assert.ok(svg.indexOf('1H 2mm ABS') < svg.indexOf('2R 0,4mm ABS'));
   assert.doesNotMatch(svg,/resz/);
 });
 test('reszelés csak az érintett 2 mm-es élnél szerepel',()=>{
@@ -53,7 +55,10 @@ test('reszelés csak az érintett 2 mm-es élnél szerepel',()=>{
     edgeThicknesses:{x1:2,x2:0,y1:2,y2:2},
     filingSides:{x1:false,x2:false,y1:true,y2:true}});
   const svg=label(p);
-  assert.match(svg,/1H 2mm 2Rresz 2mm/);
+  assert.match(svg,/1H 2mm ABS/);
+  assert.match(svg,/2R 2mm ABS/);
+  assert.match(svg,/2Rresz/);
+  assert.doesNotMatch(svg,/2Rresz 2mm/);
 });
 test('0,4mm-es élen eltávolítja a régi hibás reszelést',()=>{
   const p=part({edge:'1-2',
@@ -63,5 +68,20 @@ test('0,4mm-es élen eltávolítja a régi hibás reszelést',()=>{
   assert.equal(engine.cleanFilingForAbs(p),true);
   assert.equal(p.filingSides.y1,false);
   assert.equal(p.filingSides.y2,false);
-  assert.match(label(p),/2R 0,4mm/);
+  const svg=label(p);
+  assert.match(svg,/2R 0,4mm ABS/);
+  assert.doesNotMatch(svg,/2Rresz/);
+});
+
+test('964 × 502, 1-2 élzárás: méretenkénti ABS, reszelés csak 502 alatt',()=>{
+  const svg=label(part({originalB:502,b:502,edge:'1-2',
+    edgeSides:{x1:true,x2:false,y1:true,y2:true},
+    edgeThicknesses:{x1:2,x2:0,y1:2,y2:2},
+    filingSides:{x1:false,x2:false,y1:true,y2:true}}));
+  assert.match(svg,/>964<\/text>/);
+  assert.match(svg,/>502<\/text>/);
+  assert.match(svg,/1H 2mm ABS/);
+  assert.match(svg,/2R 2mm ABS/);
+  assert.match(svg,/2Rresz/);
+  assert.doesNotMatch(svg,/1Hresz/);
 });
