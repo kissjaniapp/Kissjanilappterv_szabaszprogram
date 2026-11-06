@@ -3124,14 +3124,59 @@
     return {schema:'gatterka-3mf-v1',designName:String(title||'3MF modell').slice(0,150),
       parts:result,groups};
   }
+  // A 3MF csak eredeti geometriát tárol; a rajz és a mellette lévő lista
+  // az Alkatrészek oldalával azonos készméret-képletkiértékelőt használja.
+  function threeMfResolvedGroups(f){
+    const model=f?.threeMfImport;
+    if(!model?.groups)return [];
+    return model.groups.map((group,index)=>{
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
+      if(!part)return {group,part:null,dimensions:group.dimensions.slice(),valid:true};
+      try{
+        const vars={W:+f.w,H:+f.ht,D:+f.d,T:materialForPart(part,f).thickness,
+          S:effectiveShelves(f),O:effectiveDivider(f)};
+        const a=calcPartFormula(part.a,vars,f,part,'x');
+        const b=calcPartFormula(part.b,vars,f,part,'y');
+        const t=Number(part.threeMfThickness??group.dimensions[2]);
+        if(![a,b,t].every(v=>Number.isFinite(v)&&v>0&&v<=10000))
+          throw Error('Érvénytelen 3MF alkatrészméret');
+        return {group,part,dimensions:[a,b,t],valid:true};
+      }catch{
+        return {group,part,dimensions:group.dimensions.slice(),valid:false};
+      }
+    });
+  }
+  // Minden fizikai 3MF példány külön megmarad a saját eredeti helyén.
+  // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
+  function threeMfEffectiveGeometry(f){
+    const model=f?.threeMfImport;
+    if(!model?.parts)return [];
+    const parts=model.parts.map(p=>p);
+    for(const row of threeMfResolvedGroups(f)){
+      if(!row.valid||!row.part)continue;
+      for(const index of row.group.indices){
+        const original=model.parts[index],bounds=original?.axisBoundsMm;
+        if(!original||!Array.isArray(bounds)||bounds.length!==3||
+          bounds.some(v=>!Number.isFinite(v)||v<=0))continue;
+        const ordered=[0,1,2].sort((a,b)=>bounds[b]-bounds[a]||a-b);
+        const ratios=[1,1,1];
+        for(let i=0;i<3;i++)ratios[ordered[i]]=row.dimensions[i]/bounds[ordered[i]];
+        const origin=original.originMm;
+        const triangles=(original.previewTriangles||[]).map(tri=>tri.map((coord,i)=>
+          origin[i%3]+(coord-origin[i%3])*ratios[i%3]));
+        parts[index]={...original,axisBoundsMm:bounds.map((v,i)=>v*ratios[i]),
+          previewTriangles:triangles};
+      }
+    }
+    return parts;
+  }
   function threeMfImportPreview(f){
     const model=f?.threeMfImport;
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
-    const rows=model.groups.map((g,index)=>{
-      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
-      const dims=part?[part.a,part.b,part.threeMfThickness]:g.dimensions;
+    const rows=threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
+      const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
-      return '<tr><td>'+h(part?.name||g.name)+'</td><td>'+dims.map(nfmt).join(' × ')+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
+      return '<tr><td>'+h(part?.name||g.name)+'</td><td>'+h(dims)+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
     }).join('');
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
       model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
@@ -3207,6 +3252,7 @@
     if(!canvases.length)return;
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
+    const effectiveParts=threeMfEffectiveGeometry(furniture);
     const id=String(furniture.id);
     if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-.62,elevation:.45,zoom:1,selectedGroup:-1,showNearSide:false});
     const state3d=threeMfViewStates.get(id);
@@ -3228,14 +3274,14 @@
       if(!ctx)return;
       const W=canvas.width,H=canvas.height;
       const project=p=>threeMfProjectPoint(p,type,state3d.azimuth,state3d.elevation);
-      const hide=type==='side'&&!state3d.showNearSide?threeMfNearSideIndex(model.parts):-1;
+      const hide=type==='side'&&!state3d.showNearSide?threeMfNearSideIndex(effectiveParts):-1;
       const palette=['#7db0a1','#e7b979','#93a9c4','#9bc2ae','#cd9f9c','#abb8a0','#a8a7c8','#76a6a6','#c9a68d'];
       const selected=Number(state3d.selectedGroup),faces=[];
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
       let surfaceId=0;
-      for(let partIndex=0;partIndex<model.parts.length;partIndex++){
+      for(let partIndex=0;partIndex<effectiveParts.length;partIndex++){
         if(partIndex===hide)continue;
-        const part=model.parts[partIndex];
+        const part=effectiveParts[partIndex];
         const active=selected<0||model.groups[selected]?.indices.includes(partIndex);
         const groups=threeMfPlanarFaces(part.previewTriangles||[],project);
         for(const group of groups){
@@ -3261,7 +3307,7 @@
       let scale,cx,cy;
       if(type==='three'){
         const boundsMin=[Infinity,Infinity,Infinity],boundsMax=[-Infinity,-Infinity,-Infinity];
-        for(const part of model.parts){
+        for(const part of effectiveParts){
           const lo=part.originMm,ext=part.axisBoundsMm;
           if(!Array.isArray(lo)||!Array.isArray(ext))continue;
           for(let axis=0;axis<3;axis++){
