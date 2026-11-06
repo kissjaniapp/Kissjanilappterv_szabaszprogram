@@ -1446,7 +1446,7 @@
       const thickness=Number(f.t)||18;
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       for(const part of f.parts){
-        if(typeof cleanFilingForAbs==='function')cleanFilingForAbs(part);
+        if(typeof cleanFilingForAbs==='function'&&typeof partEdgeThicknesses==='function')cleanFilingForAbs(part);
         const material=materialForPart(part,f),thickness=material.thickness;
         vars.T=thickness;
         if(!String(part.name||'').trim()||!String(part.a||'').trim()||!String(part.b||'').trim()||!String(part.q||'').trim()){
