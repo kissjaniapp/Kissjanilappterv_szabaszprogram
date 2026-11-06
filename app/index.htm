@@ -1420,7 +1420,7 @@
     if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='auto';
   if(['machine','rows'].includes(state.layoutMode))state.layoutMode='auto';
     state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
-    state.active=isCombinedSelectionWorkspace(entry)?'collector':(state.designMode==='parts'?'parts':'furniture');currentProjectId=entry.id;projectScreen='editor';
+    state.active=isCombinedSelectionWorkspace(entry)?'collector':'furniture';currentProjectId=entry.id;projectScreen='editor';
     result=null;notice='';render();
   }
   function projectLibraryView(){
@@ -1610,7 +1610,6 @@
     // Régi munkákhoz a nyolc eredeti oldal marad; a munkamód-választó csak
     // az új módot már választott projektekben kap külön lépést.
     // Az önálló CI tesztkörnyezetben is működik, külső helper nélkül.
-    const mode=state.designMode==='parts'?'parts':'design';
     const panels=[['library','Bútorválasztó','Mappák, szériák'],
       ...(state.designMode? [['mode','Munkamód','Tervezés vagy szabás']]:[]),
       ['furniture','Bútor adatai','Paraméterek'],
@@ -1618,7 +1617,7 @@
       ['parts-review','Alkatrész-összesítő','Méret, élzárás'],
       ['stock','Anyagkészlet','Táblák, fűrészlap'],
       ['nesting','Szabásterv','Méretezett rajz'],['labels','Matricák','Választható'],
-      ['save','Mentés','xMix + xPrg']].filter(([id])=>id!=='furniture'||mode!=='parts');
+      ['save','Mentés','xMix + xPrg']];
     return '<div class="steps">'+panels.map(([id,title,sub],index)=>
       '<button class="step '+((id==='library'?projectScreen==='library':projectScreen!=='library'&&state.active===id)?'active':'')+
       '" data-action="'+(id==='library'?'library-home':id==='mode'?'workflow-choice':'page')+'" '+
@@ -1728,13 +1727,14 @@
         '<div class="tiny muted" style="margin-top:8px">Betöltve: <strong>'+h(f.threeMfImport.designName||'3MF modell')+'</strong> · '+f.threeMfImport.parts.length+' test · '+f.threeMfImport.groups.length+' alkatrészsor</div>':'')+
       '</section>';
   }
-  function designWorkflowMode(){return state.designMode==='parts'?'parts':'design';}
+  function designWorkflowMode(){return ['parts','design','manual'].includes(state.designMode)?state.designMode:'design';}
   function modeChoiceView(){
     return intro('MUNKAMÓD','Mit szeretnél készíteni?',
-      'Válassz munkamódot. A meglévő alkatrészek módváltáskor megmaradnak.','')+
-      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px">'+
+      'Válassz a három munkamód közül. Mindháromban elérhető a bútor külmérete, a paraméterek, az alkatrészképletek és az IF-feltételek. A meglévő alkatrészek módváltáskor megmaradnak.','')+
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:18px">'+
       '<button class="panel" data-action="choose-workflow-mode" data-mode="parts" style="padding:26px;text-align:left;cursor:pointer"><h2>📐 3MF rajzzal dolgozom</h2><p>3MF rajz betöltése, alkatrészek ellenőrzése, szabásterv és mentés.</p><strong>3MF munkamód →</strong></button>'+
-      '<button class="panel" data-action="choose-workflow-mode" data-mode="design" style="padding:26px;text-align:left;cursor:pointer"><h2>🧰 Egyszerű bútortervező</h2><p>A korábbi beépített szekrénytervező 2D és forgatható 3D rajzzal, bútorparaméterekkel és alkatrészlistával.</p><strong>Bútortervező megnyitása →</strong></button>'+
+      '<button class="panel" data-action="choose-workflow-mode" data-mode="design" style="padding:26px;text-align:left;cursor:pointer"><h2>🧰 Egyszerű bútortervező</h2><p>A korábbi beépített szekrénytervező 2D és forgatható 3D rajzzal. Külméretek, paraméterek, alkatrészek és IF.</p><strong>Bútortervező megnyitása →</strong></button>'+ 
+      '<button class="panel" data-action="choose-workflow-mode" data-mode="manual" style="padding:26px;text-align:left;cursor:pointer"><h2>📋 Kézi alkatrészbevitel</h2><p>Rajz nélkül megadható alkatrészek, külméretek, paraméterek, képletek és IF-feltételek.</p><strong>Alkatrészek beírása →</strong></button>'+
       '</div>';
   }
   function furnitureView(stage='furniture'){
@@ -1763,11 +1763,15 @@
         </div>
         ${customParametersPanel(f)}
         ${designWorkflowMode()==='parts'?threeMfUploadBlock(f):''}
-        ${designWorkflowMode()==='parts'&&f.threeMfImport?.parts?.length?
-        '<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div><div class="panel-title">Élő szekrényrajz · betöltött 3MF modell</div><div class="panel-sub">Az elöl-, oldal- és 3D nézet a fájl valódi geometriáját mutatja, nem egy helyettesítő szekrénysémát.</div></div></div><div class="panel-body">'+threeMfImportPreview(f)+'</div></section>':
-        '<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="'+h(f.id)+'" style="grid-column:1/-1;padding:12px">'+
-          '<div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A Polcok menüpont csak polc nevű paraméter mellett jelenik meg.</div></div></div>'+
-          '<iframe class="gatterka-cabinet-inline-frame" title="Beépített Gatterka szekrénytervező" loading="eager" style="width:100%;height:1100px;min-height:690px;border:0;border-radius:10px;background:#f3f6f2;display:block"></iframe></section>'}
+        ${designWorkflowMode()==='parts'?
+          (f.threeMfImport?.parts?.length?
+            '<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div><div class="panel-title">Élő szekrényrajz · betöltött 3MF modell</div><div class="panel-sub">Az elöl-, oldal- és 3D nézet a fájl valódi geometriáját mutatja.</div></div></div><div class="panel-body">'+threeMfImportPreview(f)+'</div></section>':
+            '<div class="mini-info">3MF munkamód: tölts be 3MF rajzot a fenti gombbal. A külméreteket és paramétereket addig is szerkesztheted.</div>'):
+          designWorkflowMode()==='manual'?
+          '<div class="mini-info">Kézi alkatrészbevitel: add meg a bútor külméreteit és paramétereit, majd az Alkatrészek oldalon az X/Y méreteket, darabszámokat és IF-feltételeket. A szabás és a mentés ugyanúgy használható.</div>':
+          '<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="'+h(f.id)+'" style="grid-column:1/-1;padding:12px">'+
+            '<div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A Polcok menüpont csak polc nevű paraméter mellett jelenik meg.</div></div></div>'+
+            '<iframe class="gatterka-cabinet-inline-frame" title="Beépített Gatterka szekrénytervező" loading="eager" style="width:100%;height:1100px;min-height:690px;border:0;border-radius:10px;background:#f3f6f2;display:block"></iframe></section>'}
         <div class="mini-info">↗ A képletek nem kötelezők: a készméreteket közvetlenül is beírhatod. Az anyag és a célhely az Excel-lista tetején is megjelenik.</div>
         <div class="furniture-next"><span class="muted small">Minden bútor külön testreszabható.</span>
            <button class="btn" type="button" data-action="save-furniture-customization">💾 Bútor testreszabásának mentése</button>
@@ -1808,7 +1812,7 @@
     if(stage==='parts'){
       return intro('03 / ALKATRÉSZEK','Alkatrészek megadása',
         'Az összes kijelölt bútor alkatrészeit itt egy közös listában szerkesztheted; a közös szabásterv ezekből készül.',
-        `${designWorkflowMode()==='parts'?'<button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>':'<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>'}`)+
+        `<button class="btn" data-action="page" data-page="furniture">← Bútor adatai és paraméterek</button><button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>`)+
         (designWorkflowMode()==='parts'&&f?threeMfUploadBlock(f)+(f.threeMfImport?.parts?.length?threeMfImportPreview(f):''):'')+
         (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3></div>')+
         `<div class="section-bottom"><span class="muted small">${state.furnitures.length} külön bútordarab alkatrészei a közös szabástervbe kerülnek.</span></div>`+warning;
@@ -5776,13 +5780,13 @@
       }
     }
     else if(action==='choose-workflow-mode'){
-      if(!['design','parts'].includes(el.dataset.mode))return;
+      if(!['design','parts','manual'].includes(el.dataset.mode))return;
       state.designMode=el.dataset.mode;
       if(el.dataset.mode==='parts'){
         const furniture=getFurniture();
         if(furniture&&!String(furniture.name||'').trim())furniture.name='Alkatrészlista';
       }
-      state.active=el.dataset.mode==='parts'?'parts':'furniture';
+      state.active='furniture';
       notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='workflow-choice'){
@@ -5798,7 +5802,7 @@
       if(job&&isCombinedSelectionWorkspace(job)&&el.dataset.page==='furniture'){
         state.active='collector';notice='';result=null;render();return;
       }
-      state.active=designWorkflowMode()==='parts'&&el.dataset.page==='furniture'?'parts':el.dataset.page;
+      state.active=el.dataset.page;
       notice='';render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='new-furniture'){const f=createBaseFurniture();state.furnitures.push(f);state.selectedFurniture=f.id;state.active='furniture';result=null;render();}
