@@ -60,3 +60,23 @@ test('alkatrészlistában egyforma nevű bútorok is külön csoportban jelennek
  assert.match(html,/state\.furnitures\.indexOf\(owner\)\+1/);
  assert.match(html,/state\.furnitures\.indexOf\(f\)\+1/);
 });
+
+test('a gyűjtő közös célhelyét minden bútordarab átveszi a matricához',()=>{
+ const panel=between('  function collectorFurniturePanel(){','  function collectorFurnitureEditor(){');
+ assert.match(panel,/data-scope="collector-destination"/);
+ assert.match(panel,/minden bútordarab matricájának felső sorába/);
+ assert.match(html,/for\(const furniture of state\.furnitures\)furniture\.destination=el\.value/);
+ const draw=between('  function labelAxisDetails(','  const labelPaper=');
+ assert.match(draw,/currentPart\.destination/);
+});
+test('egy gyűjtőbeli szekrénynek külön alapanyag választható, az alkatrész felülírhatja',()=>{
+ const editor=between('  function collectorFurnitureEditor(){','  function isCombinedSelectionWorkspace(');
+ assert.match(editor,/data-key="materialId"/);
+ assert.match(editor,/materialCatalog\.map/);
+ const material=between('  function materialForPart(','  function materialOptions(');
+ assert.match(material,/const selected=own\|\|base/);
+});
+test('az Alkatrészek nézet bútoronként névvel és W×H×D főmérettel csoportosít',()=>{
+ assert.match(html,/state\.furnitures\.indexOf\(owner\)\+1/);
+ assert.match(html,/h\(owner\.w\).*h\(owner\.ht\).*h\(owner\.d\)/s);
+});
