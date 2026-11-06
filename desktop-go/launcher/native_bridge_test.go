@@ -110,3 +110,21 @@ func TestWriteFilesRequiresSelectedTargetAndSessionToken(t *testing.T){
  }
  if bridge.lastDirectory!=root{t.Fatal("A következő Mentés másként nem a legutóbbi mappából indul")}
 }
+
+func TestWriteFilesAcceptsMachinePayloadLargerThanOldTwelveMegabyteLimit(t *testing.T) {
+ root := t.TempDir()
+ req := nativeMixTestRequest()
+ req.Programs[0].Content = "<SchemaDoc>" + strings.Repeat("A", 13<<20) + "</SchemaDoc>"
+ encoded, err := json.Marshal(req)
+ if err != nil { t.Fatal(err) }
+ bridge := &nativeBridge{token:"secret",selectedMixPath:filepath.Join(root,"nagy_munka.xMix")}
+ request := httptest.NewRequest(http.MethodPost,"/native/write-files",strings.NewReader(string(encoded)))
+ request.Header.Set("Origin","null")
+ request.Header.Set("X-Gatterka-Token","secret")
+ response := httptest.NewRecorder()
+ bridge.writeFiles(response,request)
+ if response.Code != http.StatusOK { t.Fatal("12 MB feletti mentés sikertelen:", response.Body.String()) }
+ if data,err:=os.Stat(filepath.Join(root,"01.xPrg"));err!=nil||data.Size()<13<<20{
+  t.Fatal("A nagy xPrg fájl hiányzik vagy csonka:",err)
+ }
+}
