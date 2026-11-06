@@ -44,7 +44,6 @@ type nativeChoose struct {
  Initial string `json:"initial"`
 }
 
-const maxNativeBody = 12 << 20
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
 var machineXmixName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xMix$`)
@@ -167,7 +166,7 @@ func (bridge *nativeBridge) choose(w http.ResponseWriter,r *http.Request){
 
 func safeNativeProgramFiles(req nativeSave) (string,[]nativeFile,error){
  if !machineFolderName.MatchString(req.CabinetFolder) ||
-  len(req.Files)<2 || len(req.Files)>102 {
+  len(req.Files)<2 {
    return "",nil,errors.New("Érvénytelen gépi projektmappa vagy fájlszám.")
  }
  prefix:=req.CabinetFolder+"/"
@@ -235,7 +234,7 @@ func saveMachineFiles(root string, req nativeSave)(string,error){
  _,files,err:=safeNativeProgramFiles(req)
  if err!=nil{return "",err}
  var folder string
- for n:=1;n<=99;n++{
+ for n:=1;;n++{
   name:=req.CabinetFolder
   if n>1{name+=fmt.Sprintf("_%d",n)}
   candidate:=filepath.Join(root,name)
@@ -245,8 +244,7 @@ func saveMachineFiles(root string, req nativeSave)(string,error){
   folder=name
   break
  }
- if folder==""{return "",errors.New("Túl sok azonos nevű gépi projektmappa.")}
- full:=filepath.Join(root,folder)
+  full:=filepath.Join(root,folder)
  success:=false
  defer func(){if !success{_ = os.RemoveAll(full)}}()
  if err=os.Mkdir(filepath.Join(full,"xPrg"),0700);err!=nil{return "",err}
@@ -274,7 +272,8 @@ func (bridge *nativeBridge) save(w http.ResponseWriter,r *http.Request){
  if dir==""{machineError(w,400,errors.New("Először válassz mappát!"));return}
  info,err:=os.Stat(dir)
  if err!=nil||!info.IsDir(){machineError(w,400,errors.New("A kijelölt Windows-mappa már nem érhető el."));return}
- r.Body=http.MaxBytesReader(w,r.Body,maxNativeBody)
+ // A gépi csomag méretét a program- és táblaszám nem korlátozza.
+ // A JSON adatot a választott mentési művelet kezeli.
  var request nativeSave
  if err=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
  full,err:=saveMachineFiles(dir,request)
@@ -400,7 +399,8 @@ func (bridge *nativeBridge) writeFiles(w http.ResponseWriter,r *http.Request){
  path:=bridge.selectedMixPath
  bridge.selectedMixPath=""
  if path==""{machineError(w,400,errors.New("Először válassz mappát és fájlnevet a Mentés másként ablakban."));return}
- r.Body=http.MaxBytesReader(w,r.Body,maxNativeBody)
+ // A gépi csomag méretét a program- és táblaszám nem korlátozza.
+ // A JSON adatot a választott mentési művelet kezeli.
  var request nativeMixSave
  if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
  saved,err:=saveMixAndPrograms(path,request)
