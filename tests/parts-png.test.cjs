@@ -112,7 +112,7 @@ test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabá
    html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
      state,
      h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
-     nfmt:Number
+     nfmt:value=>String(value)
    });
  // A már meglevő gépi elhelyezés / matricaadat nem tartalmazza a filingSides mezőt.
  const oldPlacement={part:{
@@ -126,7 +126,7 @@ test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabá
  assert.ok(mixed.indexOf('>1-2</text>')<mixed.indexOf('>1Hresz 2mm 2Rresz 2mm</text>'),
    'reszelés a matricán az élzárás után, annak alatti sorban');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:true,y2:true};
- assert.match(show(),/>2Rresz 2mm<\/text>/,
+ assert.match(show(),/>1H 2mm 2Rresz 2mm<\/text>/,
    'a matrica a frissített alkatrészjelölést mutatja új bin generálása nélkül');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:false,y2:false};
  assert.doesNotMatch(show(),/Hresz|Rresz/,
@@ -139,7 +139,7 @@ test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös k�
  const label=vm.runInNewContext('(function(){'+filingSource+dimensionSource+
    html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
      h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
-     nfmt:Number
+     nfmt:value=>String(value)
    });
  const text=label({placement:{part:{
    name:'Oldallap',source:'Szekrény',destination:'Műhely',
