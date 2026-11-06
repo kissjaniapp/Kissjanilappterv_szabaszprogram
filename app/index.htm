@@ -2958,10 +2958,17 @@
     else{
       const b=result.bins[Math.max(0,Math.min(result.bins.length-1,state.selectedBoard))];
       const util=result.sheetArea?result.usedArea/result.sheetArea*100:0;
+      const legacyThreeMf=state.furnitures.filter(f=>f.threeMfImport?.groups?.some(g=>g.isRectangular==null));
+      const geometryNotice=legacyThreeMf.length?
+        '<div class="notice error" style="margin-bottom:16px"><strong>Korábbi, alakellenőrzés nélküli 3MF-import.</strong> '+
+        'Az érintett bútorok: '+h(legacyThreeMf.map(f=>f.name||'Bútor').join(', '))+
+        '. Töltsd be újra az eredeti 3MF fájlt a Bútor adatai oldalon! '+
+        'Csak így különíthetők el megbízhatóan a ferde/íves 3D testek a szabható téglatestektől. '+
+        'A modell összes testének magassága ezután is beleszámít a bútor főméretébe.</div>':'';
       const ecoInfo=state.layoutMode==='economy'?`<div class="notice" style="margin-bottom:16px"><strong>Anyagtakarékos csíkterv</strong> · teljes sáv- és csíkvágásokkal. Legnagyobb egybefüggő becsült maradék: <strong>${nfmt((result.largestReusableArea||0)/1e6)} m²</strong>. Hasonlítsd össze a „Gépi csíkos” móddal is; nem garantált optimum.</div>`:'';
       const requiredRemnantNote=(state.selectedRemnantIds||[]).length?
         '<div class="mini-info" style="margin-bottom:14px"><strong>Kötelező maradékfelhasználás:</strong> a Bevonni jelölt maradékoknak szerepelniük kell a szabástervben. A további alkatrészekhez szükség esetén teljes tábla is használható.</div>':'';
-      const stats=`${requiredRemnantNote}${ecoInfo}<div class="statrow">
+      const stats=`${geometryNotice}${requiredRemnantNote}${ecoInfo}<div class="statrow">
         <div class="stat"><div class="label">Elhelyezett alkatrész</div><div class="value">${result.items.length-result.failed.length}<span class="small muted"> / ${result.items.length}</span></div><div class="detail">${result.failed.length?'Nem fér el minden elem':'Minden elem elhelyezve'}</div></div>
         <div class="stat"><div class="label">Felhasznált táblák</div><div class="value">${result.bins.length}<span class="small muted"> db</span></div><div class="detail">maradék (kötelező bevonás) és szükség esetén teljes tábla</div></div>
         <div class="stat"><div class="label">Kihozatal</div><div class="value">${nfmt(util)}<span class="small muted">%</span></div><div class="detail">nettó alkatrész / teljes felhasznált tábla</div></div>
