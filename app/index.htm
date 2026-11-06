@@ -1289,13 +1289,15 @@
       '<div class="toolbar"><input id="new-folder-name" aria-label="Új mappa neve" placeholder="Új mappa neve" style="max-width:200px">'+
       '<button class="btn" data-action="create-folder">＋ Mappa</button>'+
       '</div></div>'+
-      '<div class="panel-body"><div class="toolbar" style="margin-bottom:15px"><button class="btn primary" data-action="start-selected-furnitures">✓ Kijelölt bútorok gyűjtőbe helyezése →</button>'+
-      '<span class="muted small">Minden megadott darab külön példány lesz; méretei és paraméterei a gyűjtőben egyedileg módosíthatók.</span></div></div>'+
       '<div class="panel-body folder-columns">'+all.map(folder=>'<section class="folder-box" data-folder-drop="'+h(folder.id)+'">'+
         '<div class="folder-heading"><strong>📁 '+h(folder.name)+'</strong>'+
         (!folder.virtual&&folder.id!=='series'?'<button class="btn sm ghost" data-action="rename-folder" data-id="'+h(folder.id)+'">Átnevezés</button>'+
         '<button class="btn sm ghost danger" data-action="delete-folder" data-id="'+h(folder.id)+'">✕</button>':'')+'</div>'+
-        cardsFor(folder.id)+'</section>').join('')+'</div></div>'+jobPanel;
+        cardsFor(folder.id)+'</section>').join('')+'</div></div>'+jobPanel+
+      '<div class="panel top-gap"><div class="panel-body"><div class="toolbar" style="justify-content:flex-end;gap:12px">'+
+      '<span class="muted small">A kijelölt bútorok minden példánya külön szerkeszthető gyűjtőbe kerül.</span>'+
+      '<button class="btn primary" data-action="start-selected-furnitures">✓ Kijelölt bútorok közös szabása →</button>'+
+      '</div></div></div>';
   }
   function seriesLibraryPanel(){
     return '<div class="panel top-gap"><div class="panel-head"><div><div class="panel-title">Szériakönyvtár · csak itt módosítható</div>'+
