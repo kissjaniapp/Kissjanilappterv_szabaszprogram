@@ -594,8 +594,18 @@
     const own=materialCatalog.find(m=>m.id===part?.materialId);
     const base=materialCatalog.find(m=>m.id===f?.materialId);
     const selected=own||base;
-    return {color:String(selected?.color||part?.materialColor||f.materialColor||'Freya').trim(),
-      thickness:Number(((part?.fusionGenerated||part?.threeMfGenerated)&&!own&&Number(part.fusionThickness??part.threeMfThickness)>0)?(part.fusionThickness??part.threeMfThickness):(selected?.thickness??f.t??18)),
+    // A 3MF/Fusion geometriai befoglaló harmadik mérete nem feltétlenül
+    // lapvastagság. A felhasználó által kijelölt alapanyag az irányadó.
+    // Katalógusválasztás nélkül is csak ismert, azonos színű/vastagságú
+    // anyagként fogadjuk el az importált vastagságot.
+    const color=String(selected?.color||part?.materialColor||f.materialColor||'Freya').trim();
+    const imported=Number(part?.fusionThickness??part?.threeMfThickness);
+    const knownImported=(part?.fusionGenerated||part?.threeMfGenerated)&&
+      Number.isFinite(imported)&&imported>0&&materialCatalog.some(m=>
+        Math.abs(Number(m.thickness)-imported)<.001&&
+        String(m.color||'').trim().toLocaleLowerCase('hu-HU')===color.toLocaleLowerCase('hu-HU'));
+    return {color,
+      thickness:Number(selected?.thickness??(knownImported?imported:(f.t??18))),
       name:selected?.color||'Korábbi mentett anyag'};
   }
   function materialOptions(part,f){
@@ -1416,7 +1426,8 @@
   function projectLibraryView(){
     return intro('01 / BÚTORVÁLASZTÓ','Melyik bútort szeretnéd leszabni?',
       'Válassz egy elmentett szériát vagy munkát. Több bútort is összeállíthatsz egy közös szabászathoz.',
-      '<button class="btn primary" data-action="create-project">＋ Új bútor létrehozása</button>')+
+      '<button class="btn primary" data-action="create-project">＋ Új bútor létrehozása</button>'+
+      '<button class="btn" data-action="materials-page">⚙ Anyagadatbázis</button>')+
       folderLibraryView()+
       '<div class="mini-info top-gap">A szériákat csak a Bútorválasztóban módosítod. A kiválasztott bútor a munkában külön testreszabható. A meglévő munkák és helyi mentések megmaradnak.</div>';
   }
@@ -2334,11 +2345,16 @@
             const color=String(item.materialColor||'').trim().toLocaleLowerCase('hu-HU');
             const matches=catalog.filter(m=>Math.abs(Number(m.thickness)-item.thickness)<.001&&
               String(m.color||'').trim().toLocaleLowerCase('hu-HU')===color);
-            const material=matches.find(m=>Number(m.boardA)>0&&Number(m.boardB)>0);
-            return material?{a:Number(material.boardA),b:Number(material.boardB),
-              thickness:item.thickness,
-              name:'Alaptábla · automatikus ('+material.boardA+' × '+material.boardB+
-                ' × '+item.thickness+')'}:null;
+            // Az adatbázisban szereplő bútorlap korlátlan nagytáblás
+            // alapanyag, darabszám nélkül. Egyedi X/Y esetén azt használjuk;
+            // egyébként az alap 2800 × 2070 mm-es gyári táblát.
+            // 38 mm munkalapra a külön, védett szabály érvényes.
+            const material=matches.find(m=>Number(m.boardA)>0&&Number(m.boardB)>0)||matches[0];
+            if(!material||isWorktop38(item.thickness))return null;
+            const a=Number(material.boardA)>0?Number(material.boardA):STANDARD_BOARD.a;
+            const b=Number(material.boardB)>0?Number(material.boardB):STANDARD_BOARD.b;
+            return {a,b,thickness:item.thickness,
+              name:'Alaptábla · automatikus ('+a+' × '+b+' × '+item.thickness+')'};
           })();
         if(stock){
           const bin=createBin({...stock,id:'standard-'+item.thickness,
@@ -2990,7 +3006,7 @@
             (!String(b.materialColor||'').trim()||
              String(b.materialColor).trim().toLocaleLowerCase('hu-HU')===color));
           const catalog=(typeof materialCatalog==='undefined'?[]:materialCatalog).some(m=>
-            Math.abs(Number(m.thickness)-thickness)<.001&&Number(m.boardA)>0&&Number(m.boardB)>0&&
+            Math.abs(Number(m.thickness)-thickness)<.001&&
             String(m.color||'').trim().toLocaleLowerCase('hu-HU')===color);
           const guidance=!configured&&!catalog&&Math.abs(thickness-18)>.001?
             ' Ehhez a színhez és vastagsághoz nincs megadva automatikus alaptábla-méret; az Anyagadatbázisban add meg az X/Y táblaméretet vagy vegyél fel megfelelő táblát.':
