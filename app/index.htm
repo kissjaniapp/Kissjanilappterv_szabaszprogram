@@ -3417,14 +3417,17 @@
   // Az eredeti 3D testet nem töröljük, mert a bútor befoglaló méretéhez kell.
   function threeMfGroupMeetsMinimum(group){
     return Array.isArray(group?.dimensions)&&
-      Number(group.dimensions[0])>=50&&Number(group.dimensions[1])>=50;
+      Number(group.dimensions[0])>=50&&Number(group.dimensions[1])>=50&&
+      // 38 mm munkalap csak a 3MF látványban és bútormagasságban szerepel.
+      Math.abs(Number(group.dimensions[2])-38)>.001;
   }
   function threeMfPartMeetsMinimum(f,part){
     const key=String(part.cabinetDesignKey||'');
     const index=/^3mf-(\d+)$/.exec(key);
     const group=index?f.threeMfImport?.groups?.[Number(index[1])-1]:null;
     if(group)return threeMfGroupMeetsMinimum(group);
-    return Number(part.a)>=50&&Number(part.b)>=50;
+    return Number(part.a)>=50&&Number(part.b)>=50&&
+      Math.abs(Number(part.threeMfThickness)-38)>.001;
   }
   function excludeSmallThreeMfParts(f){
     if(!Array.isArray(f?.parts))return;
