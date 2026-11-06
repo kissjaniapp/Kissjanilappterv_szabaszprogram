@@ -107,3 +107,26 @@ test('matrica: nagyobb rés a méret aláhúzása és az ABS között, a név le
   assert.ok(Number(name[1])>Number(abs[1])+4,'alkatrésznév továbbra is az alsó mezőben');
   assert.doesNotMatch(svg,/2Rresz/,'0,4 mm ABS-hez nincs reszelés');
 });
+
+test('négyjegyű méretek nem lógnak rá az × jelre vagy az 1-2 kódra',()=>{
+  for(const [a,b] of [[1164,464],[754,964],[1164,1464],[12345,9876]]){
+    const svg=label(part({originalA:a,originalB:b,edge:'1-2',
+      edgeSides:{x1:true,x2:false,y1:true,y2:true},
+      edgeThicknesses:{x1:2,x2:0,y1:.4,y2:.4}}));
+    const elements=[...svg.matchAll(/<text x="([^"]+)" y="[^"]+" font-size="([^"]+)"[^>]*>([^<]+)<\/text>/g)]
+      .map(m=>({x:Number(m[1]),size:Number(m[2]),value:m[3]}));
+    const first=elements.find(t=>t.value===String(a));
+    const second=elements.find(t=>t.value===String(b));
+    const multiply=elements.find(t=>t.value==='×');
+    const code=elements.find(t=>t.value==='1-2');
+    assert.ok(first&&second&&multiply&&code,'összes méret és jel látható');
+    // Konzervatív becslés félkövér Arial számszélességre.
+    const half=t=>t.value.length*t.size*.31;
+    assert.ok(first.x+half(first)+.6<multiply.x-half(multiply),
+      'első méret és × között van hely: '+a);
+    assert.ok(multiply.x+half(multiply)+.6<second.x-half(second),
+      '× és második méret között van hely: '+b);
+    assert.ok(second.x+half(second)+.6<code.x-code.value.length*code.size*.63,
+      'második méret és élzáráskód között van hely: '+b);
+  }
+});
