@@ -130,3 +130,37 @@ test('négyjegyű méretek nem lógnak rá az × jelre vagy az 1-2 kódra',()=>{
       'második méret és élzáráskód között van hely: '+b);
   }
 });
+
+test('jobb alsó élenkénti maráslista: csak az élzárt H1/R1/R2 élek, 0,4 mindig nulla',()=>{
+  const p=part({name:'Fenék',edge:'1-2',mill:true,millDepth:1,
+    edgeSides:{x1:true,x2:false,y1:true,y2:true},
+    edgeThicknesses:{x1:2,x2:0,y1:2,y2:.4},
+    millDepthSides:{x1:1,x2:2,y1:1.5,y2:2}});
+  const svg=label(p);
+  assert.match(svg,/H1: 2mm ABS – 1mm marás/);
+  assert.match(svg,/R1: 2mm ABS – 1,5mm marás/);
+  assert.match(svg,/R2: 0,4mm ABS – nincs marás/);
+  assert.doesNotMatch(svg,/H2: /);
+  assert.match(svg,/>Fenék<\/text>/);
+});
+test('0-0 címkén nincs marási mező vagy lista',()=>{
+  const svg=label(part({edge:'0-0',mill:true}));
+  assert.doesNotMatch(svg,/H1:|H2:|R1:|R2:|nincs marás/);
+});
+test('az élenkénti marásból a szabási levonás is külön történik',()=>{
+  const p=part({edge:'2-2',edgeSides:{x1:true,x2:true,y1:true,y2:true},
+    edgeThicknesses:{x1:2,x2:2,y1:2,y2:.4},mill:true,millDepth:1,
+    millDepthSides:{x1:1,x2:0,y1:1.5,y2:0}});
+  const e=vm.runInNewContext('(function(){'+helpers+';return {partMillForSide};})()',{
+    Number,Object,Array,Math,String
+  });
+  assert.equal(e.partMillForSide(p,'x1'),1);
+  assert.equal(e.partMillForSide(p,'x2'),0);
+  assert.equal(e.partMillForSide(p,'y1'),1.5);
+  assert.equal(e.partMillForSide(p,'y2'),0);
+  const t=e.partMillForSide;
+  const thickness=p.edgeThicknesses;
+  const net=side=>thickness[side]===2?2-t(p,side):thickness[side];
+  assert.equal(net('x1')+net('x2'),3);
+  assert.equal(net('y1')+net('y2'),.9);
+});
