@@ -3148,28 +3148,6 @@
   }
   // Minden fizikai 3MF példány külön megmarad a saját eredeti helyén.
   // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
-  function threeMfEffectiveGeometry(f){
-    const model=f?.threeMfImport;
-    if(!model?.parts)return [];
-    const parts=model.parts.map(p=>p);
-    for(const row of threeMfResolvedGroups(f)){
-      if(!row.valid||!row.part)continue;
-      for(const index of row.group.indices){
-        const original=model.parts[index],bounds=original?.axisBoundsMm;
-        if(!original||!Array.isArray(bounds)||bounds.length!==3||
-          bounds.some(v=>!Number.isFinite(v)||v<=0))continue;
-        const ordered=[0,1,2].sort((a,b)=>bounds[b]-bounds[a]||a-b);
-        const ratios=[1,1,1];
-        for(let i=0;i<3;i++)ratios[ordered[i]]=row.dimensions[i]/bounds[ordered[i]];
-        const origin=original.originMm;
-        const triangles=(original.previewTriangles||[]).map(tri=>tri.map((coord,i)=>
-          origin[i%3]+(coord-origin[i%3])*ratios[i%3]));
-        parts[index]={...original,axisBoundsMm:bounds.map((v,i)=>v*ratios[i]),
-          previewTriangles:triangles};
-      }
-    }
-    return parts;
-  }
   function threeMfImportPreview(f){
     const model=f?.threeMfImport;
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
@@ -3252,7 +3230,8 @@
     if(!canvases.length)return;
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
-    const effectiveParts=typeof threeMfEffectiveGeometry==='function'?threeMfEffectiveGeometry(furniture):model.parts;
+    // A betöltött 3MF geometriáját képlet vagy bútorméret nem módosíthatja.
+    const effectiveParts=model.parts;
     const id=String(furniture.id);
     if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-.62,elevation:.45,zoom:1,selectedGroup:-1,showNearSide:false});
     const state3d=threeMfViewStates.get(id);
