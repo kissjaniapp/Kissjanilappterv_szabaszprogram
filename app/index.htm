@@ -3102,6 +3102,38 @@
     return decoder.decode(uncompressed);
   }
 
+  // Csak zárt, tengelyekhez igazított téglatest alkalmas automatikus
+  // táblás szabásra. A puszta befoglalódoboz egy íves/hengeres testnél
+  // félrevezető; mind a hat teljes síkfelületet ellenőrizni kell.
+  function threeMfRectangularSolid(vertices,triangleNodes,extents,lo){
+    if(!vertices.length||!triangleNodes.length||extents.some(d=>!Number.isFinite(d)||d<=0))return false;
+    const max=lo.map((v,i)=>v+extents[i]);
+    const areas=[extents[1]*extents[2],extents[1]*extents[2],
+      extents[0]*extents[2],extents[0]*extents[2],
+      extents[0]*extents[1],extents[0]*extents[1]];
+    const covered=[0,0,0,0,0,0],tolerance=.025;
+    for(const triangle of triangleNodes){
+      const indices=['v1','v2','v3'].map(k=>Number(triangle.getAttribute(k)));
+      if(indices.some(i=>!Number.isInteger(i)||i<0||i>=vertices.length))return false;
+      const points=indices.map(i=>vertices[i]);
+      let face=-1;
+      for(let axis=0;axis<3;axis++)for(let edge=0;edge<2;edge++){
+        const value=edge?max[axis]:lo[axis];
+        if(points.every(p=>Math.abs(p[axis]-value)<=tolerance)){
+          face=axis*2+edge;break;
+        }
+        if(face>=0)break;
+      }
+      if(face<0)return false;
+      const u=points[1].map((n,i)=>n-points[0][i]);
+      const v=points[2].map((n,i)=>n-points[0][i]);
+      const cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+      const area=Math.hypot(...cross)/2;
+      if(!Number.isFinite(area)||area<=1e-9)return false;
+      covered[face]+=area;
+    }
+    return covered.every((area,i)=>Math.abs(area-areas[i])<=Math.max(.05,areas[i]*.005));
+  }
   function threeMfParse(xmlText){
     const xml=new DOMParser().parseFromString(xmlText,'application/xml');
     if(xml.querySelector('parsererror')||xml.documentElement.localName!=='model')
@@ -3176,13 +3208,14 @@
           if(previewTriangles.length>=450)break;
         }
         const extents=hi.map((n,k)=>n-lo[k]);
+        const isRectangular=threeMfRectangularSolid(transformed,triangleNodes,extents,lo);
         const dims=[...extents].sort((a,b)=>b-a);
         if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
         if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
         const rounded=n=>Math.round(n*10000)/10000;
         result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
           originMm:lo.map(rounded),
-          axisBoundsMm:extents.map(rounded),previewTriangles});
+          axisBoundsMm:extents.map(rounded),previewTriangles,isRectangular});
       }
       const components=first(object,'components');
       for(const component of children(components,'component'))
@@ -3200,6 +3233,7 @@
       if(match)match.indices.push(i);
       else groups.push({name:p.name,dimensions:p.dimensions,indices:[i]});
     }
+    for(const group of groups)group.isRectangular=group.indices.every(i=>result[i].isRectangular===true);
     const title=children(xml.documentElement,'metadata').find(x=>x.getAttribute('name')==='Title')?.textContent;
     return {schema:'gatterka-3mf-v1',designName:String(title||'3MF modell').slice(0,150),
       parts:result,groups};
@@ -3232,7 +3266,8 @@
     return threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
       const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
-      return '<tr><td>'+h(part?.name||g.name)+'</td><td>'+h(dims)+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
+      const excluded=g.isRectangular===false?' <span class="muted small">· Nem téglatest, nem kerül a szabászatra</span>':'';
+      return '<tr><td>'+h(part?.name||g.name)+excluded+'</td><td>'+h(dims)+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
     }).join('');
   }
   function refreshThreeMfDimensionRows(f){
@@ -3244,7 +3279,8 @@
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
     const rows=threeMfRowsHtml(f);
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
-      model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
+      model.parts.length+' objektum · '+model.groups.filter(g=>g.isRectangular!==false).length+' szabható alkatrészsor'+
+      (model.groups.some(g=>g.isRectangular===false)?' · nem téglatest alakú elemek: csak a bútor teljes méretéhez':'')+'</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
         '<div class="toolbar" style="margin:12px 0"><label style="margin:0">Alkatrész kiemelése</label><select data-3mf-highlight aria-label="3MF alkatrész kiemelése" style="max-width:380px"><option value="-1">Teljes szekrény (minden alkatrész)</option>'+
         model.groups.map((g,i)=>'<option value="'+i+'">'+h(g.name)+' · '+g.indices.length+' db</option>').join('')+
@@ -3477,6 +3513,7 @@
     if(!l.dimensions.every((d,i)=>Math.abs(d-r.dimensions[i])<.05))return groups;
     const first=Math.min(groups.indexOf(l),groups.indexOf(r));
     const merged={name:threeMfSideName([l.name,r.name]),dimensions:l.dimensions.slice(),
+      isRectangular:l.isRectangular!==false&&r.isRectangular!==false,
       indices:[...l.indices,...r.indices],combinedSides:true,
       originalNames:[l.name,r.name]};
     const remaining=groups.filter(g=>g!==l&&g!==r);
@@ -3490,7 +3527,9 @@
     // into the imported model's part list.
     const unrelated=(f.parts||[]).filter(p=>!p.cabinetDesignKey);
     data.groups=threeMfCombinedCuttingGroups(data);
-    const created=data.groups.map((g,i)=>({
+    // A nem téglatest hálók megmaradnak a 3D előnézetben és a bútor
+    // befoglaló magasságában, de NEM generálhatnak vágandó alkatrészt.
+    const created=data.groups.map((g,i)=>g.isRectangular===false?null:({
       id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
       name:g.name,a:String(Math.round(g.dimensions[0]*100)/100),
       b:String(Math.round(g.dimensions[1]*100)/100),
@@ -3501,7 +3540,7 @@
       filingSides:{x1:false,x2:false,y1:false,y2:false},
       edgeThickness:2,mill:true,millDepth:1,rot:false,grainRequired:true,
       materialId:'',materialColor:''
-    }));
+    })).filter(Boolean);
     f.parts=[...unrelated,...created];
     // This 3MF has world-X as width, world-Y as depth, world-Z as height.
     // Set only the cabinet overview dimensions; individual sheet dimensions are untouched.
