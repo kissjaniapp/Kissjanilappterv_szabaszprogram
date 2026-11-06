@@ -8,7 +8,7 @@ function block(a,b){
  assert.ok(start>=0&&end>start,'Hiányzó programrész: '+a);
  return html.slice(start,end);
 }
-const rectangular=vm.runInNewContext('('+block('  function threeMfRectangularSolid(','  function threeMfParse(').trim()+')');
+const rectangular=vm.runInNewContext('('+block('  function threeMfRectangularSolid(','  // Standalone 3MF/ZIP reader.').trim()+')');
 function box(w,d,h) {
  const p=[[0,0,0],[w,0,0],[w,d,0],[0,d,0],
           [0,0,h],[w,0,h],[w,d,h],[0,d,h]];
