@@ -112,9 +112,13 @@ test('a bal oldali munkamód 3MF, a jobb oldali a beépített bútortervező',()
  assert.ok(a>=0&&b>a);
  const mode=html.slice(a,b);
  assert.ok(mode.indexOf('data-mode="parts"')<mode.indexOf('data-mode="design"'));
+ assert.ok(mode.indexOf('data-mode="design"')<mode.indexOf('data-mode="manual"'));
  assert.match(mode,/3MF rajzzal dolgozom/);
  assert.match(mode,/Egyszerű bútortervező/);
+ assert.match(mode,/Kézi alkatrészbevitel/);
  assert.match(html,/designWorkflowMode\(\)==='parts'\?threeMfUploadBlock\(f\):''/);
+ assert.match(html,/designWorkflowMode\(\)==='manual'/);
+ assert.match(html,/state\.active='furniture'/);
  assert.match(html,/designWorkflowMode\(\)==='parts'&&f\.threeMfImport\?\.parts\?\.length/);
  assert.match(html,/frame\.srcdoc=GATTERKA_CABINET_INLINE_HTML/);
 });
