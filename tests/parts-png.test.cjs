@@ -101,52 +101,57 @@ test('Műhely példány PNG fejléc és fájlnév: kizárólag elkészült alkat
  assert.match(html,/Műhely példány\.zip/);
 });
 
-test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabásterv mellett is',()=>{
- const lStart=html.indexOf('  function labelSvgContent(');
- const lEnd=html.indexOf('  const labelPaper=',lStart);
- assert.ok(lStart>=0&&lEnd>lStart);
- const state={furnitures:[{id:'f1',parts:[{
+// A matricatesztek az új, méretenkénti segédfüggvényt is betöltik.
+function makeLabelRenderer(state){
+  const lStart=html.indexOf('  function labelAxisDetails(');
+  const lEnd=html.indexOf('  const labelPaper=',lStart);
+  assert.ok(lStart>=0&&lEnd>lStart,'A kétoszlopos matricageneráló elérhető');
+  return vm.runInNewContext('(function(){'+filingSource+html.slice(lStart,lEnd)+
+    ';return labelSvgContent;})()',{
+      state,
+      h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
+      nfmt:value=>String(value)
+    });
+}
+test('Matrica a jelenlegi alkatrész reszelésjelölését olvassa régi szabásterv mellett is',()=>{
+ const state={furnitures:[{parts:[{
    id:'p1',filingSides:{x1:true,x2:false,y1:true,y2:true}
  }]}]};
- const makeLabel=vm.runInNewContext('(function(){'+filingSource+dimensionSource+
-   html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
-     state,
-     h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
-     nfmt:value=>String(value)
-   });
- // A már meglevő gépi elhelyezés / matricaadat nem tartalmazza a filingSides mezőt.
+ const makeLabel=makeLabelRenderer(state);
  const oldPlacement={part:{
    uid:'p1',name:'Polc',source:'Konyha',destination:'Műhely',
    materialColor:'Freya',originalA:964,originalB:600,edge:'1-2',
    edgeThickness:2,mill:true,millDepth:1
  }};
  const show=()=>makeLabel({placement:oldPlacement},0,0,48.5,25.4);
- const mixed=show();
- assert.match(mixed,/>1Hresz 2mm 2Rresz 2mm<\/text>/);
- assert.ok(mixed.indexOf('>1-2</text>')<mixed.indexOf('>1Hresz 2mm 2Rresz 2mm</text>'),
-   'reszelés a matricán az élzárás után, annak alatti sorban');
+ let svg=show();
+ assert.match(svg,/>1Hresz<\/text>/);
+ assert.match(svg,/>2Rresz<\/text>/);
+ assert.match(svg,/>1H 2mm ABS<\/text>/);
+ assert.match(svg,/>2R 2mm ABS<\/text>/);
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:true,y2:true};
- assert.match(show(),/>1H 2mm 2Rresz 2mm<\/text>/,
-   'a matrica a frissített alkatrészjelölést mutatja új bin generálása nélkül');
+ svg=show();
+ assert.doesNotMatch(svg,/1Hresz/);
+ assert.match(svg,/>2Rresz<\/text>/);
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:false,y2:false};
- assert.doesNotMatch(show(),/Hresz|Rresz/,
-   'kikapcsolt reszelés nem maradhat a korábbi matricaállapotból');
+ assert.doesNotMatch(show(),/Hresz|Rresz/);
 });
-test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös kódolással',()=>{
- const lStart=html.indexOf('  function labelSvgContent(');
- const lEnd=html.indexOf('  const labelPaper=',lStart);
- assert.ok(lStart>=0&&lEnd>lStart);
- const label=vm.runInNewContext('(function(){'+filingSource+dimensionSource+
-   html.slice(lStart,lEnd)+';return labelSvgContent;})()',{
-     h:value=>String(value??'').replaceAll('&','&amp;').replaceAll('<','&lt;'),
-     nfmt:value=>String(value)
-   });
- const text=label({placement:{part:{
-   name:'Oldallap',source:'Szekrény',destination:'Műhely',
-   materialColor:'Freya',originalA:910,originalB:600,
-   edge:'1-2',filingSides:{x1:true,y1:true,y2:true},edgeThickness:2
+test('Matricán a reszelés a saját mérete és ABS felirata alatt jelenik meg',()=>{
+ const label=makeLabelRenderer({furnitures:[]});
+ const base={name:'Oldallap',source:'Szekrény',destination:'Műhely',
+   materialColor:'Freya',originalA:964,originalB:502,
+   edge:'1-2',filingSides:{x1:false,y1:true,y2:true},edgeThickness:2};
+ let svg=label({placement:{part:base}},0,0,48.5,25.4);
+ assert.match(svg,/>1H 2mm ABS<\/text>/);
+ assert.match(svg,/>2R 2mm ABS<\/text>/);
+ assert.match(svg,/>2Rresz<\/text>/);
+ assert.doesNotMatch(svg,/1Hresz/);
+ assert.ok(svg.indexOf('2R 2mm ABS')<svg.indexOf('2Rresz'));
+ // Hibásan régi mentésből érkező reszelés sem szerepelhet 0,4 mm-es élen.
+ svg=label({placement:{part:{...base,
+   edgeSides:{x1:true,x2:false,y1:true,y2:true},
+   edgeThicknesses:{x1:2,x2:0,y1:.4,y2:.4}
  }}},0,0,48.5,25.4);
- assert.match(text,/>1Hresz 2mm 2Rresz 2mm<\/text>/);
- assert.ok(text.indexOf('1-2')<text.indexOf('1Hresz 2mm 2Rresz 2mm'),
-  'a reszelésnek az élzárási jelölés után kell állnia');
+ assert.match(svg,/>2R 0,4mm ABS<\/text>/);
+ assert.doesNotMatch(svg,/2Rresz/);
 });
