@@ -72,12 +72,14 @@ test('A bútorok másolása új, egymástól különböző kapcsolóazonosítók
   assert.equal(b.parts[0].customPartId,b.customParameters[0].parts[0].id);
   assert.equal(f.parts[0].id,'p','eredeti bútor változatlan');
 });
-test('A közös szabás a bútoradatokat nyitja meg, és külön mentett munkaként jelenik meg',()=>{
-  assert.match(html,/state\.active='furniture';result=null;furnitureCutSelection\.clear\(\)/);
+test('A közös szabás előbb gyűjtőt nyit, amelyből külön bútoradatok szerkeszthetők',()=>{
+  assert.match(html,/state\.active='collector';result=null;furnitureCutSelection\.clear\(\)/);
   assert.match(html,/isCombinedSelectionWorkspace\(entry\)/);
-  assert.match(html,/Mentett közös szabások/);
-  assert.match(html,/data-action="next-selected-furniture"/);
-  assert.match(html,/data-action="previous-selected-furniture"/);
+  assert.match(html,/Kijelölt bútorok gyűjtője/);
+  assert.match(html,/data-action="collector-open-furniture"/);
+  assert.match(html,/data-action="collector-parts"/);
+  assert.match(html,/data-action="collector-back"/);
+  assert.match(html,/data-action="collector-save-back"/);
 });
 test('A névfelajánlás saját paraméternél is működik, de bútoronként szűr',()=>{
   assert.match(html,/data-scope="custom-part".*data-key=/s);
