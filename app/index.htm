@@ -3006,6 +3006,38 @@
     }
     return [...candidates.values()].sort((a,b)=>b.maxY-a.maxY||a.minX-b.minX||a.minY-b.minY).slice(0,150);
   }
+  // Csak zárt, tengelyekhez igazított téglatest alkalmas automatikus
+  // táblás szabásra. A puszta befoglalódoboz egy íves/hengeres testnél
+  // félrevezető; mind a hat teljes síkfelületet ellenőrizni kell.
+  function threeMfRectangularSolid(vertices,triangleNodes,extents,lo){
+    if(!vertices.length||!triangleNodes.length||extents.some(d=>!Number.isFinite(d)||d<=0))return false;
+    const max=lo.map((v,i)=>v+extents[i]);
+    const areas=[extents[1]*extents[2],extents[1]*extents[2],
+      extents[0]*extents[2],extents[0]*extents[2],
+      extents[0]*extents[1],extents[0]*extents[1]];
+    const covered=[0,0,0,0,0,0],tolerance=.025;
+    for(const triangle of triangleNodes){
+      const indices=['v1','v2','v3'].map(k=>Number(triangle.getAttribute(k)));
+      if(indices.some(i=>!Number.isInteger(i)||i<0||i>=vertices.length))return false;
+      const points=indices.map(i=>vertices[i]);
+      let face=-1;
+      for(let axis=0;axis<3;axis++)for(let edge=0;edge<2;edge++){
+        const value=edge?max[axis]:lo[axis];
+        if(points.every(p=>Math.abs(p[axis]-value)<=tolerance)){
+          face=axis*2+edge;break;
+        }
+        if(face>=0)break;
+      }
+      if(face<0)return false;
+      const u=points[1].map((n,i)=>n-points[0][i]);
+      const v=points[2].map((n,i)=>n-points[0][i]);
+      const cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+      const area=Math.hypot(...cross)/2;
+      if(!Number.isFinite(area)||area<=1e-9)return false;
+      covered[face]+=area;
+    }
+    return covered.every((area,i)=>Math.abs(area-areas[i])<=Math.max(.05,areas[i]*.005));
+  }
   // Standalone 3MF/ZIP reader. No network dependency or external ZIP service.
   async function threeMfZipModel(file){
     // Fusion's 3MF export can use ZIP64 even for small models.
@@ -3102,38 +3134,6 @@
     return decoder.decode(uncompressed);
   }
 
-  // Csak zárt, tengelyekhez igazított téglatest alkalmas automatikus
-  // táblás szabásra. A puszta befoglalódoboz egy íves/hengeres testnél
-  // félrevezető; mind a hat teljes síkfelületet ellenőrizni kell.
-  function threeMfRectangularSolid(vertices,triangleNodes,extents,lo){
-    if(!vertices.length||!triangleNodes.length||extents.some(d=>!Number.isFinite(d)||d<=0))return false;
-    const max=lo.map((v,i)=>v+extents[i]);
-    const areas=[extents[1]*extents[2],extents[1]*extents[2],
-      extents[0]*extents[2],extents[0]*extents[2],
-      extents[0]*extents[1],extents[0]*extents[1]];
-    const covered=[0,0,0,0,0,0],tolerance=.025;
-    for(const triangle of triangleNodes){
-      const indices=['v1','v2','v3'].map(k=>Number(triangle.getAttribute(k)));
-      if(indices.some(i=>!Number.isInteger(i)||i<0||i>=vertices.length))return false;
-      const points=indices.map(i=>vertices[i]);
-      let face=-1;
-      for(let axis=0;axis<3;axis++)for(let edge=0;edge<2;edge++){
-        const value=edge?max[axis]:lo[axis];
-        if(points.every(p=>Math.abs(p[axis]-value)<=tolerance)){
-          face=axis*2+edge;break;
-        }
-        if(face>=0)break;
-      }
-      if(face<0)return false;
-      const u=points[1].map((n,i)=>n-points[0][i]);
-      const v=points[2].map((n,i)=>n-points[0][i]);
-      const cross=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
-      const area=Math.hypot(...cross)/2;
-      if(!Number.isFinite(area)||area<=1e-9)return false;
-      covered[face]+=area;
-    }
-    return covered.every((area,i)=>Math.abs(area-areas[i])<=Math.max(.05,areas[i]*.005));
-  }
   function threeMfParse(xmlText){
     const xml=new DOMParser().parseFromString(xmlText,'application/xml');
     if(xml.querySelector('parsererror')||xml.documentElement.localName!=='model')
