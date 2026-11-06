@@ -1446,6 +1446,7 @@
       const thickness=Number(f.t)||18;
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       for(const part of f.parts){
+        if(typeof cleanFilingForAbs==='function')cleanFilingForAbs(part);
         const material=materialForPart(part,f),thickness=material.thickness;
         vars.T=thickness;
         if(!String(part.name||'').trim()||!String(part.a||'').trim()||!String(part.b||'').trim()||!String(part.q||'').trim()){
@@ -5647,8 +5648,18 @@
           showNotice('A jelölés formátuma például 0-0, 1-0, 1-2 vagy 2-2 lehet.');
           el.value=key==='edge'?target.edge||'0-0':codeFromSides(target.filingSides||{});return;
         }
-        if(key==='edge')setPartEdgeCode(target,code);
-        else target.filingSides=sidesFromCode(code);
+        if(key==='edge'){
+          setPartEdgeCode(target,code);
+          if(cleanFilingForAbs(target))showNotice('Reszelés csak 2 mm-es ABS-szel élzárt élen lehet.');
+        }else{
+          const requested=sidesFromCode(code),thicknesses=partEdgeThicknesses(target);
+          if(allPartSides.some(side=>requested[side]&&thicknesses[side]!==2)){
+            showNotice('Reszelést csak 2 mm-es ABS-szel ellátott élen jelölhetsz. A 0,4 mm-es él nem reszelhető.');
+            el.value=codeFromSides(target.filingSides||{});
+            return;
+          }
+          target.filingSides=requested;
+        }
       }else if(scope==='part'&&key==='edgeSideThickness'){
         if(!allPartSides.includes(el.dataset.side))return;
         const thickness=Number(value);
@@ -5660,6 +5671,7 @@
         target.edge=codeFromSides(target.edgeSides);
         if(thickness===2){target.mill=true;target.millDepth??=1;}
         if(!allPartSides.some(side=>previous[side]===2))target.mill=false;
+        if(cleanFilingForAbs(target))showNotice('A 0,4 mm-es ABS élről a reszelést töröltem; csak 2 mm-es ABS reszelhető.');
       }else if(scope==='part'&&key==='edgeSide'){
         if(!['x1','x2','y1','y2'].includes(el.dataset.side))return;
         target.edgeSides={...(target.edgeSides||sidesFromCode(target.edge)),[el.dataset.side]:value};
