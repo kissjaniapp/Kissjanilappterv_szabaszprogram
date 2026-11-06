@@ -4894,7 +4894,7 @@
     // Az alkatrész neve a matrica alsó sávjába kerül, teljes szélességben.
     // Hosszú névnél két sorra törünk; a szöveg sosem kap levágó három pontot.
     const partNameLines=(name)=>{
-      const words=String(name??'').trim().split(/\\s+/).filter(Boolean);
+      const words=String(name??'').trim().split(/\s+/).filter(Boolean);
       const first=[],second=[];
       for(const word of words){
         const target=second.length||((first.join(' ').length+(first.length?1:0)+word.length)>34&&first.length)?second:first;
