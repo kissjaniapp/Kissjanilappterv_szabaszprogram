@@ -1733,8 +1733,8 @@
     return intro('MUNKAMÓD','Mit szeretnél készíteni?',
       'Válassz munkamódot. A meglévő alkatrészek módváltáskor megmaradnak.','')+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:18px">'+
-      '<button class="panel" data-action="choose-workflow-mode" data-mode="design" style="padding:26px;text-align:left;cursor:pointer"><h2>🧰 Szekrény tervezése</h2><p>Bútoradatok, paraméterek, 3MF, élő nézetek és alkatrészlista.</p><strong>Szekrénytervezés →</strong></button>'+
-      '<button class="panel" data-action="choose-workflow-mode" data-mode="parts" style="padding:26px;text-align:left;cursor:pointer"><h2>📋 Csak alkatrészek és szabászat</h2><p>Nincs Bútor adatai oldal. Alkatrészek kézzel vagy 3MF-ből, majd szabásterv és mentés.</p><strong>Alkatrészlista →</strong></button>'+
+      '<button class="panel" data-action="choose-workflow-mode" data-mode="parts" style="padding:26px;text-align:left;cursor:pointer"><h2>📐 3MF rajzzal dolgozom</h2><p>3MF rajz betöltése, alkatrészek ellenőrzése, szabásterv és mentés.</p><strong>3MF munkamód →</strong></button>'+
+      '<button class="panel" data-action="choose-workflow-mode" data-mode="design" style="padding:26px;text-align:left;cursor:pointer"><h2>🧰 Egyszerű bútortervező</h2><p>A korábbi beépített szekrénytervező 2D és forgatható 3D rajzzal, bútorparaméterekkel és alkatrészlistával.</p><strong>Bútortervező megnyitása →</strong></button>'+
       '</div>';
   }
   function furnitureView(stage='furniture'){
@@ -1762,8 +1762,8 @@
           <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
         </div>
         ${customParametersPanel(f)}
-        ${threeMfUploadBlock(f)}
-        ${f.threeMfImport?.parts?.length?
+        ${designWorkflowMode()==='parts'?threeMfUploadBlock(f):''}
+        ${designWorkflowMode()==='parts'&&f.threeMfImport?.parts?.length?
         '<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div><div class="panel-title">Élő szekrényrajz · betöltött 3MF modell</div><div class="panel-sub">Az elöl-, oldal- és 3D nézet a fájl valódi geometriáját mutatja, nem egy helyettesítő szekrénysémát.</div></div></div><div class="panel-body">'+threeMfImportPreview(f)+'</div></section>':
         '<section class="panel gatterka-cabinet-inline" data-live-cabinet data-cabinet-furniture="'+h(f.id)+'" style="grid-column:1/-1;padding:12px">'+
           '<div class="panel-head"><div><div class="panel-title">Szekrénytervező – 2D és forgatható 3D rajz</div><div class="panel-sub">A Polcok menüpont csak polc nevű paraméter mellett jelenik meg.</div></div></div>'+
@@ -1801,7 +1801,7 @@
        ${allPartSides.map(side=>'<label>'+side.toUpperCase()+'<select aria-label="'+side.toUpperCase()+' él ABS vastagsága" data-scope="part" data-id="'+h(part.id)+'" data-key="edgeSideThickness" data-side="'+side+'">'+
          [0,2,0.4].map(value=>'<option value="'+value+'" '+(Number(partEdgeThicknesses(part)[side])===value?'selected':'')+'>'+ (value===0?'–':String(value).replace('.',',')+' mm')+'</option>').join('')+
        '</select></label>').join('')}
-      </div></td><td><input class="edge-code" style="width:64px" aria-label="Reszelés szálirány-keresztirány (0-2)" maxlength="3" pattern="[0-2]-[0-2]" title="Első szám: szálirányú élek; második: keresztirányú élek" data-scope="part" data-id="${part.id}" data-key="filingCode" value="${h(codeFromSides(part.filingSides||{}))}"></td><td class="check-cell"><input type="checkbox" title="2 mm-es ABS mellett élmarás be- és kikapcsolása" aria-label="Élmarás be- és kikapcsolása" data-scope="part" data-id="${part.id}" data-key="mill" ${!allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)?'disabled':''} ${part.mill&&allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)?'checked':''}><input type="number" min="0" max="2" step="0.1" style="width:62px;margin-left:5px" title="Előmarás mélysége milliméterben (0–2 mm)" aria-label="Marás mélysége (mm)" data-scope="part" data-id="${part.id}" data-key="millDepth" value="${h(part.millDepth??1)}" ${!allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)||!part.mill?'disabled':''}> mm<div class="tiny muted" style="margin-top:5px">Élenkénti marás (mm):</div><div style="display:grid;grid-template-columns:repeat(2,minmax(68px,1fr));gap:3px;margin-top:4px">${allPartSides.map(side=>{const edge=partEdgeThicknesses(part)[side];const v=part.millDepthSides?.[side]??part.millDepth??1;return '<label style="font-size:11px">'+({x1:'H1',x2:'H2',y1:'R1',y2:'R2'})[side]+' <input type="number" min="0" max="2" step="0.1" style="width:52px;padding:3px" data-scope="part" data-id="'+h(part.id)+'" data-key="millSideDepth" data-side="'+side+'" value="'+h(edge===2?v:0)+'" '+(edge!==2||!part.mill?'disabled':'')+'></label>';}).join('')}</div></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Sor törlése" data-action="remove-part" data-id="${part.id}">✕</button></td></tr>`;
+      </div></td><td><input class="edge-code" style="width:64px" aria-label="Reszelés szálirány-keresztirány (0-2)" maxlength="3" pattern="[0-2]-[0-2]" title="Első szám: szálirányú élek; második: keresztirányú élek" data-scope="part" data-id="${part.id}" data-key="filingCode" value="${h(codeFromSides(part.filingSides||{}))}"></td><td class="check-cell"><input type="checkbox" title="2 mm-es ABS mellett élmarás be- és kikapcsolása" aria-label="Élmarás be- és kikapcsolása" data-scope="part" data-id="${part.id}" data-key="mill" ${!allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)?'disabled':''} ${part.mill&&allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)?'checked':''}><input type="number" min="0" max="2" step="0.1" style="width:62px;margin-left:5px" title="Előmarás mélysége milliméterben (0–2 mm)" aria-label="Marás mélysége (mm)" data-scope="part" data-id="${part.id}" data-key="millDepth" value="${h(part.millDepth??1)}" ${!allPartSides.some(side=>partEdgeThicknesses(part)[side]===2)||!part.mill?'disabled':''}> mm<div class="tiny muted" style="margin-top:5px">Élenkénti marás (mm):</div><div style="display:grid;grid-template-columns:repeat(2,minmax(68px,1fr));gap:3px;margin-top:4px">${allPartSides.map(side=>{const edge=partEdgeThicknesses(part)[side];const v=part.millDepthSides?.[side]??part.millDepth??1;return '<label style="font-size:11px">'+({x1:'H1',x2:'H2',y1:'R1',y2:'R2'})[side]+' <input type="number" min="0" max="2" step="0.1" style="width:52px;padding:3px" data-scope="part" data-id="'+h(part.id)+'" data-key="millSideDepth" data-side="'+side+'" value="'+h(edge===2?v:0)+'" '+(edge!==2||!part.mill?'disabled':'')+'></label>';}).join('')}</div></td><td class="check-cell"><input title="Bepipálva: szálirány kötelező. Kikapcsolva: keresztben is forgatható." aria-label="Szálirány kötelező" type="checkbox" data-scope="part" data-id="${part.id}" data-key="grainRequired" ${part.grainRequired!==false?'checked':''}></td><td><button class="btn icon ghost danger" title="Alkatrész törlése" aria-label="Alkatrész törlése: ${h(part.name||'Névtelen alkatrész')}" data-action="remove-part" data-id="${part.id}" data-owner="${h(owner.id)}">✕</button></td></tr>`;
     }).join('');
     const right=`<div class="panel"><div class="panel-head"><div><div class="panel-title">Közös alkatrészlista <span class="pill gray">${partEntries.length} sor · ${state.furnitures.length} bútor</span></div><div class="panel-sub">X = szálirány, Y = keresztirány. A ⠿ fogantyúval a sorok egy bútoron belül áthúzhatók; az új sorrend mentődik. Az élzárást és a reszelést két számmal adhatod meg, például 1-2: első a szálirányú, második a keresztirányú élek száma.</div></div><div class="actions"><button class="btn sm" data-action="swap-all-grain" title="Az összes alkatrész X/Y szálirányának felcserélése">⇄ Szálirányok megfordítása</button><button class="btn sm" data-action="download-parts-png">↓ Lista PNG</button><button class="btn sm" data-action="materials-page">⚙ Anyagadatbázis</button></div></div><div class="table-wrap parts-table-scroll"><table><thead><tr><th title="Alkatrészek sorrendje">⠿</th><th>Megnevezés</th><th>X · szál ↔</th><th>Y · kereszt ↕</th><th>Db</th><th>IF · megmunkálási feltétel</th><th>Anyag · szín · vastagság</th><th>Élzárás (szál-kereszt)</th><th>ABS vastagság · X1 X2 Y1 Y2</th><th title="Szálirányú és keresztirányú élek száma, pl. 1-2">Reszelés</th><th title="Bekapcsolható előmarás, 0–2 mm között állítható mélység">Élmarás (mm)</th><th title="Kikapcsolva: alkatrész 90 fokkal forgatható">Szálirány kötelező</th><th></th></tr></thead><tbody>${rows||`<tr><td colspan="13" class="muted">Nincs még alkatrész.</td></tr>`}</tbody></table></div><div class="part-add-bottom"><div class="toolbar" style="justify-content:center;margin-bottom:10px">${state.furnitures.length>1&&stage==='parts'?`<label>Új alkatrész ehhez a bútorhoz: <select data-scope="ui" data-key="selectedFurniture">${state.furnitures.map(item=>`<option value="${h(item.id)}" ${f?.id===item.id?'selected':''}>${h(item.name||'Bútor')}</option>`).join('')}</select></label>`:''} </div><button class="btn primary" data-action="add-part" ${!f?'disabled':''}>＋ Új alkatrész hozzáadása</button><div class="tiny muted" style="margin-top:7px">Az új sor alul jelenik meg. A Tab billentyűvel mezőről mezőre haladhatsz.</div></div><div class="formula-bar"><strong>Képlet nélkül is használható:</strong> A névbe írhatsz képletet is, pl. <code>Polc {W-2*T} mm</code> vagy <code>=W-2*T</code>.<br><code>W</code> szélesség · <code>H</code> magasság · <code>D</code> mélység · <code>T</code> alkatrész lapvastagsága · <code>S</code> polcszám · <code>O</code> osztó (0/1)<br><strong>IF:</strong> az alkatrész akkor kerül a szabásba, ha nincs IF vagy igaz a feltétele. Példa: <code>szokli=1-2-3</code> = 1, 2 vagy 3 esetén bekerül, 0-nál kimarad. További példa: <code>szokli=2</code> és <code>W>=1100</code>. A <code>[szokli]</code> a megadott számértéket adja méret-, darabszám- és névképletben.<br><span style="color:#8a9b8f">Példa: W-2*T = két oldallap közé kerülő polc. Élzárás: X1/X2 = a két szálirányú él (az Y méretből vonunk le), Y1/Y2 = a két keresztirányú él (az X méretből vonunk le). A négy pipa száma adja a régi <b>1-0</b>, <b>0-2</b> vagy <b>2-2</b> kódot. Alapélzáró: <b>2 mm</b>. <b>2 mm-es élzárónál a marás alapból bekapcsolt</b>: ilyenkor alapból élenként 1 mm-t vonunk le, de a marás mélysége 0–2 mm között változtatható, és a jelölés kikapcsolható. A <b>0,4 mm-es élzárónál nincs marás</b>: mindig pontosan 0,4 mm-t vonunk le élenként. A <b>Reszelés</b> X1/X2/Y1/Y2 jelölése független az élzárástól, a szabási méretet nem módosítja. Hresz = hosszabb, Rresz = rövidebb él, pl. 1Hresz-2Rresz. A „Szálirány kötelező” alapból be van pipálva. Ha kikapcsolod, a program keresztbe is elforgathatja az alkatrészt.</span></div><div class="panel-body" style="padding-top:15px"><div class="toolbar"><div><strong class="num" data-live-part-total>${nfmt(summary.total)} db</strong><div class="part-summary" data-live-part-area>${nfmt(summary.rows.reduce((sum,r)=>sum+(r.originalA||0)*(r.qty||0),0)/1e6)} m² kész alkatrészterület · összes bútor</div></div><div class="actions"><button class="btn" type="button" data-action="save-furniture-customization">💾 Bútor testreszabásának mentése</button><button class="btn primary" data-action="page" data-page="parts-review">Alkatrész-összesítő →</button></div></div><div class="tiny muted" role="status" data-furniture-save-status></div></div>`;
     const warning=summary.errors.length?`<div class="notice error top-gap">${h(summary.errors[0])}${summary.errors.length>1?' · további hibák: '+(summary.errors.length-1):''}</div>`:'';
@@ -3436,7 +3436,9 @@
   // Minden fizikai 3MF példány külön megmarad a saját eredeti helyén.
   // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
   function threeMfRowsHtml(f){
-    return threeMfResolvedGroups(f).filter(({group})=>threeMfGroupMeetsMinimum(group))
+    return threeMfResolvedGroups(f).filter(({group})=>
+      threeMfGroupMeetsMinimum(group)&&
+      !(f.deletedPartKeys||[]).includes('3mf-'+(f.threeMfImport.groups.indexOf(group)+1)))
       .map(({group:g,part,dimensions,valid})=>{
       const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
@@ -3707,6 +3709,7 @@
     // A ferdevágott, zárt síklapok a legnagyobb X/Y befoglaló
     // előgyártmányként kerülnek be (0 mm plusz ráhagyás).
     // Íves és ismeretlen hálók csak a 3D előnézetben maradnak.
+    f.deletedPartKeys=(f.deletedPartKeys||[]).filter(key=>!/^3mf-\d+$/.test(key));
     const created=data.groups.map((g,i)=>
       !threeMfGroupMeetsMinimum(g)||(g.isRectangular===false&&!g.isAngledCut)?null:({
       id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
@@ -4389,6 +4392,7 @@
     const seen=new Set();
     for(const row of records){
       if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,45}$/.test(row.key))continue;
+      if((f.deletedPartKeys||[]).includes(row.key))continue;
       if(row.ready===false){seen.add(row.key);continue;}
       const a=Number(row.a),b=Number(row.b),q=Number(row.qty);
       if(![a,b,q].every(Number.isFinite)||a<=0||b<=0||q<1||a>10000||b>10000||q>100)continue;
@@ -5851,7 +5855,17 @@
       document.querySelector('[data-scope="part"][data-id="'+id+'"][data-key="name"]')?.focus();
     }
     else if(action==='remove-part'){
-      const f=getFurniture();if(f)f.parts=f.parts.filter(p=>p.id!==el.dataset.id);result=null;render();
+      // Több bútor közös listájában mindig a sor tényleges gazdájából törlünk.
+      const f=state.furnitures.find(item=>item.id===el.dataset.owner)||getFurniture();
+      const part=f?.parts?.find(p=>p.id===el.dataset.id);
+      if(!part)return;
+      if(!confirm('Törlöd ezt az alkatrészt? '+(part.name||'Névtelen alkatrész')))return;
+      if(part.cabinetDesignKey){
+        f.deletedPartKeys=Array.isArray(f.deletedPartKeys)?f.deletedPartKeys:[];
+        if(!f.deletedPartKeys.includes(part.cabinetDesignKey))f.deletedPartKeys.push(part.cabinetDesignKey);
+      }
+      f.parts=f.parts.filter(p=>p.id!==part.id);
+      result=null;save();render();
     }
     else if(action==='add-board'){state.boards.push({id:uuid(),name:'Maradék tábla',a:'',b:'',thickness:18,qty:1});result=null;render();document.getElementById('legacy-boards')?.setAttribute('open','');}
     else if(action==='remove-board'){state.boards=state.boards.filter(b=>b.id!==el.dataset.id);result=null;render();}
