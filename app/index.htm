@@ -1534,6 +1534,7 @@
       const thickness=Number(f.t)||18;
       const vars={W:+f.w,H:+f.ht,D:+f.d,T:thickness,S:effectiveShelves(f),O:effectiveDivider(f)};
       for(const part of f.parts){
+        if(part.threeMfGenerated&&!threeMfPartMeetsMinimum(f,part))continue;
         if(typeof cleanFilingForAbs==='function'&&typeof partEdgeThicknesses==='function')cleanFilingForAbs(part);
         const material=materialForPart(part,f),thickness=material.thickness;
         vars.T=thickness;
@@ -3411,10 +3412,29 @@
       }
     });
   }
+  // A 3MF-ből származó alkatrész csak 50 × 50 mm-es (vagy nagyobb)
+  // befoglaló X/Y mérettel kerülhet bármely alkatrészlistába.
+  // Az eredeti 3D testet nem töröljük, mert a bútor befoglaló méretéhez kell.
+  function threeMfGroupMeetsMinimum(group){
+    return Array.isArray(group?.dimensions)&&
+      Number(group.dimensions[0])>=50&&Number(group.dimensions[1])>=50;
+  }
+  function threeMfPartMeetsMinimum(f,part){
+    const key=String(part.cabinetDesignKey||'');
+    const index=/^3mf-(\d+)$/.exec(key);
+    const group=index?f.threeMfImport?.groups?.[Number(index[1])-1]:null;
+    if(group)return threeMfGroupMeetsMinimum(group);
+    return Number(part.a)>=50&&Number(part.b)>=50;
+  }
+  function excludeSmallThreeMfParts(f){
+    if(!Array.isArray(f?.parts))return;
+    f.parts=f.parts.filter(part=>!part.threeMfGenerated||threeMfPartMeetsMinimum(f,part));
+  }
   // Minden fizikai 3MF példány külön megmarad a saját eredeti helyén.
   // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
   function threeMfRowsHtml(f){
-    return threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
+    return threeMfResolvedGroups(f).filter(({group})=>threeMfGroupMeetsMinimum(group))
+      .map(({group:g,part,dimensions,valid})=>{
       const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
       const excluded=g.isAngledCut?' <span class="muted small">· Ferde vágás · befoglaló előgyártmány (0 mm ráhagyás)</span>':
@@ -3431,7 +3451,8 @@
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
     const rows=threeMfRowsHtml(f);
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
-      model.parts.length+' objektum · '+model.groups.filter(g=>g.isRectangular!==false||g.isAngledCut===true).length+' szabható alkatrészsor'+
+      model.parts.length+' objektum · '+model.groups.filter(g=>
+        threeMfGroupMeetsMinimum(g)&&(g.isRectangular!==false||g.isAngledCut===true)).length+' szabható alkatrészsor'+
       (model.groups.some(g=>g.isRectangular===false&&!g.isAngledCut)?' · nem szabható elemek: csak a bútor teljes méretéhez':'')+'</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
         '<div class="toolbar" style="margin:12px 0"><label style="margin:0">Alkatrész kiemelése</label><select data-3mf-highlight aria-label="3MF alkatrész kiemelése" style="max-width:380px"><option value="-1">Teljes szekrény (minden alkatrész)</option>'+
@@ -3683,7 +3704,8 @@
     // A ferdevágott, zárt síklapok a legnagyobb X/Y befoglaló
     // előgyártmányként kerülnek be (0 mm plusz ráhagyás).
     // Íves és ismeretlen hálók csak a 3D előnézetben maradnak.
-    const created=data.groups.map((g,i)=>g.isRectangular===false&&!g.isAngledCut?null:({
+    const created=data.groups.map((g,i)=>
+      !threeMfGroupMeetsMinimum(g)||(g.isRectangular===false&&!g.isAngledCut)?null:({
       id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
       name:g.name,a:String(g.dimensions[0]),
       b:String(g.dimensions[1]),
@@ -4446,6 +4468,9 @@
     }
   });
   function render(){
+    // Korábbi mentett 3MF-importokból is ki kell szűrni a túl kicsi
+    // alkatrészeket, mielőtt bármely alkatrészlista megjelenik.
+    for(const f of state.furnitures||[])excludeSmallThreeMfParts(f);
     $('#top-steps').style.display='';renderNav();
     if(projectScreen==='series-edit'){
       $('#content').innerHTML='<div class="toolbar" style="margin:16px 0">'+
