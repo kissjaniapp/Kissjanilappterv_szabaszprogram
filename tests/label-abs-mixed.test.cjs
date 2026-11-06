@@ -31,7 +31,8 @@ function label(p){
 }
 test('0-0 élzárás esetén nincs sem élzáróanyag, sem 2mm ABS jelzés a matricán',()=>{
   const svg=label(part());
-  assert.doesNotMatch(svg,/2\s*mm\s*élzáró|[12]H|[12]R|0-0/);
+  assert.doesNotMatch(svg,/2\\s*mm\\s*élzáró|[12]H|[12]R/);
+  assert.match(svg,/>0-0<\\/text>/);
   assert.match(svg,/Fehér tölgy/);
 });
 test('az anyagszín a matrica jobb felső sarkába kerül',()=>{
@@ -163,4 +164,26 @@ test('az élenkénti marásból a szabási levonás is külön történik',()=>{
   const net=side=>thickness[side]===2?2-t(p,side):thickness[side];
   assert.equal(net('x1')+net('x2'),3);
   assert.equal(net('y1')+net('y2'),.9);
+});
+
+test('élzáráskód: ha egyik méret sincs aláhúzva, 0-0',()=>{
+  const svg=label(part({edge:'0-0'}));
+  assert.match(svg,/>0-0<\/text>/);
+  assert.doesNotMatch(svg,/H1:|R1:|mm ABS/);
+});
+test('élzáráskód: csak az első méret jelölt, 1-0 vagy 2-0',()=>{
+  for(const count of [1,2]){
+    const svg=label(part({edge:count+'-0',
+      edgeSides:{x1:true,x2:count===2,y1:false,y2:false},
+      edgeThicknesses:{x1:2,x2:count===2?2:0,y1:0,y2:0}}));
+    assert.match(svg,new RegExp('>'+count+'-0<\\/text>'));
+  }
+});
+test('élzáráskód: csak a második méret jelölt, 0-1 vagy 0-2',()=>{
+  for(const count of [1,2]){
+    const svg=label(part({edge:'0-'+count,
+      edgeSides:{x1:false,x2:false,y1:true,y2:count===2},
+      edgeThicknesses:{x1:0,x2:0,y1:2,y2:count===2?.4:0}}));
+    assert.match(svg,new RegExp('>0-'+count+'<\\/text>'));
+  }
 });
