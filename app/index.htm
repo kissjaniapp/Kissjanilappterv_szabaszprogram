@@ -1343,7 +1343,7 @@
   // mentődik. Sem xMix, sem xPrg gépi fájlt nem készít.
   // A Mentés előtt a nyitott IF input legfrissebb értékét is beolvassuk.
   function captureVisibleFurnitureEdits(){
-    const sharedDestination=document.querySelector('[data-scope="collector-destination"]');
+    const sharedDestination=document.querySelector?.('[data-scope="collector-destination"]');
     if(sharedDestination)for(const furniture of state.furnitures)furniture.destination=sharedDestination.value;
     for(const el of document.querySelectorAll('[data-scope="part"][data-key], [data-scope="custom-param"][data-key], [data-scope="furniture"][data-key]')){
       const scope=el.dataset.scope,key=el.dataset.key;
