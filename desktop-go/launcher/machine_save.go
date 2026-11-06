@@ -38,8 +38,6 @@ type savedMachineFiles struct {
  Programs []string `json:"programs"`
 }
 
-const maxMachinePrograms = 100
-
 func mixFileBase(raw string) string {
  if j := strings.LastIndexAny(raw, `\/`); j >= 0 {
   return raw[j+1:]
@@ -49,7 +47,7 @@ func mixFileBase(raw string) string {
 
 // validateMixSave ellenőrzi, hogy az xMix pontosan a csomag xPrg fájljaira hivatkozik.
 func validateMixSave(req nativeMixSave) error {
- if len(req.Programs) < 1 || len(req.Programs) > maxMachinePrograms {
+ if len(req.Programs) < 1 {
   return errors.New("Érvénytelen xPrg fájlszám.")
  }
  if !strings.HasPrefix(req.Mix, "<xMix>") ||
@@ -112,7 +110,7 @@ func patchMixWithSavedPaths(mix string, savedPaths map[string]string) (string, e
 func createExclusive(dir, name, content string) (string, error) {
  extension := filepath.Ext(name)
  stem := strings.TrimSuffix(name, extension)
- for n := 1; n <= 999; n++ {
+ for n := 1; ; n++ {
   candidate := name
   if n > 1 {
    candidate = fmt.Sprintf("%s_%d%s", stem, n, extension)
@@ -136,8 +134,7 @@ func createExclusive(dir, name, content string) (string, error) {
   }
   return target, nil
  }
- return "", errors.New("Túl sok azonos nevű .xPrg fájl a mappában.")
-}
+ }
 
 // saveMixAndPrograms a felhasználó által a Mentés másként ablakban megadott
 // .xMix helyére menti a közös projektfájlt, mellé (ugyanabba a mappába) pedig
