@@ -16,7 +16,7 @@ import (
     "unsafe"
 )
 
-var version = "1.0.9"
+var version = "1.1.0"
 
 func message(s string) {
     title, _ := syscall.UTF16PtrFromString("Gatterka " + version)
