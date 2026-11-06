@@ -105,3 +105,22 @@ test('a régi táblák nem vesznek el; az új maradékkészlet a fő készletold
  assert.match(html,/materialsAndRemnantsView\(false\)/);
  assert.doesNotMatch(html,/data-action="complete-remnant-job"/);
 });
+
+test('a bal oldali munkamód 3MF, a jobb oldali a beépített bútortervező',()=>{
+ const a=html.indexOf('  function modeChoiceView(){');
+ const b=html.indexOf('  function furnitureView(',a);
+ assert.ok(a>=0&&b>a);
+ const mode=html.slice(a,b);
+ assert.ok(mode.indexOf('data-mode="parts"')<mode.indexOf('data-mode="design"'));
+ assert.match(mode,/3MF rajzzal dolgozom/);
+ assert.match(mode,/Egyszerű bútortervező/);
+ assert.match(html,/designWorkflowMode\(\)==='parts'\?threeMfUploadBlock\(f\):''/);
+ assert.match(html,/designWorkflowMode\(\)==='parts'&&f\.threeMfImport\?\.parts\?\.length/);
+ assert.match(html,/frame\.srcdoc=GATTERKA_CABINET_INLINE_HTML/);
+});
+test('alkatrészek egyenként törölhetők a saját bútorukból többbútoros listában is',()=>{
+ assert.match(html,/data-action="remove-part" data-id="\$\{part\.id\}" data-owner="\$\{h\(owner\.id\)\}"/);
+ assert.match(html,/state\.furnitures\.find\(item=>item\.id===el\.dataset\.owner\)/);
+ assert.match(html,/f\.parts=f\.parts\.filter\(p=>p\.id!==part\.id\)/);
+ assert.match(html,/deletedPartKeys/);
+});
