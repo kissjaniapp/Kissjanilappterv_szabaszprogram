@@ -1767,7 +1767,7 @@
         `${designWorkflowMode()==='parts'?'<button class="btn" data-action="workflow-choice">⚙ Munkamód váltása</button>':'<button class="btn" data-action="page" data-page="furniture">← Bútor adatai</button>'}`)+
         (designWorkflowMode()==='parts'&&f?threeMfUploadBlock(f)+(f.threeMfImport?.parts?.length?threeMfImportPreview(f):''):'')+
         (f?right:'<div class="panel empty"><h3>Először adj hozzá egy bútort.</h3></div>')+
-        `<div class="section-bottom"><span class="muted small">${state.furnitures.length} bútortípus alkatrészei a közös szabástervbe kerülnek.</span></div>`+warning;
+        `<div class="section-bottom"><span class="muted small">${state.furnitures.length} külön bútordarab alkatrészei a közös szabástervbe kerülnek.</span></div>`+warning;
     }
     return intro('02 / BÚTOR ADATAI','Bútor megadása',
       'Itt add meg a bútor méreteit, az anyagszínt és hogy hová készül. Az alkatrészlista a következő oldalon jelenik meg.',
@@ -4237,7 +4237,7 @@
         '<button class="btn" data-action="series-home">← Szériák</button>'+
         '<strong>Széria szerkesztése · önálló sablon</strong>'+
         '<button class="btn primary" data-action="save-series">💾 Széria mentése</button></div>'+
-        (state.active==='mode'?modeChoiceView():state.active==='furniture'?collectorFurniturePanel()+furnitureView():state.active==='parts'?collectorFurniturePanel()+furnitureView('parts'):state.active==='parts-review'?collectorFurniturePanel()+partsReviewView():
+        (state.active==='mode'?modeChoiceView():state.active==='furniture'?collectorFurniturePanel()+furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?collectorFurniturePanel()+partsReviewView():
          state.active==='stock'?stockPage():state.active==='nesting'?nestingView():
          state.active==='labels'?labelsPage():state.active==='save'?savePage():materialsPage());
       mountCabinetDesigner();mountThreeMfViews();return;
@@ -5497,7 +5497,7 @@
     else if(action==='collector-save-back'){
       captureVisibleFurnitureEdits();
       if(!save()){showNotice('A bútor mentése nem sikerült.');return;}
-      state.active='collector';notice='A bútordarab méretei és paraméterei elmentve.';
+      state.active='collector-edit';notice='A bútordarab méretei és paraméterei elmentve.';
       result=null;render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='collector-back'){
