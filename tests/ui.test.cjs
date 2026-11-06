@@ -107,6 +107,7 @@ test('a bútoradatok, alkatrészek, összesítő, anyagkészlet és szabásterv 
  for(const page of ["'furniture'","'parts'","'parts-review'","'stock'","'nesting'"])
   assert.ok(nav.includes(page),page);
  assert.match(html,/state\.active==='parts'\?furnitureView\('parts'\)/);
+ assert.match(html,/state\.active==='collector'\?collectorFurniturePanel\(\)/);
  assert.match(html,/if\(stage==='parts'\)/);
  assert.match(html,/data-action="open-parts"/);
  assert.match(html,/state\.active='parts'/);
