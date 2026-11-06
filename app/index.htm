@@ -4936,7 +4936,9 @@
     const secondDimension=nfmt(currentPart.originalB??currentPart.b);
     const firstEdge=labelAxisDetails(currentPart,'a');
     const secondEdge=labelAxisDetails(currentPart,'b');
-    const edgeCode=(firstEdge.abs||secondEdge.abs)?String(currentPart.edge||'0-0'):'';
+    // A jelölőkód mindig két helyiértékű. Ha egy méret nincs aláhúzva,
+    // annak számjegye 0; teljesen élzáratlan alkatrésznél 0-0 látszik.
+    const edgeCode=dimensionUnderline(currentPart,'a')+'-'+dimensionUnderline(currentPart,'b');
     const millRows=['x1','x2','y1','y2'].flatMap((side)=>{
       const thickness=partEdgeThicknesses(currentPart)[side];
       if(!thickness)return [];
@@ -5012,7 +5014,7 @@
       dimension(firstDimension,firstCenter,dimensionUnderline(currentPart,'a'))+
       line('×',x+width*.52,dimBaseline,3.1*scale,'800','text-anchor="middle"')+
       dimension(secondDimension,secondCenter,dimensionUnderline(currentPart,'b'))+
-      (edgeCode?line(edgeCode,x+width-margin,dimBaseline,3.1*scale,'800','text-anchor="end"'):'')+
+      line(edgeCode,x+width-margin,dimBaseline,3.1*scale,'800','text-anchor="end"')+
       axisInfo(firstEdge,firstCenter)+axisInfo(secondEdge,secondCenter)+
       partNameSvg()+millDetailsSvg()+
       '</g>';
