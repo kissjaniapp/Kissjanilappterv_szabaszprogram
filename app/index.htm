@@ -1211,7 +1211,7 @@
     state.furnitures=chosen;
     state.selectedFurniture=chosen[0].id;
     state.projectName='Közös szabás · '+chosen.map(x=>x.name||'Bútor').join(' + ');
-    state.active='furniture';result=null;furnitureCutSelection.clear();
+    state.active='collector';result=null;furnitureCutSelection.clear();
     // A kiválasztott bútorok közös szabása külön munkaként tárolódik.
     if(typeof currentProjectId!=='undefined'){
       const job=library.find(e=>e.id===currentProjectId);
@@ -1231,8 +1231,24 @@
       '<div class="panel-title">Kijelölt bútorok gyűjtője · '+state.furnitures.length+' db</div>'+
       '<div class="panel-sub">A bútordarabok önálló mérettel és paraméterekkel rendelkeznek.</div></div>'+
       '<div class="actions"><button class="btn" data-action="collector-save">💾 Mentés</button>'+
-      '<button class="btn primary" data-action="collector-summary">Közös alkatrész-összesítő →</button>'+
+      '<button class="btn primary" data-action="collector-parts">Alkatrészek megadása →</button>'+
       '</div></div><div class="panel-body">'+rows+'</div></div>';
+  }
+  // A gyűjtőből nyitott bútor kizárólag a főméreteket és saját paramétereit mutatja.
+  function collectorFurnitureEditor(){
+    const f=getFurniture();
+    if(!f)return '';
+    const fields=[['w','Szélesség (W)'],['ht','Magasság (H)'],['d','Mélység (D)']];
+    return '<div class="panel top-gap" data-collector-editor><div class="panel-head"><div>'+
+      '<div class="panel-title">'+h(f.name||'Bútor')+' · főméretek és paraméterek</div>'+
+      '<div class="panel-sub">Csak ezt a példányt módosítod. A széria és a többi darab nem változik.</div></div></div>'+
+      '<div class="panel-body"><div class="field-grid">'+fields.map(([key,title])=>
+        '<div><label>'+title+'</label><div class="input-unit"><input type="number" min="1" step="1" '+
+        'data-scope="furniture" data-id="'+h(f.id)+'" data-key="'+key+'" value="'+h(f[key])+'"><span>mm</span></div></div>').join('')+
+      '</div>'+customParametersPanel(f)+
+      '<div class="toolbar" style="justify-content:flex-end;margin-top:20px">'+
+      '<button class="btn" data-action="collector-back">← Vissza a gyűjtőbe</button>'+
+      '<button class="btn primary" data-action="collector-save-back">💾 Mentés</button></div></div></div>';
   }
   function isCombinedSelectionWorkspace(entry){
     return entry.selectionWorkspace===true||
@@ -1378,7 +1394,7 @@
     if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='auto';
   if(['machine','rows'].includes(state.layoutMode))state.layoutMode='auto';
     state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
-    state.active=state.designMode==='parts'?'parts':'furniture';currentProjectId=entry.id;projectScreen='editor';
+    state.active=isCombinedSelectionWorkspace(entry)?'collector':(state.designMode==='parts'?'parts':'furniture');currentProjectId=entry.id;projectScreen='editor';
     result=null;notice='';render();
   }
   function projectLibraryView(){
@@ -4226,7 +4242,7 @@
          state.active==='labels'?labelsPage():state.active==='save'?savePage():materialsPage());
       mountCabinetDesigner();mountThreeMfViews();return;
     }
-    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='mode'?modeChoiceView():state.active==='furniture'?furnitureView():state.active==='parts'?furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();mountThreeMfViews();}
+    if(projectScreen==='library'){$('#content').innerHTML=(notice?'<div class="notice top-gap">'+h(notice)+'</div>':'')+projectLibraryView();return;}$('#content').innerHTML=(notice?`<div class="notice success" style="margin-top:18px">${h(notice)} <button class="btn sm ghost" style="float:right" data-action="clear-notice">✕</button></div>`:'')+(state.active==='collector'?collectorFurniturePanel():state.active==='collector-edit'?collectorFurnitureEditor():state.active==='mode'?modeChoiceView():state.active==='furniture'?furnitureView():state.active==='parts'?collectorFurniturePanel()+furnitureView('parts'):state.active==='parts-review'?partsReviewView():state.active==='stock'?stockPage():state.active==='labels'?labelsPage():state.active==='save'?savePage():state.active==='materials'?materialsPage():nestingView());save();mountCabinetDesigner();mountThreeMfViews();}
   function download(data,filename,mime){downloadBlob(new Blob([data],{type:mime}),filename);}
   // Offline ZIP-csomagolás a táblánkénti .xPrg és a közös .xMix letöltéséhez.
   function xlsxZip(files,mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'){
@@ -5475,8 +5491,23 @@
     if(action==='library-home'){save();projectScreen='library';result=null;notice='';render();window.scrollTo(0,0);}
     else if(action==='collector-open-furniture'){
       if(!state.furnitures.some(f=>f.id===el.dataset.id))return;
-      save();state.selectedFurniture=el.dataset.id;state.active='furniture';
+      save();state.selectedFurniture=el.dataset.id;state.active='collector-edit';
       result=null;render();window.scrollTo({top:0,behavior:'smooth'});
+    }
+    else if(action==='collector-save-back'){
+      captureVisibleFurnitureEdits();
+      if(!save()){showNotice('A bútor mentése nem sikerült.');return;}
+      state.active='collector';notice='A bútordarab méretei és paraméterei elmentve.';
+      result=null;render();window.scrollTo({top:0,behavior:'smooth'});
+    }
+    else if(action==='collector-back'){
+      // A meglévő helyi automatikus mentés mellett is a gyűjtőre térünk vissza.
+      state.active='collector';result=null;render();window.scrollTo({top:0,behavior:'smooth'});
+    }
+    else if(action==='collector-parts'){
+      captureVisibleFurnitureEdits();
+      if(!save()){showNotice('A gyűjtő mentése sikertelen.');return;}
+      state.active='parts';result=null;render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='collector-save'){
       const saved=saveFurnitureCustomization();notice=saved.message;render();
