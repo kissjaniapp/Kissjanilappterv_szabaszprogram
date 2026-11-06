@@ -90,7 +90,7 @@ test('38 mm munkalap és apró 3MF test megmarad a 3D magasságában',()=>{
    name,dimensions:[x,y,t],indices:[i],isRectangular:true
  }))};
  apply(f,data);
- assert.deepEqual(f.parts.map(p=>p.name),['Határ','Lap']);
+ assert.deepEqual(Array.from(f.parts,p=>p.name),['Határ','Lap']);
  assert.equal(f.ht,238);
  assert.equal(f.threeMfImport.parts.length,4);
  assert.equal(f.threeMfImport.groups.length,4);
