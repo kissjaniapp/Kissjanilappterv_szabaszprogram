@@ -56,12 +56,12 @@ test('több bútor kijelölése: eltérő bútorok közös listában, darabszám
   showNotice:()=>{},result:null,Number
  });
  f();
- assert.equal(state.furnitures.length,2);
- assert.equal(state.furnitures[0].qty,3);
- assert.equal(state.furnitures[1].qty,2);
+ assert.equal(state.furnitures.length,5);
+ assert.ok(state.furnitures.slice(0,3).every(f=>f.qty===1));
+ assert.ok(state.furnitures.slice(3,5).every(f=>f.qty===1));
  assert.equal(original1.qty,1);
  assert.equal(original2.qty,1);
- assert.equal(state.active,'furniture','a közös szabás nem hagyhatja ki a Bútor adatai oldalt');
+ assert.equal(state.active,'collector','a közös szabás előbb a bútorgyűjtőt nyitja meg');
  assert.equal(saved,1);
  assert.equal(rendered,1);
  assert.equal(selection.size,0);
