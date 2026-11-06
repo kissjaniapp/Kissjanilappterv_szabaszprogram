@@ -20,7 +20,7 @@ const f={
   }
 };
 const functions=vm.runInNewContext('(function(){'+html.slice(start,end)+
-  ';return {threeMfResolvedGroups,threeMfEffectiveGeometry};})()',{
+  ';return {threeMfResolvedGroups};})()',{
   materialForPart:()=>({thickness:18}),
   effectiveShelves:()=>0,effectiveDivider:()=>0,
   calcPartFormula:(expr,vars)=>Number(expr)||Function('W','H','D','T','S','O',
@@ -31,16 +31,23 @@ test('3MF méretei az Alkatrészek fül képletével értékelődnek, nem NaN',(
   f.w=1100;
   assert.equal(functions.threeMfResolvedGroups(f)[0].dimensions[0],1064);
 });
-test('3MF rajz a kiszámolt hosszhoz nyúlik, az eredeti háló sértetlen',()=>{
+test('3MF eredeti geometria képlet és bútorméret változásakor is érintetlen',()=>{
   f.w=1100;
-  const adjusted=functions.threeMfEffectiveGeometry(f);
-  assert.ok(Math.abs(adjusted[0].axisBoundsMm[0]-1064)<1e-8);
-  assert.ok(Math.abs(adjusted[0].previewTriangles[0][3]-1069)<1e-8);
+  assert.equal(functions.threeMfResolvedGroups(f)[0].dimensions[0],1064);
+  assert.equal(f.threeMfImport.parts[0].axisBoundsMm[0],964);
   assert.equal(f.threeMfImport.parts[0].previewTriangles[0][3],969);
+  const renderer=html.slice(html.indexOf('function mountThreeMfViews(){'),
+    html.indexOf('function threeMfCombinedCuttingGroups('));
+  assert.match(renderer,/const effectiveParts=model\.parts;/);
+  assert.doesNotMatch(renderer,/threeMfEffectiveGeometry/);
 });
-test('hibás képletnél a 3MF eredeti rajza megmarad, nem torzul',()=>{
+test('hibás képletnél az eredeti 3MF geometria és méret megmarad',()=>{
   f.parts[0].a='ÉRVÉNYTELEN';
   const row=functions.threeMfResolvedGroups(f)[0];
   assert.equal(row.valid,false);
-  assert.equal(functions.threeMfEffectiveGeometry(f)[0].axisBoundsMm[0],964);
+  assert.equal(f.threeMfImport.parts[0].axisBoundsMm[0],964);
+});
+test('3MF mérettáblázat frissítése az élő képletfrissítéshez van kapcsolva',()=>{
+  assert.match(html,/data-3mf-dimension-rows/);
+  assert.match(html,/refreshThreeMfDimensionRows\(dxfFurniture\)/);
 });
