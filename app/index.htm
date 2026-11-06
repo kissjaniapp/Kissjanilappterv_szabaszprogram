@@ -4891,6 +4891,28 @@
         'h'+estimatedWidth+'" stroke="#151515" stroke-width="'+Math.max(.12,dimensionSize*.055)+'"/>').join(''):'';
       return line(value,center,dimBaseline,dimensionSize,'800','text-anchor="middle"')+paths;
     };
+    // Az alkatrész neve a matrica alsó sávjába kerül, teljes szélességben.
+    // Hosszú névnél két sorra törünk; a szöveg sosem kap levágó három pontot.
+    const partNameLines=(name)=>{
+      const words=String(name??'').trim().split(/\\s+/).filter(Boolean);
+      const first=[],second=[];
+      for(const word of words){
+        const target=second.length||((first.join(' ').length+(first.length?1:0)+word.length)>34&&first.length)?second:first;
+        target.push(word);
+      }
+      return [first.join(' '),second.join(' ')].filter(Boolean);
+    };
+    const partNameSvg=()=>{
+      const lines=partNameLines(currentPart.name);
+      const font=lines.length>1?2.15*scale:2.65*scale;
+      const available=width-2*margin;
+      return lines.map((value,i)=>{
+        const estimated=value.length*font*.55;
+        const compress=estimated>available?'textLength="'+available+'" lengthAdjust="spacingAndGlyphs"':'';
+        const baseline=y+height*(lines.length>1?(i===0?.815:.924):.86);
+        return line(value,x+margin,baseline,font,'700',compress);
+      }).join('');
+    };
     const axisInfo=(data,center)=>{
       const available=width*.26;
       return (data.abs?line(fit(data.abs,edgeSize,available),center,y+height*.523,edgeSize,'600','text-anchor="middle"'):'')+
@@ -4906,7 +4928,7 @@
       dimension(secondDimension,secondCenter,dimensionUnderline(currentPart,'b'))+
       (edgeCode?line(edgeCode,x+width-margin,dimBaseline,3.1*scale,'800','text-anchor="end"'):'')+
       axisInfo(firstEdge,firstCenter)+axisInfo(secondEdge,secondCenter)+
-      line(fit(currentPart.name,3.1*scale,width*.32),x+margin,y+height*.65,3.1*scale,'750')+
+      partNameSvg()+
       '</g>';
   }
   const labelPaper={width:210,height:297};
