@@ -4948,8 +4948,8 @@
     };
     const axisInfo=(data,center)=>{
       const available=width*.26;
-      return (data.abs?line(fit(data.abs,edgeSize,available),center,y+height*.523,edgeSize,'600','text-anchor="middle"'):'')+
-        (data.filing?line(data.filing,center,y+height*.610,filingSize,'700','text-anchor="middle"'):'');
+      return (data.abs?line(fit(data.abs,edgeSize,available),center,y+height*.615,edgeSize,'600','text-anchor="middle"'):'')+
+        (data.filing?line(data.filing,center,y+height*.700,filingSize,'700','text-anchor="middle"'):'');
     };
     return '<g><rect x="'+x+'" y="'+y+'" width="'+width+'" height="'+height+'" fill="white" stroke="#555" stroke-width=".25"/>'+
       line(fit(destination,2.0*scale,width*.52),x+margin,y+height*.115,2.0*scale)+
