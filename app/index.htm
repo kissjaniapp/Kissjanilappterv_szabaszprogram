@@ -1230,9 +1230,11 @@
     return '<div class="panel top-gap" data-collector-panel><div class="panel-head"><div>'+
       '<div class="panel-title">Kijelölt bútorok gyűjtője · '+state.furnitures.length+' db</div>'+
       '<div class="panel-sub">A bútordarabok önálló mérettel és paraméterekkel rendelkeznek.</div></div>'+
-      '<div class="actions"><button class="btn" data-action="collector-save">💾 Mentés</button>'+
+      '<div class="actions"><button class="btn" data-action="collector-save">💾 Gyűjtő mentése</button></div></div>'+
+      '<div class="panel-body">'+rows+
+      '<div class="toolbar" style="justify-content:flex-end;margin-top:18px">'+
       '<button class="btn primary" data-action="collector-parts">Alkatrészek megadása →</button>'+
-      '</div></div><div class="panel-body">'+rows+'</div></div>';
+      '</div></div></div>';
   }
   // A gyűjtőből nyitott bútor kizárólag a főméreteket és saját paramétereit mutatja.
   function collectorFurnitureEditor(){
