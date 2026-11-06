@@ -1503,8 +1503,19 @@
           const millDepth=mill?configuredDepth:0;
           // Az élenkénti ABS nettó hozzájárulása külön számítódik.
           // A 2 mm-es ABS előmarása beállítható; a 0,4-esnél nincs előmarás.
+          // A getParts önállóan is kiértékelhető (régi gépi tesztek).
+          // Az egyedi élmarás csak 2 mm ABS mellett érvényes.
+          const sideMill=side=>{
+            if(!mill||edgeThicknesses[side]!==2)return 0;
+            const override=part.millDepthSides?.[side];
+            if(override==null||override==='')return millDepth;
+            const value=Number(override);
+            if(!Number.isFinite(value)||value<0||value>2)
+              throw Error('Az élenkénti élmarás 0–2 mm lehet');
+            return value;
+          };
           const net=side=>edgeThicknesses[side]===2?
-            2-(mill?partMillForSide(part,side):0):edgeThicknesses[side];
+            2-sideMill(side):edgeThicknesses[side];
           const a=originalA-net('y1')-net('y2');
           const b=originalB-net('x1')-net('x2');
           if(!(a>0&&b>0&&originalA<=10000&&originalB<=10000&&q>=0&&Number.isInteger(q)&&Number.isInteger(qty)&&qty>=0&&qty<=300)) throw Error('Érvénytelen méret/darabszám');
