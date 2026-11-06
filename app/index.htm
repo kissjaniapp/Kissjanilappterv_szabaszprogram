@@ -4911,18 +4911,24 @@
     const firstEdge=labelAxisDetails(currentPart,'a');
     const secondEdge=labelAxisDetails(currentPart,'b');
     const edgeCode=(firstEdge.abs||secondEdge.abs)?String(currentPart.edge||'0-0'):'';
-    const firstCenter=x+width*.425,secondCenter=x+width*.673;
+    // Külön fix méretmezők: a négyjegyű szám sem érhet az × jelhez.
+    // Az ABS-feliratok ugyanazon mezők alatt maradnak.
+    const firstCenter=x+width*.355,secondCenter=x+width*.685;
     const dimensionSize=4.15*scale;
     const edgeSize=1.58*scale;
     const filingSize=1.53*scale;
     const dimBaseline=y+height*.393;
     const dimension=(value,center,underlines)=>{
-      const estimatedWidth=value.length*dimensionSize*.57;
-      const baseline=dimBaseline+dimensionSize*.22;
+      // A felirat és aláhúzása együtt igazodik a rendelkezésre álló mezőbe.
+      // 4+ számjegynél sem lóghat át a szorzásjelre vagy az élzáráskódra.
+      const maxWidth=width*.225;
+      const size=Math.min(dimensionSize,maxWidth/(Math.max(1,value.length)*.61));
+      const estimatedWidth=value.length*size*.57;
+      const baseline=dimBaseline+size*.22;
       const paths=underlines?Array.from({length:underlines},(_,i)=>
-        '<path d="M'+(center-estimatedWidth/2)+' '+(baseline+i*dimensionSize*.14)+
-        'h'+estimatedWidth+'" stroke="#151515" stroke-width="'+Math.max(.12,dimensionSize*.055)+'"/>').join(''):'';
-      return line(value,center,dimBaseline,dimensionSize,'800','text-anchor="middle"')+paths;
+        '<path d="M'+(center-estimatedWidth/2)+' '+(baseline+i*size*.14)+
+        'h'+estimatedWidth+'" stroke="#151515" stroke-width="'+Math.max(.12,size*.055)+'"/>').join(''):'';
+      return line(value,center,dimBaseline,size,'800','text-anchor="middle"')+paths;
     };
     // Az alkatrész neve a matrica alsó sávjába kerül, teljes szélességben.
     // Hosszú névnél két sorra törünk; a szöveg sosem kap levágó három pontot.
@@ -4957,7 +4963,7 @@
       '<path d="M'+(x+margin)+' '+(y+height*.16)+'H'+(x+width-margin)+'" stroke="#aaa" stroke-width=".2"/>'+
       line(fit(currentPart.source,1.9*scale,width*.31),x+margin,y+height*.286,1.9*scale)+
       dimension(firstDimension,firstCenter,dimensionUnderline(currentPart,'a'))+
-      line('×',x+width*.55,dimBaseline,3.1*scale,'800','text-anchor="middle"')+
+      line('×',x+width*.52,dimBaseline,3.1*scale,'800','text-anchor="middle"')+
       dimension(secondDimension,secondCenter,dimensionUnderline(currentPart,'b'))+
       (edgeCode?line(edgeCode,x+width-margin,dimBaseline,3.1*scale,'800','text-anchor="end"'):'')+
       axisInfo(firstEdge,firstCenter)+axisInfo(secondEdge,secondCenter)+
