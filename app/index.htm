@@ -1600,6 +1600,7 @@
     const drawing=document.querySelector('[data-live-cabinet]');
     if(drawing&&drawing.classList.contains('gatterka-cabinet-inline'))syncCabinetDesignerDimensions();
     const dxfFurniture=getFurniture();
+    if(dxfFurniture?.threeMfImport?.parts?.length)refreshThreeMfDimensionRows(dxfFurniture);
     if(dxfFurniture?.dxfDrawings?.front&&document.querySelector('.gatterka-dxf-card')){
       updateDxfPreviewDom(dxfFurniture);
       refreshDxfPartsPreview(dxfFurniture);
@@ -3148,14 +3149,21 @@
   }
   // Minden fizikai 3MF példány külön megmarad a saját eredeti helyén.
   // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
-  function threeMfImportPreview(f){
-    const model=f?.threeMfImport;
-    if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
-    const rows=threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
+  function threeMfRowsHtml(f){
+    return threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
       const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
       return '<tr><td>'+h(part?.name||g.name)+'</td><td>'+h(dims)+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
     }).join('');
+  }
+  function refreshThreeMfDimensionRows(f){
+    const body=document.querySelector('[data-3mf-dimension-rows]');
+    if(body&&f?.threeMfImport?.parts?.length)body.innerHTML=threeMfRowsHtml(f);
+  }
+  function threeMfImportPreview(f){
+    const model=f?.threeMfImport;
+    if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
+    const rows=threeMfRowsHtml(f);
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
       model.parts.length+' objektum · '+model.groups.length+' alkatrészsor</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
@@ -3168,7 +3176,7 @@
           '<div class="gatterka-3mf-view gatterka-3mf-view-3d"><div class="toolbar"><strong>3D nézet · forgatható</strong><button type="button" class="btn sm" data-action="3mf-reset-view">↻ Nézet visszaállítása</button></div><canvas data-3mf-view="three" aria-label="3MF 3D nézet, egérrel forgatható" width="680" height="420"></canvas><div class="tiny muted">Forgatás: bal egérgombbal húzás · Nagyítás: egérgörgő</div></div>'+
         '</div>':
         '<div class="tiny muted">Ehhez a régi importhoz nincs eltárolt háromszögháló. Töltsd be újra a 3MF fájlt a három nézethez.</div>')+
-      '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+      '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody data-3mf-dimension-rows>'+rows+'</tbody></table></div>';
   }
 
 
