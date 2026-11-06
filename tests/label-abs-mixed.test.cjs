@@ -32,7 +32,7 @@ function label(p){
 test('0-0 élzárás esetén nincs sem élzáróanyag, sem 2mm ABS jelzés a matricán',()=>{
   const svg=label(part());
   assert.doesNotMatch(svg,/2\\s*mm\\s*élzáró|[12]H|[12]R/);
-  assert.match(svg,/>0-0<\\/text>/);
+  assert.match(svg,/>0-0<\/text>/);
   assert.match(svg,/Fehér tölgy/);
 });
 test('az anyagszín a matrica jobb felső sarkába kerül',()=>{
