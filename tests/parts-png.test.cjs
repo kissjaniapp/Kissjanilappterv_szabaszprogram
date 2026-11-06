@@ -26,7 +26,7 @@ function mockDocument(){
     }
   };
 }
-const fcStart=html.indexOf('  function filingCode(sides,a,b){');
+const fcStart=html.indexOf('  function sidesFromCode(code){');
 const fcEnd=html.indexOf('  let loaded=null;',fcStart);
 assert.ok(fcStart>=0&&fcEnd>fcStart,'Hiányzik a reszeléskód');
 const filingSource=html.slice(fcStart,fcEnd);
@@ -117,16 +117,16 @@ test('Matrica a JELENLEGI alkatrész reszelésjelölését olvassa, régi szabá
  // A már meglevő gépi elhelyezés / matricaadat nem tartalmazza a filingSides mezőt.
  const oldPlacement={part:{
    uid:'p1',name:'Polc',source:'Konyha',destination:'Műhely',
-   materialColor:'Freya',originalA:964,originalB:600,edge:'1-0',
+   materialColor:'Freya',originalA:964,originalB:600,edge:'1-2',
    edgeThickness:2,mill:true,millDepth:1
  }};
  const show=()=>makeLabel({placement:oldPlacement},0,0,48.5,25.4);
  const mixed=show();
- assert.match(mixed,/>1Hresz-2Rresz<\/text>/);
- assert.ok(mixed.indexOf('>1-0</text>')<mixed.indexOf('>1Hresz-2Rresz</text>'),
+ assert.match(mixed,/>1Hresz 2mm 2Rresz 2mm<\/text>/);
+ assert.ok(mixed.indexOf('>1-2</text>')<mixed.indexOf('>1Hresz 2mm 2Rresz 2mm</text>'),
    'reszelés a matricán az élzárás után, annak alatti sorban');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:true,y2:true};
- assert.match(show(),/>2Rresz<\/text>/,
+ assert.match(show(),/>2Rresz 2mm<\/text>/,
    'a matrica a frissített alkatrészjelölést mutatja új bin generálása nélkül');
  state.furnitures[0].parts[0].filingSides={x1:false,x2:false,y1:false,y2:false};
  assert.doesNotMatch(show(),/Hresz|Rresz/,
@@ -144,9 +144,9 @@ test('Matricán a reszelés szövege az élzárás alatt jelenik meg, közös k�
  const text=label({placement:{part:{
    name:'Oldallap',source:'Szekrény',destination:'Műhely',
    materialColor:'Freya',originalA:910,originalB:600,
-   edge:'1-1',filingSides:{x1:true,y1:true,y2:true},edgeThickness:2
+   edge:'1-2',filingSides:{x1:true,y1:true,y2:true},edgeThickness:2
  }}},0,0,48.5,25.4);
- assert.match(text,/>1Hresz-2Rresz<\/text>/);
- assert.ok(text.indexOf('1-1')<text.indexOf('1Hresz-2Rresz'),
+ assert.match(text,/>1Hresz 2mm 2Rresz 2mm<\/text>/);
+ assert.ok(text.indexOf('1-2')<text.indexOf('1Hresz 2mm 2Rresz 2mm'),
   'a reszelésnek az élzárási jelölés után kell állnia');
 });
