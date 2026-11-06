@@ -3229,9 +3229,10 @@
     const groups=[];
     for(let i=0;i<result.length;i++){
       const p=result[i],match=groups.find(g=>g.name.toLocaleLowerCase('hu')===p.name.toLocaleLowerCase('hu')&&
+        g.isRectangular===p.isRectangular&&
         g.dimensions.every((d,k)=>Math.abs(d-p.dimensions[k])<.05));
       if(match)match.indices.push(i);
-      else groups.push({name:p.name,dimensions:p.dimensions,indices:[i]});
+      else groups.push({name:p.name,dimensions:p.dimensions,indices:[i],isRectangular:p.isRectangular});
     }
     for(const group of groups)group.isRectangular=group.indices.every(i=>result[i].isRectangular===true);
     const title=children(xml.documentElement,'metadata').find(x=>x.getAttribute('name')==='Title')?.textContent;
