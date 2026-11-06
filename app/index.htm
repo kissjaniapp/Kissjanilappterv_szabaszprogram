@@ -3123,6 +3123,66 @@
     }
     return covered.every((area,i)=>Math.abs(area-areas[i])<=Math.max(.05,areas[i]*.005));
   }
+  // A szögben leszabott (háromszög / trapéz / ferde végű) síklap
+  // előgyártmánya a teljes befoglaló téglalap, 0 mm ráhagyással.
+  // Csak zárt, két párhuzamos lapfelületű és egyenes kontúrú
+  // extrudált síklapot fogadunk el: íves/díszítő és hibás mesh kizárva.
+  function threeMfAngledPanel(vertices,triangleNodes,extents,lo){
+    if(!Array.isArray(vertices)||vertices.length<6||vertices.length>64||
+      !triangleNodes||triangleNodes.length<8||
+      extents.some(d=>!Number.isFinite(d)||d<=0))return false;
+    const axis=extents.indexOf(Math.min(...extents));
+    const thickness=extents[axis];
+    const other=[0,1,2].filter(i=>i!==axis);
+    if(thickness>100||thickness>Math.min(...other.map(i=>extents[i]))*.6)return false;
+    const eps=.025,hi=lo[axis]+thickness,lower=[],upper=[];
+    const edges=new Map();
+    const keys=vertices.map((p,i)=>{
+      if(!Array.isArray(p)||p.length!==3||p.some(v=>!Number.isFinite(v)))return null;
+      const layer=Math.abs(p[axis]-lo[axis])<=eps?0:
+        Math.abs(p[axis]-hi)<=eps?1:-1;
+      if(layer<0)return null;
+      const uv=other.map(k=>p[k]);
+      (layer?upper:lower).push(uv);
+      return layer+':'+uv.map(v=>Math.round(v/eps)).join(':');
+    });
+    if(keys.includes(null)||lower.length<3||upper.length<3)return false;
+    const unique=points=>[...new Map(points.map(p=>[p.map(v=>Math.round(v/eps)).join(':'),p])).values()];
+    const bottom=unique(lower),top=unique(upper);
+    if(bottom.length<3||bottom.length>16||top.length!==bottom.length)return false;
+    const coords=points=>points.map(p=>p.map(v=>Math.round(v/eps)).join(':')).sort().join('|');
+    if(coords(bottom)!==coords(top))return false;
+    for(const face of triangleNodes){
+      const ids=['v1','v2','v3'].map(k=>Number(face.getAttribute(k)));
+      if(ids.some(i=>!Number.isInteger(i)||i<0||i>=vertices.length)||new Set(ids).size!==3)return false;
+      const a=vertices[ids[0]],b=vertices[ids[1]],c=vertices[ids[2]];
+      const u=b.map((v,i)=>v-a[i]),v=c.map((n,i)=>n-a[i]);
+      if(Math.hypot(u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])<1e-7)return false;
+      for(let k=0;k<3;k++){
+        const x=ids[k],y=ids[(k+1)%3],key=x<y?x+':'+y:y+':'+x;
+        edges.set(key,(edges.get(key)||0)+1);
+      }
+    }
+    if([...edges.values()].some(n=>n!==2))return false;
+    // Csak konvex, egyenes szabáskontúr. A lekerekített vagy homorú
+    // forma nem minősül automatikusan ferdevágott lapnak.
+    const ordered=bottom.slice().sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+    const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+    const build=points=>{
+      const hull=[];
+      for(const p of points){
+        while(hull.length>=2&&cross(hull[hull.length-2],hull[hull.length-1],p)<=eps)hull.pop();
+        hull.push(p);
+      }
+      return hull;
+    };
+    const low=build(ordered),high=build(ordered.slice().reverse());
+    const hull=low.slice(0,-1).concat(high.slice(0,-1));
+    if(hull.length<3||hull.length>8)return false;
+    const pointOnEdge=(p,a,b)=>Math.abs(cross(a,b,p))<=eps*Math.max(1,Math.hypot(b[0]-a[0],b[1]-a[1]))&&
+      (p[0]-a[0])*(p[0]-b[0])+(p[1]-a[1])*(p[1]-b[1])<=eps;
+    return bottom.every(p=>hull.some((a,i)=>pointOnEdge(p,a,hull[(i+1)%hull.length])));
+  }
   // Standalone 3MF/ZIP reader. No network dependency or external ZIP service.
   async function threeMfZipModel(file){
     // Fusion's 3MF export can use ZIP64 even for small models.
@@ -3294,13 +3354,14 @@
         }
         const extents=hi.map((n,k)=>n-lo[k]);
         const isRectangular=threeMfRectangularSolid(transformed,triangleNodes,extents,lo);
+        const isAngledCut=!isRectangular&&threeMfAngledPanel(transformed,triangleNodes,extents,lo);
         const dims=[...extents].sort((a,b)=>b-a);
         if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
         if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
         const rounded=n=>Math.round(n*10000)/10000;
         result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
           originMm:lo.map(rounded),
-          axisBoundsMm:extents.map(rounded),previewTriangles,isRectangular});
+          axisBoundsMm:extents.map(rounded),previewTriangles,isRectangular,isAngledCut});
       }
       const components=first(object,'components');
       for(const component of children(components,'component'))
@@ -3314,12 +3375,16 @@
     const groups=[];
     for(let i=0;i<result.length;i++){
       const p=result[i],match=groups.find(g=>g.name.toLocaleLowerCase('hu')===p.name.toLocaleLowerCase('hu')&&
-        g.isRectangular===p.isRectangular&&
+        g.isRectangular===p.isRectangular&&g.isAngledCut===p.isAngledCut&&
         g.dimensions.every((d,k)=>Math.abs(d-p.dimensions[k])<.05));
       if(match)match.indices.push(i);
-      else groups.push({name:p.name,dimensions:p.dimensions,indices:[i],isRectangular:p.isRectangular});
+      else groups.push({name:p.name,dimensions:p.dimensions,indices:[i],
+        isRectangular:p.isRectangular,isAngledCut:p.isAngledCut});
     }
-    for(const group of groups)group.isRectangular=group.indices.every(i=>result[i].isRectangular===true);
+    for(const group of groups){
+      group.isRectangular=group.indices.every(i=>result[i].isRectangular===true);
+      group.isAngledCut=!group.isRectangular&&group.indices.every(i=>result[i].isAngledCut===true);
+    }
     const title=children(xml.documentElement,'metadata').find(x=>x.getAttribute('name')==='Title')?.textContent;
     return {schema:'gatterka-3mf-v1',designName:String(title||'3MF modell').slice(0,150),
       parts:result,groups};
@@ -3352,7 +3417,8 @@
     return threeMfResolvedGroups(f).map(({group:g,part,dimensions,valid})=>{
       const dims=valid?dimensions.map(nfmt).join(' × '):'Érvénytelen képlet · '+nfmt(dimensions[2])+' mm';
       const control=part?'<button type="button" class="btn sm ghost" data-action="swap-part-grain" data-id="'+h(part.id)+'" title="Az X/Y méret száliránya minden táblázatban megfordul">⇄ X/Y</button>':'';
-      const excluded=g.isRectangular===false?' <span class="muted small">· Nem téglatest, nem kerül a szabászatra</span>':'';
+      const excluded=g.isAngledCut?' <span class="muted small">· Ferde vágás · befoglaló előgyártmány (0 mm ráhagyás)</span>':
+        g.isRectangular===false?' <span class="muted small">· Nem szabható geometria, nem kerül a szabászatra</span>':'';
       return '<tr><td>'+h(part?.name||g.name)+excluded+'</td><td>'+h(dims)+' '+control+'</td><td>'+h(part?.q||g.indices.length)+'</td></tr>';
     }).join('');
   }
@@ -3365,8 +3431,8 @@
     if(!model?.parts?.length)return '<div class="tiny muted" style="margin-top:9px">Nincs betöltött 3MF modell.</div>';
     const rows=threeMfRowsHtml(f);
     return '<div class="tiny muted" style="margin-top:10px"><strong>'+h(model.designName)+'</strong> · '+
-      model.parts.length+' objektum · '+model.groups.filter(g=>g.isRectangular!==false).length+' szabható alkatrészsor'+
-      (model.groups.some(g=>g.isRectangular===false)?' · nem téglatest alakú elemek: csak a bútor teljes méretéhez':'')+'</div>'+
+      model.parts.length+' objektum · '+model.groups.filter(g=>g.isRectangular!==false||g.isAngledCut===true).length+' szabható alkatrészsor'+
+      (model.groups.some(g=>g.isRectangular===false&&!g.isAngledCut)?' · nem szabható elemek: csak a bútor teljes méretéhez':'')+'</div>'+
       (model.parts.some(p=>p.previewTriangles?.length)?
         '<div class="toolbar" style="margin:12px 0"><label style="margin:0">Alkatrész kiemelése</label><select data-3mf-highlight aria-label="3MF alkatrész kiemelése" style="max-width:380px"><option value="-1">Teljes szekrény (minden alkatrész)</option>'+
         model.groups.map((g,i)=>'<option value="'+i+'">'+h(g.name)+' · '+g.indices.length+' db</option>').join('')+
@@ -3600,6 +3666,7 @@
     const first=Math.min(groups.indexOf(l),groups.indexOf(r));
     const merged={name:threeMfSideName([l.name,r.name]),dimensions:l.dimensions.slice(),
       isRectangular:l.isRectangular!==false&&r.isRectangular!==false,
+      isAngledCut:!!l.isAngledCut&&!!r.isAngledCut,
       indices:[...l.indices,...r.indices],combinedSides:true,
       originalNames:[l.name,r.name]};
     const remaining=groups.filter(g=>g!==l&&g!==r);
@@ -3613,13 +3680,14 @@
     // into the imported model's part list.
     const unrelated=(f.parts||[]).filter(p=>!p.cabinetDesignKey);
     data.groups=threeMfCombinedCuttingGroups(data);
-    // A nem téglatest hálók megmaradnak a 3D előnézetben és a bútor
-    // befoglaló magasságában, de NEM generálhatnak vágandó alkatrészt.
-    const created=data.groups.map((g,i)=>g.isRectangular===false?null:({
+    // A ferdevágott, zárt síklapok a legnagyobb X/Y befoglaló
+    // előgyártmányként kerülnek be (0 mm plusz ráhagyás).
+    // Íves és ismeretlen hálók csak a 3D előnézetben maradnak.
+    const created=data.groups.map((g,i)=>g.isRectangular===false&&!g.isAngledCut?null:({
       id:uuid(),cabinetDesignKey:'3mf-'+(i+1),threeMfGenerated:true,
-      name:g.name,a:String(Math.round(g.dimensions[0]*100)/100),
-      b:String(Math.round(g.dimensions[1]*100)/100),
-      threeMfThickness:g.dimensions[2],q:String(g.indices.length),
+      name:g.name,a:String(g.dimensions[0]),
+      b:String(g.dimensions[1]),
+      threeMfThickness:g.dimensions[2],angledBlank:!!g.isAngledCut,q:String(g.indices.length),
       threeMfInstances:g.indices.slice(),
       threeMfSourceParts:g.indices.map(index=>({index,id:data.parts[index]?.id,name:data.parts[index]?.name,originMm:data.parts[index]?.originMm})),
       edge:'0-0',edgeSides:sidesFromCode('0-0'),
@@ -4968,8 +5036,9 @@
       // A Go a kiválasztott mappába írja az xMix-et és az xPrg fájlokat, az xMix sorait
       // pedig a ténylegesen elmentett xPrg fájlok teljes útvonalára írja át.
       const saved=await requestNativeMachine('write-files',{mix:mixEntry[1],programs});
-      if(!saved.mixPath||!Array.isArray(saved.programs))throw Error('A mentés nem igazolható.');
-      report('Elmentve a következő mappába: '+saved.folder+' · 1 xMix ('+
+      if(!saved.mixPath||!Array.isArray(saved.programs)||
+        saved.programs.length!==programs.length)throw Error('A mentés nem igazolható.');
+      report('A mentés sikeres volt! Elmentve a következő mappába: '+saved.folder+' · 1 xMix ('+
         saved.mixPath.slice(saved.mixPath.lastIndexOf('\\')+1)+') és '+saved.programs.length+
         ' xPrg. Az xMix az xPrg fájlok teljes útvonalát tartalmazza.');
     }catch(err){
