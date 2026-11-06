@@ -1,6 +1,7 @@
 package main
 
 import (
+ "fmt"
  "os"
  "path/filepath"
  "strings"
@@ -143,5 +144,31 @@ func TestFailedMixWriteRemovesNewXprgFiles(t *testing.T) {
  entries, _ := os.ReadDir(root)
  if len(entries) != 1 || entries[0].Name() != "foglalt.xMix" {
   t.Fatalf("Hiba után árva xPrg/ideiglenes fájl maradt: %v", entries)
+ }
+}
+
+func TestLargeCollectorSavesMoreThanOneHundredMachinePrograms(t *testing.T) {
+ root := t.TempDir()
+ req := nativeMixSave{}
+ var mix strings.Builder
+ mix.WriteString("<xMix>\r\n<RigheMix>\r\n")
+ const boards = 135
+ for i := 1; i <= boards; i++ {
+  name := fmt.Sprintf("tabla_%03d.xPrg", i)
+  req.Programs = append(req.Programs, nativeProgram{
+   Name: name, Content: fmt.Sprintf("<SchemaDoc>tabla %d</SchemaDoc>", i),
+  })
+  fmt.Fprintf(&mix, "<RigaMix File=\".\\\\xPrg\\\\%s\" Rep=\"1\" />\r\n", name)
+ }
+ mix.WriteString("</RigheMix>\r\n</xMix>\r\n")
+ req.Mix = mix.String()
+ target := filepath.Join(root, "Sok_butor.xMix")
+ saved, err := saveMixAndPrograms(target, req)
+ if err != nil { t.Fatal(err) }
+ if len(saved.Programs) != boards { t.Fatalf("Csak %d / %d program került mentésre", len(saved.Programs), boards) }
+ xml := readFile(t, target)
+ for _, program := range saved.Programs {
+  if _, err := os.Stat(program); err != nil { t.Fatal(err) }
+  if !strings.Contains(xml, xmlEscapeNative(program)) { t.Fatalf("Az xMix nem hivatkozza: %s", program) }
  }
 }
