@@ -31,6 +31,7 @@ test('ferde, hiányos vagy íves / befoglaló doboz szerinti alak nem lesz autom
  const modified=tris.slice();modified[2]={getAttribute:key=>String([{v1:4,v2:5,v3:8}[key]])};
  assert.equal(rectangular(curved,modified,[900,500,18],[0,0,0]),false);
 });
+const minimum=vm.runInNewContext('('+block('  function threeMfGroupMeetsMinimum(','  function threeMfPartMeetsMinimum(').trim()+')');
 const angled=vm.runInNewContext('('+block('  function threeMfAngledPanel(','  // Standalone 3MF/ZIP reader.').trim()+')');
 function extrudedPanel(points,t=18){
   const n=points.length;
@@ -62,6 +63,38 @@ test('íves és homorú test továbbra sem kap automatikusan előgyártmányt',(
   const concave=extrudedPanel([[0,0],[900,0],[900,200],[500,200],[500,500],[0,500]]);
   assert.equal(angled(concave.p,concave.tris,concave.extents,concave.lo),false);
 });
+test('3MF-ben a 50 × 50 mm a minimum, a 38 mm munkalap nem alkatrész',()=>{
+ assert.equal(minimum({dimensions:[37,30,18]}),false);
+ assert.equal(minimum({dimensions:[50,50,18]}),true);
+ assert.equal(minimum({dimensions:[50,49.99,18]}),false);
+ assert.equal(minimum({dimensions:[900,600,38]}),false);
+ assert.equal(minimum({dimensions:[900,600,36]}),true);
+});
+test('38 mm munkalap és apró 3MF test megmarad a 3D magasságában',()=>{
+ const code=block('  function threeMfApplyImport(','  function fusionEulerAngles(');
+ let sequence=0;
+ const apply=vm.runInNewContext('(function(){'+code+';return threeMfApplyImport;})()',{
+   uuid:()=>String(++sequence),threeMfCombinedCuttingGroups:data=>data.groups,
+   threeMfGroupMeetsMinimum:minimum,
+   sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
+   threeMfViewStates:new Map(),result:{},Math,Number,String
+ });
+ const f={id:'cabinet',w:1,ht:1,d:1,parts:[]};
+ const specs=[
+   ['Kicsi',37,30,18,0],['Határ',50,50,18,20],
+   ['Munkalap',900,600,38,200],['Lap',850,500,18,50]
+ ];
+ const data={parts:specs.map(([name,x,y,t,z],i)=>({
+   id:String(i),name,originMm:[0,0,z],axisBoundsMm:[x,y,t]
+ })),groups:specs.map(([name,x,y,t],i)=>({
+   name,dimensions:[x,y,t],indices:[i],isRectangular:true
+ }))};
+ apply(f,data);
+ assert.deepEqual(f.parts.map(p=>p.name),['Határ','Lap']);
+ assert.equal(f.ht,238);
+ assert.equal(f.threeMfImport.parts.length,4);
+ assert.equal(f.threeMfImport.groups.length,4);
+});
 test('3MF-nél csak a téglatest kerül alkatrészlistába, de magasabb szabálytalan test növeli a bútormagasságot',()=>{
  const code=block('  function threeMfApplyImport(','  function fusionEulerAngles(');
  let sequence=0;
@@ -70,6 +103,7 @@ test('3MF-nél csak a téglatest kerül alkatrészlistába, de magasabb szabály
    threeMfCombinedCuttingGroups:data=>data.groups,
    sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
    threeMfViewStates:new Map(),
+   threeMfGroupMeetsMinimum:minimum,
    result:{},Math,Number,String
  };
  const apply=vm.runInNewContext('(function(){'+code+';return threeMfApplyImport;})()',ctx);
