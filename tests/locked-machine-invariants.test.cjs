@@ -79,7 +79,7 @@ const locked=[
  ['xMix/xPrg fájlformátum és parancssor',
   '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','a16c7e88'],
  ['Mentés másként – Windows helyi mentés',
-  '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','f49fe3b5'],
+  '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','d6ced248'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',
   '  function svgBoardSize(bin,compact=false){','\n  function trimmingSteps(','86d21042']
 ];
