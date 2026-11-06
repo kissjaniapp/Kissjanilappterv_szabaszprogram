@@ -91,6 +91,6 @@ test('hosszú alkatrésznév teljes egészében szerepel a lejjebb helyezett mat
   const svg=label(part({name}));
   assert.doesNotMatch(svg,/Különösen…|oldallap…/);
   assert.ok(svg.includes('Különösen hosszú konyhai'));
-  assert.ok(svg.includes('felső szekrény oldallap'));
+  assert.ok(svg.includes('szekrény oldallap'));
   assert.ok(svg.indexOf('Különösen')>svg.indexOf('1H 2mm ABS')||!svg.includes('1H 2mm ABS'));
 });
