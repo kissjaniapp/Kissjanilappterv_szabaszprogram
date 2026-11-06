@@ -1741,7 +1741,7 @@
       const f=owner;
       const r=summary.rows.find(r=>r.part===part);
       const computed=r.skipped?`<span class="pill gray">${r.ifSkipped?'IF hamis · kimarad':'Hiányos · kimarad'}</span>`:r.error?`<span class="td-val err">Hiba</span><span class="inline-err">${h(r.error)}</span>`:`<span class="td-val num">${nfmt(r.originalA)} × ${nfmt(r.originalB)}</span><div class="tiny muted">${nfmt(r.qty)} db · kész méret</div>`;
-      const heading=rowIndex===0||partEntries[rowIndex-1].owner.id!==owner.id?`<tr class="furniture-part-group"><td colspan="13"><strong>${h(owner.name||'Új bútor')}</strong> · ${nfmt(owner.qty||1)} db bútor</td></tr>`:'';
+      const heading=rowIndex===0||partEntries[rowIndex-1].owner.id!==owner.id?`<tr class="furniture-part-group"><td colspan="13"><strong>${h(owner.name||'Új bútor')} · ${state.furnitures.indexOf(owner)+1}. példány</strong> · ${nfmt(owner.qty||1)} db bútor</td></tr>`:'';
       return heading+`<tr class="part-sort-row" data-part-sort="${h(part.id)}" data-part-owner="${h(owner.id)}"><td><span class="part-sort-handle" draggable="true" title="Fogd meg és húzd a kívánt sor elé vagy mögé" aria-label="Alkatrész áthelyezése">⠿</span></td><td><input class="part-name" aria-label="Alkatrész neve (képlet is lehet)" data-scope="part" data-id="${part.id}" data-key="name" value="${h(part.name)}"><div class="tiny muted" data-name-preview="${h(part.id)}">${h(r?.resolvedName&&r.resolvedName!==part.name?r.resolvedName:'')}</div></td><td colspan="2"><div class="part-xy-fields"><div class="part-x-field">${partDimensionInput(part,f,'a','Első méret szálirányban')}</div><button type="button" class="btn sm ghost part-xy-flip" data-action="swap-part-grain" data-id="${part.id}" title="Szálirány megfordítása: az X és Y méretet és a hozzájuk tartozó élzárást is felcseréli">⇄ X/Y</button><div class="part-y-field">${partDimensionInput(part,f,'b','Második méret keresztirányban')}</div></div></td><td><input class="expr" style="width:60px;min-width:60px" aria-label="Darabszám képlete" data-scope="part" data-id="${part.id}" data-key="q" value="${h(part.q)}"></td><td class="part-if-cell">
       <details class="part-if-panel" ${String(part.ifCondition||'').trim()?'open':''}>
         <summary title="IF – megmunkálási feltétel">IF</summary>
@@ -1783,7 +1783,7 @@
       const f=r.furniture,part=r.part;
       const header=lastFurniture!==f.id?
         '<tr class="furniture-part-group"><td colspan="7"><strong>'+
-        h(f.name||'Bútor')+'</strong></td></tr>':'';
+        h(f.name||'Bútor')+' · '+(state.furnitures.indexOf(f)+1)+'. példány</strong></td></tr>':'';
       lastFurniture=f.id;
       const edge=h(r.edge||'0-0');
       const filing=h(filingCode(part.filingSides,r.originalA,r.originalB)||'—');
@@ -5545,6 +5545,10 @@
         const latest=library.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0))[0];
         if(latest)openSavedProject(latest.id);
         else freshProject();
+      }
+      const job=library.find(e=>e.id===currentProjectId);
+      if(job&&isCombinedSelectionWorkspace(job)&&el.dataset.page==='furniture'){
+        state.active='collector';notice='';result=null;render();return;
       }
       state.active=designWorkflowMode()==='parts'&&el.dataset.page==='furniture'?'parts':el.dataset.page;
       notice='';render();window.scrollTo({top:0,behavior:'smooth'});
