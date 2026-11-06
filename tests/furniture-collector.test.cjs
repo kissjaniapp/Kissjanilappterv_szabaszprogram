@@ -20,8 +20,8 @@ test('a gyűjtő megnyitás/mentés/összesítés gombjai működő eseményekre
  const src=between('  function collectorFurniturePanel(){','  function isCombinedSelectionWorkspace(');
  assert.match(src,/data-action="collector-open-furniture"/);
  assert.match(src,/data-action="collector-save"/);
- assert.match(src,/data-action="collector-summary"/);
- for(const action of ['collector-open-furniture','collector-save','collector-summary']){
+ assert.match(src,/data-action="collector-parts"/);
+ for(const action of ['collector-open-furniture','collector-save','collector-parts']){
   assert.ok(html.includes("action==='"+action+"'"),'Hiányzó gombkezelő '+action);
  }
 });
@@ -39,4 +39,24 @@ test('a Még nincs mappában rész megszűnt, mentett bútorok továbbra is elé
 test('szabászati xMix és xPrg megvalósításhoz a gyűjtő nem nyúl',()=>{
  const src=between('  function collectorFurniturePanel(){','  function isCombinedSelectionWorkspace(');
  assert.doesNotMatch(src,/xMix|xPrg|cuttingGroup|makeStripPlan/);
+});
+
+test('a gyűjtőszerkesztő csak főméreteket és paramétereket mutat',()=>{
+ const src=between('  function collectorFurnitureEditor(){','  function isCombinedSelectionWorkspace(');
+ for(const key of ['w','ht','d'])assert.ok(src.includes("['"+key+"'"),key+' főméret');
+ assert.match(src,/customParametersPanel\(f\)/);
+ assert.doesNotMatch(src,/threeMfUploadBlock|threeMfImportPreview|gatterka-cabinet-inline|furnitureView\(/);
+ assert.match(src,/data-action="collector-save-back"/);
+ assert.match(src,/data-action="collector-back"/);
+});
+test('a gyűjtő Mentés/Vissza művelet után újra megnyílik; alkatrészlista gomb parts nézet',()=>{
+ assert.match(html,/action==='collector-save-back'/);
+ assert.match(html,/action==='collector-back'/);
+ assert.match(html,/action==='collector-parts'/);
+ assert.match(html,/state\.active='collector-edit'/);
+ assert.match(html,/state\.active='parts'/);
+});
+test('alkatrészlistában egyforma nevű bútorok is külön csoportban jelennek meg',()=>{
+ assert.match(html,/state\.furnitures\.indexOf\(owner\)\+1/);
+ assert.match(html,/state\.furnitures\.indexOf\(f\)\+1/);
 });
