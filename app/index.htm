@@ -2609,7 +2609,7 @@
     if(Number(state.trim)>0&&Number(state.trim)<Number(state.kerf))
       return {error:'A gépi szélezési ráhagyás nem lehet kisebb a vágásrésnél.'};
     if(parts.errors.length)return {error:'Előbb javítsd a képlethibákat. '+parts.errors[0]};
-    if(parts.total>700)return {error:'A program egy tervben legfeljebb 700 alkatrészt kezel. Csökkentsd a darabszámot.'};
+    // A bútorok, alkatrészek és táblák számát itt nem korlátozzuk.
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
     let best=null;
     const economyMode=state.layoutMode==='economy';
@@ -2620,7 +2620,11 @@
       (selectedFeed==='x'||selectedFeed==='y'?[selectedFeed]:['x','y']);
     // Gépi csíkos tervnél az eddigi 6 helyett 48 különböző sorrend/
     // újracsíkozási súlyozás közül választunk. Nagy feladatnál 24 próba.
-    const effort=economyMode?(parts.total<=150?96:48):
+    // Nagy közös munkánál kevesebb alternatív keresést futtatunk, különben
+    // a fő szál túl sokáig foglalt és a Mentés másként gomb nem érhető el.
+    // A meglévő gépi terv és vágássorrend minden próbában változatlan.
+    const effort=parts.total>2000?4:parts.total>700?8:
+      economyMode?(parts.total<=150?96:48):
       machineMode?(parts.total<=150?48:24):
       parts.total<=80?96:parts.total<=200?48:24;
     const modes=Array.from({length:effort},(_,i)=>i)
