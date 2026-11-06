@@ -8,7 +8,7 @@ function block(a,b){
  assert.ok(start>=0&&end>start,'Hiányzó programrész: '+a);
  return html.slice(start,end);
 }
-const rectangular=vm.runInNewContext('('+block('  function threeMfRectangularSolid(','  // Standalone 3MF/ZIP reader.').trim()+')');
+const rectangular=vm.runInNewContext('('+block('  function threeMfRectangularSolid(','  // A szögben leszabott').trim()+')');
 function box(w,d,h) {
  const p=[[0,0,0],[w,0,0],[w,d,0],[0,d,0],
           [0,0,h],[w,0,h],[w,d,h],[0,d,h]];
@@ -30,6 +30,37 @@ test('ferde, hiányos vagy íves / befoglaló doboz szerinti alak nem lesz autom
  const curved=p.map(v=>v.slice());curved.push([450,250,18]);
  const modified=tris.slice();modified[2]={getAttribute:key=>String([{v1:4,v2:5,v3:8}[key]])};
  assert.equal(rectangular(curved,modified,[900,500,18],[0,0,0]),false);
+});
+const angled=vm.runInNewContext('('+block('  function threeMfAngledPanel(','  // Standalone 3MF/ZIP reader.').trim()+')');
+function extrudedPanel(points,t=18){
+  const n=points.length;
+  const p=[...points.map(([x,y])=>[x,y,0]),...points.map(([x,y])=>[x,y,t])];
+  const faces=[];
+  for(let i=1;i<n-1;i++){faces.push([0,i+1,i]);faces.push([n,n+i,n+i+1]);}
+  for(let i=0;i<n;i++){
+    const j=(i+1)%n;
+    faces.push([i,j,n+j],[i,n+j,n+i]);
+  }
+  const tris=faces.map(ids=>({getAttribute:key=>String(ids[{v1:0,v2:1,v3:2}[key]])}));
+  const lo=[Math.min(...p.map(q=>q[0])),Math.min(...p.map(q=>q[1])),0];
+  const extents=[Math.max(...p.map(q=>q[0]))-lo[0],Math.max(...p.map(q=>q[1]))-lo[1],t];
+  return {p,tris,lo,extents};
+}
+test('ferde vágású trapéz és háromszög befoglaló mérettel szabható',()=>{
+  for(const points of [
+    [[0,0],[900,0],[760,500],[0,500]],
+    [[0,0],[900,0],[0,500]]
+  ]){
+    const {p,tris,extents,lo}=extrudedPanel(points);
+    assert.equal(angled(p,tris,extents,lo),true);
+    assert.deepEqual(extents,[900,500,18]);
+    assert.equal(rectangular(p,tris,extents,lo),false);
+    assert.equal(angled(p,tris.slice(2),extents,lo),false,'hiányos mesh nem megengedett');
+  }
+});
+test('íves és homorú test továbbra sem kap automatikusan előgyártmányt',()=>{
+  const concave=extrudedPanel([[0,0],[900,0],[900,200],[500,200],[500,500],[0,500]]);
+  assert.equal(angled(concave.p,concave.tris,concave.extents,concave.lo),false);
 });
 test('3MF-nél csak a téglatest kerül alkatrészlistába, de magasabb szabálytalan test növeli a bútormagasságot',()=>{
  const code=block('  function threeMfApplyImport(','  function fusionEulerAngles(');
