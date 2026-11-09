@@ -32,6 +32,8 @@ test('a szerkezeti alkatrészek bekerülnek a szerkeszthető listába, a bizonyt
   const snippet=source.slice(start,end);
   const ctx={
     uuid:(()=>{let i=0;return ()=>'new-'+(++i);})(),
+    materialCatalog:[{id:'hdf4',name:'HDF hátfal',color:'HDF',thickness:4}],
+    hdfMaterial:()=>({id:'hdf4',name:'HDF hátfal',color:'HDF',thickness:4}),
     sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
     result:null
   };
@@ -47,6 +49,8 @@ test('a szerkezeti alkatrészek bekerülnek a szerkeszthető listába, a bizonyt
   assert.equal(furniture.parts.length,4);
   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='top').a,'964');
   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-rabbet').dxfUnverified,true);
+  assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-rabbet').materialId,'hdf4');
+  assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-rabbet').materialColor,'HDF');
   furniture.parts[0].edge='2-0';
   ctx.syncCabinetDesignerParts(furniture,[...parts.slice(0,2),{...parts[2],a:952},parts[3]]);
   assert.equal(furniture.parts.length,4,'Egy alkatrész sem duplázódhat');
