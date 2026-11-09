@@ -78,3 +78,61 @@ test('4 mm-es bútorlap is választható; a HDF függetlenül 4 mm',()=>{
   assert.match(html,/id="bottomHdfCut"/);
   assert.match(html,/'topHdfCut','bottomHdfCut','hasBottom'/);
 });
+
+
+test('Pótfenék bekapcsolásakor a H teljes külméret nem nő: az oldallap T-vel rövidebb',()=>{
+  const {state,calculate}=make();
+  const old=calculate();
+  assert.equal(old.p.sideH,910);
+  assert.equal(old.p.hdfH,899);
+  state.falseBottom=true;
+  const {p,parts}=calculate();
+  assert.equal(p.h,910,'A felhasználó H külmérete változatlan');
+  assert.equal(p.bodyBottomOffset,18);
+  assert.equal(p.bodyH,892);
+  assert.equal(p.sideH,892,'Oldallap 910 - 18 = 892 mm');
+  assert.equal(parts.find(x=>x.key==='side-left').a,892);
+  assert.equal(parts.find(x=>x.key==='side-right').a,892);
+  assert.equal(p.innerH,856);
+  assert.equal(hdf(parts).a,989);
+  assert.equal(hdf(parts).b,881);
+  const falseBottom=parts.find(x=>x.key==='false-bottom');
+  assert.equal(falseBottom.a,1001,'0,5–0,5 mm túlnyúlás megmarad');
+  assert.equal(falseBottom.b,600);
+  assert.equal(falseBottom.thickness,18);
+  assert.equal(p.hdfBottomOffset,23.5,'18 mm pótfenék + 5,5 mm falc');
+});
+
+test('Végigmenő tető és fenék, pótfenék és teli hátfal esetén is H-t követ minden lap',()=>{
+  const {state,calculate}=make();
+  state.falseBottom=true;
+  state.top='full';state.bottom='full';
+  let {p,parts}=calculate();
+  assert.equal(p.sideH,856,'910 - 18 pótfenék - 18 tető - 18 fenék');
+  assert.equal(hdf(parts).b,845,'A falcos HDF a rövidebb oldallapból számolódik');
+  state.backType='full';
+  ({p,parts}=calculate());
+  assert.equal(p.innerH,856);
+  assert.equal(parts.find(x=>x.key==='back-full').b,856);
+  assert.equal(parts.find(x=>x.key==='side-left').a,856);
+});
+
+test('Falcos HDF csatlakozóválasztók kizárólag a Hátfal panelben találhatók',()=>{
+  const panelStart=html.indexOf('<section class="panel"><div class="panel-head"><h2>▥');
+  const panelEnd=html.indexOf('</section>',panelStart);
+  assert.ok(panelStart>=0&&panelEnd>panelStart);
+  const panel=html.slice(panelStart,panelEnd);
+  assert.match(panel,/id="rabbetSettings"/);
+  assert.match(panel,/id="topHdfJoin"/);
+  assert.match(panel,/id="bottomHdfJoin"/);
+  assert.ok(panel.indexOf('id="rabbetSettings"')<panel.indexOf('id="topHdfJoin"'));
+  assert.ok(panel.indexOf('id="rabbetSettings"')<panel.indexOf('id="bottomHdfJoin"'));
+  assert.doesNotMatch(html.slice(0,panelStart),/id="topHdfJoin"|id="bottomHdfJoin"/);
+  assert.match(script,/\$\('rabbetSettings'\)\.classList\.toggle\('hidden',!p\.rabbet\)/);
+  assert.match(script,/\$\('topHdfJoin'\)\.classList\.toggle\('hidden',!p\.hasTop\|\|!p\.rabbet\)/);
+  assert.match(script,/\$\('bottomHdfJoin'\)\.classList\.toggle\('hidden',!p\.hasBottom\|\|!p\.rabbet\)/);
+  const topStart=html.indexOf('<section class="panel"><div class="panel-head"><h2>▤');
+  const topEnd=html.indexOf('</section>',topStart);
+  const section=html.slice(topStart,topEnd);
+  assert.equal((section.match(/<div(?:\s|>)/g)||[]).length,(section.match(/<\/div>/g)||[]).length);
+});
