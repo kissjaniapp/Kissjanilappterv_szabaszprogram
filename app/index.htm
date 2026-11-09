@@ -4423,6 +4423,16 @@
   function hasPolcParameter(f){
     return (f?.customParameters||[]).some(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
   }
+  function cabinetDesignerInitialConfig(f){
+    // A legutóbb mentett polcszámot, illetve a saját "polc" paramétert az első
+    // automatikus alkatrészátadás előtt átadjuk; így az indulás nem írja felül.
+    const saved=f?.cabinetDesign||{};
+    const rule=(f?.customParameters||[]).find(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
+    const requested=rule?.value??saved.inputs?.count??f?.s??0;
+    const number=Number(requested);
+    const count=Number.isFinite(number)?Math.max(0,Math.min(12,Math.round(number))):0;
+    return {...saved,inputs:{...(saved.inputs||{}),count:String(count)}};
+  }
   function applyCabinetShelfPolicy(frame,f){
     // Polcok és polcfuratozás mindig látható; a meglévő polc-paraméter értékét követik.
     const rule=(f?.customParameters||[]).find(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
@@ -4460,7 +4470,7 @@
       return;
     }
     if(event.data.type==='gatterka-designer-ready'){
-      frame.contentWindow.postMessage({type:'gatterka-designer-init',dims:cabinetDesignerDims(f),design:f.cabinetDesign||null},'*');
+      frame.contentWindow.postMessage({type:'gatterka-designer-init',dims:cabinetDesignerDims(f),design:cabinetDesignerInitialConfig(f)},'*');
       syncCabinetDesignerTheme();
       // The initial design is loaded asynchronously by the iframe; apply the policy afterward.
       setTimeout(()=>applyCabinetShelfPolicy(frame,f),120);
