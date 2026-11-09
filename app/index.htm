@@ -3057,7 +3057,7 @@
     const frame=document.querySelector('.gatterka-cabinet-inline-frame');
     if(!frame?.contentWindow)return;
     frame.contentWindow.postMessage({type:'gatterka-designer-theme',
-      theme:{mode:themeSettings.mode,background:themeSettings.colors.background,
+      theme:{mode:themeSettings.base,background:themeSettings.colors.background,
         text:themeSettings.colors.text,button:themeSettings.colors.button,
         surface:themeSettings.base==='dark'?'#25342d':'#ffffff'}},'*');
   }
