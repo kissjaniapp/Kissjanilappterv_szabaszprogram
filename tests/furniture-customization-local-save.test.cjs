@@ -35,11 +35,11 @@ function setup(mode='editor',options={}){
   return {actions,state,furniture,library,storage,fields};
 }
 const field=(scope,id,key,value)=>({tagName:'INPUT',value,dataset:{scope,id,key}});
-test('A Bútor adatai és Alkatrészek oldalon külön belső mentőgomb van',()=>{
-  assert.match(html,/class="furniture-next"[\s\S]*?data-action="save-furniture-customization"/);
-  assert.match(html,/data-action="save-furniture-customization"[\s\S]*?data-page="parts-review"/);
-  assert.match(html,/data-furniture-save-status/);
-  assert.match(html,/if\(action==='save-furniture-customization'\)/);
+test('A Bútor adatai és Alkatrészek oldalon minden változás automatikusan mentődik',()=>{
+  assert.doesNotMatch(html,/data-action="save-furniture-customization"/);
+  assert.doesNotMatch(html,/data-furniture-save-status/);
+  assert.match(html,/document\.addEventListener\('input',autoSaveFurnitureEdits\)/);
+  assert.match(html,/document\.addEventListener\('change',autoSaveFurnitureEdits\)/);
 });
 test('A legutóbb beírt IF, paraméter és alkatrész adatai azonnal menthetők',()=>{
   const x=setup();
@@ -97,6 +97,7 @@ test('Ha a helyi tárhely nem írható, a program nem állíthatja hogy mentett'
 });
 test('Az IF új kifejezése nem indít xMix/xPrg gépi exportot',()=>{
   assert.doesNotMatch(code,/saveXprgToSelectedFolder|buildOfflineXprgProject|downloadXprgProject/);
-  assert.match(html,/if\(action==='save-furniture-customization'\)\{[\s\S]*?const status=saveFurnitureCustomization\(\)/);
+  assert.match(html,/queueMicrotask\(\(\)=>/);
+  assert.match(html,/captureVisibleFurnitureEdits\(\)/);
   assert.match(html,/el\.dispatchEvent\(new Event\('input',\{bubbles:true\}\)\)/);
 });
