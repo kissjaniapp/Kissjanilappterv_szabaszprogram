@@ -30,6 +30,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   field('w',1000);field('h',910);field('d',600);field('t',18);
   field('count',3);field('hasTop',true,'checkbox');field('hasBottom',true,'checkbox');
   field('falseBottom',false,'checkbox');field('rabbetWidth',4);
+  field('topHdfCut','falc');field('bottomHdfCut','falc');
   const radio=(name,value,selected)=>{
     const el={name,value,dispatchEvent(){}};
     Object.defineProperty(el,'checked',{
@@ -60,7 +61,12 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
     '  const pick=name=>document.querySelectorAll(\'input[type="radio"]:checked\').find(r=>r.name===name)?.value||"between";',
     '  const w=num("w"),h=num("h"),d=num("d"),t=num("t");',
     '  const backType=pick("backType"),hasTop=checked("hasTop"),hasBottom=checked("hasBottom");',
-    '  return {w,h,d,t,n:num("count"),hasTop,hasBottom,top:pick("top"),bottom:pick("bottom"),',
+    '  const top=pick("top"),bottom=pick("bottom");',
+    '  const topDed=hasTop?(document.getElementById("topHdfCut").value==="falc"?5.5:2):0;',
+    '  const bottomDed=hasBottom?(document.getElementById("bottomHdfCut").value==="falc"?5.5:2):0;',
+    '  const sideH=h-(hasTop&&top==="full"?t:0)-(hasBottom&&bottom==="full"?t:0);',
+    '  return {w,h,d,t,n:num("count"),hasTop,hasBottom,top,bottom,',
+    '    hdfW:w-11,hdfH:sideH-topDed-bottomDed,topHdfDeduction:topDed,bottomHdfDeduction:bottomDed,',
     '    innerW:w-2*t,innerH:h-(hasTop?t:0)-(hasBottom?t:0),',
     '    falseBottom:checked("falseBottom"),rabbet:backType==="rabbet",fullBack:backType==="full",',
     '    fullBackSetback:0};',
@@ -76,7 +82,13 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   assert.equal(firstSave.parts.length,8);
   assert.equal(firstSave.parts.find(x=>x.key==='top').a,964);
   assert.equal(firstSave.parts.find(x=>x.key==='side-left').b,600);
-  assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').ready,false);
+  assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').ready,true);
+  assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').a,989);
+  assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').b,899);
+  assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').thickness,4);
+  fields.get('topHdfCut').value='trim';
+  const mixedCut=window.GatterkaCabinetBridge.snapshot().parts.find(x=>x.key==='back-rabbet');
+  assert.equal(mixedCut.b,902.5);
 
   fields.get('w').value='1200';fields.get('h').value='1000';
   fields.get('d').value='550';fields.get('count').value='4';
@@ -98,6 +110,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   const restored=window.GatterkaCabinetBridge.snapshot();
   assert.equal(restored.inputs.count,'4');
   assert.equal(restored.radios.backType,'full');
+  assert.equal(restored.inputs.topHdfCut,'trim');
   assert.equal(restored.parts.length,9);
   assert.equal(restored.parts.find(x=>x.key==='top').a,1164);
   assert.equal(restored.parts.find(x=>x.key==='back-full').b,964);
@@ -105,7 +118,9 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   const begin=source.indexOf('  function syncCabinetDesignerParts(f,records){');
   const end=source.indexOf('  function cabinetDesignerDims(f){',begin);
   assert.ok(begin>=0&&end>begin);
-  const parent={result:null,sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
+  const parent={result:null,materialCatalog:[{id:'hdf4',thickness:4,color:'HDF'}],
+    hdfMaterial:()=>({id:'hdf4',thickness:4,color:'HDF'}),
+    sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
     uuid:(()=>{let id=0;return ()=>'generated-'+ ++id;})()};
   vm.runInNewContext(source.slice(begin,end),parent);
   const furniture={parts:[]};
