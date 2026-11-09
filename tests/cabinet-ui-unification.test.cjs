@@ -30,7 +30,7 @@ test('az alkatrészek automatikusan a Gatterkához kerülnek, külön gomb nélk
   assert.doesNotMatch(designer,/id="exportParts"/);
   assert.match(designer,/last='';notify\(\)/);
   assert.match(designer,/gatterka-designer-save/);
-  assert.match(source,/syncCabinetDesignerParts\(f,event.data.design.parts\)/);
+  assert.match(source,/applyCabinetDesignerSnapshot\(f,event.data.design\)/);
 });
 
 test('három natív, egyéni színválasztó és egységes sötét szerkesztő',()=>{
