@@ -377,12 +377,12 @@
     catch(e){console.warn('A téma mentése nem sikerült:',e);}
   }
 
-  const predefinedThemeColors={"text":[["Fekete","#111111"],["Sötétzöld","#23322c"],["Fehér","#ffffff"],["Világos","#e6f0e8"],["Szürke","#555e59"],["Kék","#284b6f"]],"button":[["Fenyőzöld","#17392f"],["Zöld","#3c8064"],["Kék","#245c9a"],["Bordó","#883d55"],["Szürke","#58636a"],["Fekete","#252525"],["Narancs","#bd6a30"]],"background":[["Világos","#f5f7f4"],["Fehér","#ffffff"],["Krém","#f1e9dc"],["Szürke","#dfe4e5"],["Sötét","#131e19"],["Grafit","#252b30"],["Sötétkék","#192b3d"]]};
   function themeColorChoices(key){
-    return '<div class="theme-color-field"><strong>'+({text:'Szöveg színe',button:'Gombok színe',background:'Háttér színe'}[key])+'</strong><div class="gatterka-palette">'+
-       predefinedThemeColors[key].map(([label,color])=>'<button type="button" data-action="theme-color-preset" data-color-key="'+key+'" data-color="'+color+'" title="'+label+'" aria-label="'+label+'" class="'+(themeSettings.colors[key].toLowerCase()===color?'chosen':'')+'" style="background:'+color+'"></button>').join('')+'</div></div>';
+    const label={text:'Szöveg színe',button:'Gombok színe',background:'Háttér színe'}[key];
+    return '<label class="theme-color-field"><span>'+label+'</span>'+
+      '<input type="color" data-theme-color="'+key+'" value="'+themeSettings.colors[key]+'" aria-label="'+label+'" title="Kattints az egyéni szín választásához"></label>';
   }
-  function settingsPanel(){
+    function settingsPanel(){
     const choice=mode=>`<button type="button" class="theme-choice ${themeSettings.mode===mode?'active':''}" data-action="theme-preset" data-mode="${mode}" aria-pressed="${themeSettings.mode===mode}">
       <span class="theme-swatch ${mode}">${mode==='light'?'Világos előnézet':'Sötét előnézet'}</span>${mode==='light'?'☀ Világos téma':'☾ Sötét téma'}</button>`;
     const fields=['text','button','background'].map(themeColorChoices).join('');
@@ -4422,21 +4422,14 @@
     return (f?.customParameters||[]).some(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
   }
   function applyCabinetShelfPolicy(frame,f){
-    try{
-      const doc=frame.contentDocument;if(!doc)return;
-      const title=Array.from(doc.querySelectorAll('h2')).find(x=>x.textContent?.toLocaleLowerCase('hu-HU').includes('polcok'));
-      const section=title?.closest('section.panel');if(!section)return;
-      const visible=hasPolcParameter(f);
-      section.style.display=visible?'':'none';
-      if(!visible){
-        const count=doc.getElementById('count');
-        if(count&&Number(count.value)!==0){
-          count.value='0';
-          count.dispatchEvent(new Event('change',{bubbles:true}));
-          count.dispatchEvent(new Event('input',{bubbles:true}));
-        }
-      }
-    }catch(error){console.warn('Polc-paraméter szinkron hiba:',error);}
+    // Polcok és polcfuratozás mindig látható; a meglévő polc-paraméter értékét követik.
+    const rule=(f?.customParameters||[]).find(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
+    if(!rule||!frame?.contentWindow)return;
+    const count=Number(rule.value);
+    if(Number.isFinite(count)&&count>=0){
+      f.s=Math.min(12,Math.round(count));
+      frame.contentWindow.postMessage({type:'gatterka-designer-shelf-count',count:f.s},'*');
+    }
   }
   function mountCabinetDesigner(){
     const slot=document.querySelector('.gatterka-cabinet-inline');
@@ -4471,6 +4464,15 @@
       setTimeout(()=>applyCabinetShelfPolicy(frame,f),120);
     }else if(event.data.type==='gatterka-designer-save'&&event.data.design&&typeof event.data.design==='object'){
       f.cabinetDesign=event.data.design;
+        const count=Number(event.data.design.inputs?.count);
+        if(Number.isFinite(count)&&count>=0){
+          const next=Math.min(12,Math.round(count));
+          const rule=(f.customParameters||[]).find(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')==='polc');
+          const changed=f.s!==next||(rule&&Number(rule.value)!==next);
+          f.s=next;
+          if(rule)rule.value=next;
+          if(changed){syncCustomParameterParts(f);result=null;}
+        }
       if(!f.threeMfImport?.parts?.length&&!f.dxfDrawings?.front&&Array.isArray(event.data.design.parts))syncCabinetDesignerParts(f,event.data.design.parts);
       save();
     }else if(event.data.type==='gatterka-cabinet-parts-draft'&&event.data.payload?.schema==='gatterka-cabinet-parts-preview-v1'){
@@ -6005,7 +6007,7 @@
       furnitureCutSelection.set(el.dataset.choiceKey,choice);
       return;
     }
-    if(el.dataset.themeColor){changeThemeColor(el.dataset.themeColor,el.value);return;}
+    if(el.dataset.themeColor){changeThemeColor(el.dataset.themeColor,el.value);syncCabinetDesignerTheme();return;}
     const scope=el.dataset.scope,key=el.dataset.key;
     if(scope==='settings'&&key==='xmixMachineRoot'){
       rememberMachineRoot(el.value);
@@ -6059,6 +6061,7 @@
       furniture[key]=value;
       syncCustomParameterParts(furniture);refreshCustomRuleStatuses(furniture);
       refreshLiveFormulaValues();
+      if(['w','ht','d','t'].includes(key))syncCabinetDesignerDimensions();
       scheduleLiveNesting();
     }
   });
@@ -6093,7 +6096,7 @@
       }
       syncCustomParameterParts(f);result=null;
       refreshCustomRuleStatuses(f);refreshLiveFormulaValues();
-      // A polc paraméter átnevezésekor az élő szekrénytervező menüje azonnal frissül.
+      // A polc paraméter átírásakor a mindig látható polcválasztó értéke frissül.
       const frame=document.querySelector('.gatterka-cabinet-inline-frame');
       if(frame)applyCabinetShelfPolicy(frame,f);
       save();return; // A Tab minden képletmezőn és legördülőn továbblép.
