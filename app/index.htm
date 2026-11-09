@@ -946,6 +946,8 @@
     const matches=(f?.customParameters||[]).filter(p=>
       String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle&&needle);
     if(!matches.length&&needle==='munkalap')return worktopFlag(f);
+    // A polc=0 alapból elérhető, saját paraméter felvétele nélkül is.
+    if(!matches.length&&needle==='polc')return Math.max(0,Math.round(Number(f?.s)||0));
     if(!matches.length){
       const imported=(f?.fusionParameters||[]).filter(p=>String(p.name||'').trim().toLocaleLowerCase('hu-HU')===needle);
       if(imported.length===1&&imported[0].type==='number'&&
@@ -980,7 +982,7 @@
     const exact=(f?.customParameters||[]).filter(p=>
       String(p.name||'').trim().toLocaleLowerCase('hu-HU')===
         condition.toLocaleLowerCase('hu-HU'));
-    if(exact.length)return namedFurnitureParameter(condition,vars,f,visited)!==0;
+    if(exact.length||condition.toLocaleLowerCase('hu-HU')==='polc')return namedFurnitureParameter(condition,vars,f,visited)!==0;
     return condition.split(/\s*\|\|\s*/).some(group=>
       group.split(/\s*&&\s*/).every(original=>{
         let expression=original.trim(),negated=false;
@@ -993,7 +995,7 @@
           const parameters=(f?.customParameters||[]).filter(p=>
             String(p.name||'').trim().toLocaleLowerCase('hu-HU')===
             term.toLocaleLowerCase('hu-HU')&&term);
-          if(parameters.length===1||term.toLocaleLowerCase('hu-HU')==='munkalap')
+          if(parameters.length===1||['munkalap','polc'].includes(term.toLocaleLowerCase('hu-HU')))
             return namedFurnitureParameter(term,vars,f,visited);
           if(parameters.length>1)throw Error('Nem egyértelmű bútorparaméter: '+term);
           return calcPartFormula(term,vars,f,
@@ -1520,7 +1522,7 @@
           name.toLocaleLowerCase('hu-HU'))))return full;
         return (prefix||'')+lookup(name,dir);
       });
-    return calc(f?.customParameters?.length?
+    return calc(f?.customParameters?.length||/\[(?:polc|munkalap)\]/i.test(expression)?
       expandFurnitureParameters(expression,vars,f,chain):expression,vars);
   }
   function getParts(){
