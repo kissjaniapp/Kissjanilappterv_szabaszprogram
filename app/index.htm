@@ -1764,6 +1764,76 @@
       '<button class="panel" data-action="choose-workflow-mode" data-mode="manual" style="padding:26px;text-align:left;cursor:pointer"><h2>📋 Kézi alkatrészbevitel</h2><p>Rajz nélkül megadható alkatrészek, külméretek, paraméterek, képletek és IF-feltételek.</p><strong>Alkatrészek beírása →</strong></button>'+
       '</div>';
   }
+
+  // Excel-szerű, projektadatoktól független oszlopszélességek.
+  const partColumnStorageKey='gatterka-parts-column-widths-v1';
+  const partColumnDefaults=[42,210,145,145,60,215,195,120,185,94,215,125,46];
+  const partColumnMinimum=[32,100,88,88,48,105,125,78,145,76,164,95,40];
+  const partColumnTitles=[
+    ['⠿','Alkatrészek sorrendje'],['Megnevezés','Alkatrész megnevezése'],
+    ['X · szál ↔','Szálirányú méret'],['Y · kereszt ↕','Keresztirányú méret'],
+    ['Db','Darabszám'],['IF · megmunkálási feltétel','IF feltétel'],
+    ['Anyag · szín · vastagság','Alapanyag'],['Élzárás (szál-kereszt)','Élzárás'],
+    ['ABS vastagság · X1 X2 Y1 Y2','ABS élvastagságok'],['Reszelés','Reszelés'],
+    ['Élmarás (mm)','Élmarás'],['Szálirány kötelező','Szálirány kikötése'],
+    ['','Alkatrész törlése']
+  ];
+  function loadPartColumnWidths(){
+    let stored=null;
+    try{stored=JSON.parse(localStorage.getItem(partColumnStorageKey));}catch{}
+    return partColumnDefaults.map((v,i)=>{
+      const n=Array.isArray(stored)?Number(stored[i]):NaN;
+      return Number.isFinite(n)?Math.max(partColumnMinimum[i],Math.min(650,Math.round(n))):v;
+    });
+  }
+  let partColumnWidths=loadPartColumnWidths();
+  function partTableTotalWidth(){return partColumnWidths.reduce((sum,w)=>sum+w,0);}
+  function partTableColgroup(){return '<colgroup>'+partColumnWidths.map((width,i)=>'<col data-part-col-index="'+i+'" style="width:'+width+'px">').join('')+'</colgroup>';}
+  function partTableHeadings(){return '<thead><tr>'+partColumnTitles.map(([label,title],i)=>
+    '<th data-part-col-index="'+i+'" title="'+title+'"><span class="parts-col-caption">'+label+'</span>'+
+    '<span class="parts-col-resizer" data-part-column-resize="'+i+'" role="separator" aria-orientation="vertical"'+
+    ' aria-label="Oszlopszélesség: '+title+'" tabindex="0" title="Az oszlop szélességét a jobb szélén húzva állíthatod"></span></th>').join('')+'</tr></thead>';}
+  function setPartColumnWidth(i,width){
+    if(!Number.isInteger(i)||i<0||i>=partColumnWidths.length)return;
+    partColumnWidths[i]=Math.min(650,Math.max(partColumnMinimum[i],Math.round(width)));
+    const table=document.querySelector('.parts-resizable-table');
+    if(table){
+      table.style.width=partTableTotalWidth()+'px';
+      const col=table.querySelector('col[data-part-col-index="'+i+'"]');
+      if(col)col.style.width=partColumnWidths[i]+'px';
+    }
+  }
+  function savePartColumnWidths(){
+    try{localStorage.setItem(partColumnStorageKey,JSON.stringify(partColumnWidths));}
+    catch(error){console.warn('Oszlopszélességek mentési hibája:',error);}
+  }
+  document.addEventListener('pointerdown',event=>{
+    const grip=event.target.closest?.('[data-part-column-resize]');
+    if(!grip||(event.pointerType==='mouse'&&event.button!==0))return;
+    const index=Number(grip.dataset.partColumnResize);
+    if(!Number.isInteger(index)||index<0||index>=partColumnWidths.length)return;
+    event.preventDefault();
+    const pointer=event.pointerId,startX=event.clientX,initial=partColumnWidths[index];
+    const move=e=>{if(e.pointerId===pointer)setPartColumnWidth(index,initial+e.clientX-startX);};
+    const stop=e=>{
+      if(e.pointerId!==pointer)return;
+      window.removeEventListener('pointermove',move);
+      window.removeEventListener('pointerup',stop);
+      window.removeEventListener('pointercancel',stop);
+      savePartColumnWidths();
+    };
+    window.addEventListener('pointermove',move);
+    window.addEventListener('pointerup',stop);
+    window.addEventListener('pointercancel',stop);
+  });
+  document.addEventListener('keydown',event=>{
+    const grip=event.target.closest?.('[data-part-column-resize]');
+    if(!grip||!['ArrowLeft','ArrowRight'].includes(event.key))return;
+    event.preventDefault();
+    const index=Number(grip.dataset.partColumnResize);
+    setPartColumnWidth(index,partColumnWidths[index]+(event.key==='ArrowRight'?10:-10));
+    savePartColumnWidths();
+  });
   function furnitureView(stage='furniture'){
     const f=getFurniture(),summary=getParts();
     const actions=f&&projectScreen==='editor'?
