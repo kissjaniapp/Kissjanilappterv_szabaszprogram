@@ -556,6 +556,7 @@
   const remnantHistoryKey='gatterka-maradek-elozmenyek-v1';
   const defaults=[
     {id:'lap18',name:'Bútorlap',thickness:18,color:'Freya'},
+    {id:'hdf4',name:'HDF hátfal',thickness:4,color:'HDF'},
     {id:'rtg12',name:'RTG · rétegelt lemez',thickness:12,color:'RTG'},
     {id:'hexa15',name:'Hexa RTG',thickness:15,color:'Hexa RTG'}
   ];
@@ -580,7 +581,21 @@
     ...m,color:String(m.color||m.name||'').trim(),thickness:Number(m.thickness)||18,
     boardA:catalogSheetDimension(m.boardA),boardB:catalogSheetDimension(m.boardB)
   }));
-  const materialThicknesses=[12,15,18,36];
+  const materialThicknesses=[4,12,15,18,36];
+  // Régi anyagadatbázis: a HDF tételt egyszer felvesszük, az eddigieket megőrizve.
+  const hdfMigrationKey='gatterka-hdf4-added-v1';
+  let migrateHdf=true;
+  try{migrateHdf=localStorage.getItem(hdfMigrationKey)!=='1';}catch{}
+  if(migrateHdf){
+    if(!materialCatalog.some(m=>Number(m.thickness)===4&&/hdf/i.test(String(m.color||'')+' '+String(m.name||'')))){
+      materialCatalog.push({id:'hdf4',name:'HDF hátfal',thickness:4,color:'HDF',boardA:'',boardB:''});
+    }
+    storeCatalog(materialKey,materialCatalog);
+    try{localStorage.setItem(hdfMigrationKey,'1');}catch{}
+  }
+  function hdfMaterial(){
+    return materialCatalog.find(m=>Number(m.thickness)===4&&/hdf/i.test(String(m.color||'')+' '+String(m.name||'')))||null;
+  }
   let seriesCatalog=storedArray(seriesKey);
   const foldersKey='gatterka-butor-mappak-v1';
   let furnitureFolders=storedArray(foldersKey,[{id:'series',name:'Széria'}]);
@@ -591,6 +606,10 @@
     try{localStorage.setItem(key,JSON.stringify(entries));}catch(error){console.warn('Katalógus mentési hiba:',key,error);}
   }
   function materialForPart(part,f){
+    if(part?.cabinetDesignKey==='back-rabbet'){
+      const chosen=materialCatalog.find(m=>m.id===part?.materialId&&Number(m.thickness)===4)||hdfMaterial();
+      return {color:String(chosen?.color||'HDF'),thickness:4,name:String(chosen?.name||'HDF hátfal')};
+    }
     const own=materialCatalog.find(m=>m.id===part?.materialId);
     const base=materialCatalog.find(m=>m.id===f?.materialId);
     const selected=own||base;
@@ -609,6 +628,12 @@
       name:selected?.color||'Korábbi mentett anyag'};
   }
   function materialOptions(part,f){
+    if(part?.cabinetDesignKey==='back-rabbet'){
+      const options=materialCatalog.filter(m=>Number(m.thickness)===4);
+      const current=options.some(m=>m.id===part.materialId)?String(part.materialId):String(hdfMaterial()?.id||'');
+      return options.map(m=>'<option value="'+h(m.id)+'" '+(m.id===current?'selected':'')+'>'+
+        h(m.color)+' · 4 mm'+h(materialBoardSizeSuffix(m))+'</option>').join('');
+    }
     const current=String(part?.materialId||'');
     return '<option value="" '+(!current?'selected':'')+'>Bútor alapanyaga · '+h(materialForPart({},f).color)+
       ' · '+h(materialForPart({},f).thickness)+' mm</option>'+
@@ -4401,17 +4426,27 @@
       if(![a,b,q].every(Number.isFinite)||a<=0||b<=0||q<1||a>10000||b>10000||q>100)continue;
       seen.add(row.key);
       let part=f.parts.find(p=>p.cabinetDesignKey===row.key);
+      const generatedHdf=row.key==='back-rabbet';
+      const currentHdfMaterial=materialCatalog.find(m=>m.id===part?.materialId&&Number(m.thickness)===4)||hdfMaterial();
       if(part){
         part.dxfUnverified=row.ready===false;
         // DXF alkatrésznél a felhasználó képleteit ne írja felül a rajzi szinkron.
         if(!part.dxfGenerated){part.a=String(a);part.b=String(b);}
         part.q=String(q);
+        if(generatedHdf){
+          if(!part.name||part.name==='Falcos hátlap – méretellenőrzés szükséges')part.name=String(row.name||'Falcos hátfal · HDF');
+          part.materialId=currentHdfMaterial?.id||'';
+          part.materialColor=currentHdfMaterial?.color||'HDF';
+        }
       }
-      else f.parts.push({id:uuid(),cabinetDesignKey:row.key,dxfUnverified:row.ready===false,
+      else f.parts.push({id:uuid(),cabinetDesignKey:row.key,
+        materialId:generatedHdf?(currentHdfMaterial?.id||''):'',
+        materialColor:generatedHdf?(currentHdfMaterial?.color||'HDF'):'',
+        dxfUnverified:row.ready===false,
         name:String(row.name||row.key).slice(0,100),a:String(a),b:String(b),q:String(q),
         edge:'0-0',edgeSides:sidesFromCode('0-0'),
         filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
-        mill:true,millDepth:1,rot:false,grainRequired:true,materialId:'',materialColor:''});
+        mill:true,millDepth:1,rot:false,grainRequired:true});
     }
     f.parts=f.parts.filter(p=>!p.cabinetDesignKey||seen.has(p.cabinetDesignKey));
     result=null;
