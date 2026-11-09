@@ -68,6 +68,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
     '  return {w,h,d,t,n:num("count"),hasTop,hasBottom,top,bottom,',
     '    hdfW:w-11,hdfH:sideH-topDed-bottomDed,topHdfDeduction:topDed,bottomHdfDeduction:bottomDed,',
     '    innerW:w-2*t,innerH:h-(hasTop?t:0)-(hasBottom?t:0),',
+    '    sideH:h-(hasTop&&top==="full"?t:0)-(hasBottom&&bottom==="full"?t:0),',
     '    falseBottom:checked("falseBottom"),rabbet:backType==="rabbet",fullBack:backType==="full",',
     '    fullBackSetback:0};',
     '}'
