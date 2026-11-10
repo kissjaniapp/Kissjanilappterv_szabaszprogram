@@ -209,6 +209,46 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
 - A védett XPrg/XMix, szabási sorrend, tábla- és Windows mentő
   logika NEM MÓDOSULT.
   
+2026-11-10 – CNC POLCTARTÓ REF / EGYSÉGES BÚTOR-KÖTÉSMÓD
+-------------------------------------------------------
+A POLCTARTO_LOGIKAHOZ.zip-ben átadott 1DB_V-OSZTO.pgm és
+2DB_V-OSZTO.pgm gépi minták alapján:
+- A teljes bútor ÖSSZEÉPÍTÉSÉNEK egyetlen, bútoronként mentett kötésmódja
+  van (nem az F-osztóhoz tartozó külön választás). Ez a tető, fenék,
+  polcok, F/V osztók összes szerkezeti LAPA/LAPF/ELF makrójára
+  érvényes. Tipli: lap G=0, él G=0; excenter: lap G=1, él G=1;
+  hosszú excenter: lap G=1, él G=2; csavar: lap G=2, él G=0.
+- A POLC makróban a G=1# nem kötésmód: ez a csatolt Xilog-minta
+  POLC makróparamétere. A POLC Y=... Q=...# s=32 G=1# F=1
+  önállóan működik, a szerkezeti G-től függetlenül.
+- A géphez egyetlen mentés gomb tartozik: minden aktív, megmunkálható
+  alkatrész külön .xxl fájlja egy ZIP-be kerül. Nincs külön
+  alkatrészkiválasztás és nincs kódbeviteli/előnézeti szövegmező.
+- A polctartó furatsor V-osztónként több REF szakaszra válik szét;
+  egy V-osztó 2, két V-osztó 3 szakaszt hoz létre az adott oldallapon.
+  A V-osztó tényleges alsó (közép-t/2) és felső (közép+t/2)
+  felületéig számol. Az egyedi V-magasság nem cserélhető
+  automatikusan egyenletes V-kiosztásra.
+- REF BX = a szakasz kezdete az oldallap alsó CNC nullpontjától,
+  REF DX = a szakasz érvényes szabad magassága, a megadott
+  kihagyásokkal. Példa: 1500 mm oldallap; 18 mm V-osztó középvonala
+  alulról 609 mm: alsó V felület 600 mm; 0 extra kihagyással
+  REF DX=600 BX=0. A V felett a második REF kezdete BX=618,
+  felső DX a tető alsó felületéhez és a kihagyásokhoz igazodik.
+- Három, külön állítható kihagyás a bútortervező Polcfuratozás
+  részén: fenéktől, tetőtől és V-osztótól (utóbbi mindkét oldalon).
+  A beállításokat a bútor beállításaival mentjük.
+- POLC Q=0: teljes raszterfurat-sor minden REF szakaszon,
+  Q>0: az adott REF szakaszba tartozó állítható polcok száma.
+  s = furatosztás, Y = az első/hátsó élhez képesti polctartó
+  távolsága. Egyedi (nem egyenlő) polcmagasságnál nem szabad
+  Q-ból téves furatpozíciót kitalálni; az érintett CNC tiltott.
+- A REF és POLC műveletek fizikai gépi elfogadása és az elöl/hátul
+  furatminősége még Xilog/WinCut előnézettel, majd szárazpróbával
+  ellenőrzendő. Az automatikus teszt nem helyettesíti ezt.
+- A védett XPrg/XMix gépi export és a korábbi szabási sorrend
+  továbbra is változatlan.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
