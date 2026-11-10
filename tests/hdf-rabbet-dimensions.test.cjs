@@ -29,6 +29,8 @@ const make=()=>{
     shelfBackAt:()=>4,
     shelfDepthAt:p=>p.d-p.front-(p.rabbet?p.rabbetWidth:p.fullBack?p.t+p.fullBackSetback:0),
     baseShelfBack:p=>p.rabbet?p.rabbetWidth:p.fullBack?p.t+p.fullBackSetback:0,
+    // A HDF méretét izoláltan teszteljük; az F/V/osztó geometriát külön teszt fedi.
+    fixedDividerPieces:()=>[],
     fmt:n=>String(n)
   };
   vm.runInNewContext(readCode+'\n'+partsCode+'\nthis.makeParts=()=>{const p=read();return {p,parts:getStructuredParts(p)};}',ctx);
