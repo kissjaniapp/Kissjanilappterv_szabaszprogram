@@ -6734,36 +6734,106 @@
     const order=['X','Y','A','x','y','G'];
     return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
   }
+
+  // A csatolt Xilog3 .pgm referenciákból ellenőrzött formátum:
+  // REF DX=491 BX=0; POLC Y=50 Q=0# s=32 G=1# F=1; REF (visszaállítás).
+  function parseShelfMacro(line,dx,dy,state){
+    const name=line.split(/\s+/)[0];
+    if(name==='REF'){
+      if(line==='REF'){
+        if(!state.active)throw new Error('REF visszaállítás aktív szakasz nélkül.');
+        state.active=false;
+        return 'REF';
+      }
+      if(state.active)throw new Error('Az előző REF szakaszt előbb le kell zárni.');
+      const fields={};
+      for(const part of line.split(/\s+/).slice(1)){
+        const m=/^(DX|BX)=((?:\d+\.?\d*|\.\d+))$/.exec(part);
+        if(!m||Object.prototype.hasOwnProperty.call(fields,m[1]))
+          throw new Error('Érvénytelen REF paraméter: '+part);
+        fields[m[1]]=number(m[2],m[1],true);
+      }
+      if(!(fields.DX>0)||!(fields.BX>=0)||fields.BX+fields.DX>dx+.001)
+        throw new Error('A REF szakasz kezdőpontja/hossza kilóg az oldallapból.');
+      state.active=true;state.dx=fields.DX;state.bx=fields.BX;
+      return 'REF DX='+fmt(fields.DX)+' BX='+fmt(fields.BX);
+    }
+    if(name==='POLC'){
+      if(!state.active)throw new Error('POLC csak előzetes REF szakaszon belül használható.');
+      const fields={};
+      for(const part of line.split(/\s+/).slice(1)){
+        const m=/^(Y|Q|s|G|F)=((?:\d+\.?\d*|\.\d+))#?$/.exec(part);
+        if(!m||Object.prototype.hasOwnProperty.call(fields,m[1]))
+          throw new Error('Érvénytelen POLC paraméter: '+part);
+        fields[m[1]]=number(m[2],m[1],true);
+      }
+      if(!('Y'in fields)||fields.Y>dy||!Number.isInteger(fields.Q)||
+          fields.Q<0||fields.Q>12||!Number.isFinite(fields.s)||
+          fields.s<8||fields.s>200||fields.G!==1||fields.F!==1)
+        throw new Error('Érvénytelen POLC Y/Q/s/G/F; a minták G=1 F=1 értéket használnak.');
+      return 'POLC Y='+fmt(fields.Y)+' Q='+fmt(fields.Q)+'# s='+fmt(fields.s)+
+        ' G=1# F=1';
+    }
+    throw new Error('Ismeretlen REF/POLC makró.');
+  }
+  // Xilog CNC fejléc: a DX/DY szabja meg a megmunkálási térfélkódot.
+  // A bal oldali alap térfél IJ, a jobb oldali LK; a különböző
+  // szélességű és összekapcsolt változatokat automatikusan képezzük.
+  function cncToolCode(dx,combined){
+    const length=number(dx,'DX');
+    return (combined?16973824:196608)+(length>=620?1:0);
+  }
+  function cncHeader(dx,dy,requestedSide){
+    const length=number(dx,'DX'),width=number(dy,'DY');
+    const side=String(requestedSide||'IJ').replace(/^-/, '').toUpperCase();
+    const left=['IJ','IL','AB','AD'].includes(side);
+    const right=['LK','LI','DC','DA'].includes(side);
+    if(!left&&!right)throw new Error('Nem támogatott Xilog térfél: '+side);
+    const combined=length>=1350;
+    const narrow=width<800;
+    const target=narrow
+      ?(combined?(left?'IL':'LI'):(left?'IJ':'LK'))
+      :(combined?(left?'AD':'DA'):(left?'AB':'DC'));
+    return {side:target,combined,tool:cncToolCode(length,combined)};
+  }
   function compileXxl(spec){
     if(!spec||typeof spec!=='object')throw new Error('Hiányzó CNC programadatok.');
     const dx=number(spec.dx,'DX'),dy=number(spec.dy,'DY'),dz=number(spec.dz,'DZ');
-    const side=String(spec.side||'IJ').replace(/^-/, '').toUpperCase();
-    if(side!=='IJ'&&side!=='LK')throw new Error('Csak IJ vagy LK referencia választható.');
+    const header=cncHeader(dx,dy,spec.side);
     const text=String(spec.commands??'').replace(/\r/g,'');
     if(text.length>50000)throw new Error('Túl hosszú CNC makrólista.');
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
     if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
-    const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+side+
-      ' C=0 T=196608 R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
+    const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
+      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
     let macrocnt=0,flips=0,justFlipped=false;
+    const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
       if(lines[i]==='FORDIT'){
+        if(shelfRef.active)throw new Error('A REF szakaszt FORDIT előtt le kell zárni.');
         if(!macrocnt||justFlipped||i===lines.length-1)
           throw new Error('A FORDIT csak két megmunkálási csoport között állhat.');
         if(++flips>1)throw new Error('A többfordításos CNC program még nincs hitelesítve.');
         out.push(';','VEGE','XMSG Q=1 N="FORDIT"',';');
         justFlipped=true;
+      }else if(lines[i]==='REF'||lines[i].startsWith('REF ')||lines[i].startsWith('POLC ')){
+        const line=parseShelfMacro(lines[i],dx,dy,shelfRef);
+        out.push(line);
+        if(lines[i].startsWith('POLC '))macrocnt++;
+        justFlipped=false;
       }else{
+        if(shelfRef.active)throw new Error('A REF szakaszba csak POLC-makró írható.');
         out.push(parseMacro(lines[i],dx,dy));
         macrocnt++;
         justFlipped=false;
       }
     }
+    if(shelfRef.active)throw new Error('A REF szakaszból hiányzik a záró REF.');
     if(!macrocnt)throw new Error('Hiányzik a megmunkálási makró.');
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
   }
-  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,compileXxl};
+  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,cncToolCode,cncHeader,compileXxl};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCnc=api;
 })(typeof window!=='undefined'?window:null);
@@ -6783,7 +6853,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -6791,13 +6861,46 @@
       .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,65)||'Alkatresz';
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
+  function jointMode(operation,mode){
+    // A teljes bútor összes szerkezeti kötésére ugyanaz a választott mód
+    // vonatkozik (a POLC polctartó furat ettől független).
+    const settings=typeof mode==='string'?{assemblyJoint:mode}:mode||{};
+    return settings.assemblyJoint||settings.carcassJoint||settings.dividerJoint||'excenter';
+  }
   function macroLine(operation,mode){
     if(!operation||!VALID_MACROS.has(operation.macro))
       throw new Error('A megadott alkatrésznél nem támogatott CNC makró.');
     if(!core)throw new Error('A CNC makrófordító nem töltődött be.');
-    const joint=operation.joint==='fixed'?'tipli':mode;
-    const codes=core.jointCodes(joint);
-    const G=operation.macro.startsWith('ELF')?codes.el:codes.lap;
+    if(operation.macro==='REF'){
+      if(operation.DX===undefined)return 'REF';
+      const dx=finite(operation.DX),bx=finite(operation.BX);
+      if(!Number.isFinite(dx)||dx<=0||!Number.isFinite(bx)||bx<0)
+        throw new Error('Hibás REF DX vagy BX érték.');
+      return 'REF DX='+round(dx)+' BX='+round(bx);
+    }
+    if(operation.macro==='POLC'){
+      const y=finite(operation.Y),q=finite(operation.Q),sp=finite(operation.s);
+      if(!Number.isFinite(y)||y<0||!Number.isInteger(q)||q<0||q>12||
+          !Number.isFinite(sp)||sp<8||sp>200)
+        throw new Error('A POLC Y/Q/s paraméter nem érvényes.');
+      // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
+      // a két felhasználói PGM minta kifejezetten G=1# F=1.
+      return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    const joint=jointMode(operation,mode),codes=core.jointCodes(joint);
+    // A beküldött F-osztó + polc referenciák G=2 eltolt ELF furata
+    // KIZÁRÓLAG excenteres összehúzásnál ismert. G=2 nem általános
+    // "másik oldal": más kötésmódnál tilos néma felülírással dolgozni.
+    if(operation.shiftedF&&joint!=='excenter')
+      throw new Error('Az eltolt F-osztó furatpár csak excenteres (összehúzós) kötésnél hitelesített.');
+    let G=operation.macro.startsWith('ELF')?codes.el:codes.lap;
+    if(operation.shiftedF&&operation.gOverride!==undefined){
+      if(!operation.macro.startsWith('ELF')||operation.gOverride!==2)
+        throw new Error('Az F-osztós eltolt G felülírás csak ELF G=2 lehet.');
+      G=2;
+    }else if(operation.gOverride!==undefined){
+      throw new Error('Engedély nélküli CNC furat-G felülírás.');
+    }
     let body=operation.macro,fields=['X','Y','A','x','y'];
     for(const field of fields){
       if(field!=='A'&&operation[field]===undefined)continue;
@@ -6834,8 +6937,8 @@
    */
   function makeAutoPrograms(furniture,allowedIds,options={}){
     if(!core)throw new Error('A CNC makrómodul hiányzik.');
-    const mode=String(options.dividerJoint||'excenter');
-    core.jointCodes(mode);
+    const modes={assemblyJoint:String(options.assemblyJoint||options.dividerJoint||'excenter')};
+    core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
     const result={files:[],blocked:[],skipped:[],total:0};
     const used=new Set();
@@ -6880,12 +6983,20 @@
           appendFailure(result.blocked,shown,'Döntött polchoz még nincs hiteles ferde furatmakró, a CNC export biztonságból tiltva.');
           continue;
         }
+        if(entry.noCnc===true){
+          if(entry.operations?.length||entry.issues?.length){
+            appendFailure(result.blocked,shown,'CNC nélkül megjelölt alkatrészhez megmunkálás is tartozik; hibás szerkezeti adatok.');
+          }else{
+            appendFailure(result.skipped,shown,'Állítható polc: polctartós kivitel, saját kötésfuratot nem igényel.');
+          }
+          continue;
+        }
         try{
-          const content=compileEntry(entry,mode);
+          const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
           const filename=(name+'_'+cleanName(part.name||entry.name)+'_'+suffix+'.xxl').slice(0,160);
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
-            commands:(entry.operations||[]).map(op=>macroLine(op,mode)).join('\n'),
+            commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
       }
@@ -6896,7 +7007,6 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCncAuto=api;
 })(typeof window!=='undefined'?window:null);
-
 </script>
 <script>
 (function(){
