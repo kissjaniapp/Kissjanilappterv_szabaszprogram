@@ -197,5 +197,22 @@ test('egyedi polcmagasságot nem cserél fel automatikus, egyenletes POLC Q megm
  const boards=[{kind:'shelf',index:0,x1:18,x2:982,z1:300,z2:318,y0:0,y1:396}];
  const r=ctx.cncSupportRegions(p,boards,'left');
  assert.equal(r.segments.length,0);
- assert.match(r.issues.join(' '),/egyedi polcmagasság/);
+ assert.match(r.issues.join(' '),/nem egyenletes polcmagasság/);
+});
+
+test('egyedileg pozicionált V-osztó mellett a REF Q=1 működik, ha a polc a saját rekeszének közepén van',()=>{
+ const {ctx}=extractedGeometry(),p={...base(),
+   hasTop:false,hasBottom:false,sideH:1500,
+   drilling:'local',distribution:'manual',cncGapBottom:0,
+   cncGapTop:0,cncGapDivider:0,raster:32,supportInset:50
+ };
+ const boards=[
+   {kind:'v',index:0,x1:18,x2:982,z1:600,z2:618},
+   {kind:'shelf',index:0,x1:18,x2:982,z1:291,z2:309,y0:0,y1:396},
+   {kind:'shelf',index:1,x1:18,x2:982,z1:1050,z2:1068,y0:0,y1:396}
+ ];
+ // Alsó közép 300 mm, felső közép: (618+1500)/2=1059 mm.
+ const v=ctx.cncSupportRegions(p,boards,'left');
+ assert.equal(v.issues.length,0);
+ assert.deepEqual(Array.from(v.segments,s=>[s.BX,s.DX,s.Q]),[[0,600,1],[618,882,1]]);
 });
