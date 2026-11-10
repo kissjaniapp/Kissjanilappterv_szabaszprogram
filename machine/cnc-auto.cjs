@@ -21,14 +21,10 @@
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
   function jointMode(operation,mode){
-    const settings=typeof mode==='string'?{dividerJoint:mode}:mode||{};
-    const group=String(operation.joint||'fixed');
-    if(group==='fixed')return 'tipli';
-    if(group==='divider')return settings.dividerJoint||'excenter';
-    if(group==='carcass')return settings.carcassJoint||'excenter';
-    if(group==='v')return settings.vJoint||'tipli';
-    if(group==='shelf')return settings.shelfJoint||'tipli';
-    throw new Error('Nem támogatott csatlakozási kötésmód: '+group);
+    // A teljes bútor összes szerkezeti kötésére ugyanaz a választott mód
+    // vonatkozik (a POLC polctartó furat ettől független).
+    const settings=typeof mode==='string'?{assemblyJoint:mode}:mode||{};
+    return settings.assemblyJoint||settings.carcassJoint||settings.dividerJoint||'excenter';
   }
   function macroLine(operation,mode){
     if(!operation||!VALID_MACROS.has(operation.macro))
@@ -88,13 +84,8 @@
    */
   function makeAutoPrograms(furniture,allowedIds,options={}){
     if(!core)throw new Error('A CNC makrómodul hiányzik.');
-    const modes={
-      dividerJoint:String(options.dividerJoint||'excenter'),
-      carcassJoint:String(options.carcassJoint||'excenter'),
-      vJoint:String(options.vJoint||'tipli'),
-      shelfJoint:String(options.shelfJoint||'tipli')
-    };
-    for(const mode of Object.values(modes))core.jointCodes(mode);
+    const modes={assemblyJoint:String(options.assemblyJoint||options.dividerJoint||'excenter')};
+    core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
     const result={files:[],blocked:[],skipped:[],total:0};
     const used=new Set();
