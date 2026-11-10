@@ -3085,6 +3085,38 @@
       '<div class="mini-info top-gap">A matricák ki vannak kapcsolva. A gépi mentés ettől függetlenül működik.</div>')+
       '<div class="section-bottom"><button class="btn primary" data-action="page" data-page="save">Tovább a gépi mentéshez →</button></div>';
   }
+  // CNC / Xilog XXL: az új, különálló próbaexport nem érinti a védett XPrg/XMix mentést.
+  function cncXxlPanel(){
+    const f=getFurniture();
+    const rows=getParts().rows.filter(r=>f&&r.furniture?.id===f.id&&!r.skipped&&!r.error&&r.qty>0);
+    const options=rows.map(r=>'<option value="'+h(r.part.id)+'" data-filename="'+h(fileName(r.resolvedName||r.part.name||'Alkatresz'))+
+      '" data-dx="'+h(r.originalA)+'" data-dy="'+h(r.originalB)+'" data-dz="'+h(r.thickness)+'">'+
+      h((r.resolvedName||r.part.name)+' · '+nfmt(r.originalA)+' × '+nfmt(r.originalB)+' × '+nfmt(r.thickness)+' mm')+'</option>').join('');
+    const first=rows[0];
+    return '<div class="panel top-gap" id="cnc-xxl-panel">'+
+      '<div class="panel-head"><div><div class="panel-title">CNC – Xilog XXL próbaexport</div>'+
+      '<div class="panel-sub">Különálló CNC-furatprogram. Nem módosítja a szabászgép XPrg/XMix fájljait.</div></div></div>'+
+      '<div class="panel-body"><p class="muted small">A kiválasztott alkatrész <strong>készméretét</strong> használja. '+
+      'A furatok helye egyelőre a lent megadott, ellenőrzött Xilog makrósorokból készül; az automatikus szerkezeti furatkiosztás még nincs engedélyezve.</p>'+
+      '<label for="cnc-xxl-part">Alkatrész</label>'+
+      '<select id="cnc-xxl-part" '+(!rows.length?'disabled':'')+'>'+
+      (options||'<option value="">Nincs érvényes alkatrész</option>')+'</select>'+
+      '<div class="toolbar" style="gap:12px;flex-wrap:wrap;margin-top:12px">'+
+      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dx">DX (mm)</label><input id="cnc-xxl-dx" type="number" min="0.001" max="10000" step="any" value="'+h(first?.originalA||'')+'"></div>'+
+      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dy">DY (mm)</label><input id="cnc-xxl-dy" type="number" min="0.001" max="10000" step="any" value="'+h(first?.originalB||'')+'"></div>'+
+      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dz">DZ (mm)</label><input id="cnc-xxl-dz" type="number" min="0.001" max="10000" step="any" value="'+h(first?.thickness||'')+'"></div>'+
+      '<div style="min-width:150px;flex:1"><label for="cnc-xxl-side">Megmunkálási oldal</label><select id="cnc-xxl-side">'+
+      '<option value="IJ">IJ – bal</option><option value="LK">LK – jobb, tükör</option></select></div></div>'+
+      '<label for="cnc-xxl-commands" style="display:block;margin-top:12px">CNC makrósorok (LAPA, LAPF, ELF2, ELF3, ELF5)</label>'+
+      '<textarea id="cnc-xxl-commands" rows="7" spellcheck="false" style="width:100%;min-height:140px;resize:vertical" '+
+      'placeholder="Példa: LAPA X=158.38 Y=56 A=0 y=464 G=1"></textarea>'+
+      '<p class="muted tiny">Soronként egy makró. Átfordításhoz önálló <code>FORDIT</code> sort használj. '+
+      'Lapfurat: G=0 tipli / 1 excenter / 2 csavar; élfurat: G=0 tipli / 1 excenter / 2 hosszú excenter. '+
+      'A gép elfogadását és a furatok helyességét a WinCut/Xilog előnézetben és szárazpróbával ellenőrizni kell.</p>'+
+      '<button class="btn primary" data-action="save-cnc-xxl" '+(!rows.length?'disabled':'')+'>💾 CNC .XXL mentése</button>'+
+      '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
+      '</div></div>';
+  }
   function savePage(){
     if(!result)result=computeNesting();
     // A régóta működő gépi mentési panel HTML-jét újrahasznosítjuk.
@@ -3092,7 +3124,7 @@
     nestingView();
     return intro('08 / MENTÉS','Gépi programok mentése','1 xMix gyűjtő és minden táblához külön xPrg. A kipróbált mentési és gépi programgeneráló kód változatlan.')+
       (savedMachinePanel||'<div class="notice error">Az exportáláshoz előbb hibamentes szabásterv kell.</div>')+
-      '';
+      cncXxlPanel();
   }
   function materialsPage(){
     return intro('ANYAGADATBÁZIS','Színek és lapvastagságok','A bútor alapanyaga és az alkatrészek anyaga ebből az adatbázisból választható.')+
@@ -6594,6 +6626,163 @@
     }catch(err){showNotice('Nem sikerült betölteni a projektet: '+err.message);}finally{e.target.value='';}
   });
   render();
+})();
+</script>
+<script>
+'use strict';
+/**
+ * Gatterka CNC / Xilog XXL: ellenőrzött, explicit makrók exportja.
+ * Nem automatikus furatkiosztó és nem helyettesíti az SCM gépi szimulációját.
+ * A szabászati .xPrg/.xMix kódjától teljesen független.
+ */
+(function(root){
+  const JOINT_G=Object.freeze({
+    tipli:Object.freeze({lap:0,el:0}),
+    excenter:Object.freeze({lap:1,el:1}),
+    hosszuExcenter:Object.freeze({lap:1,el:2}),
+    csavar:Object.freeze({lap:2,el:0})
+  });
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  function number(value,name,allowZero){
+    const n=Number(value);
+    if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
+      throw new Error('Érvénytelen '+name+' méret.');
+    return n;
+  }
+  function fmt(value){
+    const n=number(value,'numerikus',true);
+    return Number(n.toFixed(3)).toString();
+  }
+  function centerline(start,thickness){
+    return Number((number(start,'kezdőpont',true)+number(thickness,'anyagvastagság')/2).toFixed(3));
+  }
+  function mirroredX(width,x){
+    const w=number(width,'szélesség'),p=number(x,'X',true);
+    if(p>w)throw new Error('A tükrözött X a munkadarabon kívülre kerül.');
+    return Number((w-p).toFixed(3));
+  }
+  function jointCodes(type){
+    if(!Object.prototype.hasOwnProperty.call(JOINT_G,type))throw new Error('Ismeretlen kötésmód.');
+    return {...JOINT_G[type]};
+  }
+  function parseMacro(line,dx,dy){
+    const bits=line.trim().split(/\s+/);
+    const macro=bits.shift().toUpperCase();
+    if(!MACROS.has(macro))throw new Error('Nem támogatott CNC makró: '+macro);
+    const fields={};
+    for(const part of bits){
+      const match=/^([XYxyAG])=(-?(?:\d+\.?\d*|\.\d+))$/.exec(part);
+      if(!match||Object.prototype.hasOwnProperty.call(fields,match?.[1]))
+        throw new Error('Érvénytelen vagy ismételt CNC makróparaméter: '+part);
+      fields[match[1]]=number(match[2],match[1],true);
+    }
+    if(!Object.prototype.hasOwnProperty.call(fields,'A')||fields.A!==0)
+      throw new Error('Az A forgásszög csak 0 lehet a jelenleg ellenőrzött mintákban.');
+    if(!Object.prototype.hasOwnProperty.call(fields,'G')||
+       !Number.isInteger(fields.G)||fields.G<0||fields.G>2)
+      throw new Error('A CNC G paraméter csak 0, 1 vagy 2 lehet.');
+    if(macro==='LAPA'&&(!('X'in fields)||!('Y'in fields)||!('y'in fields)||'x'in fields))
+      throw new Error('LAPA: X, Y, A, y és G szükséges.');
+    if(macro==='LAPF'&&(!('X'in fields)||!('Y'in fields)||!('x'in fields)||'y'in fields))
+      throw new Error('LAPF: X, Y, A, x és G szükséges.');
+    if(macro.startsWith('ELF')&&!('x'in fields)&&!('y'in fields))
+      throw new Error('Élfurathoz x vagy y hossz szükséges.');
+    if('X'in fields&&fields.X>dx || 'Y'in fields&&fields.Y>dy ||
+       'x'in fields&&fields.x>dx || 'y'in fields&&fields.y>dy ||
+       'X'in fields&&'x'in fields&&fields.X+fields.x>dx ||
+       'Y'in fields&&'y'in fields&&fields.Y+fields.y>dy)
+      throw new Error('A CNC makró mérete kilóg az alkatrészből.');
+    const order=['X','Y','A','x','y','G'];
+    return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
+  }
+  function compileXxl(spec){
+    if(!spec||typeof spec!=='object')throw new Error('Hiányzó CNC programadatok.');
+    const dx=number(spec.dx,'DX'),dy=number(spec.dy,'DY'),dz=number(spec.dz,'DZ');
+    const side=String(spec.side||'IJ').replace(/^-/, '').toUpperCase();
+    if(side!=='IJ'&&side!=='LK')throw new Error('Csak IJ vagy LK referencia választható.');
+    const text=String(spec.commands??'').replace(/\r/g,'');
+    if(text.length>50000)throw new Error('Túl hosszú CNC makrólista.');
+    const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
+    if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
+    const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+side+
+      ' C=0 T=196608 R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
+    let macrocnt=0,flips=0,justFlipped=false;
+    for(let i=0;i<lines.length;i++){
+      if(lines[i]==='FORDIT'){
+        if(!macrocnt||justFlipped||i===lines.length-1)
+          throw new Error('A FORDIT csak két megmunkálási csoport között állhat.');
+        if(++flips>1)throw new Error('A többfordításos CNC program még nincs hitelesítve.');
+        out.push(';','VEGE','XMSG Q=1 N="FORDIT"',';');
+        justFlipped=true;
+      }else{
+        out.push(parseMacro(lines[i],dx,dy));
+        macrocnt++;
+        justFlipped=false;
+      }
+    }
+    if(!macrocnt)throw new Error('Hiányzik a megmunkálási makró.');
+    out.push(';','VEGE');
+    return out.join('\r\n')+'\r\n';
+  }
+  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,compileXxl};
+  if(typeof module!=='undefined'&&module.exports)module.exports=api;
+  if(root)root.GatterkaCnc=api;
+})(typeof window!=='undefined'?window:null);
+</script>
+<script>
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  document.addEventListener('change',event=>{
+    if(event.target?.id!=='cnc-xxl-part')return;
+    const opt=event.target.selectedOptions?.[0];
+    if(!opt)return;
+    for(const key of ['dx','dy','dz']){
+      const field=$('cnc-xxl-'+key);
+      if(field)field.value=opt.dataset[key]||'';
+    }
+  });
+  document.addEventListener('click',async event=>{
+    const btn=event.target?.closest?.('[data-action="save-cnc-xxl"]');
+    if(!btn)return;
+    event.preventDefault();
+    const status=$('cnc-xxl-save-status');
+    if(btn.disabled)return;
+    btn.disabled=true;
+    try{
+      const opt=$('cnc-xxl-part')?.selectedOptions?.[0];
+      if(!opt?.value)throw new Error('Válassz ki egy érvényes alkatrészt.');
+      const cnc=window.GatterkaCnc;
+      if(!cnc)throw new Error('Nem tölthető be a CNC kódgenerátor.');
+      const content=cnc.compileXxl({
+        dx:$('cnc-xxl-dx').value,dy:$('cnc-xxl-dy').value,
+        dz:$('cnc-xxl-dz').value,side:$('cnc-xxl-side').value,
+        commands:$('cnc-xxl-commands').value
+      });
+      const name=(opt.dataset.filename||'Alkatresz').replace(/[^A-Za-z0-9_-]/g,'_').slice(0,65)+'_CNC.xxl';
+      if(typeof window.showSaveFilePicker==='function'){
+        const handle=await window.showSaveFilePicker({suggestedName:name,types:[
+          {description:'Xilog CNC program (.xxl)',accept:{'text/plain':['.xxl']}}
+        ]});
+        const stream=await handle.createWritable();
+        await stream.write(content);
+        await stream.close();
+      }else{
+        const blob=new Blob([content],{type:'text/plain;charset=utf-8'});
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement('a');
+        a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),5000);
+      }
+      if(status){status.textContent='A CNC .XXL fájl mentése elindult. Gépi ellenőrzés szükséges.';status.style.color='';}
+    }catch(err){
+      if(status){
+        status.textContent=err?.name==='AbortError'?'A mentést megszakítottad.':
+          'CNC export hiba: '+(err?.message||'ismeretlen hiba');
+        status.style.color=err?.name==='AbortError'?'':'#b44836';
+      }
+    }finally{btn.disabled=false;}
+  });
 })();
 </script>
 </body>
