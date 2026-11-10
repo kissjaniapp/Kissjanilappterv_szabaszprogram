@@ -130,6 +130,14 @@
           appendFailure(result.blocked,shown,'Döntött polchoz még nincs hiteles ferde furatmakró, a CNC export biztonságból tiltva.');
           continue;
         }
+        if(entry.noCnc===true){
+          if(entry.operations?.length||entry.issues?.length){
+            appendFailure(result.blocked,shown,'CNC nélkül megjelölt alkatrészhez megmunkálás is tartozik; hibás szerkezeti adatok.');
+          }else{
+            appendFailure(result.skipped,shown,'Állítható polc: polctartós kivitel, saját kötésfuratot nem igényel.');
+          }
+          continue;
+        }
         try{
           const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
