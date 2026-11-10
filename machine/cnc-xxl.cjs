@@ -64,6 +64,48 @@
     const order=['X','Y','A','x','y','G'];
     return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
   }
+
+  // A csatolt Xilog3 .pgm referenciákból ellenőrzött formátum:
+  // REF DX=491 BX=0; POLC Y=50 Q=0# s=32 G=1# F=1; REF (visszaállítás).
+  function parseShelfMacro(line,dx,dy,state){
+    const name=line.split(/\s+/)[0];
+    if(name==='REF'){
+      if(line==='REF'){
+        if(!state.active)throw new Error('REF visszaállítás aktív szakasz nélkül.');
+        state.active=false;
+        return 'REF';
+      }
+      if(state.active)throw new Error('Az előző REF szakaszt előbb le kell zárni.');
+      const fields={};
+      for(const part of line.split(/\s+/).slice(1)){
+        const m=/^(DX|BX)=((?:\d+\.?\d*|\.\d+))$/.exec(part);
+        if(!m||Object.prototype.hasOwnProperty.call(fields,m[1]))
+          throw new Error('Érvénytelen REF paraméter: '+part);
+        fields[m[1]]=number(m[2],m[1],true);
+      }
+      if(!(fields.DX>0)||!(fields.BX>=0)||fields.BX+fields.DX>dx+.001)
+        throw new Error('A REF szakasz kezdőpontja/hossza kilóg az oldallapból.');
+      state.active=true;state.dx=fields.DX;state.bx=fields.BX;
+      return 'REF DX='+fmt(fields.DX)+' BX='+fmt(fields.BX);
+    }
+    if(name==='POLC'){
+      if(!state.active)throw new Error('POLC csak előzetes REF szakaszon belül használható.');
+      const fields={};
+      for(const part of line.split(/\s+/).slice(1)){
+        const m=/^(Y|Q|s|G|F)=((?:\d+\.?\d*|\.\d+))#?$/.exec(part);
+        if(!m||Object.prototype.hasOwnProperty.call(fields,m[1]))
+          throw new Error('Érvénytelen POLC paraméter: '+part);
+        fields[m[1]]=number(m[2],m[1],true);
+      }
+      if(!('Y'in fields)||fields.Y>dy||!Number.isInteger(fields.Q)||
+          fields.Q<0||fields.Q>12||!Number.isFinite(fields.s)||
+          fields.s<8||fields.s>200||fields.G!==1||fields.F!==1)
+        throw new Error('Érvénytelen POLC Y/Q/s/G/F; a minták G=1 F=1 értéket használnak.');
+      return 'POLC Y='+fmt(fields.Y)+' Q='+fmt(fields.Q)+'# s='+fmt(fields.s)+
+        ' G=1# F=1';
+    }
+    throw new Error('Ismeretlen REF/POLC makró.');
+  }
   function compileXxl(spec){
     if(!spec||typeof spec!=='object')throw new Error('Hiányzó CNC programadatok.');
     const dx=number(spec.dx,'DX'),dy=number(spec.dy,'DY'),dz=number(spec.dz,'DZ');
@@ -76,19 +118,28 @@
     const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+side+
       ' C=0 T=196608 R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
     let macrocnt=0,flips=0,justFlipped=false;
+    const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
       if(lines[i]==='FORDIT'){
+        if(shelfRef.active)throw new Error('A REF szakaszt FORDIT előtt le kell zárni.');
         if(!macrocnt||justFlipped||i===lines.length-1)
           throw new Error('A FORDIT csak két megmunkálási csoport között állhat.');
         if(++flips>1)throw new Error('A többfordításos CNC program még nincs hitelesítve.');
         out.push(';','VEGE','XMSG Q=1 N="FORDIT"',';');
         justFlipped=true;
+      }else if(lines[i]==='REF'||lines[i].startsWith('REF ')||lines[i].startsWith('POLC ')){
+        const line=parseShelfMacro(lines[i],dx,dy,shelfRef);
+        out.push(line);
+        if(lines[i].startsWith('POLC '))macrocnt++;
+        justFlipped=false;
       }else{
+        if(shelfRef.active)throw new Error('A REF szakaszba csak POLC-makró írható.');
         out.push(parseMacro(lines[i],dx,dy));
         macrocnt++;
         justFlipped=false;
       }
     }
+    if(shelfRef.active)throw new Error('A REF szakaszból hiányzik a záró REF.');
     if(!macrocnt)throw new Error('Hiányzik a megmunkálási makró.');
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
