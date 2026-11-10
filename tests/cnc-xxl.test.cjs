@@ -48,7 +48,8 @@ test('hibás G, makró, méret és nem igazolt fordítás nem exportálható',()
 test('a gépi xPrg/xMix változatlan, a CNC XXL külön exportáló',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
- assert.match(app,/GatterkaCnc\.compileXxl/);
+ assert.match(app,/const cnc=window\.GatterkaCnc;/);
+ assert.match(app,/cnc\.compileXxl/);
  assert.match(app,/id="cnc-xxl-commands"/);
  assert.match(app,/data-action="save-cnc-xxl"/);
 });
