@@ -408,11 +408,12 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   mind ettől számítandók. A REF BX és LAPA X ugyanazt az
   alsó origót használja. A fő bútor külmagasságát nem szabad
   helyette nullpontként használni.
-- F-osztó: fizikai FELSŐ ütköző, a teljes saját lap X=0 pontja
-  a felső végén. A saját csatlakozási LAPA és REF/POLC koordinátái
-  onnan lefelé számolandók. Az F-osztók felváltott IJ/LK oldalisága,
-  a kétoldali FORDIT és a korábban jóváhagyott eltolt Y furatok
-  nem változhatnak meg emiatt.
+- KORÁBBI F-osztó szabály – 2026-11-10-én FELÜLÍRVA:
+  a felső ütközős X=0 és a felülről lefelé méretezés NEM érvényes.
+  Az F-osztó is az alkatrész saját ALSÓ éléről, X=0-tól felfelé
+  méretezendő. Az IJ/LK oldaliságot, a kétoldali FORDIT sorrendet
+  és a jóváhagyott eltolt Y furatokat a szükséges X-koordináta
+  átállításától függetlenül meg kell őrizni.
 - Tető: a már működő furatirány, megfordítási sorrend és F-osztó
   csatlakozása változatlanul marad.
 - Fenék: az első megmunkálási oldalon ALUL készülnek az összehúzó
@@ -438,3 +439,32 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   Xilog előnézetben és gépen ellenőrzendő.
 - A védett xMix/xPrg szabási sorrendhez, Windows mentéshez és
   a már jóváhagyott tetőfuratokhoz nem szabad hozzányúlni.
+
+2026-11-10 – KÖTELEZŐ, EGYSÉGES CNC X=0 REFERENCIA – MINDEN ALKATRÉSZ
+---------------------------------------------------------------------
+A tulajdonos egyértelmű, legfrissebb döntése:
+- MINDEN CNC-vel megmunkált alkatrésznél az X=0 pont az ADOTT
+  ALKATRÉSZ SAJÁT ALSÓ ÉLÉN van. Az X koordináta LENTRŐL
+  FELFELÉ NÖVEKSZIK. Ez az általános szabály minden
+  alkatrészre kötelező, kivétel nélkül: oldallap, F-osztó,
+  V-osztó, polc, tető, fenék, pótfenék és minden további
+  CNC-vel megmunkált elem.
+- A nullpontot nem a teljes bútor teteje, a teljes bútor
+  alja vagy egy szomszédos lap határozza meg, hanem minden
+  esetben a CNC-be betett ALKATRÉSZ SAJÁT ALSÓ ÉLE.
+- A korábbi F-osztó FELSŐ ütközős X=0 szabályt EZ a
+  bejegyzés kifejezetten FELÜLÍRJA. Az F-osztón is alul
+  van az X=0, és az X-méretek alulról felfelé számolódnak.
+- A FORDIT utasítás a megmunkált lapoldalt váltja; nem
+  jogosít fel a fent rögzített X-nullpont önkényes
+  megfordítására. A korábban jóváhagyott Y-furateltolásokat,
+  oldaliságot és a kötés G-kódokat meg kell őrizni.
+- Kódba átvezetés előtt a teljes szerkezeti CNC geometria,
+  az F-osztó REF/POLC és LAPA, a fenék/tető kétoldalas
+  megmunkálás, valamint a Xilog kimenet ellenőrzendő. Amíg
+  az összes érintett gépi kód nem ezt az origót használja,
+  a korábbi „zöld” teszt és telepítő nem jelenti a szabály
+  gépi teljesítését: Xilog előnézet + gépi szárazpróba kell.
+- Ez CNC megmunkálási koordinátaszabály. A védett xMix/xPrg
+  szabási sorrendet, mentési helyet és vágási logikát NEM
+  módosítja.
