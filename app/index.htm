@@ -3138,7 +3138,7 @@
     if(!Array.isArray(files)||!files.length)throw Error('Nincs exportálható CNC-program.');
     const f=getFurniture();
     const data=files.map(file=>[file.filename,new TextEncoder().encode(file.content)]);
-    downloadBlob(xlsxZip(data,'application/zip'),fileName(f?.name||'Gatterka')+'_CNC_XXL.zip');
+    downloadBlob(xlsxZip(data,'application/zip'),[f?.name||'Gatterka',f?.destination,'CNC_XXL'].filter(Boolean).map(fileName).join('_')+'.zip');
   };
   function savePage(){
     if(!result)result=computeNesting();
@@ -4601,6 +4601,10 @@
     if(/^side(?:-|$)/.test(key)||/^(?:(?:bal|jobb)\s*)?oldal(?:lap)?$/.test(name))role='side';
     else if(key==='top'||/^teto(?:lap)?$/.test(name))role='top';
     else if(/^shelf-/.test(key)||/^polc(?:\s*\d+)?$/.test(name))role='shelf';
+    else if(key==='bottom'||/^fenek(?:lap)?$/.test(name))role='bottom';
+    else if(key==='false-bottom'||/^potfenek(?:lap)?$/.test(name))role='false-bottom';
+    else if(/^v-divider-/.test(key)||/^v-oszto(?:\s*\d+)?$/.test(name))role='v-divider';
+    else if(/^f-divider-/.test(key)||/^f-oszto(?:\s*\d+)?$/.test(name))role='f-divider';
     else if(/^back-(?:full|rabbet)$/.test(key)||/^(?:teli|falcos)?\s*hat(?:fal|lap)(?:.*)?$/.test(name))role='back';
     if(!role)return;
     const inputs=config?.inputs||{},radios=config?.radios||{};
@@ -4612,6 +4616,8 @@
     }else if(role==='top'){
       const full=radios.top==='full';edge=full?'1-2':'1-0';filing=full?'0-2':'0-0';
     }else if(role==='shelf')edge=part.autoCabinetShelfAxis==='y'?'0-1':'1-0';
+    else if(role==='bottom'||role==='v-divider'||role==='f-divider')edge='1-0';
+    else if(role==='false-bottom'){edge='1-2';filing='0-2';}
     const previous=part.autoCabinetEdging;
     const current=JSON.stringify({edge:part.edge||'0-0',filing:codeFromSides(part.filingSides||{}),thickness:partEdgeThicknesses(part)});
     if(previous&&current!==previous)return;
