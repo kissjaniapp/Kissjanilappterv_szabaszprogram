@@ -2807,6 +2807,9 @@
     // A meglévő gépi terv és vágássorrend minden próbában változatlan.
     const effort=parts.total>2000?4:parts.total>700?8:
       economyMode?(parts.total<=150?96:48):
+      // A korábbi 'machine' projektek 48 próbája marad. Ez kizárólag a
+      // tervválasztó keresés kerete; a védett vágási sorrendhez nem nyúlunk.
+      state.layoutMode==='machine'?48:
       machineMode?(parts.total<=150?96:parts.total<=350?72:48):
       parts.total<=80?96:parts.total<=200?48:24;
     const modes=Array.from({length:effort},(_,i)=>i)
