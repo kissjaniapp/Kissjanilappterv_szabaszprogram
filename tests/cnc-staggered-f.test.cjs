@@ -17,7 +17,7 @@ function sourceModel(){
  const last=source.lastIndexOf('";',end);
  assert.ok(first>=0&&last>first,'Beágyazott bútortervező hiányzik');
  const html=JSON.parse(source.slice(first,last+1));
- const start=html.indexOf('function cncSupportRegions(p,boards,which){');
+ const start=html.indexOf('function cncSupportRegions(');
  const stop=html.indexOf('function getStructuredParts(p){',start);
  assert.ok(start>=0&&stop>start);
  const ctx={fixedDividerPieces:()=>[],baseShelfBack:()=>4};
