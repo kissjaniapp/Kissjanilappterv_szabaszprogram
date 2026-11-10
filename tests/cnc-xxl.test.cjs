@@ -45,14 +45,15 @@ test('hibás G, makró, méret és nem igazolt fordítás nem exportálható',()
   assert.throws(()=>cnc.compileXxl({...base,dx:0,commands:'LAPA X=0 Y=0 A=0 y=464 G=1'}));
   assert.throws(()=>cnc.compileXxl({...base,side:'AUTO',commands:'LAPA X=0 Y=0 A=0 y=464 G=1'}));
 });
-test('a gépi xPrg/xMix változatlan, a CNC XXL külön automata modul',()=>{
+test('a CNC teljes bútorra ad egyetlen közös mentést, a kódok rejtve maradnak',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
  assert.match(app,/window\.gatterkaBuildAutoCnc=function/);
+ assert.match(app,/window\.gatterkaSetAssemblyJoint=function/);
  assert.match(app,/GatterkaCncAuto=api/);
- assert.match(app,/id="cnc-xxl-commands"/);
- assert.match(app,/data-action="save-cnc-xxl"/);
+ assert.match(app,/Az egész bútor összefúrásának kötésmódja/);
  assert.match(app,/data-action="save-all-cnc-xxl"/);
+ assert.doesNotMatch(app,/data-action="save-cnc-xxl"/);
+ assert.doesNotMatch(app,/id="cnc-xxl-commands"/);
  assert.match(app,/cncInstances=Array\.isArray\(row\.cncInstances\)/);
- assert.match(app,/<textarea id="cnc-xxl-commands"[^>]*readonly/);
 });
