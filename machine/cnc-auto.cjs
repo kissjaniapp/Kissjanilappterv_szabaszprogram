@@ -81,6 +81,32 @@
     }
     return body+' G='+G;
   }
+  // Az F-osztó X tengely körüli átfordítása után a HÁTULSÓ él a Y ütköző.
+  // A geometriai bemenet minden oldalon az elülső éltől méri Y-t,
+  // a második oldal CNC koordinátáit viszont a hátulsó élből kell számítani.
+  // Pont: Y'=DY-Y. Megmunkálási SZAKASZ: Y'=DY-(Y+y), a hossz y változatlan.
+  // X az alkatrész saját alsó szélétől számolódik, fordításkor NEM tükröződik.
+  function orientOperationAfterXFlip(operation,entry){
+    if(entry.flipAxis!=='X'||String(operation.face||'primary')!=='reverse'||
+       operation.Y===undefined)return operation;
+    const dy=finite(entry.dy),y=finite(operation.Y);
+    if(!Number.isFinite(dy)||dy<=0||!Number.isFinite(y)||y<0)
+      throw new Error('Az F-osztó hátsó ütközőjéhez hiányzik a hiteles Y/DY méret.');
+    let target;
+    if(operation.y!==undefined){
+      const span=finite(operation.y);
+      if(!Number.isFinite(span)||span<=0||y+span>dy+.001)
+        throw new Error('Az F-osztó második oldalán az Y furatszakasz kilóg az alkatrészből.');
+      target=dy-(y+span);
+    }else{
+      if(y>dy+.001)
+        throw new Error('Az F-osztó második oldalán az Y furat kilóg az alkatrészből.');
+      target=dy-y;
+    }
+    if(target<-.001||target>dy+.001)
+      throw new Error('Az F-osztó átfordított Y koordinátája a munkadarabon kívül van.');
+    return {...operation,Y:round(Math.max(0,Math.min(dy,target)))};
+  }
   function compileEntry(entry,mode){
     const problems=Array.isArray(entry.issues)?entry.issues.filter(Boolean):[];
     if(problems.length)throw new Error(problems.join('; '));
@@ -94,7 +120,7 @@
     for(const op of entry.operations){
       const face=String(op.face||'primary');
       if(!FACES.has(face))throw new Error('Nem meghatározott megmunkálási oldal.');
-      (face==='primary'?first:other).push(macroLine(op,mode));
+      (face==='primary'?first:other).push(macroLine(orientOperationAfterXFlip(op,entry),mode));
     }
     // A Xilog minta elöl kezdi a megmunkálást, a túloldalt FORDIT-tal kéri.
     if(!first.length&&other.length)throw new Error('Csak hátoldali megmunkálás: nincs igazolt első oldali felrakási sorrend.');
@@ -167,7 +193,7 @@
           const suffix=cleanName(identity);
           const filename=(name+'_'+cleanName(part.name||entry.name)+'_'+suffix+'.xxl').slice(0,160);
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
-            commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
+            commands:(entry.operations||[]).map(op=>macroLine(orientOperationAfterXFlip(op,entry),modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
       }
