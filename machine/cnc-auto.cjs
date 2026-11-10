@@ -94,6 +94,11 @@
         // A kézi méretcsere/képlet átírása után nem szabad a régi furatokat
         // automatikusan a más méretű előgyártmányra kiküldeni.
         const a=finite(part.a),b=finite(part.b),z=finite(entry.dz);
+        const actualZ=finite(options.actualThicknesses?.[part.id]);
+        if(Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
+          appendFailure(result.blocked,shown,'Az anyag vastagsága eltér a bútor szerkezeti tervétől; új CNC-terv szükséges.');
+          continue;
+        }
         const same=Number.isFinite(a)&&Number.isFinite(b)&&
           Math.abs(a-finite(entry.dx))<=.11&&Math.abs(b-finite(entry.dy))<=.11;
         if(!same){
