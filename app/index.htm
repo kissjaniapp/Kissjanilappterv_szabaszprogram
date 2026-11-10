@@ -3090,37 +3090,64 @@
       '<div class="section-bottom"><button class="btn primary" data-action="page" data-page="save">Tovább a gépi mentéshez →</button></div>';
   }
   // CNC / Xilog XXL: az új, különálló próbaexport nem érinti a védett XPrg/XMix mentést.
+
   function cncXxlPanel(){
     const f=getFurniture();
     const rows=getParts().rows.filter(r=>f&&r.furniture?.id===f.id&&!r.skipped&&!r.error&&r.qty>0);
-    const options=rows.map(r=>'<option value="'+h(r.part.id)+'" data-filename="'+h(fileName(r.resolvedName||r.part.name||'Alkatresz'))+
-      '" data-dx="'+h(r.originalA)+'" data-dy="'+h(r.originalB)+'" data-dz="'+h(r.thickness)+'">'+
-      h((r.resolvedName||r.part.name)+' · '+nfmt(r.originalA)+' × '+nfmt(r.originalB)+' × '+nfmt(r.thickness)+' mm')+'</option>').join('');
-    const first=rows[0];
+    const entries=rows.flatMap(r=>(r.part.cncInstances||[]).map(e=>({
+      id:String(r.part.id)+'::'+String(e.key),name:String(r.resolvedName||r.part.name||'Alkatrész'),
+      piece:e.name||e.key,dx:e.dx,dy:e.dy,dz:e.dz
+    })));
+    const options=entries.map(e=>'<option value="'+h(e.id)+'">'+h(e.name)+' · '+h(e.piece)+
+      ' · '+nfmt(e.dx)+' × '+nfmt(e.dy)+' × '+nfmt(e.dz)+' mm</option>').join('');
     return '<div class="panel top-gap" id="cnc-xxl-panel">'+
-      '<div class="panel-head"><div><div class="panel-title">CNC – Xilog XXL próbaexport</div>'+
-      '<div class="panel-sub">Különálló CNC-furatprogram. Nem módosítja a szabászgép XPrg/XMix fájljait.</div></div></div>'+
-      '<div class="panel-body"><p class="muted small">A kiválasztott alkatrész <strong>készméretét</strong> használja. '+
-      'A furatok helye egyelőre a lent megadott, ellenőrzött Xilog makrósorokból készül; az automatikus szerkezeti furatkiosztás még nincs engedélyezve.</p>'+
-      '<label for="cnc-xxl-part">Alkatrész</label>'+
-      '<select id="cnc-xxl-part" '+(!rows.length?'disabled':'')+'>'+
-      (options||'<option value="">Nincs érvényes alkatrész</option>')+'</select>'+
-      '<div class="toolbar" style="gap:12px;flex-wrap:wrap;margin-top:12px">'+
-      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dx">DX (mm)</label><input id="cnc-xxl-dx" type="number" min="0.001" max="10000" step="any" value="'+h(first?.originalA||'')+'"></div>'+
-      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dy">DY (mm)</label><input id="cnc-xxl-dy" type="number" min="0.001" max="10000" step="any" value="'+h(first?.originalB||'')+'"></div>'+
-      '<div style="min-width:100px;flex:1"><label for="cnc-xxl-dz">DZ (mm)</label><input id="cnc-xxl-dz" type="number" min="0.001" max="10000" step="any" value="'+h(first?.thickness||'')+'"></div>'+
-      '<div style="min-width:150px;flex:1"><label for="cnc-xxl-side">Megmunkálási oldal</label><select id="cnc-xxl-side">'+
-      '<option value="IJ">IJ – bal</option><option value="LK">LK – jobb, tükör</option></select></div></div>'+
-      '<label for="cnc-xxl-commands" style="display:block;margin-top:12px">CNC makrósorok (LAPA, LAPF, ELF2, ELF3, ELF5)</label>'+
-      '<textarea id="cnc-xxl-commands" rows="7" spellcheck="false" style="width:100%;min-height:140px;resize:vertical" '+
-      'placeholder="Példa: LAPA X=158.38 Y=56 A=0 y=464 G=1"></textarea>'+
-      '<p class="muted tiny">Soronként egy makró. Átfordításhoz önálló <code>FORDIT</code> sort használj. '+
-      'Lapfurat: G=0 tipli / 1 excenter / 2 csavar; élfurat: G=0 tipli / 1 excenter / 2 hosszú excenter. '+
-      'A gép elfogadását és a furatok helyességét a WinCut/Xilog előnézetben és szárazpróbával ellenőrizni kell.</p>'+
-      '<button class="btn primary" data-action="save-cnc-xxl" '+(!rows.length?'disabled':'')+'>💾 CNC .XXL mentése</button>'+
+      '<div class="panel-head"><div><div class="panel-title">CNC – automatikus Xilog XXL programok</div>'+
+      '<div class="panel-sub">Minden megmunkálandó alkatrészhez saját CNC-fájl. A szabászgép XPrg/XMix fájljai változatlanok.</div></div></div>'+
+      '<div class="panel-body"><p class="muted small">A furatmakrókat a bútortervező kiszámított '+
+      '<strong>csatlakozási helyeiből és valódi alkatrészméreteiből</strong> készítjük. '+
+      'Nem kell kézzel LAPA/LAPF/ELF sorokat megadnod.</p>'+
+      '<label for="cnc-join-mode">F-osztó csatlakozásának kötési módja</label>'+
+      '<select id="cnc-join-mode">'+
+      '<option value="excenter">Összehúzós / excenter (lap G=1, él G=1)</option>'+
+      '<option value="tipli">Sima tipli (lap G=0, él G=0)</option>'+
+      '<option value="csavar">Csavaros (lap G=2, él G=0)</option>'+
+      '<option value="hosszuExcenter">Hosszú excenter (lap G=1, él G=2)</option></select>'+
+      '<p class="muted tiny">A fix polcok és a V-osztók oldalcsatlakozása tiplis (G=0); az F-osztóhoz tartozó kötések a választás szerint készülnek.</p>'+
+      '<label for="cnc-xxl-part">CNC alkatrész</label>'+
+      '<select id="cnc-xxl-part">'+(options||'<option value="">Nincs szerkezeti CNC-alkatrész; nyisd meg a bútortervezőt!</option>')+'</select>'+
+      '<label for="cnc-xxl-commands" style="display:block;margin-top:12px">Automatikusan számított makrósorok – ellenőrzési előnézet</label>'+
+      '<textarea id="cnc-xxl-commands" rows="8" readonly spellcheck="false" style="width:100%;min-height:140px;resize:vertical"'+
+      ' placeholder="Az alkatrész kiválasztásakor a Gatterka kitölti a CNC makrókat."></textarea>'+
+      '<div class="toolbar" style="gap:10px;flex-wrap:wrap;margin-top:12px">'+
+      '<button class="btn primary" data-action="save-cnc-xxl" '+(!entries.length?'disabled':'')+'>💾 Kiválasztott .XXL mentése</button>'+
+      '<button class="btn primary" data-action="save-all-cnc-xxl" '+(!entries.length?'disabled':'')+'>📦 CNC-programok egy ZIP-ben</button>'+
+      '</div><div id="cnc-xxl-counts" class="muted small" style="margin-top:10px"></div>'+
       '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
-      '</div></div>';
+      '<div class="muted tiny" style="margin-top:10px">Hiányos szerkezetnél vagy nem igazolt ferde CNC-makró esetén az export tiltva marad. '+
+      'A fájlokat Xilog előnézetben és gépi szárazpróbával ellenőrizni kell.</div></div></div>';
   }
+  window.gatterkaBuildAutoCnc=function(options){
+    const f=getFurniture();
+    if(!f)throw new Error('Nincs kiválasztott bútor.');
+    const cnc=window.GatterkaCncAuto;
+    if(!cnc)throw new Error('A CNC automata nem tölthető be.');
+    const rows=getParts().rows.filter(r=>r.furniture?.id===f.id&&!r.skipped&&!r.error&&r.qty>0);
+    return cnc.makeAutoPrograms(f,rows.map(r=>r.part.id),{
+      ...(options||{}),
+      actualThicknesses:Object.fromEntries(rows.map(r=>[r.part.id,r.thickness]))
+    });
+  };
+  window.gatterkaDownloadAutoCnc=function(files,zip=false){
+    if(!Array.isArray(files)||!files.length)throw Error('Nincs exportálható CNC-program.');
+    if(zip){
+      const f=getFurniture();
+      const data=files.map(file=>[file.filename,new TextEncoder().encode(file.content)]);
+      downloadBlob(xlsxZip(data,'application/zip'),fileName(f?.name||'Gatterka')+'_CNC_XXL.zip');
+    }else{
+      const file=files[0];
+      downloadBlob(new Blob([file.content],{type:'text/plain;charset=utf-8'}),file.filename);
+    }
+  };
   function savePage(){
     if(!result)result=computeNesting();
     // A régóta működő gépi mentési panel HTML-jét újrahasznosítjuk.
