@@ -131,6 +131,28 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
 - Ellenőrizni kell, hogy a visszaállások figyelembevételével az oldallapi és
   a hozzá csatlakozó V-osztó vagy fix polc furatsorának hossza egyezzen.
 
+
+2026-11-10 – CNC XILOG XXL PRÓBAEXPORT (első megvalósítás)
+------------------------------------------------------
+- A Mentés oldalon a szabászati xMix/xPrg mentéstől elkülönített CNC .xxl
+  próbaexport érhető el. Az aktuális bútor aktív alkatrészeinek kiszámított
+  készmérete és anyagvastagsága tölti ki az alapadatokat (DX, DY, DZ).
+- A CNC-program kézzel megadott és ellenőrzött LAPA, LAPF, ELF2, ELF3,
+  ELF5 makrósorokból készül. IJ és LK megmunkálási oldal, valamint legfeljebb
+  egy FORDIT csoportváltás támogatott. A makrók méret- és G-ellenőrzöttek;
+  G: lap 0 tipli / 1 excenter / 2 csavar, él 0 tipli / 1 excenter / 2 hosszú.
+- Az oldallapi megmunkálás X/Y nullpontja az alkatrész saját felső bal
+  referenciaéle. Középvonal: kezdőpont + anyagvastagság/2. Tükrözéshez
+  ellenőrző segédfüggvény készült, de automatikus LK tükröző geometria
+  még NEM AKTÍV: csak ellenőrzött koordinátasorok exportálhatók.
+- A külön .xxl fájl mentése fájlválasztóval történik, ha a Chromium ezt
+  támogatja; egyébként böngészős fájlletöltés. A művelet nem írja át a
+  gépi xMix/xPrg-t, vágási sorrendet vagy a Windows Mentés másként kódját.
+- A szerkezetből automatikusan számított CNC-furatkiosztás, a további
+  kötésvariánsok és falcmegmunkálások a pontos gépi minták és hitelesítés
+  hiánya miatt nincsenek bekapcsolva. A generált próba-XXL-t valós gépen
+  ellenőrizni kell, éles megmunkálásra önmagában nem hiteles.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
