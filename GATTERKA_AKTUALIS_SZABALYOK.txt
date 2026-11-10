@@ -73,8 +73,12 @@ ALKATRÉSZEK, ÉLZÁRÁS, RESZELÉS
   él és a két rövid él 2 mm ABS, mindkét rövid él reszelve.
 - Polc: a bútor szélessége irányába eső első él 2 mm ABS-t kap. Ez a méret
   nem minden alkatrészen feltétlenül a hosszabbik méret.
-- Teli hátlap: nincs automatikus élzárás. A fenék, pótfenék, F- és V-osztó
-  további automatikus élzárási szabályai külön egyeztetésig nincsenek rögzítve.
+- Teli hátlap: nincs automatikus élzárás.
+- Fenék: alap élzárás 1-0, reszelés nélkül.
+- Pótfenék: alap élzárás 1-2, mindkét rövid él reszelése 2Rresz.
+- V-osztó és F-osztó: alap élzárás 1-0, reszelés nélkül.
+  Mindez bútortervezői és név alapján felismert 3MF alkatrészre is vonatkozik;
+  a korábbi kézi eltérést meg kell őrizni.
 - Az élzárás és a reszelés külön jelölés; a reszelés nem módosítja a
   szabási méretet. A pontos jelöléseket a védett szabályfájl is rögzíti.
 
@@ -249,8 +253,11 @@ A POLCTARTO_LOGIKAHOZ.zip-ben átadott 1DB_V-OSZTO.pgm és
   nélkül kimaradhat az XXL listából, miközben a szabászati listában
   gyártandó alkatrész marad.
 - Állítható polc F-osztóhoz csatlakozásakor az F-osztó kétoldali
-  belső REF/POLC furatolása még nem hitelesített; ebben az esetben
-  a hiányos CNC csomag generálását blokkoljuk.
+  REF/POLC furatolása a saját felülről mért X tengelyből számolódik.
+  A bal és jobb oldal közé a kétoldalas program FORDIT parancsot helyez.
+  A programot Xilog előnézettel és fizikai szárazpróbával ellenőrizni kell;
+  a hitelesítetlen, hibás vagy egyedi polcos furatkiosztást továbbra is
+  blokkolni kell.
 - A REF és POLC műveletek fizikai gépi elfogadása és az elöl/hátul
   furatminősége még Xilog/WinCut előnézettel, majd szárazpróbával
   ellenőrzendő. Az automatikus teszt nem helyettesíti ezt.
@@ -335,3 +342,39 @@ ellenőrizni kell. A védett gépi teszteket és a projekthez előírt további
 ellenőrzéseket a módosítás jellegének megfelelően futtatni kell. A gépi
 tesztek és a felületi vagy tényleges gépi próba eltérő dolgokat igazolnak;
 csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
+
+2026-11-10 – GATTERKA BESZÉLGETÉSEK ÉS ÚJ CNC PÓTFENÉK/LAB
+-----------------------------------------------------------
+- Valamennyi „Gatterka” témájú korábbi és új beszélgetés ugyanahhoz
+  a kissjaniapp/Kissjanilappterv_szabaszprogram GitHub projekthez tartozik.
+  A következő fejlesztéshez a korábbi megállapodások és a legfrissebb
+  felhasználói utasítások együttesen érvényesek; ütközésnél előbb
+  egyeztetni kell, majd csak az egyeztetett részt átírni.
+  A védett szabási sorrend/xMix/xPrg/Windows mentés nem változtatható.
+- A bútortervezőben a Fenék és tető résznél „Kell láb?” jelölés tartozik
+  a pótfenékhez. Ha aktív, 4 db LAB lábfúrás készül a pótfenék másik
+  oldalán FORDIT után. Ideiglenes saroktávolság: 59 mm a
+  (X,Y) = (59,59), (DX-59,59), (59,DY-59), (DX-59,DY-59) helyeken.
+  LAB formátuma: LAB X=<koordináta> Y=<koordináta> G=2.
+  Ha nem kell láb, LAB parancs nem kerül a programba.
+- Pótfenék esetén a szerkezeti LAPA kötésfuratokat az oldallap
+  középvonalai határozzák meg. A 0,5-0,5 mm túlnyúlást figyelembe
+  kell venni. A végigmenő fenékkel közös, még nem egyeztetett
+  csatlakozás CNC exportja továbbra is tiltott.
+- A 3MF-be rajzolt, pótfenék alatti, függőleges 28 mm átmérőjű és
+  100 mm magas hengerek LAB jelölők, nem szabandó alkatrészek.
+  A henger tengelyközéppontjának pótfenékhez viszonyított X/Y
+  koordinátáját az import tárolja és megjeleníti; a kör alakú palást
+  ellenőrzése szükséges. A teljes 3MF-alapú automatikus CNC export csak
+  validált szerkezeti furatadatokkal engedélyezhető.
+- V-osztóknál a régi, igazolt oldallapi REF BX=0 DX=600 (609 mm
+  osztópozíció mellett) változatlan. A REF szakaszok száma a V-osztók
+  számát követi; a tetőtől, fenéktől és V-osztóktól kihagyandó távolság
+  külön állítható. Q=0 végigfuratolás, Q>0 az adott REF-re eső
+  egyenletesen osztott polcok száma.
+- F-osztók mindkét lapoldalára önálló REF/POLC szakaszok készülnek,
+  a tényleges V-osztó csatlakozásoknak megfelelően.
+- CNC ZIP neve: Bútor neve + Hová készül + CNC_XXL.
+- Az új 3MF hengerfelismerés és LAB makró gépi hitelesítést igényel;
+  a programban készülő teszt nem helyettesíti az SCM/Xilog
+  előnézetet és a gépi szárazpróbát.
