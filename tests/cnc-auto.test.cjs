@@ -313,7 +313,7 @@ test('pótfenék: 2 LAPA a felső oldalon, 4 LAB a másikon, láb nélkül LAB n
  assert.equal(entry.operations.filter(op=>op.macro==='LAPA').length,2);
  assert.equal(entry.operations.filter(op=>op.macro==='LAB').length,4);
  assert.equal(entry.operations.filter(op=>op.macro==='LAB'&&op.face==='reverse').length,4);
- assert.deepEqual(entry.operations.filter(op=>op.macro==='LAB').map(op=>[op.X,op.Y]),
+ assert.deepEqual(Array.from(entry.operations.filter(op=>op.macro==='LAB'),op=>[op.X,op.Y]),
   [[59,59],[59,341],[942,59],[942,341]]);
  const out=auto.makeAutoPrograms({name:'Teszt',parts:[
    board('fb','Pótfenék',1001,400,[entry])]},['fb']);
