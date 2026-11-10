@@ -285,7 +285,7 @@ test('V-osztó sima excenter és hosszú excenter: azonos LAPA G=1, eltérő ELF
   }
 });
 
-test('állítható polc + F-osztó: kétoldali REF/POLC és FORDIT készül',()=>{
+test('állítható polc + F-osztó: kétoldali REF/POLC és FORDIT_X készül',()=>{
  const {ctx}=extractedGeometry(),p={...base(),drilling:'full',n:1,
     fCount:1,raster:32,supportInset:50,cncGapBottom:0,
     cncGapTop:0,cncGapDivider:0};
@@ -301,7 +301,7 @@ test('állítható polc + F-osztó: kétoldali REF/POLC és FORDIT készül',()=
  assert.equal(out.blocked.length,0);
  assert.equal(out.files.length,1);
  assert.match(out.files[0].content,/REF DX=1464 BX=0/);
- assert.match(out.files[0].content,/XMSG Q=1 N="FORDIT"/);
+ assert.match(out.files[0].content,/XMSG Q=1 N="FORDIT_X"/);
 });
 test('pótfenék: 2 LAPA a felső oldalon, 4 LAB a másikon, láb nélkül LAB nincs',()=>{
  const {ctx}=extractedGeometry();
