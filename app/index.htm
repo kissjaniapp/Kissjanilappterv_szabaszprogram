@@ -3550,11 +3550,25 @@
         const isRectangular=threeMfRectangularSolid(transformed,triangleNodes,extents,lo);
         const isAngledCut=!isRectangular&&threeMfAngledPanel(transformed,triangleNodes,extents,lo);
         const dims=[...extents].sort((a,b)=>b-a);
+        // LAB lábjelölő: 28 mm átmérő, 100 mm magasság, függőleges Z tengely.
+        // A befoglaló méret mellett a kör alakú palást csúcspontjait ellenőrizzük.
+        const cx=(lo[0]+hi[0])/2,cy=(lo[1]+hi[1])/2,angles=new Set(),radii=[];
+        for(const v of transformed){
+          const radius=Math.hypot(v[0]-cx,v[1]-cy);
+          if(radius>1){
+            radii.push(radius);
+            angles.add(Math.floor((((Math.atan2(v[1]-cy,v[0]-cx)+Math.PI*2)%(Math.PI*2))/(Math.PI*2))*24));
+          }
+        }
+        const labCylinder=!isRectangular&&!isAngledCut&&
+          Math.abs(extents[0]-28)<.6&&Math.abs(extents[1]-28)<.6&&
+          Math.abs(extents[2]-100)<.6&&angles.size>=8&&radii.length>=16&&
+          radii.every(r=>Math.abs(r-14)<.65);
         if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
         if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
         const rounded=n=>Math.round(n*10000)/10000;
         result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
-          originMm:lo.map(rounded),
+          originMm:lo.map(rounded),labCylinder,labAxisMm:[rounded(cx),rounded(cy)],
           axisBoundsMm:extents.map(rounded),previewTriangles,isRectangular,isAngledCut});
       }
       const components=first(object,'components');
@@ -3662,6 +3676,7 @@
           '<div class="gatterka-3mf-view gatterka-3mf-view-3d"><div class="toolbar"><strong>3D nézet · forgatható</strong><button type="button" class="btn sm" data-action="3mf-reset-view">↻ Nézet visszaállítása</button></div><canvas data-3mf-view="three" aria-label="3MF 3D nézet, egérrel forgatható" width="680" height="420"></canvas><div class="tiny muted">Forgatás: bal egérgombbal húzás · Nagyítás: egérgörgő</div></div>'+
         '</div>':
         '<div class="tiny muted">Ehhez a régi importhoz nincs eltárolt háromszögháló. Töltsd be újra a 3MF fájlt a három nézethez.</div>')+
+      (model.labFootCenters?.length?'<div class="mini-info">3MF LAB jelölők: '+model.labFootCenters.length+' db. Tengely X/Y: '+model.labFootCenters.map(p=>nfmt(p.x)+' / '+nfmt(p.y)+' mm').join(', ')+'.</div>':'')+
       '<div class="table-wrap"><table><thead><tr><th>Alkatrész</th><th>Hossz × Szélesség × Vastagság (mm)</th><th>Db</th></tr></thead><tbody data-3mf-dimension-rows>'+rows+'</tbody></table></div>';
   }
 
@@ -3899,6 +3914,17 @@
     // into the imported model's part list.
     const unrelated=(f.parts||[]).filter(p=>!p.cabinetDesignKey);
     data.groups=threeMfCombinedCuttingGroups(data);
+    // A pótfenék alatti henger tengelye a pótfenék saját XY kezdőpontjához képest.
+    const markerName=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+    const extraBody=data.parts.find(p=>/^potfenek(?:lap)?$/.test(markerName(p.name))&&p.isRectangular);
+    const candidates=(extraBody?data.parts:[]).filter(p=>p.labCylinder&&
+      p.originMm[2]+p.axisBoundsMm[2]<=extraBody.originMm[2]+1);
+    data.labFootCenters=candidates.map(p=>({
+      x:Math.round((p.labAxisMm[0]-extraBody.originMm[0])*100)/100,
+      y:Math.round((p.labAxisMm[1]-extraBody.originMm[1])*100)/100,
+      sourceId:p.id
+    })).filter(p=>p.x>=0&&p.y>=0&&
+      p.x<=extraBody.axisBoundsMm[0]&&p.y<=extraBody.axisBoundsMm[1]);
     // A ferdevágott, zárt síklapok a legnagyobb X/Y befoglaló
     // előgyártmányként kerülnek be (0 mm plusz ráhagyás).
     // Íves és ismeretlen hálók csak a 3D előnézetben maradnak.
