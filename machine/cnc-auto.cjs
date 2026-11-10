@@ -47,7 +47,19 @@
       return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
     }
     const joint=jointMode(operation,mode),codes=core.jointCodes(joint);
-    const G=operation.macro.startsWith('ELF')?codes.el:codes.lap;
+    // A beküldött F-osztó + polc referenciák G=2 eltolt ELF furata
+    // KIZÁRÓLAG excenteres összehúzásnál ismert. G=2 nem általános
+    // "másik oldal": más kötésmódnál tilos néma felülírással dolgozni.
+    if(operation.shiftedF&&joint!=='excenter')
+      throw new Error('Az eltolt F-osztó furatpár csak excenteres (összehúzós) kötésnél hitelesített.');
+    let G=operation.macro.startsWith('ELF')?codes.el:codes.lap;
+    if(operation.shiftedF&&operation.gOverride!==undefined){
+      if(!operation.macro.startsWith('ELF')||operation.gOverride!==2)
+        throw new Error('Az F-osztós eltolt G felülírás csak ELF G=2 lehet.');
+      G=2;
+    }else if(operation.gOverride!==undefined){
+      throw new Error('Engedély nélküli CNC furat-G felülírás.');
+    }
     let body=operation.macro,fields=['X','Y','A','x','y'];
     for(const field of fields){
       if(field!=='A'&&operation[field]===undefined)continue;
