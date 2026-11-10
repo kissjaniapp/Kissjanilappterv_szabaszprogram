@@ -257,6 +257,42 @@ A POLCTARTO_LOGIKAHOZ.zip-ben átadott 1DB_V-OSZTO.pgm és
 - A védett XPrg/XMix gépi export és a korábbi szabási sorrend
   továbbra is változatlan.
 
+2026-11-10 – F-OSZTÓ / FIX POLC / V-OSZTÓ ELTOLT CNC KÖTÉSFURATOK
+--------------------------------------------------------------
+A F-OSZTO_MELETTE_FIX_POLC_TALAKOZAS.zip felhasználói minták:
+  BAL_OLDALI_POLC.pgm: ELF3 Y=0 y=400 G=1; ELF2 Y=0 y=400 G=1
+  JOBB_OLDALI_POLC.pgm: ELF3 Y=15 y=DY-30 G=2; ELF2 Y=0 y=400 G=1
+  F-OSZTO.pgm: LAPA X=DX/2 Y=0 y=400 G=1;
+               FORDIT_X; LAPA X=DX/2 Y=15 y=400-30 G=1
+- A F-osztókat a tényleges balról jobbra X pozíció szerint kell rendezni.
+  Az első F-osztó CNC fejléce IJ; a második LK, a továbbiak felváltva
+  IJ/LK (ugyanazon F külön függőleges darabjai azonos irányt kapnak).
+- Egy F-osztó két polc/V-szakaszt ad:
+  bal szélső: ELF3 = G=1, Y=0, teljes mélység;
+              ELF2 = G=1, Y=0, teljes mélység;
+  jobb szélső: ELF3 = G=2, Y=15, mélység - 30;
+               ELF2 = G=1, Y=0, teljes mélység.
+- Kettő vagy több F-osztó esetén a két F közti minden V/fixpolc
+  mindkét vége eltolt: bal ELF3 G=2, jobb ELF2 G=2,
+  Y=15 és y=illeszkedő csatlakozási mélység - 30.
+  A legjobboldalibb szekció jobb, KÜLSŐ oldallaphoz csatlakozó
+  éle MINDIG normál ELF2 G=1, Y=0, teljes mélység.
+- A F-osztó LAPA furatpárjai ugyanezt a 15–15 mm-es eltolást követik
+  a találkozó V/fixpolc alapján. A LAPA G=1 marad, a hosszát és
+  magasságát a tényleges szerkezeti találkozásból kell számolni.
+  A két felrakási oldal közé egy FORDIT kerül.
+- Az eltolt G=2 és G=1 páros mintái az EXCENTERES kötésre vonatkoznak;
+  más kötésmódnál az F-osztós eltolás CNC kimentése tiltott, amíg
+  a géphez külön jóváhagyott furatkiosztás nem áll rendelkezésre.
+  Ez NEM módosítja a teljes bútor korábban bevezetett kötésmód-választóját.
+- Túl rövid átfedő mélységnél (< 30 mm ráhagyás után) a CNC program
+  tiltva marad. A fizikailag nem csatlakozó polchoz/F-részhez tilos
+  képzeletbeli lap- vagy élfuratot kiadni.
+- A Xilog3 gépi példa bináris .pgm mintájából olvasható makrósorok
+  alapján ez egy .xxl KÍSÉRLETI generátor. A tényleges IJ/LK oldal,
+  FORDIT felrakás és G-kódos furatok gépi próbamunkája kötelező.
+- A védett xPrg/xMix szabási és Windows mentési kód változatlan.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
