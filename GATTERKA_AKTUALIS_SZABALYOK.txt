@@ -243,6 +243,14 @@ A POLCTARTO_LOGIKAHOZ.zip-ben átadott 1DB_V-OSZTO.pgm és
   s = furatosztás, Y = az első/hátsó élhez képesti polctartó
   távolsága. Egyedi (nem egyenlő) polcmagasságnál nem szabad
   Q-ból téves furatpozíciót kitalálni; az érintett CNC tiltott.
+- Állítható polcnál a polctartó REF/POLC felváltja a polc fix
+  tipli/excenter/csavar LAPA/ELF kötésfuratait; ugyanarra a polcra
+  nem szabad a kettőt együtt küldeni. Az állítható polc CNC-művelet
+  nélkül kimaradhat az XXL listából, miközben a szabászati listában
+  gyártandó alkatrész marad.
+- Állítható polc F-osztóhoz csatlakozásakor az F-osztó kétoldali
+  belső REF/POLC furatolása még nem hitelesített; ebben az esetben
+  a hiányos CNC csomag generálását blokkoljuk.
 - A REF és POLC műveletek fizikai gépi elfogadása és az elöl/hátul
   furatminősége még Xilog/WinCut előnézettel, majd szárazpróbával
   ellenőrzendő. Az automatikus teszt nem helyettesíti ezt.
