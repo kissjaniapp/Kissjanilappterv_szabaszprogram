@@ -516,7 +516,7 @@ test('F-osztó FORDIT_X után a HÁTULSÓ Y ütköző: szakasz Y=DY-(Y+y), pont 
    flip=result.indexOf('XMSG Q=1 N="FORDIT_X"'),
    after=result.indexOf('LAPA X=250 Y=225 A=0 y=140 G=1');
  assert.ok(before>=0&&flip>before&&after>flip,'jobb oldal -> FORDIT_X -> hátulról mért bal oldal');
- assert.match(result,/REF DX=1464 BX=0\\r\\nPOLC Y=340 Q=0# s=32 G=1# F=1/);
+ assert.match(result,/REF DX=1464 BX=0\r\nPOLC Y=340 Q=0# s=32 G=1# F=1/);
  assert.match(result,/POLC Y=50 Q=0# s=32 G=1# F=1/);
  assert.equal(entry.operations[1].Y,35,'eredeti elölről mért forráskoordinátát nem szabad átírni');
  assert.equal(entry.operations[3].Y,60,'forrás POLC koordinátát nem szabad átírni');
