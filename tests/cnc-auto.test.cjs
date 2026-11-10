@@ -59,8 +59,8 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const left=result.files.find(f=>f.filename.includes('side-left'));
   const right=result.files.find(f=>f.filename.includes('side-right'));
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
-  assert.match(left.content,/-IJ C=0/);
-  assert.match(right.content,/-LK C=0/);
+  assert.match(left.content,/-IL C=0 T=16973825/);
+  assert.match(right.content,/-LI C=0 T=16973825/);
   assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
@@ -257,4 +257,14 @@ test('állítható polc + F-osztó találkozásánál a belső polctartómakró 
    board('f','F-osztó',1464,396,[entry])]},['f']);
  assert.equal(out.files.length,0);
  assert.equal(out.blocked.length,1);
+});
+
+test('az automatikus CNC mentés DX=1350+ és DY=800+ esetén AD/DA összevont térfelet kap',()=>{
+ for(const [side,expected] of [['IJ','AD'],['LK','DA']]){
+   const entry={key:'piece-'+side,dx:1400,dy:900,dz:18,side,operations:[
+     {macro:'LAPA',X:300,Y:20,y:800,joint:'fixed',face:'primary'}
+   ]};
+   const result=auto.compileEntry(entry,{assemblyJoint:'excenter'});
+   assert.match(result,new RegExp('^H DX=1400 DY=900 DZ=18 -'+expected+' C=0 T=16973825'));
+ }
 });
