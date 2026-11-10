@@ -638,3 +638,22 @@ kötelező éles használat előtt.
 FONTOS: kizárólag CNC-megmunkálási referenciáról szól; a korábbi,
 védett szabászgépi xMix/xPrg algoritmus, vágási sorrend, szélezés,
 és natív Windows mentési működés változatlan.
+
+2026-11-10 – F-OSZTÓ KÖTELEZŐ BEFOGÁSI ÉS FURATOZÁSI SORREND
+----------------------------------------------------------------
+A CNC-be helyezett F-osztó SAJÁT ALSÓ ÉLE az X=0 ütköző.
+A BÚTOR ELEJE a Y=0 ütköző (fizikai homlokél).
+Az F-osztó összes LAPA és REF/POLC X koordinátáját alulról
+felfelé számítjuk. A korábbi felülről számoló értékek elavultak.
+Kétoldalas megmunkálás SORRENDJE kötelező:
+1. Az F-osztó JOBB OLDALI lapfelületének fúrása.
+2. X TENGELY körüli, kezelő által végzett fordítás:
+   XMSG Q=1 N="FORDIT_X".
+3. Az F-osztó BAL OLDALI lapfelületének fúrása.
+Az IJ/LK munkatérfelek helyét, a 15 mm-es Y-eltolásokat,
+a fizikai alsó X=0 nullpontot és az excenter G-kódokat a
+FORDIT_X nem írhatja felül. A fordítás kezelői utasítás,
+nem tényleges automatikus géptengely-mozgás.
+Az xMix/xPrg szabási sorrend, a tető/fenék korábban jóváhagyott
+oldalsorrendje és a Windows natív mentés érintetlen marad.
+Xilog előnézet és fizikai szárazpróba kötelező.
