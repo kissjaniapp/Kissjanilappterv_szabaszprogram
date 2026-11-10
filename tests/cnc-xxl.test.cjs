@@ -54,5 +54,5 @@ test('a gépi xPrg/xMix változatlan, a CNC XXL külön automata modul',()=>{
  assert.match(app,/data-action="save-cnc-xxl"/);
  assert.match(app,/data-action="save-all-cnc-xxl"/);
  assert.match(app,/cncInstances=Array\.isArray\(row\.cncInstances\)/);
- assert.doesNotMatch(app,/Adj meg 1–500 ellenőrzött CNC makrósort/);
+ assert.match(app,/<textarea id="cnc-xxl-commands"[^>]*readonly/);
 });
