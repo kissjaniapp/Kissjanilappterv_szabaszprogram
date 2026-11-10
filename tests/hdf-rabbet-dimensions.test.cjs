@@ -94,7 +94,8 @@ test('Pótfenék bekapcsolásakor a H teljes külméret nem nő: az oldallap T-v
   assert.equal(p.bodyH,892);
   assert.equal(p.sideH,892,'Oldallap 910 - 18 = 892 mm');
   assert.equal(parts.find(x=>x.key==='side-left').a,892);
-  assert.equal(parts.find(x=>x.key==='side-right').a,892);
+  assert.equal(parts.find(x=>x.key==='side-left').qty,2,'A két oldal azonos mérettel egy sorban van');
+  assert.equal(parts.find(x=>x.key==='side-right'),undefined,'A jobb oldallap nem külön rekord');
   assert.equal(p.innerH,856);
   assert.equal(hdf(parts).a,989);
   assert.equal(hdf(parts).b,881);
