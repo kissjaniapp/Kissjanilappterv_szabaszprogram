@@ -293,6 +293,41 @@ A F-OSZTO_MELETTE_FIX_POLC_TALAKOZAS.zip felhasználói minták:
   FORDIT felrakás és G-kódos furatok gépi próbamunkája kötelező.
 - A védett xPrg/xMix szabási és Windows mentési kód változatlan.
 
+2026-11-10 – XILOG XXL FEJLÉC: T ÉS TÉRFÉLKÓD AUTOMATIKUS DX/DY HATÁROK
+---------------------------------------------------------------------
+A CNC .xxl fejlécében az alkatrész tényleges DX és DY mérete alapján
+változik a -TÉRFÉL és a T gépi érték. A korábbi állandó
+-IJ/-LK és T=196608 fejléc NEM alkalmazható általánosan.
+
+- DX < 620 mm: nem kapcsolt T=196608.
+- 620 <= DX < 1350 mm: nem kapcsolt T=196609.
+- DX >= 1350 mm: a megmunkálási térfeleket ÖSSZE kell kapcsolni,
+  és T=16973825 (mivel ez a DX már mindig >= 620 mm).
+- A kapcsolt térfél-kódok alacsonyabb DX-es, általános T-szabálya:
+  DX < 620: T=16973824; DX >= 620: T=16973825.
+  A jelenlegi automatikus 1350 mm-es kapcsolási küszöb mellett
+  az első kombináció (kapcsolt + DX < 620) nem keletkezhet;
+  az ellenőrző segédfüggvény mind a négy T-kombinációt ismeri.
+
+Térfél a DY és a bal/jobb oldaliság szerint:
+  DY < 800 mm:     bal IJ / kapcsolt IL; jobb LK / kapcsolt LI.
+  DY >= 800 mm:    bal AB / kapcsolt AD; jobb DC / kapcsolt DA.
+A 620, 800 és 1350 mm küszöbök maguk már a felső
+tartományba tartoznak.
+
+A bútortervező továbbra is a fizikai bal oldalt IJ, a jobb
+oldalt LK alaptérfélként adja át. A kész CNC-fejléc ezt
+automatikusan helyettesíti a megfelelő IJ/LK/IL/LI/AB/DC/AD/DA
+kóddal, az alkatrészenkénti DX/DY figyelembevételével.
+Az F-osztók korábbi felváltott IJ/LK bal/jobb hozzárendelése
+és az eltoltfurat-makrók ettől nem változnak.
+A Windows appba BEÁGYAZOTT és a különálló CNC compiler/automata
+modulok azonosak; eltérésük külön teszthibát okoz.
+
+A védett XPRG/XMIX gépi szabási és Windows mappaválasztó
+mentési logikához, a vágási sorrendhez nem szabad hozzányúlni.
+A Xilog gépi értelmezést a valós gépen külön ellenőrizni kell.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
