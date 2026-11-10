@@ -112,6 +112,17 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
   további egyeztetett anyagból kell azonosítani; ez a bejegyzés nem teljes
   CNC-programozási specifikáció.
 
+- A LAPA, LAPF és a többi él-furatsor G paramétere a furatváltozatot választja:
+  G=1 sima tipli, G=2 excenteres, G=3 hosszú excenteres. A G=3 pontos
+  alkalmazási helyét és a csavaros mód hozzárendelését még tisztázni kell.
+- F-osztó nélkül a két oldal közé kerülő V-osztó vagy fix polc érintett
+  élén G=1. F-osztó esetén a bal oldali elem oldallap felőli kapcsolata
+  G=1; a jobb oldali V-osztó vagy fix polc F-osztó felőli élén G=2, a
+  külső oldal felőli élén G=1. Az excenterfuratok az alkatrész visszájára
+  kerülnek, ezért a megmunkálásnál a tükrözést figyelembe kell venni.
+- Ellenőrizni kell, hogy a visszaállások figyelembevételével az oldallapi és
+  a hozzá csatlakozó V-osztó vagy fix polc furatsorának hossza egyezzen.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
