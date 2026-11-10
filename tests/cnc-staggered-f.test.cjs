@@ -70,7 +70,7 @@ test('egy F-osztó: bal V-polc 1/1 normál, jobb V-polc 2/1 eltolt, az osztó IJ
  assert.match(left,/ELF2 Y=0 A=0 y=400 G=1/);
  assert.match(right,/ELF3 Y=15 A=0 y=370 G=2/);
  assert.match(right,/ELF2 Y=0 A=0 y=400 G=1/);
- assert.match(divider,/^-?H DX=1464 DY=400 DZ=18 -IJ /);
+ assert.match(divider,/^-?H DX=1464 DY=400 DZ=18 -IL C=0 T=16973825 /);
  assert.match(divider,/LAPA X=973 Y=0 A=0 y=400 G=1/);
  assert.match(divider,/XMSG Q=1 N="FORDIT"/);
  assert.match(divider,/LAPA X=973 Y=15 A=0 y=370 G=1/);
@@ -85,8 +85,8 @@ test('két F-osztó: középső polc mindkét éle ELF G=2; osztók IJ és LK',(
  assert.match(middle,/ELF2 Y=15 A=0 y=370 G=2/);
  assert.match(right,/ELF3 Y=15 A=0 y=370 G=2/);
  assert.match(right,/ELF2 Y=0 A=0 y=400 G=1/);
- assert.match(first,/-IJ C=0/);
- assert.match(second,/-LK C=0/);
+ assert.match(first,/-IL C=0/);
+ assert.match(second,/-LI C=0/);
  assert.match(first,/LAPA X=973 Y=0 A=0 y=400 G=1/);
  assert.match(first,/LAPA X=973 Y=15 A=0 y=370 G=1/);
  assert.equal((second.match(/LAPA X=973 Y=15 A=0 y=370 G=1/g)||[]).length,2);
