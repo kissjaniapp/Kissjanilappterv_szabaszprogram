@@ -47,7 +47,7 @@ function geometry(angle=25,overrides={},layout={}){
   hasTop:true,hasBottom:true,top:'between',bottom:'between',
   falseBottom:false,innerW:964,innerH:1464,sideH:1500,
   backType:'rabbet',fullBack:false,rabbet:true,rabbetWidth:4,
-  hdfThickness:4,hdfW:989,hdfH:1480,
+  hdfThickness:4,hdfW:989,hdfH:1480,topHdfDeduction:5.5,bottomHdfDeduction:5.5,
   fullBackSetback:0,drilling:'fixed',dividerThrough:'f',
   ...overrides.panel
  };
