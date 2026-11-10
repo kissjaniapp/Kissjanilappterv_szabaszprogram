@@ -4,6 +4,9 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const auto=require('../machine/cnc-auto.cjs');
 
+// F-OSZTO minták jobb oldali furatsorát készítjük ELŐSZÖR,
+// utána X tengelyes fordítás (FORDIT_X), végül bal oldal.
+// A korábban jóváhagyott 15 mm-es Y-eltolás és G-kód változatlan.
 // A felhasználó F-OSZTO_MELETTE_FIX_POLC_TALAKOZAS.zip mintái:
 // BAL_OLDALI_POLC: ELF3 Y=0 y=400 G=1 / ELF2 Y=0 y=400 G=1
 // JOBB_OLDALI_POLC: ELF3 Y=15 y=DY-30 G=2 / ELF2 Y=0 y=400 G=1
@@ -71,9 +74,15 @@ test('egy F-osztó: bal V-polc 1/1 normál, jobb V-polc 2/1 eltolt, az osztó IJ
  assert.match(right,/ELF3 Y=15 A=0 y=370 G=2/);
  assert.match(right,/ELF2 Y=0 A=0 y=400 G=1/);
  assert.match(divider,/^-?H DX=1464 DY=400 DZ=18 -IL C=0 T=16973825 /);
- assert.match(divider,/LAPA X=973 Y=0 A=0 y=400 G=1/);
- assert.match(divider,/XMSG Q=1 N="FORDIT"/);
- assert.match(divider,/LAPA X=973 Y=15 A=0 y=370 G=1/);
+ assert.match(divider,/LAPA X=491 Y=0 A=0 y=400 G=1/);
+ assert.match(divider,/XMSG Q=1 N="FORDIT_X"/);
+ assert.match(divider,/LAPA X=491 Y=15 A=0 y=370 G=1/);
+ // Az F-osztó JOBB lapoldala a gépen az első; csak utána fordul X körül a BAL oldalra.
+ const rightFirst=divider.indexOf('LAPA X=491 Y=15 A=0 y=370 G=1');
+ const flipped=divider.indexOf('XMSG Q=1 N="FORDIT_X"');
+ const leftSecond=divider.indexOf('LAPA X=491 Y=0 A=0 y=400 G=1');
+ assert.ok(rightFirst>=0&&flipped>rightFirst&&leftSecond>flipped,
+   'Az F-osztó jobb oldalát kell először fúrni, és FORDIT_X után a balt');
 });
 test('két F-osztó: középső polc mindkét éle ELF G=2; osztók IJ és LK',()=>{
  const {byKey,sections,f}=generated(2);
@@ -87,9 +96,9 @@ test('két F-osztó: középső polc mindkét éle ELF G=2; osztók IJ és LK',(
  assert.match(right,/ELF2 Y=0 A=0 y=400 G=1/);
  assert.match(first,/-IL C=0/);
  assert.match(second,/-LI C=0/);
- assert.match(first,/LAPA X=973 Y=0 A=0 y=400 G=1/);
- assert.match(first,/LAPA X=973 Y=15 A=0 y=370 G=1/);
- assert.equal((second.match(/LAPA X=973 Y=15 A=0 y=370 G=1/g)||[]).length,2);
+ assert.match(first,/LAPA X=491 Y=0 A=0 y=400 G=1/);
+ assert.match(first,/LAPA X=491 Y=15 A=0 y=370 G=1/);
+ assert.equal((second.match(/LAPA X=491 Y=15 A=0 y=370 G=1/g)||[]).length,2);
 });
 test('három F-osztó: a két köztes szakasz G=2/G=2, szélső lapcsatlakozás G=1',()=>{
  const {byKey,sections,f}=generated(3);
