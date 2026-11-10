@@ -44,7 +44,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   assert.equal(side.length,2);
   assert.equal(side[0].side,'IJ');
   assert.equal(side[1].side,'LK');
-  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===891&&op.Y===0&&op.y===396));
+  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===609&&op.Y===0&&op.y===396));
   assert.deepEqual(Array.from(shelf.operations,op=>op.macro),['ELF3','ELF2']);
   const parts=[
     board('sides','Oldal',1500,400,side),
@@ -61,7 +61,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
   assert.match(left.content,/-IL C=0 T=16973825/);
   assert.match(right.content,/-LI C=0 T=16973825/);
-  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
+  assert.match(left.content,/LAPA X=609 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
@@ -154,7 +154,7 @@ test('két V-osztó három független REF szakaszt készít, a 3 távolságkül�
  const {segments,issues}=ctx.cncSupportRegions(p,boards,'right');
  assert.equal(issues.length,0);
  assert.deepEqual(Array.from(segments,s=>[s.BX,s.DX]),[
-   [20,564],[634,350],[1034,426]
+   [0,584],[634,350],[1034,426]
  ]);
 });
 test('Q=0 végigfúrást, Q>0 a rekeszbe eső polcszámot jelenti; a REF és POLC nem írja át a kötés G kódját',()=>{
@@ -279,7 +279,7 @@ test('V-osztó sima excenter és hosszú excenter: azonos LAPA G=1, eltérő ELF
     assert.match(vProgram.content,new RegExp('ELF3 Y=0 A=0 y=396 G='+expectedEdgeG));
     assert.match(vProgram.content,new RegExp('ELF2 Y=0 A=0 y=396 G='+expectedEdgeG));
     for(const sideFile of sidePrograms){
-      assert.match(sideFile.content,/LAPA X=891 Y=0 A=0 y=396 G=1/,
+      assert.match(sideFile.content,/LAPA X=609 Y=0 A=0 y=396 G=1/,
         'a lapfurat mindkét excenteres kötésnél G=1');
     }
   }
@@ -335,4 +335,100 @@ test('az automatikus CNC mentés DX=1350+ és DY=800+ esetén AD/DA összevont t
    const result=auto.compileEntry(entry,{assemblyJoint:'excenter'});
    assert.match(result,new RegExp('^H DX=1400 DY=900 DZ=18 -'+expected+' C=0 T=16973825'));
  }
+});
+
+
+test('CNC alul ütköző oldallap: V-osztó, tető és fenék a fizikai alsó végtől mérve',()=>{
+ const {ctx}=extractedGeometry(),p={...base(),drilling:'fixed',rabbet:false,
+   vCount:1,hasTop:true,hasBottom:true,top:'between',bottom:'between'};
+ ctx.fixedDividerPieces=()=>[{key:'v-divider-1',name:'V-osztó',kind:'v',index:0,
+   x1:18,x2:982,y0:0,y1:396,z1:600,z2:618,a:964,b:396,undercutDegrees:0}];
+ const records=[{key:'side-left',sourceKeys:['side-left','side-right']}];
+ ctx.buildCncInstancesForParts(p,records);
+ for(const e of records[0].cncInstances){
+   assert.deepEqual(Array.from(e.operations.filter(o=>o.macro==='LAPA'),o=>o.X),
+     [609,1491,9]);
+ }
+});
+
+test('a CNC fenékből eltűnt kihagyás beállítását régi mentésből is figyelmen kívül hagyjuk',()=>{
+ const {ctx,html}=extractedGeometry();
+ assert.doesNotMatch(html,/id="cncGapBottom"/);
+ const p={...base(),drilling:'full',hasTop:false,hasBottom:false,
+   cncGapBottom:99,cncGapTop:0,cncGapDivider:0,raster:32,supportInset:50};
+ const seg=ctx.cncSupportRegions(p,[{kind:'v',x1:18,x2:982,z1:600,z2:618}],'left');
+ assert.equal(seg.issues.length,0);
+ assert.equal(seg.segments[0].BX,0);
+ assert.equal(seg.segments[0].DX,600);
+});
+
+test('végigfuratolt polc CNC-nél is választható az egyedi magasság',()=>{
+ const {html}=extractedGeometry();
+ assert.match(html,/const distribution=choice\\('distribution'\\)/);
+ assert.match(html,/const manual=p\\.distribution==='manual';/);
+ assert.match(html,/p\\.drilling==='full'&&p\\.distribution!=='manual'/);
+ assert.doesNotMatch(html,/e\\.target\\.name==='drilling'&&e\\.target\\.value==='full'/);
+ const start=html.indexOf('function horizontalLayout(p){'),
+       stop=html.indexOf('function positions(p){',start);
+ assert.ok(start>=0&&stop>start);
+ const vm=require('node:vm'),context={
+   horizontalMembers:()=>[{kind:'shelf',index:0}],
+   rasterLevels:()=>[128],
+   calculateGaps:()=>({gaps:[200,782]}),
+ };
+ vm.createContext(context);
+ vm.runInContext(html.slice(start,stop),context);
+ const manual=context.horizontalLayout({n:1,vCount:0,drilling:'full',distribution:'manual',t:18,innerH:1000});
+ const automatic=context.horizontalLayout({n:1,vCount:0,drilling:'full',distribution:'equal',t:18,innerH:1000});
+ assert.equal(manual[0].level,209);
+ assert.equal(automatic[0].level,128);
+});
+
+test('falcos HDF: XFALC csak falc=1 esetén; 4 db szomszédos lapra, trim esetén kihagy',()=>{
+ const {ctx}=extractedGeometry();
+ const p={...base(),drilling:'fixed',rabbet:true,topHdfCut:'falc',bottomHdfCut:'falc'};
+ ctx.fixedDividerPieces=()=>[];
+ const records=[
+   {key:'side-left',sourceKeys:['side-left','side-right']},{key:'top'},{key:'bottom'}
+ ];
+ ctx.buildCncInstancesForParts(p,records);
+ for(const r of records){
+   for(const e of r.cncInstances)assert.equal(e.operations.filter(o=>o.macro==='XFALC').length,1);
+ }
+ const core=require('../machine/cnc-xxl.cjs');
+ assert.equal(core.parseMacro('XFALC Q=1# G=2# T=103',1500,400),'XFALC Q=1# G=2# T=103');
+ assert.throws(()=>core.parseMacro('XFALC Q=1# G=2# T=104',1500,400),/XFALC/);
+ assert.throws(()=>core.parseMacro('XFALC Q=5# G=2# T=103',1500,400),/XFALC/);
+ const out=auto.compileEntry(records[0].cncInstances[0],{assemblyJoint:'excenter'});
+ assert.match(out,/XFALC Q=1# G=2# T=103/);
+ p.topHdfCut='trim';
+ const trimmed=records.map(r=>({key:r.key,sourceKeys:r.sourceKeys}));
+ ctx.buildCncInstancesForParts(p,trimmed);
+ assert.equal(trimmed[1].cncInstances[0].operations.filter(o=>o.macro==='XFALC').length,0);
+ assert.equal(trimmed[2].cncInstances[0].operations.filter(o=>o.macro==='XFALC').length,1);
+ p.rabbet=false;
+ const plain=records.map(r=>({key:r.key,sourceKeys:r.sourceKeys}));
+ ctx.buildCncInstancesForParts(p,plain);
+ assert.equal(plain.flatMap(r=>r.cncInstances||[]).flatMap(e=>e.operations).filter(o=>o.macro==='XFALC').length,0);
+});
+
+test('F-osztó felül ütközik, a fenék alsó összehúzója után FORDIT következik',()=>{
+ const {ctx}=extractedGeometry();
+ const p={...base(),drilling:'fixed',fCount:1,rabbet:false};
+ const f={key:'f-divider-1',name:'F-osztó',kind:'f',index:0,
+   x1:491,x2:509,z1:18,z2:1482,y0:0,y1:396,a:1464,b:396};
+ const s={key:'shelf-1',name:'Polc 1',kind:'shelf',index:0,
+   x1:18,x2:491,z1:1241,z2:1259,y0:0,y1:396,a:473,b:396,undercutDegrees:0};
+ ctx.fixedDividerPieces=()=>[f,s];
+ const records=[{key:'top'},{key:'bottom'},{key:'f-divider-1'}];
+ ctx.buildCncInstancesForParts(p,records);
+ const upper=records[0].cncInstances[0],lower=records[1].cncInstances[0],vertical=records[2].cncInstances[0];
+ // A polc középpontja z=1250; az F-osztó felső ütközője z=1482.
+ assert.equal(vertical.operations.find(o=>o.macro==='LAPA')?.X,232);
+ assert.equal(upper.operations.find(o=>o.macro==='LAPA')?.face,'reverse');
+ assert.equal(lower.operations.find(o=>o.macro==='LAPA')?.face,'reverse');
+ const code=auto.compileEntry(lower,{assemblyJoint:'excenter'});
+ assert.match(code,/ELF3 Y=0 A=0 y=400 G=1/);
+ assert.match(code,/XMSG Q=1 N="FORDIT"/);
+ assert.match(code,/XMSG Q=1 N="FORDIT"[\\s\\S]+LAPA X=482 Y=0 A=0 y=396 G=1/);
 });
