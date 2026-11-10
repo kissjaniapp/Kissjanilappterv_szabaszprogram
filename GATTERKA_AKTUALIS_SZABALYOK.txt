@@ -50,8 +50,9 @@ F- ÉS V-OSZTÓK
   elemhez is állítható. Az osztók kiosztása egyedileg módosítható.
 - Találkozáskor választható, melyik osztó fut végig; a megszakított osztó
   külön gyártandó alkatrészekre oszlik, az anyagvastagság figyelembevételével.
-  A V-osztó korábbi példaképletében a külméret és az oldalak levonásának
-  viszonya nem egyértelmű; az általános képletet még egyeztetni kell.
+  Egy középen végigfutó F-osztónál a két egyforma V-osztó-szakasz szélessége:
+  (oldalak közötti belső szélesség − F-osztó vastagsága) / 2. Eltérő
+  kiosztásnál a szakaszok a tényleges helyük szerinti szélességet kapják.
 - Az F- és V-osztó első visszaállása egymástól függetlenül állítható.
   Mindkettő alapértéke 0 mm: az első él az oldallal síkban van.
 
@@ -68,9 +69,8 @@ ALKATRÉSZEK, ÉLZÁRÁS, RESZELÉS
 - Oldal: egy hosszú él 2 mm ABS. A szabadon látható felső és alsó rövid él
   2 mm ABS-t és reszelést kap. A tető, fenék és pótfenék tényleges
   csatlakozása határozza meg, hogy 0, 1 vagy 2 rövid él szabad.
-- Közé menő tető: egy hosszú él 2 mm ABS. Végigfutó tető: két rövid él
-  2 mm ABS, mindkét rövid él reszelve. Hogy ehhez hosszú él is tartozik-e,
-  tisztázandó; a jelenlegi megvalósítás hosszú élt is jelöl.
+- Közé menő tető: egy hosszú él 2 mm ABS. Végigfutó tető: az első hosszú
+  él és a két rövid él 2 mm ABS, mindkét rövid él reszelve.
 - Polc: a bútor szélessége irányába eső első él 2 mm ABS-t kap. Ez a méret
   nem minden alkatrészen feltétlenül a hosszabbik méret.
 - Teli hátlap: nincs automatikus élzárás. A fenék, pótfenék, F- és V-osztó
