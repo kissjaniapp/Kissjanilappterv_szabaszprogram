@@ -90,6 +90,28 @@ SZABÁSTERV ÉS KEZELÉS
 - A számmezőkben több számjegy folyamatosan begépelhető legyen; az automatikus
   frissítés ne ugorjon a szám elejére, és ne vegye el a fókuszt gépelés közben.
 
+
+CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
+---------------------------------------------------
+- Az oldallapon végzett megmunkálás helyét az oldallap saját külső éleihez,
+  nem a teljes bútor külméreteihez viszonyítjuk.
+- Az oldallap CNC-referencianézetében a szekrény teteje balra, az eleje
+  felül van. A bal oldali ütközőtől X, a felső él felől Y szerint mérünk.
+- Az oldallapra csatlakozó alkatrész helyét a csatlakozó alkatrész
+  anyagvastagságának középvonala jelöli. A furatkiosztást az adott alkatrész
+  kijelölt kezdőpontjától kell mérni. A piros pontokat tartalmazó rajz és a
+  teljes kiosztási szabály külön szükséges a pontos helyek megállapításához.
+- A felhasználó által leírt CNC-programfejlécben DX és DY az anyag X/Y
+  mérete; IJ bal oldali, LK jobb oldali, tükrözött megmunkálást jelöl.
+  C=0, T=196608, R=100, *MM, /"DEF", BX=0, BY=0, BZ=0 és V=1 rögzített
+  értékek. A T mechanikai opcióinak képlete később tisztázandó; a 18 mm-es
+  vastagságot ebben a korai fejlécpéldában külön nem írták be.
+- A sima, összehúzós és csavaros CNC-minták a tulajdonos megerősítése szerint
+  a Xilog_makro_ai_proba mappában vannak. A teljes csatlakozási és furatolási
+  szabályokat, a falcmakró működését és a működő fájlgenerálás módját a
+  további egyeztetett anyagból kell azonosítani; ez a bejegyzés nem teljes
+  CNC-programozási specifikáció.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
