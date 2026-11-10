@@ -53,7 +53,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   };
   const window={};
   const ctx={window,document,Event:class Event{},fmt:x=>String(x),
-    shelfAngleAt:()=>0,shelfBackAt:()=>4,shelfDepthAt:p=>p.d-4};
+    shelfAngleAt:()=>0,shelfBackAt:()=>4,shelfDepthAt:p=>p.d-4,
+    baseShelfBack:p=>p.rabbet?Math.max(p.rabbetWidth||0,p.hdfThickness||4):p.fullBack?p.t+(p.fullBackSetback||0):0};
   const readStub=[
     'function read(){',
     '  const num=id=>Number(document.getElementById(id).value);',
@@ -124,6 +125,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   const parent={result:null,materialCatalog:[{id:'hdf4',thickness:4,color:'HDF'}],
     hdfMaterial:()=>({id:'hdf4',thickness:4,color:'HDF'}),
     sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
+    // This test covers dimension round-trips, not edging rules.
+    cabinetAutoEdging:()=>{},
     uuid:(()=>{let id=0;return ()=>'generated-'+ ++id;})()};
   vm.runInNewContext(source.slice(begin,end),parent);
   const furniture={parts:[]};
