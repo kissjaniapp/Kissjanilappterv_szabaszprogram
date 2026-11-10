@@ -21,7 +21,7 @@ test('a 3D tervező azonnal szinkronizál és oldalváltás előtt átadja az al
   assert.match(designer,/gatterka-designer-save/);
   assert.match(source,/window\.gatterkaCabinetDirectSave=function\(source,design\)/);
   assert.match(source,/frame\.contentWindow!==source/);
-  assert.match(source,/captureCabinetDesignerBeforePageChange\(\);\s*\/\/ Korábbi/);
+  assert.match(source,/captureCabinetDesignerBeforePageChange\(\);\s*const currentNavigation=/);
   assert.match(source,/applyCabinetDesignerSnapshot\(f,event\.data\.design\)/);
 });
 
@@ -35,6 +35,8 @@ test('a szerkezeti alkatrészek bekerülnek a szerkeszthető listába, a bizonyt
     materialCatalog:[{id:'hdf4',name:'HDF hátfal',color:'HDF',thickness:4}],
     hdfMaterial:()=>({id:'hdf4',name:'HDF hátfal',color:'HDF',thickness:4}),
     sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
+    // A gépi élzárást külön teszteljük; itt a méretszinkron a tárgy.
+    cabinetAutoEdging:()=>{},
     result:null
   };
   vm.runInNewContext(snippet,ctx);
