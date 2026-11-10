@@ -106,3 +106,17 @@ test('a Windows beágyazott CNC-moduljai megegyeznek az ellenőrzött modulokkal
      fs.readFileSync(path.join(__dirname,'../machine/',file),'utf8').trim());
  }
 });
+
+test('LAB makró: négy pótfenék-lábpozíció G=2-vel, csak FORDIT után',()=>{
+ const cnc=require('../machine/cnc-xxl.cjs');
+ const result=cnc.compileXxl({dx:1001,dy:400,dz:18,commands:
+   'LAPA X=9.5 Y=0 A=0 y=400 G=1\nFORDIT\n'+
+   'LAB X=59 Y=59 G=2\nLAB X=59 Y=341 G=2\n'+
+   'LAB X=942 Y=59 G=2\nLAB X=942 Y=341 G=2'});
+ assert.match(result,/XMSG Q=1 N="FORDIT"/);
+ assert.equal((result.match(/LAB X=/g)||[]).length,4);
+ assert.throws(()=>cnc.compileXxl({dx:1001,dy:400,dz:18,
+   commands:'LAB X=59 Y=59 G=0'}));
+ assert.throws(()=>cnc.compileXxl({dx:1001,dy:400,dz:18,
+   commands:'LAB X=1200 Y=59 G=2'}));
+});
