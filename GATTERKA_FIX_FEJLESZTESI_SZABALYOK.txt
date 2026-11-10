@@ -617,3 +617,24 @@ xPrg/xMix a16c7e88, Windows natív mentés f49fe3b5,
 fő SVG 86d21042.
 Előző változat archiválva:
 archive/before-part-filing-and-workshop-png-20261104
+
+2026-11-10 – CNC GÉPI X-NULLPONT – ÚJ, KÖTELEZŐ TULAJDONOSI SZABÁLY
+-------------------------------------------------------------------
+A gépi CNC megmunkálásoknál MINDEN alkatrész saját ALSÓ ÉLE az
+X=0 nullpont. A furat, falc és minden más X-koordinátás megmunkálás
+X-mérete az adott alkatrészen LENTRŐL FELFELÉ növekszik.
+Kivétel nincs: oldallap, tető, fenék, polc, V-osztó, F-osztó,
+pótfenék és minden további megmunkált alkatrész egyaránt.
+A korábban az F-osztóra alkalmazott felső ütközős X=0 szabály
+ezennel VISSZAVONVA, az új alsó X=0 szabály helyettesíti.
+Az X-nullpont az alkatrészhez, nem a bútor teljes külméretéhez
+tartozik. A FORDIT során a megmunkálási oldalt változtatjuk,
+nem választunk önkényesen ellenkező X-referenciát.
+A CNC implementációt és az F-osztó korábbi felülről számított
+LAPA/REF/POLC koordinátáit külön korrigálni és ellenőrizni kell.
+A 2026-11-10-i korábbi zöld tesztek nem igazolják még ezt az új
+általános koordinátaszabályt. Xilog előnézet és fizikai szárazpróba
+kötelező éles használat előtt.
+FONTOS: kizárólag CNC-megmunkálási referenciáról szól; a korábbi,
+védett szabászgépi xMix/xPrg algoritmus, vágási sorrend, szélezés,
+és natív Windows mentési működés változatlan.
