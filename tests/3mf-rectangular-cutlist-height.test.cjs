@@ -77,7 +77,9 @@ test('38 mm munkalap és apró 3MF test megmarad a 3D magasságában',()=>{
    uuid:()=>String(++sequence),threeMfCombinedCuttingGroups:data=>data.groups,
    threeMfGroupMeetsMinimum:minimum,
    sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
-   threeMfViewStates:new Map(),result:{},Math,Number,String
+   threeMfViewStates:new Map(),
+   // The isolated mesh/height test does not load the cabinet edging module.
+   cabinetAutoEdging:()=>{},result:{},Math,Number,String
  });
  const f={id:'cabinet',w:1,ht:1,d:1,parts:[]};
  const specs=[
@@ -103,6 +105,8 @@ test('3MF-nél csak a téglatest kerül alkatrészlistába, de magasabb szabály
    threeMfCombinedCuttingGroups:data=>data.groups,
    sidesFromCode:()=>({x1:false,x2:false,y1:false,y2:false}),
    threeMfViewStates:new Map(),
+   // The isolated mesh/height test does not load the cabinet edging module.
+   cabinetAutoEdging:()=>{},
    threeMfGroupMeetsMinimum:minimum,
    result:{},Math,Number,String
  };
