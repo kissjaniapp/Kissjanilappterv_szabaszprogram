@@ -10,7 +10,7 @@ function extractedGeometry(){
   const last=raw.lastIndexOf('";',next);
   assert.ok(start>=0&&first>=0&&last>first);
   const html=JSON.parse(raw.slice(first,last+1));
-  const a=html.indexOf('function cncSupportRegions(p,boards,which){');
+  const a=html.indexOf('function cncSupportRegions(');
   const b=html.indexOf('function getStructuredParts(p){',a);
   assert.ok(a>=0&&b>a,'A CNC-szerkezeti geometria hiányzik a tervezőből');
   const ctx={fixedDividerPieces:()=>[],baseShelfBack:()=>4};
