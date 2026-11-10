@@ -132,7 +132,7 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
   a hozzá csatlakozó V-osztó vagy fix polc furatsorának hossza egyezzen.
 
 
-2026-11-10 – CNC XILOG XXL PRÓBAEXPORT (első megvalósítás)
+2026-11-10 – CNC XILOG XXL PRÓBAEXPORT (korábbi kézi változat; automatával felülírva)
 ------------------------------------------------------
 - A Mentés oldalon a szabászati xMix/xPrg mentéstől elkülönített CNC .xxl
   próbaexport érhető el. Az aktuális bútor aktív alkatrészeinek kiszámított
@@ -179,6 +179,36 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
 - A már védett xPrg/xMix mentést, vágási sorrendet és CNC XXL
   próbaexportot ez a bútor-geometriai javítás nem módosítja.
 
+2026-11-10 – AUTOMATIKUS, ALKATRÉSZENKÉNTI XILOG XXL PRÓBAEXPORT
+----------------------------------------------------------------
+- A CNC makrósorokat a bútortervező fixDividerPieces szerkezeti
+  geometriájából készítjük automatikusan. Az oldallapok, polcok,
+  V/F-osztók és a tető/fenék tényleges csatlakozásainak saját
+  kezdőpontja és hossza kerül a LAPA / ELF3 / ELF2 makróba.
+- Az azonos méretű két oldallap továbbra is közös szabászati
+  alkatrészsor, de külön bal (IJ) és jobb (LK) CNC-programot kap.
+  A bal/jobb megmunkálási oldalt kizárólag a Xilog fejléc jelöli;
+  ugyanazt a koordinátát nem szabad még egyszer kézzel tükrözni.
+- Fix polc és V-osztó külső oldalcsatlakozása sima tipli (G=0).
+  Az F-osztó kötésmódja választható: tipli, excenter, hosszú excenter,
+  csavar. A lap- és élfurat G értéke a rögzített 0/1/2 kiosztásból
+  származik, átmérőt/furatszámot a program NEM talál ki.
+- Kétoldalas megmunkálásnál először az első oldal, utána VEGE,
+  XMSG Q=1 N="FORDIT", második oldal és VEGE keletkezik.
+- A Mentés oldalon nincs kötelező kézi CNC makrósor-bevitel:
+  olvasható ellenőrző előnézet, egy alkatrész .xxl mentése és több
+  darab .xxl közös ZIP-be csomagolása támogatott.
+- Nem hitelesített 3MF/DXF geometria, eltérő alkatrész-készméret
+  vagy vastagság, nem igazolt ferde polcfúrás, illetve hiányos
+  csatlakozási adatok esetén az érintett CNC-program tiltva marad.
+  Teljes ZIP sem készül, ha egy aktív alkatrész ellenőrizendő.
+  Hátfalnál nincs automatikus CNC-makró, mert nem igényel itt
+  hitelesített furatot. Nem jelöljük a hiányzó műveletet elkészültnek.
+- A tényleges gépi elfogadás és szerszámmozgás NINCS hitelesítve:
+  Xilog előnézet + gépi szárazpróba szükséges az első éles használat előtt.
+- A védett XPrg/XMix, szabási sorrend, tábla- és Windows mentő
+  logika NEM MÓDOSULT.
+  
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
