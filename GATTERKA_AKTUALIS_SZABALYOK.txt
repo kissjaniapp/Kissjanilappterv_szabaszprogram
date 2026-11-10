@@ -145,8 +145,8 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
   referenciaéle. Középvonal: kezdőpont + anyagvastagság/2. Tükrözéshez
   ellenőrző segédfüggvény készült, de automatikus LK tükröző geometria
   még NEM AKTÍV: csak ellenőrzött koordinátasorok exportálhatók.
-- A külön .xxl fájl mentése fájlválasztóval történik, ha a Chromium ezt
-  támogatja; egyébként böngészős fájlletöltés. A művelet nem írja át a
+- A külön .xxl fájl szabványos böngészős letöltéssel menthető, a korábbi
+  exportokkal azonos módon. A művelet nem írja át a
   gépi xMix/xPrg-t, vágási sorrendet vagy a Windows Mentés másként kódját.
 - A szerkezetből automatikusan számított CNC-furatkiosztás, a további
   kötésvariánsok és falcmegmunkálások a pontos gépi minták és hitelesítés
