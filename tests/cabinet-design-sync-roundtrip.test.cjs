@@ -73,6 +73,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
     '    fullBackSetback:0};',
     '}'
   ].join('\n');
+  ctx.fixedDividerPieces=p=>Array.from({length:p.n||0},(_,i)=>({kind:'shelf',index:i,key:'shelf-'+(i+1),name:'Polc '+(i+1),a:p.innerW,b:p.d-4,angle:0}));
+  ctx.shelfBackAt=()=>4;
   vm.runInNewContext('(function(){'+getParts+readStub+bridge+'})();',ctx);
   // A mentés külön IIFE-ben van. A read() és getStructuredParts() ott nem látható.
   vm.runInNewContext('(function(){'+ids+snapshot+methods+
