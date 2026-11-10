@@ -10,10 +10,10 @@ function extractedGeometry(){
   const last=raw.lastIndexOf('";',next);
   assert.ok(start>=0&&first>=0&&last>first);
   const html=JSON.parse(raw.slice(first,last+1));
-  const a=html.indexOf('function buildCncInstancesForParts(p,records){');
+  const a=html.indexOf('function cncSupportRegions(p,boards,which){');
   const b=html.indexOf('function getStructuredParts(p){',a);
   assert.ok(a>=0&&b>a,'A CNC-szerkezeti geometria hiányzik a tervezőből');
-  const ctx={fixedDividerPieces:()=>[]};
+  const ctx={fixedDividerPieces:()=>[],baseShelfBack:()=>4};
   vm.createContext(ctx);
   vm.runInContext(html.slice(a,b),ctx);
   return {ctx,html};
@@ -61,9 +61,9 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
   assert.match(left.content,/-IJ C=0/);
   assert.match(right.content,/-LK C=0/);
-  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=0/);
-  assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=0/);
-  assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=0/);
+  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
+  assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
+  assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
 test('F-osztó csatlakozásánál a megfelelő makró saját G kódja automatikus',()=>{
   const part=board('f','F-osztó',700,400,[{
