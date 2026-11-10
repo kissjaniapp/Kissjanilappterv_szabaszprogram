@@ -364,10 +364,10 @@ test('a CNC fenékből eltűnt kihagyás beállítását régi mentésből is fi
 
 test('végigfuratolt polc CNC-nél is választható az egyedi magasság',()=>{
  const {html}=extractedGeometry();
- assert.match(html,/const distribution=choice\\('distribution'\\)/);
- assert.match(html,/const manual=p\\.distribution==='manual';/);
- assert.match(html,/p\\.drilling==='full'&&p\\.distribution!=='manual'/);
- assert.doesNotMatch(html,/e\\.target\\.name==='drilling'&&e\\.target\\.value==='full'/);
+  assert.ok(html.includes("const distribution=choice('distribution');"));
+  assert.ok(html.includes("const manual=p.distribution==='manual';"));
+  assert.ok(html.includes("p.drilling==='full'&&p.distribution!=='manual'"));
+  assert.ok(!html.includes("e.target.name==='drilling'&&e.target.value==='full'"));
  const start=html.indexOf('function horizontalLayout(p){'),
        stop=html.indexOf('function positions(p){',start);
  assert.ok(start>=0&&stop>start);
@@ -430,5 +430,5 @@ test('F-osztó felül ütközik, a fenék alsó összehúzója után FORDIT köv
  const code=auto.compileEntry(lower,{assemblyJoint:'excenter'});
  assert.match(code,/ELF3 Y=0 A=0 y=400 G=1/);
  assert.match(code,/XMSG Q=1 N="FORDIT"/);
- assert.match(code,/XMSG Q=1 N="FORDIT"[\\s\\S]+LAPA X=482 Y=0 A=0 y=396 G=1/);
+  assert.match(code,/XMSG Q=1 N="FORDIT"[\s\S]+LAPA X=482 Y=0 A=0 y=396 G=1/);
 });
