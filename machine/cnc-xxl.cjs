@@ -11,7 +11,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','LAB']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','LAB','XFALC']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -38,6 +38,14 @@
     const bits=line.trim().split(/\s+/);
     const macro=bits.shift().toUpperCase();
     if(!MACROS.has(macro))throw new Error('Nem támogatott CNC makró: '+macro);
+    if(macro==='XFALC'){
+      // Gépi referencia: XFALC Q=1# G=2# T=103.
+      // Q: 1 kifutó, 2 nem kifutó, 3 bal oldalt zárt, 4 jobb oldalt zárt.
+      // G: 2 balról jobbra, 3 jobbról balra. Fix falcoló szerszám: T=103.
+      const m=/^XFALC Q=([1-4])# G=([23])# T=103$/.exec(line.trim());
+      if(!m)throw new Error('XFALC: Q=1..4, G=2/3 és T=103 szükséges.');
+      return 'XFALC Q='+m[1]+'# G='+m[2]+'# T=103';
+    }
     const fields={};
     for(const part of bits){
       const match=/^([XYxyAG])=(-?(?:\d+\.?\d*|\.\d+))$/.exec(part);
