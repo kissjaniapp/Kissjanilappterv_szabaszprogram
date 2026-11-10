@@ -106,17 +106,36 @@
     }
     throw new Error('Ismeretlen REF/POLC makró.');
   }
+  // Xilog CNC fejléc: a DX/DY szabja meg a megmunkálási térfélkódot.
+  // A bal oldali alap térfél IJ, a jobb oldali LK; a különböző
+  // szélességű és összekapcsolt változatokat automatikusan képezzük.
+  function cncToolCode(dx,combined){
+    const length=number(dx,'DX');
+    return (combined?16973824:196608)+(length>=620?1:0);
+  }
+  function cncHeader(dx,dy,requestedSide){
+    const length=number(dx,'DX'),width=number(dy,'DY');
+    const side=String(requestedSide||'IJ').replace(/^-/, '').toUpperCase();
+    const left=['IJ','IL','AB','AD'].includes(side);
+    const right=['LK','LI','DC','DA'].includes(side);
+    if(!left&&!right)throw new Error('Nem támogatott Xilog térfél: '+side);
+    const combined=length>=1350;
+    const narrow=width<800;
+    const target=narrow
+      ?(combined?(left?'IL':'LI'):(left?'IJ':'LK'))
+      :(combined?(left?'AD':'DA'):(left?'AB':'DC'));
+    return {side:target,combined,tool:cncToolCode(length,combined)};
+  }
   function compileXxl(spec){
     if(!spec||typeof spec!=='object')throw new Error('Hiányzó CNC programadatok.');
     const dx=number(spec.dx,'DX'),dy=number(spec.dy,'DY'),dz=number(spec.dz,'DZ');
-    const side=String(spec.side||'IJ').replace(/^-/, '').toUpperCase();
-    if(side!=='IJ'&&side!=='LK')throw new Error('Csak IJ vagy LK referencia választható.');
+    const header=cncHeader(dx,dy,spec.side);
     const text=String(spec.commands??'').replace(/\r/g,'');
     if(text.length>50000)throw new Error('Túl hosszú CNC makrólista.');
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
     if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
-    const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+side+
-      ' C=0 T=196608 R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
+    const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
+      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
     let macrocnt=0,flips=0,justFlipped=false;
     const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
@@ -144,7 +163,7 @@
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
   }
-  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,compileXxl};
+  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,cncToolCode,cncHeader,compileXxl};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCnc=api;
 })(typeof window!=='undefined'?window:null);
