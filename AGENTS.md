@@ -2,6 +2,8 @@
 
 A fejlesztések megkezdése előtt olvasd el a gyökérben található `GATTERKA_FIX_FEJLESZTESI_SZABALYOK.txt` fájlt, és tartsd be minden pontját.
 
+Olvasd el a `GATTERKA_AKTUALIS_SZABALYOK.txt` fájlt is, és a megállapodott új vagy módosított funkcionális szabályokat az érintett változtatással együtt vezesd át rajta. Ha egy új kérés rögzített szabállyal ütközik, jelezd a tulajdonosnak és tisztázzátok az új szabályt vagy kivételt az ütköző rész megváltoztatása előtt.
+
 **Kiemelten védett:** a már rögzített gépi vágási sorrend és az xMix/xPrg export/Windows mentés. Kifejezett tulajdonosi utasítás nélkül egyiket sem szabad módosítani. A védelmet a `tests/locked-machine-invariants.test.cjs` teszt ellenőrzi; ezt nem szabad a védelem megkerülésére átírni.
 
 ## Jóváhagyott vágási logika (2026-11-03)
