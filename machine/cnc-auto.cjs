@@ -98,7 +98,7 @@
     }
     // A Xilog minta elöl kezdi a megmunkálást, a túloldalt FORDIT-tal kéri.
     if(!first.length&&other.length)throw new Error('Csak hátoldali megmunkálás: nincs igazolt első oldali felrakási sorrend.');
-    const lines=other.length?[...first,'FORDIT',...other]:first;
+    const lines=other.length?[...first,entry.flipAxis==='X'?'FORDIT_X':'FORDIT',...other]:first;
     return core.compileXxl({dx,dy,dz,side:entry.side||'IJ',commands:lines.join('\n')});
   }
   /**
