@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -20,12 +20,37 @@
       .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,65)||'Alkatresz';
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
+  function jointMode(operation,mode){
+    const settings=typeof mode==='string'?{dividerJoint:mode}:mode||{};
+    const group=String(operation.joint||'fixed');
+    if(group==='fixed')return 'tipli';
+    if(group==='divider')return settings.dividerJoint||'excenter';
+    if(group==='carcass')return settings.carcassJoint||'excenter';
+    if(group==='v')return settings.vJoint||'tipli';
+    if(group==='shelf')return settings.shelfJoint||'tipli';
+    throw new Error('Nem támogatott csatlakozási kötésmód: '+group);
+  }
   function macroLine(operation,mode){
     if(!operation||!VALID_MACROS.has(operation.macro))
       throw new Error('A megadott alkatrésznél nem támogatott CNC makró.');
     if(!core)throw new Error('A CNC makrófordító nem töltődött be.');
-    const joint=operation.joint==='fixed'?'tipli':mode;
-    const codes=core.jointCodes(joint);
+    if(operation.macro==='REF'){
+      if(operation.DX===undefined)return 'REF';
+      const dx=finite(operation.DX),bx=finite(operation.BX);
+      if(!Number.isFinite(dx)||dx<=0||!Number.isFinite(bx)||bx<0)
+        throw new Error('Hibás REF DX vagy BX érték.');
+      return 'REF DX='+round(dx)+' BX='+round(bx);
+    }
+    if(operation.macro==='POLC'){
+      const y=finite(operation.Y),q=finite(operation.Q),sp=finite(operation.s);
+      if(!Number.isFinite(y)||y<0||!Number.isInteger(q)||q<0||q>12||
+          !Number.isFinite(sp)||sp<8||sp>200)
+        throw new Error('A POLC Y/Q/s paraméter nem érvényes.');
+      // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
+      // a két felhasználói PGM minta kifejezetten G=1# F=1.
+      return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    const joint=jointMode(operation,mode),codes=core.jointCodes(joint);
     const G=operation.macro.startsWith('ELF')?codes.el:codes.lap;
     let body=operation.macro,fields=['X','Y','A','x','y'];
     for(const field of fields){
@@ -63,8 +88,13 @@
    */
   function makeAutoPrograms(furniture,allowedIds,options={}){
     if(!core)throw new Error('A CNC makrómodul hiányzik.');
-    const mode=String(options.dividerJoint||'excenter');
-    core.jointCodes(mode);
+    const modes={
+      dividerJoint:String(options.dividerJoint||'excenter'),
+      carcassJoint:String(options.carcassJoint||'excenter'),
+      vJoint:String(options.vJoint||'tipli'),
+      shelfJoint:String(options.shelfJoint||'tipli')
+    };
+    for(const mode of Object.values(modes))core.jointCodes(mode);
     const allowed=new Set((allowedIds||[]).map(String));
     const result={files:[],blocked:[],skipped:[],total:0};
     const used=new Set();
@@ -110,11 +140,11 @@
           continue;
         }
         try{
-          const content=compileEntry(entry,mode);
+          const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
           const filename=(name+'_'+cleanName(part.name||entry.name)+'_'+suffix+'.xxl').slice(0,160);
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
-            commands:(entry.operations||[]).map(op=>macroLine(op,mode)).join('\n'),
+            commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
       }
