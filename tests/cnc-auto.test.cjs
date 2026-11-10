@@ -499,3 +499,66 @@ test('F-osztó REF: X szakaszok alulról emelkednek az egyedi V-osztó körül',
  assert.match(text,/REF DX=864 BX=600/);
  assert.match(text,/XMSG Q=1 N="FORDIT_X"/);
 });
+
+
+test('F-osztó FORDIT_X után a HÁTULSÓ Y ütköző: szakasz Y=DY-(Y+y), pont Y=DY-Y',()=>{
+ const entry={key:'f-test',name:'F-osztó',dx:1464,dy:400,dz:18,side:'IJ',
+   flipAxis:'X',operations:[
+     {macro:'LAPA',face:'primary',X:250,Y:40,y:140},
+     {macro:'LAPA',face:'reverse',X:250,Y:35,y:140},
+     {macro:'REF',face:'reverse',BX:0,DX:1464},
+     {macro:'POLC',face:'reverse',Y:60,Q:0,s:32},
+     {macro:'POLC',face:'reverse',Y:350,Q:0,s:32},
+     {macro:'REF',face:'reverse'}
+   ]};
+ const result=auto.compileEntry(entry,{assemblyJoint:'excenter'});
+ const before=result.indexOf('LAPA X=250 Y=40 A=0 y=140 G=1'),
+   flip=result.indexOf('XMSG Q=1 N="FORDIT_X"'),
+   after=result.indexOf('LAPA X=250 Y=225 A=0 y=140 G=1');
+ assert.ok(before>=0&&flip>before&&after>flip,'jobb oldal -> FORDIT_X -> hátulról mért bal oldal');
+ assert.match(result,/REF DX=1464 BX=0\\r\\nPOLC Y=340 Q=0# s=32 G=1# F=1/);
+ assert.match(result,/POLC Y=50 Q=0# s=32 G=1# F=1/);
+ assert.equal(entry.operations[1].Y,35,'eredeti elölről mért forráskoordinátát nem szabad átírni');
+ assert.equal(entry.operations[3].Y,60,'forrás POLC koordinátát nem szabad átírni');
+});
+
+test('Az X tengelyes átfordítás Y-számítása nem vonatkozik más lapok normál FORDIT-jára',()=>{
+ const entry={dx:650,dy:400,dz:18,side:'IJ',operations:[
+   {macro:'LAPA',face:'primary',X:200,Y:40,y:140},
+   {macro:'LAPA',face:'reverse',X:200,Y:35,y:140}
+ ]};
+ const out=auto.compileEntry(entry,{assemblyJoint:'excenter'});
+ assert.match(out,/XMSG Q=1 N="FORDIT"/);
+ assert.match(out,/LAPA X=200 Y=35 A=0 y=140 G=1/);
+ assert.doesNotMatch(out,/N="FORDIT_X"/);
+});
+
+test('Az F-osztó hátsó ütközős szakasza nem lóghat túl a tényleges mélységén',()=>{
+ const entry={dx:650,dy:400,dz:18,side:'IJ',flipAxis:'X',operations:[
+   {macro:'LAPA',face:'primary',X:200,Y:40,y:140},
+   {macro:'LAPA',face:'reverse',X:200,Y:350,y:140}
+ ]};
+ assert.throws(()=>auto.compileEntry(entry,{assemblyJoint:'excenter'}),
+   /Y furatszakasz kilóg/);
+});
+
+test('Aszimmetrikus F-osztó polc: a bal oldali LAPA a hátsó ütközőtől számol',()=>{
+ const {ctx}=extractedGeometry();
+ const p={...base(),drilling:'fixed',rabbet:false,fCount:1,hasTop:false,hasBottom:false};
+ const f={key:'f-divider-1',name:'F-osztó',kind:'f',index:0,
+   x1:491,x2:509,z1:18,z2:1482,y0:0,y1:400,a:1464,b:400};
+ const l={key:'left-part',name:'Bal polc',kind:'shelf',index:0,
+   x1:18,x2:491,z1:1241,z2:1259,y0:40,y1:180,a:473,b:140,undercutDegrees:0};
+ const r={key:'right-part',name:'Jobb polc',kind:'shelf',index:1,
+   x1:509,x2:982,z1:1241,z2:1259,y0:40,y1:180,a:473,b:140,undercutDegrees:0};
+ ctx.fixedDividerPieces=()=>[f,l,r];
+ const records=[{key:'f-divider-1'}];
+ ctx.buildCncInstancesForParts(p,records);
+ const entry=records[0].cncInstances[0];
+ assert.equal(entry.flipAxis,'X');
+ const output=auto.compileEntry(entry,{assemblyJoint:'excenter'});
+ const right=output.indexOf('LAPA X=1232 Y=55 A=0 y=110 G=1');
+ const flip=output.indexOf('XMSG Q=1 N="FORDIT_X"');
+ const left=output.indexOf('LAPA X=1232 Y=220 A=0 y=140 G=1');
+ assert.ok(right>=0&&flip>right&&left>flip,'aszimmetrikus polc a valós hátulsó ütközőhöz igazodik');
+});
