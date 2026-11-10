@@ -4623,8 +4623,8 @@
       if(!keys.length)return [];
       const existing=keys.map(k=>f.parts.find(p=>p.cabinetDesignKey===k)).filter(Boolean);
       const different=existing.length>1&&new Set(existing.map(signature)).size>1;
-      if(!different)return [{...row,key:keys[0],qty:keys.length}];
-      return keys.map((key,i)=>({...row,key,qty:1,name:row.name+' '+(i+1)}));
+      if(!different)return [{...row,key:keys[0],qty:keys.length,cncInstances:(row.cncInstances||[]).filter(entry=>keys.includes(entry.key))}];
+      return keys.map((key,i)=>({...row,key,qty:1,name:row.name+' '+(i+1),cncInstances:(row.cncInstances||[]).filter(entry=>entry.key===key)}));
     });
     const seen=new Set();
     for(const row of records){
@@ -4669,6 +4669,7 @@
         generated.shelfTiltDegrees=Number(row.shelfTiltDegrees)||0;
         generated.shelfBevelDegrees=Math.abs(Number(row.shelfBevelDegrees)||0);
         generated.fixedDrilling=Boolean(row.fixedDrilling);
+        generated.cncInstances=Array.isArray(row.cncInstances)?JSON.parse(JSON.stringify(row.cncInstances)):[];
       }
     }
     f.parts=f.parts.filter(p=>!p.cabinetDesignKey||seen.has(p.cabinetDesignKey));
