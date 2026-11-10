@@ -99,8 +99,9 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
 ---------------------------------------------------
 - Az oldallapon végzett megmunkálás helyét az oldallap saját külső éleihez,
   nem a teljes bútor külméreteihez viszonyítjuk.
-- Az oldallap CNC-referencianézetében a szekrény teteje balra, az eleje
-  felül van. A bal oldali ütközőtől X, a felső él felől Y szerint mérünk.
+- Az oldallap CNC-ütközője a BÚTOR ALJA: az oldallap saját alsó végén X=0,
+  felfelé növekszik a furatsor X koordinátája. Y az elülső éltől hátrafelé.
+  Az előző, tető felőli X=0 értelmezés visszavonva.
 - Az oldallapra csatlakozó alkatrész helyét a csatlakozó alkatrész
   anyagvastagságának középvonala jelöli. A furatkiosztást az adott alkatrész
   kijelölt kezdőpontjától kell mérni. A piros pontokat tartalmazó rajz és a
@@ -239,9 +240,9 @@ A POLCTARTO_LOGIKAHOZ.zip-ben átadott 1DB_V-OSZTO.pgm és
   alulról 609 mm: alsó V felület 600 mm; 0 extra kihagyással
   REF DX=600 BX=0. A V felett a második REF kezdete BX=618,
   felső DX a tető alsó felületéhez és a kihagyásokhoz igazodik.
-- Három, külön állítható kihagyás a bútortervező Polcfuratozás
-  részén: fenéktől, tetőtől és V-osztótól (utóbbi mindkét oldalon).
-  A beállításokat a bútor beállításaival mentjük.
+- A fenéktől mért külön CNC-kihagyás megszűnt: a szakasz alul X=0-nál kezdődik.
+  A tetőtől és a V-osztótól (mindkét oldalon) a külön kihagyás állítható.
+  A korábbi mentés cncGapBottom értékét az új CNC-logika figyelmen kívül hagyja.
 - POLC Q=0: teljes raszterfurat-sor minden REF szakaszon,
   Q>0: az adott REF szakaszba tartozó állítható polcok száma.
   s = furatosztás, Y = az első/hátsó élhez képesti polctartó
@@ -369,9 +370,9 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   validált szerkezeti furatadatokkal engedélyezhető.
 - V-osztóknál a régi, igazolt oldallapi REF BX=0 DX=600 (609 mm
   osztópozíció mellett) változatlan. A REF szakaszok száma a V-osztók
-  számát követi; a tetőtől, fenéktől és V-osztóktól kihagyandó távolság
-  külön állítható. Q=0 végigfuratolás, Q>0 az adott REF-re eső
-  egyenletesen osztott polcok száma.
+  számát követi; a tetőtől és V-osztótól kihagyandó távolság
+  külön állítható, a fenékhez nincs külön kihagyás.
+  Q=0 végigfuratolás, Q>0 az adott REF-re eső egyenletesen osztott polcok száma.
 - F-osztók mindkét lapoldalára önálló REF/POLC szakaszok készülnek,
   a tényleges V-osztó csatlakozásoknak megfelelően.
 - CNC ZIP neve: Bútor neve + Hová készül + CNC_XXL.
@@ -399,3 +400,41 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   szerszámhelyet és előlap-geometriát tilos feltételezni.
 - A 2026-11-10-i fejlesztési ág tests/cnc-auto.test.cjs tesztje
   külön ellenőrzi az excenter és hosszú excenter V-osztó G-kódját.
+
+2026-11-10 – CNC ALSÓ/FELSŐ ÜTKÖZŐ, EGYEDI POLC, FENÉK ÉS FALC
+----------------------------------------------------------------
+- Oldallap: fizikai ALSÓ ütköző, X=0 az alsó végen. A V-osztó,
+  fix polc, tető és fenék oldallapi csatlakozási középvonalai
+  mind ettől számítandók. A REF BX és LAPA X ugyanazt az
+  alsó origót használja. A fő bútor külmagasságát nem szabad
+  helyette nullpontként használni.
+- F-osztó: fizikai FELSŐ ütköző, a teljes saját lap X=0 pontja
+  a felső végén. A saját csatlakozási LAPA és REF/POLC koordinátái
+  onnan lefelé számolandók. Az F-osztók felváltott IJ/LK oldalisága,
+  a kétoldali FORDIT és a korábban jóváhagyott eltolt Y furatok
+  nem változhatnak meg emiatt.
+- Tető: a már működő furatirány, megfordítási sorrend és F-osztó
+  csatlakozása változatlanul marad.
+- Fenék: az első megmunkálási oldalon ALUL készülnek az összehúzó
+  oldalkötések. Ezt FORDIT követi, és a másik oldalon készül az
+  F-osztó kötésfurata. Nem szabad a fenék első és második
+  megmunkálási oldalát felcserélni. A hosszú/sima excenter
+  G-kódja továbbra is a bútor választott kötésmódjából jön.
+- Polcok egyedi magassági kiosztása akkor is szerkeszthető és
+  menthető, ha a polctartó fúrás módja végig állítható
+  (Q=0, teljes raszter). A helyi Q>0 furatoknál a nem egyenletes
+  egyedi polcsor továbbra sem exportálható kitalált kiosztással.
+- A bútortervező külön „CNC: kihagyás a fenéktől” mezője megszűnik.
+  Régi projekt esetén a tárolt mező nem tolhatja el az új CNC-t.
+- A felhasználó korábbi Xilog mintája szerinti falcolás:
+  XFALC Q=1# G=2# T=103. Csak falc=1 / Falcos hát esetén.
+  Q=1 kifutó, Q=2 nem kifutó, Q=3 balra nem kifutó,
+  Q=4 jobbra nem kifutó; G=2 balról jobbra, G=3 jobbról balra;
+  T=103 a rögzített falcoló szerszám.
+- A falcos hát falcoló makrója a bal/jobb oldallaphoz kerül,
+  és a tető/fenék csak akkor kap XFALC-ot, ha az adott HDF
+  csatlakozás falcos (nem visszavágott). Teli hát = nincs XFALC.
+  Az új falc-makró és megmunkálási oldal éles CNC használat előtt
+  Xilog előnézetben és gépen ellenőrzendő.
+- A védett xMix/xPrg szabási sorrendhez, Windows mentéshez és
+  a már jóváhagyott tetőfuratokhoz nem szabad hozzányúlni.
