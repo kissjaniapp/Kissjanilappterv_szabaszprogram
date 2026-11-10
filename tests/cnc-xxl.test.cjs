@@ -19,7 +19,7 @@ test('az ismert oldallap minta fejlécét és LAPA/LAPF sorait előállítja',()
   const x=cnc.compileXxl({dx:754,dy:520,dz:18,side:'IJ',commands:
    'LAPA X=158.38 Y=56 A=0 y=464 G=1\nLAPA X=745 Y=56 A=0 y=464 G=1\n'+
    'LAPF X=0 Y=47 A=0 x=754 G=1\nLAPF X=0 Y=29 A=0 x=754 G=1'});
-  assert.match(x,/^H DX=754 DY=520 DZ=18 -IJ C=0 T=196608 R=100 \*MM \/"DEF" BX=0 BY=0 BZ=0 V=1\r\n/);
+  assert.match(x,/^H DX=754 DY=520 DZ=18 -IJ C=0 T=196609 R=100 \*MM \/"DEF" BX=0 BY=0 BZ=0 V=1\r\n/);
   assert.match(x,/LAPA X=158\.38 Y=56 A=0 y=464 G=1/);
   assert.match(x,/LAPF X=0 Y=47 A=0 x=754 G=1/);
   assert.match(x,/;\r\nVEGE\r\n$/);
@@ -56,4 +56,53 @@ test('a CNC teljes bútorra ad egyetlen közös mentést, a kódok rejtve maradn
  assert.doesNotMatch(app,/data-action="save-cnc-xxl"/);
  assert.doesNotMatch(app,/id="cnc-xxl-commands"/);
  assert.match(app,/cncInstances=Array\.isArray\(row\.cncInstances\)/);
+});
+
+test('a CNC fejléc pontos DX/DY határok szerint választja a bal és jobb térfeleket',()=>{
+ const cases=[
+  [619,799,'IJ','IJ',196608],[619,799,'LK','LK',196608],
+  [620,799,'IJ','IJ',196609],[620,799,'LK','LK',196609],
+  [1349.999,799,'IJ','IJ',196609],[1349.999,799,'LK','LK',196609],
+  [1350,799,'IJ','IL',16973825],[1350,799,'LK','LI',16973825],
+  [619,800,'IJ','AB',196608],[619,800,'LK','DC',196608],
+  [620,800,'IJ','AB',196609],[620,800,'LK','DC',196609],
+  [1349.999,800,'IJ','AB',196609],[1349.999,800,'LK','DC',196609],
+  [1350,800,'IJ','AD',16973825],[1350,800,'LK','DA',16973825],
+  [1500,900,'IJ','AD',16973825],[1500,900,'LK','DA',16973825],
+  [1350,799.999,'IJ','IL',16973825],[1350,799.999,'LK','LI',16973825]
+ ];
+ for(const [dx,dy,requested,side,tool] of cases){
+   const expected=cnc.cncHeader(dx,dy,requested);
+   assert.equal(expected.side,side,'DX='+dx+', DY='+dy+', oldal='+requested);
+   assert.equal(expected.tool,tool);
+   const xxl=cnc.compileXxl({dx,dy,dz:18,side:requested,commands:'ELF3 Y=0 A=0 y=10 G=1'});
+   assert.equal(xxl.split('\r\n')[0],
+    'H DX='+dx+' DY='+dy+' DZ=18 -'+side+' C=0 T='+tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1');
+ }
+});
+test('a kapcsolt és szétválasztott térfelek mind a négy T kódja pontos',()=>{
+ assert.equal(cnc.cncToolCode(619.999,false),196608);
+ assert.equal(cnc.cncToolCode(620,false),196609);
+ assert.equal(cnc.cncToolCode(619.999,true),16973824);
+ assert.equal(cnc.cncToolCode(620,true),16973825);
+ assert.equal(cnc.cncHeader(1349.999,799,'IJ').combined,false);
+ assert.equal(cnc.cncHeader(1350,799,'IJ').combined,true);
+});
+test('a térfél eredeti bal/jobb oldalisága megmarad korábbi fejlécváltozatnál is',()=>{
+ assert.equal(cnc.cncHeader(1350,800,'IL').side,'AD');
+ assert.equal(cnc.cncHeader(1350,799,'AD').side,'IL');
+ assert.equal(cnc.cncHeader(620,799,'DA').side,'LK');
+ assert.equal(cnc.cncHeader(620,800,'LI').side,'DC');
+ for(const side of ['AUTO','XX','IJLK'])
+   assert.throws(()=>cnc.cncHeader(1500,600,side),/térfél/);
+});
+test('a Windows beágyazott CNC-moduljai megegyeznek az ellenőrzött modulokkal',()=>{
+ const fs=require('node:fs'),path=require('node:path');
+ const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+ for(const [name,file] of [['GatterkaCnc=api','cnc-xxl.cjs'],['GatterkaCncAuto=api','cnc-auto.cjs']]){
+   const i=app.indexOf(name),start=app.lastIndexOf('<script>',i),end=app.indexOf('</script>',i);
+   assert.ok(i>0&&start>0&&end>i,'Hiányzó CNC-modul: '+name);
+   assert.equal(app.slice(start+'<script>'.length,end).trim(),
+     fs.readFileSync(path.join(__dirname,'../machine/',file),'utf8').trim());
+ }
 });
