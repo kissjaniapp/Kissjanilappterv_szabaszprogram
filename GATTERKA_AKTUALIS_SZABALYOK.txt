@@ -408,12 +408,13 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   mind ettől számítandók. A REF BX és LAPA X ugyanazt az
   alsó origót használja. A fő bútor külmagasságát nem szabad
   helyette nullpontként használni.
-- KORÁBBI F-osztó szabály – 2026-11-10-én FELÜLÍRVA:
-  a felső ütközős X=0 és a felülről lefelé méretezés NEM érvényes.
-  Az F-osztó is az alkatrész saját ALSÓ éléről, X=0-tól felfelé
-  méretezendő. Az IJ/LK oldaliságot, a kétoldali FORDIT sorrendet
-  és a jóváhagyott eltolt Y furatokat a szükséges X-koordináta
-  átállításától függetlenül meg kell őrizni.
+- F-osztó (2026-11-10-i pontosítás): az alkatrész SAJÁT ALSÓ
+  ÉLE az X=0 ütköző, a BÚTOR ELEJE a Y=0 ütköző.
+  A gépen ELŐSZÖR a bútor jobb oldalára néző F-osztó LAPOLDALÁT
+  fúrjuk. Ezután X TENGELY KÖRÜL fordítjuk át, és a BAL oldal
+  furatolása következik. A korábban felső ütközős, illetve
+  baloldal-először szabály FELÜLÍRVA. Az IJ/LK alap térfél,
+  az F-polc Y-eltolása és az ELF G-kódok ettől nem változnak.
 - Tető: a már működő furatirány, megfordítási sorrend és F-osztó
   csatlakozása változatlanul marad.
 - Fenék: az első megmunkálási oldalon ALUL készülnek az összehúzó
@@ -468,3 +469,26 @@ A tulajdonos egyértelmű, legfrissebb döntése:
 - Ez CNC megmunkálási koordinátaszabály. A védett xMix/xPrg
   szabási sorrendet, mentési helyet és vágási logikát NEM
   módosítja.
+
+2026-11-10 – F-OSZTÓ CNC BEFOGÁS ÉS KÉTOLDALAS FURATOZÁS – VÉGLEGES
+-------------------------------------------------------------------
+- F-osztó: X=0 az F-osztó SAJÁT ALSÓ élén; az X méret az
+  adott lap aljától FELFELÉ növekszik (nem a bútor tetőjétől).
+- A BÚTOR ELEJE a Y=0 ütköző. Mindkét lapoldalon a
+  jóváhagyott Y-méreteket, 15/15 mm eltolt furatsorokat
+  és G-kódokat kell megtartani; önkényes Y-tükrözés nincs.
+- Furatozási sorrend: 1. az F-osztó JOBB oldali lapfelülete;
+  2. kezelői FORDIT_X, azaz megfordítás az X tengely KÖRÜL;
+  3. az F-osztó BAL oldali lapfelülete. Nem fordítva.
+- A kimentett Xilog XXL-ben az első jobb oldali megmunkálás
+  után az XMSG Q=1 N="FORDIT_X" üzenet jelenik meg, majd
+  a bal oldali megmunkálási sorok. A FORDIT_X kezelői
+  utasítás, nem automatikus gépi tengelymozgás.
+- Az F-osztó REF BX/DX rekeszek és a csatlakozó LAPA X értékek
+  ugyanazt az alsó X=0 origót használják. A V-osztók szintje
+  alulról képződik a tényleges F-osztó z1 kezdőpontjához.
+- A tető/fenék korábbi megállapodott fúrási oldala, az
+  IJ/LK térfélkiosztás, a védett xMix/xPrg és Windows
+  mentési működés nem változtatható.
+- Xilog előnézet és fizikai szárazpróba kötelező az új
+  F-osztó kétoldalas fordítás éles használata előtt.
