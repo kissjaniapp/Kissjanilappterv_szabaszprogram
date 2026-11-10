@@ -16,6 +16,7 @@ function setup(){
  const prefix='const fixedGaps=[],horizontalGaps=[],verticalGaps=[],fStarts=[],fEnds=[];\n'+
   'const baseShelfBack=p=>p.rabbet?p.rabbetWidth:p.fullBack?p.t+p.fullBackSetback:0;\n'+
   'const shelfBackAt=(p,i)=>baseShelfBack(p);\n'+
+  'const shelfFrontAt=(p,i)=>p.front;\n'+
   'const shelfDepthAt=(p,i)=>p.d-p.front-baseShelfBack(p);\n'+
   'const shelfAngleAt=i=>0;\n'+
   'const fmt=n=>String(n);\n';
