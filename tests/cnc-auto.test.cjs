@@ -244,7 +244,7 @@ test('állítható polc kizárólag polctartót kap: nincs mellette fix LAPA/ELF
  assert.equal(onlyShelf.blocked.length,0);
  assert.equal(onlyShelf.skipped.length,1);
 });
-test('állítható polc + F-osztó találkozásánál a belső polctartómakró hiányát jelzi',()=>{
+test('állítható polc + F-osztó: kétoldali REF/POLC és FORDIT készül',()=>{
  const {ctx}=extractedGeometry(),p={...base(),drilling:'full',n:1,
     fCount:1,raster:32,supportInset:50,cncGapBottom:0,
     cncGapTop:0,cncGapDivider:0};
@@ -252,11 +252,38 @@ test('állítható polc + F-osztó találkozásánál a belső polctartómakró 
    index:0,x1:491,x2:509,y0:0,y1:396,z1:18,z2:1482,a:1464,b:396}];
  const records=[{key:'f-divider-1'}];ctx.buildCncInstancesForParts(p,records);
  const entry=records[0].cncInstances[0];
- assert.match(entry.issues.join(' '),/F-osztó oldalainak polctartó/);
+ assert.equal(entry.issues.length,0);
+ assert.equal(entry.operations.filter(op=>op.macro==='POLC').length,4);
+ assert.equal(entry.operations.filter(op=>op.macro==='REF'&&op.DX).length,2);
  const out=auto.makeAutoPrograms({name:'Teszt',parts:[
    board('f','F-osztó',1464,396,[entry])]},['f']);
- assert.equal(out.files.length,0);
- assert.equal(out.blocked.length,1);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.files.length,1);
+ assert.match(out.files[0].content,/REF DX=1464 BX=0/);
+ assert.match(out.files[0].content,/XMSG Q=1 N="FORDIT"/);
+});
+test('pótfenék: 2 LAPA a felső oldalon, 4 LAB a másikon, láb nélkül LAB nincs',()=>{
+ const {ctx}=extractedGeometry();
+ const p={...base(),w:1000,d:400,hasTop:false,
+  hasBottom:true,falseBottom:true,hasFeet:true,bottom:'between'};
+ const records=[{key:'false-bottom'}];ctx.buildCncInstancesForParts(p,records);
+ const entry=records[0].cncInstances[0];
+ assert.equal(entry.dx,1001);
+ assert.equal(entry.operations.filter(op=>op.macro==='LAPA').length,2);
+ assert.equal(entry.operations.filter(op=>op.macro==='LAB').length,4);
+ assert.equal(entry.operations.filter(op=>op.macro==='LAB'&&op.face==='reverse').length,4);
+ assert.deepEqual(entry.operations.filter(op=>op.macro==='LAB').map(op=>[op.X,op.Y]),
+  [[59,59],[59,341],[942,59],[942,341]]);
+ const out=auto.makeAutoPrograms({name:'Teszt',parts:[
+   board('fb','Pótfenék',1001,400,[entry])]},['fb']);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.files.length,1);
+ assert.match(out.files[0].content,/LAPA X=9\.5 Y=0 A=0 y=400 G=1/);
+ assert.match(out.files[0].content,/LAB X=942 Y=341 G=2/);
+ assert.match(out.files[0].content,/XMSG Q=1 N="FORDIT"/);
+ p.hasFeet=false;
+ const noFeet=[{key:'false-bottom'}];ctx.buildCncInstancesForParts(p,noFeet);
+ assert.equal(noFeet[0].cncInstances[0].operations.filter(op=>op.macro==='LAB').length,0);
 });
 
 test('az automatikus CNC mentés DX=1350+ és DY=800+ esetén AD/DA összevont térfelet kap',()=>{
