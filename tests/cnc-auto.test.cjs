@@ -1,0 +1,123 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const vm=require('node:vm'),fs=require('node:fs'),path=require('node:path');
+const auto=require('../machine/cnc-auto.cjs');
+const raw=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+function extractedGeometry(){
+  const token='const GATTERKA_CABINET_INLINE_HTML=';
+  const start=raw.indexOf(token),first=raw.indexOf('"',start);
+  const next=raw.indexOf('function syncCabinetDesignerTheme()',first);
+  const last=raw.lastIndexOf('";',next);
+  assert.ok(start>=0&&first>=0&&last>first);
+  const html=JSON.parse(raw.slice(first,last+1));
+  const a=html.indexOf('function buildCncInstancesForParts(p,records){');
+  const b=html.indexOf('function getStructuredParts(p){',a);
+  assert.ok(a>=0&&b>a,'A CNC-szerkezeti geometria hiányzik a tervezőből');
+  const ctx={fixedDividerPieces:()=>[]};
+  vm.createContext(ctx);
+  vm.runInContext(html.slice(a,b),ctx);
+  return {ctx,html};
+}
+function base(){
+  return {w:1000,h:1500,d:400,t:18,sideH:1500,innerW:964,
+    hasTop:true,hasBottom:true,top:'between',bottom:'between',
+    bodyBottomOffset:0,rabbet:true,fullBack:false,rabbetWidth:4,
+    hdfThickness:4,front:0,vSetback:0,fSetback:0,drilling:'fixed'};
+}
+function board(key,name,a,b,cncInstances,extra={}){
+  return {id:key,cabinetDesignKey:key,name,a:String(a),b:String(b),
+    cncInstances,...extra};
+}
+test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallapnak és a polcnak',()=>{
+  const {ctx}=extractedGeometry(),p=base();
+  ctx.fixedDividerPieces=()=>[{
+    key:'shelf-1',name:'Polc 1',kind:'shelf',index:0,
+    x1:18,x2:982,y0:0,y1:396,z1:600,z2:618,a:964,b:396,
+    angle:0,undercutDegrees:0
+  }];
+  const records=[
+    {key:'side-left',sourceKeys:['side-left','side-right']},
+    {key:'top'},{key:'bottom'},{key:'shelf-1'}
+  ];
+  ctx.buildCncInstancesForParts(p,records);
+  const side=records[0].cncInstances,shelf=records[3].cncInstances[0];
+  assert.equal(side.length,2);
+  assert.equal(side[0].side,'IJ');
+  assert.equal(side[1].side,'LK');
+  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===891&&op.Y===0&&op.y===396));
+  assert.deepEqual(Array.from(shelf.operations,op=>op.macro),['ELF3','ELF2']);
+  const parts=[
+    board('sides','Oldal',1500,400,side),
+    board('top','Tető',964,400,records[1].cncInstances),
+    board('bottom','Fenék',964,400,records[2].cncInstances),
+    board('shelf','Polc 1',964,396,records[3].cncInstances)
+  ];
+  const result=auto.makeAutoPrograms({name:'Konyha',parts},parts.map(p=>p.id));
+  assert.equal(result.blocked.length,0);
+  assert.equal(result.files.length,5,'két oldal és három további lap külön CNC fájl');
+  assert.equal(new Set(result.files.map(x=>x.filename)).size,5);
+  const left=result.files.find(f=>f.filename.includes('side-left'));
+  const right=result.files.find(f=>f.filename.includes('side-right'));
+  const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
+  assert.match(left.content,/-IJ C=0/);
+  assert.match(right.content,/-LK C=0/);
+  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=0/);
+  assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=0/);
+  assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=0/);
+});
+test('F-osztó csatlakozásánál a megfelelő makró saját G kódja automatikus',()=>{
+  const part=board('f','F-osztó',700,400,[{
+    key:'f-divider-1',dx:700,dy:400,dz:18,side:'IJ',operations:[
+      {macro:'LAPA',X:100,Y:0,y:400,joint:'divider',face:'primary'},
+      {macro:'ELF3',Y:0,y:400,joint:'divider',face:'primary'}
+    ]
+  }]);
+  for(const [mode,face,edge] of [
+    ['tipli',0,0],['excenter',1,1],['csavar',2,0],['hosszuExcenter',1,2]
+  ]){
+    const r=auto.makeAutoPrograms({name:'Szekrény',parts:[part]},['f'],{dividerJoint:mode});
+    assert.equal(r.blocked.length,0,mode);
+    assert.match(r.files[0].content,new RegExp('LAPA X=100 Y=0 A=0 y=400 G='+face));
+    assert.match(r.files[0].content,new RegExp('ELF3 Y=0 A=0 y=400 G='+edge));
+  }
+});
+test('kétoldalas csatlakozás FORDIT után a második oldalon folytatódik',()=>{
+  const part=board('v','V-osztó',964,464,[{
+    key:'v-divider-1',dx:964,dy:464,dz:18,operations:[
+      {macro:'LAPA',X:509,Y:0,y:464,joint:'divider',face:'primary'},
+      {macro:'LAPA',X:482,Y:0,y:464,joint:'divider',face:'reverse'}
+    ]
+  }]);
+  const r=auto.makeAutoPrograms({name:'Test',parts:[part]},['v'],{dividerJoint:'csavar'});
+  assert.equal(r.blocked.length,0);
+  assert.match(r.files[0].content,/LAPA X=509 Y=0 A=0 y=464 G=2\r\n;\r\nVEGE\r\nXMSG Q=1 N="FORDIT"\r\n;\r\nLAPA X=482 Y=0 A=0 y=464 G=2/);
+});
+test('a hibás/hiányzó geometria, ferde polc és a kézzel átírt méret nem jut ki a CNC-re',()=>{
+  const entry={key:'shelf-1',dx:964,dy:396,dz:18,operations:[
+    {macro:'ELF3',Y:0,y:396,joint:'fixed'}
+  ]};
+  const parts=[
+    board('a','Eltérő méret',964,390,[entry]),
+    board('b','Ferde',964,396,[entry],{shelfBevelDegrees:25}),
+    board('c','Nincs geometria',900,400,[]),
+    board('d','Teli hátlap',964,900,[])
+  ];
+  parts[3].cabinetDesignKey='back-full';
+  const r=auto.makeAutoPrograms({name:'Test',parts},parts.map(p=>p.id));
+  assert.equal(r.files.length,0);
+  assert.equal(r.blocked.length,3);
+  assert.equal(r.skipped.length,1);
+});
+test('ismeretlen vagy túllógó CNC makró nem menthető, külső 3MF import nem kap automatikus programot',()=>{
+  const p=board('a','Oldal',1500,400,[{
+    key:'side-left',dx:1500,dy:400,dz:18,
+    operations:[{macro:'LAPA',X:1501,Y:0,y:400,joint:'fixed'}]
+  }]);
+  const other=board('b','3MF alkatrész',1500,400,[{
+    key:'side-right',dx:1500,dy:400,dz:18,
+    operations:[{macro:'LAPA',X:100,Y:0,y:400,joint:'fixed'}]
+  }],{threeMfGenerated:true});
+  const r=auto.makeAutoPrograms({name:'Test',parts:[p,other]},['a','b']);
+  assert.equal(r.files.length,0);
+  assert.equal(r.blocked.length,2);
+});
