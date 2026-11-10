@@ -153,6 +153,32 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
   hiánya miatt nincsenek bekapcsolva. A generált próba-XXL-t valós gépen
   ellenőrizni kell, éles megmunkálásra önmagában nem hiteles.
 
+
+2026-11-10 – DÖNTÖTT POLC, HÁTFAL, ALÁVÁGÁSI SZÖG
+---------------------------------------------------
+- A döntött polc hátsó vége mindig a hátfal belső síkjáig ér.
+  Falcos 4 mm-es HDF-nél a hátsó távolság legalább 4 mm (a falc
+  szélessége, ha nagyobb), teli hátnál a lapvastagság és a
+  hátfal külső visszaállása összeadódik; hátfal nélkül 0 mm.
+- Döntött polcnál a korábbi kézi hátsó visszaállás és vetületi
+  polcmélység nem szakíthatja el a lapot a hátfaltól. Az első
+  visszaállás továbbra is állítható, a hátsó méret automatikus.
+- A rajz vízszintes mélységvetületéből a hosszabb ferde
+  szabásméret: vetület/cos(dőlésszög). A közös szerkezeti
+  geometria ugyanazt adja az élő 2D/3D nézetnek és az alkatrész
+  előnézetnek, majd a Gatterka alkatrészszerkesztőjének,
+  összesítőjének, PNG-jének és matricájának is.
+- A döntött polc fixen befúrt kialakítású, ezért ilyen polc
+  mellett a program automatikusan fix furat-módot választ.
+  A V-osztó szintén fix, és a hátfal belső síkjáig ér.
+- A döntött polc alkatrészéhez az abszolút alávágási fokérték
+  metaadatként tartozik, a címkén „Alávágás: N°” jelenik meg;
+  0°-nál nincs alávágási felirat. A fokkal együtt minden módosult
+  alkatrészméret frissül a listákban. CNC éles gépi megmunkálás
+  előtt a szögek szerszámbeállítását és az alkatrészeket mérni kell.
+- A már védett xPrg/xMix mentést, vágási sorrendet és CNC XXL
+  próbaexportot ez a bútor-geometriai javítás nem módosítja.
+
 ELLENŐRZÉS
 ----------
 Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
