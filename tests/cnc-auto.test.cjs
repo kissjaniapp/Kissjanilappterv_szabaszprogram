@@ -244,6 +244,47 @@ test('állítható polc kizárólag polctartót kap: nincs mellette fix LAPA/ELF
  assert.equal(onlyShelf.blocked.length,0);
  assert.equal(onlyShelf.skipped.length,1);
 });
+
+test('V-osztó sima excenter és hosszú excenter: azonos LAPA G=1, eltérő ELF G=1/2',()=>{
+  const {ctx}=extractedGeometry();
+  const p={...base(),hasTop:false,hasBottom:false,bodyBottomOffset:0,
+    sideH:1500,drilling:'fixed',fCount:0};
+  const v={key:'v-divider-1',name:'V-osztó',kind:'v',index:0,
+    x1:18,x2:982,y0:0,y1:396,z1:600,z2:618,a:964,b:396,
+    angle:0,undercutDegrees:0};
+  ctx.fixedDividerPieces=()=>[v];
+  const records=[
+    {key:'side-left',sourceKeys:['side-left','side-right']},
+    {key:'v-divider-1'}
+  ];
+  ctx.buildCncInstancesForParts(p,records);
+  const side=records[0].cncInstances,divider=records[1].cncInstances;
+  assert.equal(side.length,2,'a két oldallap külön CNC programot kap');
+  assert.equal(divider.length,1);
+  assert.equal(divider[0].operations.filter(op=>op.macro==='ELF3').length,1);
+  assert.equal(divider[0].operations.filter(op=>op.macro==='ELF2').length,1);
+  for(const [assemblyJoint,expectedEdgeG] of [['excenter',1],['hosszuExcenter',2]]){
+    const parts=[
+      board('oldalak','Oldal',1500,400,side),
+      board('v','V-osztó',964,396,divider)
+    ];
+    const res=auto.makeAutoPrograms({name:'Szekrény',parts},
+      ['oldalak','v'],{assemblyJoint});
+    assert.equal(res.blocked.length,0,assemblyJoint);
+    assert.equal(res.files.length,3,assemblyJoint);
+    const vProgram=res.files.find(file=>file.filename.includes('v-divider-1'));
+    const sidePrograms=res.files.filter(file=>file.filename.includes('side-'));
+    assert.ok(vProgram,assemblyJoint);
+    assert.equal(sidePrograms.length,2,assemblyJoint);
+    assert.match(vProgram.content,new RegExp('ELF3 Y=0 A=0 y=396 G='+expectedEdgeG));
+    assert.match(vProgram.content,new RegExp('ELF2 Y=0 A=0 y=396 G='+expectedEdgeG));
+    for(const sideFile of sidePrograms){
+      assert.match(sideFile.content,/LAPA X=891 Y=0 A=0 y=396 G=1/,
+        'a lapfurat mindkét excenteres kötésnél G=1');
+    }
+  }
+});
+
 test('állítható polc + F-osztó: kétoldali REF/POLC és FORDIT készül',()=>{
  const {ctx}=extractedGeometry(),p={...base(),drilling:'full',n:1,
     fCount:1,raster:32,supportInset:50,cncGapBottom:0,
