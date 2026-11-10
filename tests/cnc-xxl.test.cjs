@@ -45,11 +45,14 @@ test('hibás G, makró, méret és nem igazolt fordítás nem exportálható',()
   assert.throws(()=>cnc.compileXxl({...base,dx:0,commands:'LAPA X=0 Y=0 A=0 y=464 G=1'}));
   assert.throws(()=>cnc.compileXxl({...base,side:'AUTO',commands:'LAPA X=0 Y=0 A=0 y=464 G=1'}));
 });
-test('a gépi xPrg/xMix változatlan, a CNC XXL külön exportáló',()=>{
+test('a gépi xPrg/xMix változatlan, a CNC XXL külön automata modul',()=>{
  const fs=require('node:fs'),path=require('node:path');
  const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
- assert.match(app,/const cnc=window\.GatterkaCnc;/);
- assert.match(app,/cnc\.compileXxl/);
+ assert.match(app,/window\.gatterkaBuildAutoCnc=function/);
+ assert.match(app,/GatterkaCncAuto=api/);
  assert.match(app,/id="cnc-xxl-commands"/);
  assert.match(app,/data-action="save-cnc-xxl"/);
+ assert.match(app,/data-action="save-all-cnc-xxl"/);
+ assert.match(app,/cncInstances=Array\.isArray\(row\.cncInstances\)/);
+ assert.doesNotMatch(app,/Adj meg 1–500 ellenőrzött CNC makrósort/);
 });
