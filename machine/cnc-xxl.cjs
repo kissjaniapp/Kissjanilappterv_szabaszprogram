@@ -153,12 +153,12 @@
     let macrocnt=0,flips=0,justFlipped=false;
     const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
-      if(lines[i]==='FORDIT'){
+      if(lines[i]==='FORDIT'||lines[i]==='FORDIT_X'){
         if(shelfRef.active)throw new Error('A REF szakaszt FORDIT előtt le kell zárni.');
         if(!macrocnt||justFlipped||i===lines.length-1)
           throw new Error('A FORDIT csak két megmunkálási csoport között állhat.');
         if(++flips>1)throw new Error('A többfordításos CNC program még nincs hitelesítve.');
-        out.push(';','VEGE','XMSG Q=1 N="FORDIT"',';');
+        out.push(';','VEGE','XMSG Q=1 N="'+lines[i]+'"',';');
         justFlipped=true;
       }else if(lines[i]==='REF'||lines[i].startsWith('REF ')||lines[i].startsWith('POLC ')){
         const line=parseShelfMacro(lines[i],dx,dy,shelfRef);
