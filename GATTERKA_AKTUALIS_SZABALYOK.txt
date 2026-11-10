@@ -378,3 +378,24 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - Az új 3MF hengerfelismerés és LAB makró gépi hitelesítést igényel;
   a programban készülő teszt nem helyettesíti az SCM/Xilog
   előnézetet és a gépi szárazpróbát.
+
+2026-11-10 – V-OSZTÓ KÖTÉSFURAT, SIMA ÉS HOSSZÚ EXCENTER
+-------------------------------------------------------
+- Mindkét választható excenteres kötésmód a V-osztóra és az oldalak
+  V-osztóhoz tartozó kötésfurataira is kiterjed. Nem csak az
+  F-osztóra és a polcokra.
+- Sima excenter: oldallapi LAPA = G=1; a V-osztó érintett
+  ELF3/ELF2 élmakrói = G=1.
+- Hosszú excenter: oldallapi LAPA = G=1; a V-osztó érintett
+  ELF3/ELF2 élmakrói = G=2.
+- A csatlakozási helyet és furatsor hosszát a tényleges alkatrész
+  geometriájából kell képezni. Az F-osztóval érintkező, Y=15 és
+  mélység-30 mm eltolásos G=2 esetet nem szabad az excenter
+  hosszválasztásával összekeverni: az F-osztós hosszú excenteres
+  eltolt kombináció gépi hitelesítése külön feladat, addig tiltott.
+- A korábbi egyeztetésben a V-osztó 5-ös éle (ELF5) is
+  megmunkálandó az előlap csatlakozásához; ennek meglevő kódbeli
+  hiányát külön feladatként kell kezelni. Ellenőrzés nélküli
+  szerszámhelyet és előlap-geometriát tilos feltételezni.
+- A 2026-11-10-i fejlesztési ág tests/cnc-auto.test.cjs tesztje
+  külön ellenőrzi az excenter és hosszú excenter V-osztó G-kódját.
