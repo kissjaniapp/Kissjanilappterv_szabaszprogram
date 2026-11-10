@@ -1,0 +1,99 @@
+GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+Frissítve: 2026-11-10
+
+Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
+jelöl: önmagában nem bizonyítja, hogy minden eset már helyesen működik.
+A gépi szabás, a vágási sorrend és az export részletes, védett szabályai a
+GATTERKA_FIX_FEJLESZTESI_SZABALYOK.txt fájlban vannak. Annak későbbi, kifejezetten
+felülíró bejegyzései az érintett régebbi bejegyzéseket felváltják; a történeti
+részeket nem szabad aktuális előírásként automatikusan alkalmazni.
+
+SZABÁLYOK MÓDOSÍTÁSA
+-------------------
+Fejlesztés előtt ezt a fájlt és a GATTERKA_FIX_FEJLESZTESI_SZABALYOK.txt
+fájlt is el kell olvasni. A megállapodott új szabályt, kivételt vagy pontosítást
+az érintett változtatással együtt itt is rögzíteni kell. Az elavult szabályt
+egyértelműen módosítani vagy felülírtként jelölni kell, hogy két érvényesnek
+látszó előírás ne maradjon egymás mellett. A gépi szabályok változásait a
+védett szabályfájlban is vezetni kell, az ott előírt ellenőrzésekkel.
+
+Ha egy új kérés valamelyik rögzített szabállyal ütközik, ezt a fejlesztőnek
+jeleznie kell a tulajdonosnak, és vele kell tisztáznia az új szabályt vagy az
+adott helyzetre vonatkozó kivételt. Az ütköző részt a döntésig nem szabad
+egyoldalúan megváltoztatni. A nem ütköző, önállóan elvégezhető részekkel
+közben lehet haladni. A megállapodást a megvalósításkor rögzíteni kell.
+Hiányzó vagy kétértelmű élzárási, szerkezeti vagy gépi szabályt nem szabad
+jóváhagyott szabályként kitalálni; az érintett esetet tisztázni kell.
+
+BÚTOR, HÁTFAL ÉS POLCOK
+----------------------
+- A pótfenék beleszámít a bútor megadott külső magasságába. Bekapcsolásakor
+  az oldal magassága ennek anyagvastagságával csökken.
+- A falcos HDF hátfal 4 mm vastag; 4 mm-es anyagvastagság választható.
+- Falcos hátfalnál a tető és a fenék HDF-csatlakozása külön állítható:
+  falcos vagy visszavágott. A választók csak falcos hátfalnál jelenjenek meg.
+- Falcos hátfal és visszavágott tető vagy fenék esetén az érintett alkatrész
+  mélységéből a hátfal vastagságát is le kell vonni a visszaálláson felül.
+- A polcok és V-osztók alapértelmezetten egyenlő szabad távolságokra osztják
+  a rendelkezésre álló belmagasságot; egyedi közök is beállíthatók.
+- Páratlan polcszám és V-osztó esetén választható legyen, hogy a több polc
+  alulra vagy felülre kerüljön. Több V-osztónál az elosztás pontos értelmezését
+  szükség esetén a tulajdonossal tisztázni kell.
+- Polconként állítható a dőlés és az első visszaállás; az egyedi beállítás a
+  rajzban, az alkatrész méretében és a mentett tervben is érvényesüljön.
+  Az oldalnézet a polcdőlés irányának viszonyítási alapja a 3D nézethez.
+
+F- ÉS V-OSZTÓK
+--------------
+- Több függőleges F-osztó és vízszintes V-osztó adható meg. Az F-osztók
+  alapból a fenék és a tető közé kerülnek; csatlakozásuk más vízszintes
+  elemhez is állítható. Az osztók kiosztása egyedileg módosítható.
+- Találkozáskor választható, melyik osztó fut végig; a megszakított osztó
+  külön gyártandó alkatrészekre oszlik, az anyagvastagság figyelembevételével.
+  A V-osztó korábbi példaképletében a külméret és az oldalak levonásának
+  viszonya nem egyértelmű; az általános képletet még egyeztetni kell.
+- Az F- és V-osztó első visszaállása egymástól függetlenül állítható.
+  Mindkettő alapértéke 0 mm: az első él az oldallal síkban van.
+
+ALKATRÉSZEK, ÉLZÁRÁS, RESZELÉS
+------------------------------
+- Az azonos oldalak közös „Oldal” sorban, darabszámmal jelenjenek meg.
+  Az azonos fajtájú és méretű F-osztók, illetve V-osztók összevonhatók;
+  azonos alkatrészek matricáján azonos név szerepelhet. Eltérő anyag, élzárás,
+  reszelés, megmunkálás vagy saját név nem veszhet el összevonás miatt.
+- A HDF a felsorolásban és a szabástervben minden más anyag után következik.
+- Az automatikus élzárás és a reszelés a bútorszerkesztő alkatrészeire és a
+  megfelelő alapnéven felismert 3MF-alkatrészekre is vonatkozik, ha a szükséges
+  szerkezeti adatok rendelkezésre állnak. A kézi módosítást meg kell őrizni.
+- Oldal: egy hosszú él 2 mm ABS. A szabadon látható felső és alsó rövid él
+  2 mm ABS-t és reszelést kap. A tető, fenék és pótfenék tényleges
+  csatlakozása határozza meg, hogy 0, 1 vagy 2 rövid él szabad.
+- Közé menő tető: egy hosszú él 2 mm ABS. Végigfutó tető: két rövid él
+  2 mm ABS, mindkét rövid él reszelve. Hogy ehhez hosszú él is tartozik-e,
+  tisztázandó; a jelenlegi megvalósítás hosszú élt is jelöl.
+- Polc: a bútor szélessége irányába eső első él 2 mm ABS-t kap. Ez a méret
+  nem minden alkatrészen feltétlenül a hosszabbik méret.
+- Teli hátlap: nincs automatikus élzárás. A fenék, pótfenék, F- és V-osztó
+  további automatikus élzárási szabályai külön egyeztetésig nincsenek rögzítve.
+- Az élzárás és a reszelés külön jelölés; a reszelés nem módosítja a
+  szabási méretet. A pontos jelöléseket a védett szabályfájl is rögzíti.
+
+SZABÁSTERV ÉS KEZELÉS
+--------------------
+- A szabad legsűrűbb elrendezés törekedjen a táblák minél jobb kihasználására,
+  a valós anyag-, szálirány-, fűrészrés- és gépi vágási feltételek betartásával.
+  A sűrűbb elrendezés nem írhatja felül a rögzített gépi szabályokat.
+- A kijelölt „Bevonni” maradékokra és a munkalapokra a védett szabályfájl
+  legutolsó érvényes rendelkezése az irányadó.
+- Az első oldal kivételével legyen Vissza gomb. A szerkesztési adatok
+  oldalváltáskor ne vesszenek el.
+- A számmezőkben több számjegy folyamatosan begépelhető legyen; az automatikus
+  frissítés ne ugorjon a szám elejére, és ne vegye el a fókuszt gépelés közben.
+
+ELLENŐRZÉS
+----------
+Változtatáskor az érintett funkciót és a korábbi projektek megőrzését is
+ellenőrizni kell. A védett gépi teszteket és a projekthez előírt további
+ellenőrzéseket a módosítás jellegének megfelelően futtatni kell. A gépi
+tesztek és a felületi vagy tényleges gépi próba eltérő dolgokat igazolnak;
+csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
