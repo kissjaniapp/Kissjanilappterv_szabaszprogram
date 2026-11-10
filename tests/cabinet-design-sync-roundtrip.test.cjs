@@ -83,7 +83,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   const firstSave=window.GatterkaCabinetBridge.snapshot();
   assert.equal(firstSave.inputs.count,'3');
   assert.equal(firstSave.radios.backType,'rabbet');
-  assert.equal(firstSave.parts.length,8);
+  assert.equal(firstSave.parts.length,7,'Az oldallapok két darabként, közös sorban szerepelnek');
+  assert.equal(firstSave.parts.find(x=>x.key==='side-left').qty,2);
   assert.equal(firstSave.parts.find(x=>x.key==='top').a,964);
   assert.equal(firstSave.parts.find(x=>x.key==='side-left').b,600);
   assert.equal(firstSave.parts.find(x=>x.key==='back-rabbet').ready,true);
@@ -98,7 +99,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   fields.get('d').value='550';fields.get('count').value='4';
   radioItems.find(x=>x.name==='backType'&&x.value==='full').checked=true;
   const saved=window.GatterkaCabinetBridge.snapshot();
-  assert.equal(saved.parts.length,9);
+  assert.equal(saved.parts.length,8);
   assert.equal(saved.parts.find(x=>x.key==='top').a,1164);
   assert.equal(saved.parts.find(x=>x.key==='side-left').a,1000);
   assert.equal(saved.parts.find(x=>x.key==='back-full').b,964);
@@ -115,7 +116,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   assert.equal(restored.inputs.count,'4');
   assert.equal(restored.radios.backType,'full');
   assert.equal(restored.inputs.topHdfCut,'trim');
-  assert.equal(restored.parts.length,9);
+  assert.equal(restored.parts.length,8);
   assert.equal(restored.parts.find(x=>x.key==='top').a,1164);
   assert.equal(restored.parts.find(x=>x.key==='back-full').b,964);
 
@@ -131,7 +132,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   vm.runInNewContext(source.slice(begin,end),parent);
   const furniture={parts:[]};
   parent.syncCabinetDesignerParts(furniture,restored.parts);
-  assert.equal(furniture.parts.length,9);
+  assert.equal(furniture.parts.length,8);
   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='top').a,'1164');
   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-full').b,'964');
   assert.equal(furniture.parts.filter(x=>x.cabinetDesignKey?.startsWith('shelf-')).length,4);
