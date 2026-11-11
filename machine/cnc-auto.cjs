@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC','LAB','XFALC']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','LAB','XFALC']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -117,16 +117,21 @@
     if(entry.partRole!=='top'&&entry.partRole!=='bottom')return null;
     const edge=o=>o.macro.startsWith('ELF');
     const foot=o=>o.macro==='LAB';
-    if(join==='tipli'){
-      if(operations.some(foot))
-        throw new Error('Tipli és fenék alatti LAB együtt nem készülhet ugyanazon a felső oldali felrakáson fordítás nélkül; válassz összehúzós/csavaros kötést vagy kapcsold ki a lábat.');
-      return {first:operations,other:[]};
+    if(entry.partRole==='bottom'){
+      // Fenék: először a szekrényben FELSŐ felülete (falc, F-osztó,
+      // összehúzó/élfuratok), majd FORDIT, aztán a fonák 4 LAB furata.
+      // A pótfenék jelenléte miatt LAB nélkül nem kérünk megfordítást.
+      const top=operations.filter(o=>!foot(o));
+      const underside=operations.filter(foot);
+      return {first:top.length?top:underside,other:top.length?underside:[]};
     }
+    // Tető: excenter/csavar: az ALSÓ színén falc és F-osztó,
+    // FORDIT után az élösszehúzók. Egyszerű tiplis tető egyoldalas.
+    if(join==='tipli')return {first:operations,other:[]};
     if(!['excenter','hosszuExcenter','csavar'].includes(join))
       throw new Error('Ismeretlen tető/fenék megmunkálási kötésmód.');
-    const first=operations.filter(o=>entry.partRole==='top'?!edge(o):edge(o)||foot(o));
-    const other=operations.filter(o=>entry.partRole==='top'?edge(o):!edge(o)&&!foot(o));
-    // Ha nincs megmunkálás a második oldalon, a gép nem kér szükségtelen forgatást.
+    const first=operations.filter(o=>!edge(o));
+    const other=operations.filter(edge);
     return {first:first.length?first:other,other:first.length?other:[]};
   }
   function compileEntry(entry,mode){
