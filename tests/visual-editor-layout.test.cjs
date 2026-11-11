@@ -35,10 +35,10 @@ test('Sor / egyedi mód, halvány kivett részek, kézzel módosítható lapvég
  assert.match(html,/data-vis-edit="shift"/);
 });
 test('Vizuális adatok mentése és visszaállítása a bútorral',()=>{
- assert.match(html,/snapshotVisual:\(\)=>visualSnapshot\(\)/);
- assert.match(html,/restoreVisual:data=>visualRestore\(data\)/);
- assert.match(html,/visual:window\.GatterkaCabinetModel\.snapshotVisual\(\)/);
- assert.match(html,/restoreVisual\(cfg\.visual\|\|null\)/);
+ assert.match(html,/GatterkaCabinetModel\.snapshotVisual=\(\)=>visualSnapshot\(\)/);
+ assert.match(html,/GatterkaCabinetModel\.restoreVisual=data=>visualRestore\(data\)/);
+ assert.match(html,/visual:typeof window\.GatterkaCabinetModel\.snapshotVisual/);
+ assert.match(html,/restoreVisual\?\.\(cfg\.visual\|\|null\)/);
 });
 test('A be nem hitelesített egyedi szakasz CNC-biztonsági figyelmeztetést kap',()=>{
  assert.match(html,/Rajzon kivett osztószakasz/);
