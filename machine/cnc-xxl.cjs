@@ -11,7 +11,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','LAB','XFALC']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','LAB','XFALC']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -149,7 +149,7 @@
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
     if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
     const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
-      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
+      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK'];
     let macrocnt=0,flips=0,justFlipped=false;
     const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
