@@ -72,7 +72,10 @@ test('Windows Mentés másként után az xMix és az xPrg fájlok közvetlenül 
  assert.doesNotMatch(native.slice(native.indexOf('func chooseWindowsSaveXmix('),native.indexOf('func (bridge *nativeBridge) chooseSaveAs(')),/exec\.Command\("powershell\.exe"/);
  assert.match(native,/router.HandleFunc\("\/native\/choose-save-as"/);
  assert.match(native,/router.HandleFunc\("\/native\/write-files"/);
- assert.doesNotMatch(native,/write-zip|archive\/zip|saveMachineZipAt|writeMachineArchive/);
+ // A CNC külön natív ZIP-mentése megengedett, az xMix/xPrg mentő nem módosul.
+ assert.doesNotMatch(save,/archive\/zip|saveMachineZipAt|writeMachineArchive/);
+ assert.match(native,/router.HandleFunc\("\\/native\\/choose-cnc-save-as"/);
+ assert.match(native,/router.HandleFunc\("\\/native\\/write-cnc-zip"/);
  assert.match(native,/saveMixAndPrograms\(path,request\)/);
  assert.match(save,/func saveMixAndPrograms\(mixPath string,\s*req nativeMixSave\)/);
  assert.match(save,/patchMixWithSavedPaths\(/);
