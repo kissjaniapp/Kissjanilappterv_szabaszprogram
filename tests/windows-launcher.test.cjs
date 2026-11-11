@@ -74,8 +74,8 @@ test('Windows Mentés másként után az xMix és az xPrg fájlok közvetlenül 
  assert.match(native,/router.HandleFunc\("\/native\/write-files"/);
  // A CNC külön natív ZIP-mentése megengedett, az xMix/xPrg mentő nem módosul.
  assert.doesNotMatch(save,/archive\/zip|saveMachineZipAt|writeMachineArchive/);
- assert.match(native,/router.HandleFunc\("\\/native\\/choose-cnc-save-as"/);
- assert.match(native,/router.HandleFunc\("\\/native\\/write-cnc-zip"/);
+ assert.ok(native.includes('router.HandleFunc("/native/choose-cnc-save-as"'));
+ assert.ok(native.includes('router.HandleFunc("/native/write-cnc-zip"'));
  assert.match(native,/saveMixAndPrograms\(path,request\)/);
  assert.match(save,/func saveMixAndPrograms\(mixPath string,\s*req nativeMixSave\)/);
  assert.match(save,/patchMixWithSavedPaths\(/);
