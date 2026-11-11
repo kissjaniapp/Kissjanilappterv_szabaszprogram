@@ -4,8 +4,8 @@ const assert=require('node:assert/strict');
 const fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
 const auto=require('../machine/cnc-auto.cjs');
 
-// F-OSZTO minták jobb oldali furatsorát készítjük ELŐSZÖR,
-// utána X tengelyes fordítás (FORDIT_X), végül bal oldal.
+// F-OSZTO: a BAL oldali furatsor készül ELŐSZÖR,
+// utána X tengelyes fordítás (FORDIT_X), végül a JOBB lapoldal.
 // A korábban jóváhagyott 15 mm-es Y-eltolás és G-kód változatlan.
 // A felhasználó F-OSZTO_MELETTE_FIX_POLC_TALAKOZAS.zip mintái:
 // BAL_OLDALI_POLC: ELF3 Y=0 y=400 G=1 / ELF2 Y=0 y=400 G=1
@@ -77,12 +77,12 @@ test('egy F-osztó: bal V-polc 1/1 normál, jobb V-polc 2/1 eltolt, az osztó IJ
  assert.match(divider,/LAPA X=491 Y=0 A=0 y=400 G=1/);
  assert.match(divider,/XMSG Q=1 N="FORDIT_X"/);
  assert.match(divider,/LAPA X=491 Y=15 A=0 y=370 G=1/);
- // Az F-osztó JOBB lapoldala a gépen az első; csak utána fordul X körül a BAL oldalra.
- const rightFirst=divider.indexOf('LAPA X=491 Y=15 A=0 y=370 G=1');
+ // Az F-osztó BAL lapoldala készül előbb, utána FORDIT_X és JOBB oldal.
+ const rightAfter=divider.indexOf('LAPA X=491 Y=15 A=0 y=370 G=1');
  const flipped=divider.indexOf('XMSG Q=1 N="FORDIT_X"');
- const leftSecond=divider.indexOf('LAPA X=491 Y=0 A=0 y=400 G=1');
- assert.ok(rightFirst>=0&&flipped>rightFirst&&leftSecond>flipped,
-   'Az F-osztó jobb oldalát kell először fúrni, és FORDIT_X után a balt');
+ const leftFirst=divider.indexOf('LAPA X=491 Y=0 A=0 y=400 G=1');
+ assert.ok(leftFirst>=0&&flipped>leftFirst&&rightAfter>flipped,
+   'Az F-osztó bal oldalát kell először fúrni, FORDIT_X után a jobbat');
 });
 test('két F-osztó: középső polc mindkét éle ELF G=2; osztók IJ és LK',()=>{
  const {byKey,sections,f}=generated(2);
