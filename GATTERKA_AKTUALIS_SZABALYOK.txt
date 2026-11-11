@@ -526,3 +526,57 @@ A tulajdonos egyértelmű, legfrissebb döntése:
   blokkolandó; nem szabad a munkadarabon kívülre fúrni.
 - Az xMix/xPrg és a szabási sorrend változatlan.
   Valós Xilog előnézet és CNC szárazpróba továbbra is szükséges.
+
+2026-11-11 – TETŐ/FENÉK CNC, PÓTFENÉK-LÁB, HDF ÉS MENTÉS – ÚJ SZABÁLY
+--------------------------------------------------------------------
+- Tető, összehúzós, hosszú excenteres vagy csavaros kötés esetén:
+  a szekrényben ALSÓ lapfelület („szín”) kerül elsőként a gépre;
+  falcos hátfal esetén itt készül az XFALC és itt készülnek
+  az F-osztó lapfuratai. Ezután FORDIT, majd a tető élfuratai.
+  A második oldal hiányában nincs felesleges FORDIT.
+- Fenék, összehúzós, hosszú excenteres vagy csavaros kötés:
+  az alsó oldali élfuratok és – pótfenék NÉLKÜL – a lábfuratok
+  készülnek először. FORDIT után a felső oldalon a falc
+  (ha valódi falcos HDF-csatlakozás van) és az F-osztó furatai.
+  Felesleges FORDIT nélkül, ha csak egy felületet kell fúrni.
+- Egyszerű tipli (nem összehúzós és nem csavaros) esetén
+  a tető és fenék normál felső színével kezdődik a megmunkálás,
+  nincs szükségtelen FORDIT; ha a fenék alján LAB is kellene,
+  a gépi export fordítás nélkül nem készíthet hibás programot.
+- A HDF felső és alsó csatlakozása TELJESEN FÜGGETLEN:
+  valódi 5,5 mm falcos csatlakozásnál a tető/fenék
+  MÉLYSÉGÉBŐL nem kell levonni az HDF-et és XFALC kell;
+  „visszavágott – 2 mm” csatlakozásnál nincs XFALC az adott
+  lapon és a tető/fenék teljes gyártási mélysége D-HDF vastagság.
+  Falcos HDF-nél az aktuális rendszer 4 mm HDF-fel számol.
+  A méretkorrekció az alkatrészlistában, 3D-ben, CNC DY-ben
+  és az él-/lapfuratok hosszán is érvényes.
+- Azonos méretű polcoknál csak EGY külön XXL-program készül,
+  amennyiben a tényleges furatkép is azonos. Ha azonos
+  vágásméret mellett különböző furatkép van, a program
+  tiltó hibát jelez, nem választ önkényesen egy rossz programot.
+- CNC .xxl programok ZIP csomagja a telepített Windows
+  Gatterka külön, valódi natív „Mentés másként” párbeszédablakával
+  kiválasztott mappába kerül. A felhasználó fájlnevet is választ;
+  már létező ZIP-et automatikusan nem ír felül (pl. _2.zip).
+  Az xMix/xPrg választási és mentési kódja változatlan.
+- „Kell láb?” csak „Kell fenék?” bejelölése esetén lehetséges.
+  A pótfenék BEKAPCSOLÁSA elsőbbséget élvez: a 4 LAB
+  lábfúrás KIZÁRÓLAG a pótfenékre kerül, a rendes fenék
+  SEMMILYEN LAB furatot nem kap, akkor sem, ha a fenék végigmegy!
+  Végigmenő fenék + pótfenék megengedett; a pótfenéket
+  közvetlenül a fonákjával tesszük a gépre, ha csak LAB készül.
+  Közémenő fenék + pótfenék esetén a korábbi pótfenék LAPA
+  és a FORDIT utáni LAB sorrend marad.
+  Fenék nélkül pótfenék és láb sem kerül be.
+- Pótfenék NÉLKÜL a 4 LAB a rendes fenék FONÁK oldalán:
+  végigmenő fenék: X1=59, X2=DX-59;
+  oldalak közé menő fenék: X1=59-t, X2=DX-59+t
+  (18 mm anyagnál X1=41, X2=DX-41).
+  Y1=59, Y2=DY-59; a fenék túl kis mérete blokkolja a CNC-t.
+- Az általános X=0 továbbra is MINDEN alkatrész ALSÓ éle.
+  Az F-osztó FORDIT_X utáni hátsó Y-ütközőt és tükrözést
+  nem szabad megváltoztatni. A xMix/xPrg védett
+  szabási sorrend és mentési rendszer változatlan.
+- Új gépi műveleteket éles használat előtt Xilog előnézettel,
+  majd gépi szárazpróbával ellenőrizni kell.
