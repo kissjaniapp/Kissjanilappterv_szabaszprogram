@@ -566,7 +566,7 @@ test('Aszimmetrikus F-osztó polc: a bal oldali LAPA a hátsó ütközőtől sz�
 
 test('Láb a fenéken csak pótfenék nélkül: végigmenő vagy közémenő fenék és eltolás',()=>{
  const {ctx,html}=extractedGeometry();
- assert.match(html,/hasFeet=hasBottom&&\\$\\('hasFeet'\\)\\.checked/);
+ assert.ok(html.includes("hasFeet=hasBottom&&$('hasFeet').checked"));
  for(const kind of ['full','between']){
   const p={...base(),bottom:kind,hasFeet:true,falseBottom:false,rabbet:false};
   ctx.fixedDividerPieces=()=>[];
