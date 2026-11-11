@@ -32,6 +32,7 @@ function shelf(index,extra={}){
  if(extra.part)Object.assign(part,extra.part);
  const {part:ignored,...other}=extra;
  Object.assign(row,other);
+ if(!Object.prototype.hasOwnProperty.call(other,'resolvedName'))row.resolvedName=part.name;
  return row;
 }
 test('Három azonos polc egy összesítő-sor, de három fizikai darab és ép forrásrekord',()=>{
