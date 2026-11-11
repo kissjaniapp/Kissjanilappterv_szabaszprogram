@@ -562,3 +562,107 @@ test('Aszimmetrikus F-osztó polc: a bal oldali LAPA a hátsó ütközőtől sz�
  const left=output.indexOf('LAPA X=1232 Y=220 A=0 y=140 G=1');
  assert.ok(right>=0&&flip>right&&left>flip,'aszimmetrikus polc a valós hátulsó ütközőhöz igazodik');
 });
+
+
+test('Láb a fenéken csak pótfenék nélkül: végigmenő vagy közémenő fenék és eltolás',()=>{
+ const {ctx,html}=extractedGeometry();
+ assert.match(html,/hasFeet=hasBottom&&\\$\\('hasFeet'\\)\\.checked/);
+ for(const kind of ['full','between']){
+  const p={...base(),bottom:kind,hasFeet:true,falseBottom:false,rabbet:false};
+  ctx.fixedDividerPieces=()=>[];
+  const rows=[{key:'bottom'}];ctx.buildCncInstancesForParts(p,rows);
+  const entry=rows[0].cncInstances[0];
+  const foot=entry.operations.filter(o=>o.macro==='LAB');
+  const dx=kind==='between'?964:1000;
+  const shift=kind==='between'?18:0;
+  assert.equal(entry.dx,dx);
+  assert.equal(foot.length,4);
+  assert.deepEqual(Array.from(foot,x=>x.X),[59-shift,59-shift,dx-59+shift,dx-59+shift]);
+  assert.deepEqual(Array.from(foot,x=>x.Y),[59,341,59,341]);
+  assert.ok(foot.every(x=>x.face==='reverse'));
+  assert.match(auto.compileEntry(entry,{assemblyJoint:'excenter'}),/LAB X=/);
+ }
+ const p={...base(),hasBottom:false,hasFeet:true,falseBottom:false};
+ const rows=[{key:'bottom'}];ctx.buildCncInstancesForParts(p,rows);
+ assert.equal(rows[0].cncInstances.length,0,'fenék nélkül nincs alkatrész és nincs LAB');
+});
+test('Pótfenék mellett a rendes fenék SOSEM kap LAB furatot, még végigmenő fenéknél sem',()=>{
+ const {ctx}=extractedGeometry();
+ for(const kind of ['full','between']){
+  const p={...base(),bottom:kind,falseBottom:true,hasFeet:true,rabbet:false};
+  ctx.fixedDividerPieces=()=>[];
+  const rows=[{key:'bottom'},{key:'false-bottom'}];
+  ctx.buildCncInstancesForParts(p,rows);
+  const lower=rows[0].cncInstances[0],extra=rows[1].cncInstances[0];
+  assert.equal(lower.operations.filter(o=>o.macro==='LAB').length,0);
+  assert.equal(extra.operations.filter(o=>o.macro==='LAB').length,4);
+  assert.equal(extra.issues.length,0,'végigmenő fenék+pótfenék nem tiltott');
+  const foot=extra.operations.filter(o=>o.macro==='LAB');
+  assert.ok(foot.every(o=>o.face===(kind==='between'?'reverse':'primary')));
+  assert.match(auto.compileEntry(extra,{assemblyJoint:'excenter'}),/LAB X=59 Y=59 G=2/);
+ }
+});
+test('Tető: alsó színén F-osztó és falc; FORDIT után az élfurat; fenék fordított sorrend',()=>{
+ const {ctx}=extractedGeometry(),p={...base(),hasFeet:true,falseBottom:false,
+   rabbet:true,topHdfCut:'falc',bottomHdfCut:'falc',fCount:1};
+ const f={key:'f-divider-1',name:'F-osztó',kind:'f',index:0,x1:491,x2:509,
+   z1:18,z2:1482,y0:0,y1:396,a:1464,b:396};
+ ctx.fixedDividerPieces=()=>[f];
+ const rows=[{key:'top'},{key:'bottom'}];ctx.buildCncInstancesForParts(p,rows);
+ const upper=rows[0].cncInstances[0],lower=rows[1].cncInstances[0];
+ for(const [kind,e] of [['top',upper],['bottom',lower]]){
+   const code=auto.compileEntry(e,{assemblyJoint:'excenter'});
+   const flip=code.indexOf('XMSG Q=1 N="FORDIT"');
+   const edge=code.indexOf('ELF3');
+   const rabbet=code.indexOf('XFALC Q=1# G=2# T=103');
+   const divider=code.indexOf('LAPA X=482');
+   assert.ok(flip>=0&&edge>=0&&rabbet>=0&&divider>=0,kind+' minden művelet elkészül');
+   if(kind==='top'){
+     assert.ok(rabbet<flip&&divider<flip&&edge>flip,'tető: falc + F, fordítás, él');
+   }else{
+     assert.ok(edge<flip&&rabbet>flip&&divider>flip,'fenék: él, fordítás, falc + F');
+     assert.ok(code.indexOf('LAB X=41')<flip,'fenék fonák LAB az első megmunkálási oldalon');
+   }
+ }
+ const tipli=auto.compileEntry(upper,{assemblyJoint:'tipli'});
+ assert.doesNotMatch(tipli,/N="FORDIT"/);
+ const tipliBottom={...lower,operations:lower.operations.filter(o=>o.macro!=='LAB')};
+ assert.doesNotMatch(auto.compileEntry(tipliBottom,{assemblyJoint:'tipli'}),/N="FORDIT"/);
+});
+test('Hátfal 2 mm-es csatlakozásnál tető/fenék külön DY csökken, falcosnál nem',()=>{
+ const {ctx,html}=extractedGeometry();ctx.fixedDividerPieces=()=>[];
+ assert.match(html,/topBoardDepth=Math\.max\(0,d-\(rabbet&&hasTop&&topHdfCut==='trim'\?4:0\)\)/);
+ assert.match(html,/bottomBoardDepth=Math\.max\(0,d-\(rabbet&&hasBottom&&bottomHdfCut==='trim'\?4:0\)\)/);
+ for(const [topCut,bottomCut,topDepth,bottomDepth] of [
+   ['trim','falc',396,400],['falc','trim',400,396],['trim','trim',396,396]
+ ]){
+  const p={...base(),topHdfCut:topCut,bottomHdfCut:bottomCut,topBoardDepth:topDepth,bottomBoardDepth:bottomDepth};
+  const rows=[{key:'top'},{key:'bottom'}];ctx.buildCncInstancesForParts(p,rows);
+  const upper=rows[0].cncInstances[0],lower=rows[1].cncInstances[0];
+  assert.equal(upper.dy,topDepth);assert.equal(lower.dy,bottomDepth);
+  assert.equal(upper.operations.filter(o=>o.macro==='XFALC').length,topCut==='falc'?1:0);
+  assert.equal(lower.operations.filter(o=>o.macro==='XFALC').length,bottomCut==='falc'?1:0);
+  assert.ok(upper.operations.filter(o=>o.macro.startsWith('ELF')).every(o=>o.y===topDepth));
+  assert.ok(lower.operations.filter(o=>o.macro.startsWith('ELF')).every(o=>o.y===bottomDepth));
+ }
+});
+test('Ugyanabból a polcméretből csak egy XXL program, eltérő furatkép nem vonható össze',()=>{
+ function entry(key,y=396){return {key,dx:964,dy:396,dz:18,side:'IJ',operations:[
+   {macro:'ELF3',Y:0,y},{macro:'ELF2',Y:0,y}
+ ]}}
+ const parts=[
+   board('s1','Polc 1',964,396,[entry('shelf-1')]),
+   board('s2','Polc 2',964,396,[entry('shelf-2')])
+ ];
+ let out=auto.makeAutoPrograms({name:'Próba',parts},['s1','s2']);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.files.length,1);
+ assert.equal(out.skipped.length,1);
+ parts.push(board('s3','Polc 3',964,396,[{...entry('shelf-3'),operations:[
+   {macro:'ELF3',Y:10,y:386},{macro:'ELF2',Y:0,y:396}
+ ]}]));
+ out=auto.makeAutoPrograms({name:'Próba',parts},['s1','s2','s3']);
+ assert.equal(out.files.length,1);
+ assert.equal(out.blocked.length,1);
+ assert.match(out.blocked[0].reason,/eltérő CNC-furatozás/);
+});
