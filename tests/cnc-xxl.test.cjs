@@ -19,7 +19,7 @@ test('az ismert oldallap minta fejlécét és LAPA/LAPF sorait előállítja',()
   const x=cnc.compileXxl({dx:754,dy:520,dz:18,side:'IJ',commands:
    'LAPA X=158.38 Y=56 A=0 y=464 G=1\nLAPA X=745 Y=56 A=0 y=464 G=1\n'+
    'LAPF X=0 Y=47 A=0 x=754 G=1\nLAPF X=0 Y=29 A=0 x=754 G=1'});
-  assert.match(x,/^H DX=754 DY=520 DZ=18 -IJ C=0 T=196609 R=100 \*MM \/"DEF" BX=0 BY=0 BZ=0 V=1\r\n/);
+  assert.match(x,/^H DX=754 DY=520 DZ=18 -IJ C=0 T=196609 R=100 \*MM \/"DEF" BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK\r\n/);
   assert.match(x,/LAPA X=158\.38 Y=56 A=0 y=464 G=1/);
   assert.match(x,/LAPF X=0 Y=47 A=0 x=754 G=1/);
   assert.match(x,/;\r\nVEGE\r\n$/);
@@ -77,7 +77,7 @@ test('a CNC fejléc pontos DX/DY határok szerint választja a bal és jobb tér
    assert.equal(expected.tool,tool);
    const xxl=cnc.compileXxl({dx,dy,dz:18,side:requested,commands:'ELF3 Y=0 A=0 y=10 G=1'});
    assert.equal(xxl.split('\r\n')[0],
-    'H DX='+dx+' DY='+dy+' DZ=18 -'+side+' C=0 T='+tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1');
+    'H DX='+dx+' DY='+dy+' DZ=18 -'+side+' C=0 T='+tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK');
  }
 });
 test('a kapcsolt és szétválasztott térfelek mind a négy T kódja pontos',()=>{
@@ -119,4 +119,26 @@ test('LAB makró: négy pótfenék-lábpozíció G=2-vel, csak FORDIT után',()=
    commands:'LAB X=59 Y=59 G=0'}));
  assert.throws(()=>cnc.compileXxl({dx:1001,dy:400,dz:18,
    commands:'LAB X=1200 Y=59 G=2'}));
+});
+
+
+test('a CNC fejléc végén pontosan egyszer szerepel a szó szerinti ;ABS_UTKOUIK',()=>{
+ for(const side of ['IJ','LK']){
+  const x=cnc.compileXxl({dx:1000,dy:400,dz:18,side,
+   commands:'ELF3 Y=0 A=0 y=400 G=1'});
+  const first=x.split('\r\n')[0];
+  assert.ok(first.endsWith(' V=1;ABS_UTKOUIK'),first);
+  assert.equal((first.match(/;ABS_UTKOUIK/g)||[]).length,1);
+ }
+});
+test('teli hátlap: 4 élmakró és a tengelyük kötelezően helyes',()=>{
+ const x=cnc.compileXxl({dx:1464,dy:964,dz:18,side:'IJ',commands:
+  'ELF3 Y=0 A=0 y=964 G=1\nELF2 Y=0 A=0 y=964 G=1\n'+
+  'ELF4 X=0 A=0 x=1464 G=1\nELF5 X=0 A=0 x=1464 G=1'});
+ for(const name of ['ELF2','ELF3'])assert.match(x,new RegExp(name+' Y=0 A=0 y=964 G=1'));
+ for(const name of ['ELF4','ELF5'])assert.match(x,new RegExp(name+' X=0 A=0 x=1464 G=1'));
+ assert.throws(()=>cnc.compileXxl({dx:1464,dy:964,dz:18,
+   commands:'ELF4 Y=0 A=0 y=964 G=1'}),/ELF4\/ELF5/);
+ assert.throws(()=>cnc.compileXxl({dx:1464,dy:964,dz:18,
+   commands:'ELF3 X=0 A=0 x=1464 G=1'}),/ELF2\/ELF3/);
 });
