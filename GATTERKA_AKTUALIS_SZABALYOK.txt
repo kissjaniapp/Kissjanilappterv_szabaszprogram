@@ -1,5 +1,5 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
-Frissítve: 2026-11-10
+Frissítve: 2026-11-11
 
 Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
 jelöl: önmagában nem bizonyítja, hogy minden eset már helyesen működik.
@@ -362,3 +362,26 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - A gépi fűrész xMix/xPrg, a rögzített vágási sorrend, a Windows
   natív Mentés másként és a korábban hitelesítendő CNC makrókódolás
   nem módosul. Az új csatlakozásokat CNC-gépen külön kell ellenőrizni.
+
+2026-11-11 – F-OSZTÓK TÚLFUTÁSA ÉS AZONOS POLCOK ÖSSZEVONÁSA
+--------------------------------------------------------------
+- A több F-osztó egyedi szabad hézagja egymást követi: az 1. a bal
+  oldallap belső élétől, a 2. és további az előző F-osztó jobb
+  élétől értendő. A kezelőfelület ezt egyértelműen jelöli.
+- Az egyedi F-hézagoknak és az osztók vastagságának együtt be kell
+  férnie a bútor belső szélességébe. Ha a 3. vagy további F-osztó
+  helye a jobb oldallapon túlnyúlna, NEM kerülhet a 2D/3D rajzra,
+  az alkatrészlistába vagy gyártható CNC-ként az exportba. A hiba
+  egyértelmű figyelmeztetést kap. Egyforma szabad hézagok megengedettek,
+  ha mindegyik ténylegesen befér.
+- Az Alkatrész-összesítőben az azonos kész- és szabásméretű,
+  anyagú, színű, vastagságú, élzárású, reszelésű, alávágású,
+  szálirányú ÉS CNC megmunkálású polcok egy sorban, összeadott
+  darabszámmal jelennek meg. Az automatikus „Polc 1/2/3” neveket
+  az összevont sor egységesen „Polc”-ként írja ki; a felhasználó
+  saját neve csak azonos névvel vonható össze.
+- A „Műhely példány PNG” ugyanazt az összevont polclistát használja.
+  Az egyes polcok az Alkatrészek oldalon külön szerkeszthetők maradnak.
+  Eltérő élzárás, CNC-furat, anyag vagy más fontos gyártási adat
+  esetén az összevonás tilos; a nyers getParts(), CNC, gépi szabás,
+  xMix/xPrg és Windows mentés adatai és sorrendje érintetlen.
