@@ -456,7 +456,7 @@ func validateCncZip(req nativeCncSave) error {
   lowered:=strings.ToLower(name)
   if names[lowered]{return errors.New("Azonos nevű CNC program nem menthető kétszer.")}
   names[lowered]=true
-  if !strings.HasPrefix(p.Content,"H DX=")||!strings.HasSuffix(p.Content,"VEGE\\r\\n"){
+  if !strings.HasPrefix(p.Content,"H DX=")||!strings.HasSuffix(p.Content,"VEGE\r\n"){
     return errors.New("Érvénytelen Xilog XXL tartalom: "+name)
   }
  }
