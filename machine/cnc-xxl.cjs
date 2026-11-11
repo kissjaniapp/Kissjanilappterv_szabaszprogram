@@ -68,8 +68,12 @@
       throw new Error('LAPA: X, Y, A, y és G szükséges.');
     if(macro==='LAPF'&&(!('X'in fields)||!('Y'in fields)||!('x'in fields)||'y'in fields))
       throw new Error('LAPF: X, Y, A, x és G szükséges.');
-    if(macro.startsWith('ELF')&&!('x'in fields)&&!('y'in fields))
-      throw new Error('Élfurathoz x vagy y hossz szükséges.');
+    if((macro==='ELF2'||macro==='ELF3')&&
+       (!('Y'in fields)||!('y'in fields)||'X'in fields||'x'in fields))
+      throw new Error('Az ELF2/ELF3 él-furatmakró csak Y kezdőponttal és y hosszal használható.');
+    if((macro==='ELF4'||macro==='ELF5')&&
+       (!('X'in fields)||!('x'in fields)||'Y'in fields||'y'in fields))
+      throw new Error('Az ELF4/ELF5 él-furatmakró csak X kezdőponttal és x hosszal használható.');
     if('X'in fields&&fields.X>dx || 'Y'in fields&&fields.Y>dy ||
        'x'in fields&&fields.x>dx || 'y'in fields&&fields.y>dy ||
        'X'in fields&&'x'in fields&&fields.X+fields.x>dx ||
