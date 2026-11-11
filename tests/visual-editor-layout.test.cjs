@@ -4,7 +4,7 @@ const source=fs.readFileSync(path.join(__dirname,'..','app','index.htm'),'utf8')
 const match=source.match(/const GATTERKA_CABINET_INLINE_HTML=("(?:\\.|[^"\\])*");/s);
 assert.ok(match,'A valóban beágyazott bútortervező hiányzik');
 const html=JSON.parse(match[1]);
-const scripts=[...html.matchAll(/<script>([\s\S]*?)<\\/script>/g)].map(x=>x[1]);
+const scripts=html.split('<script>').slice(1).map(s=>s.split('</script>')[0]);
 test('Vizuális szerkesztő: mindkét beágyazott JS szintaktikailag érvényes',()=>{
  assert.equal(scripts.length,2);
  for(const code of scripts)assert.doesNotThrow(()=>new vm.Script(code));
