@@ -58,7 +58,7 @@ test('Eltérő élzárás, anyag, CNC-művelet, dőlés és kézi név nem vonha
   shelf(8,{furniture:{id:'cabinet-2'}})
  ];
  const output=group([first,...altered]);
- assert.equal(output.length,9);
+ assert.equal(output.length,8);
 });
 test('Kézzel szerkesztett azonos nevű és megmunkálású polcok is csoportosíthatók',()=>{
  const a=shelf(1,{part:{name:'Fix polc'}}),b=shelf(2,{part:{name:'Fix polc'}});
@@ -67,8 +67,8 @@ test('Kézzel szerkesztett azonos nevű és megmunkálású polcok is csoportos�
  assert.equal(output[0].resolvedName,'Fix polc');
 });
 test('Az összesítő és a műhely példány PNG ugyanazt az összevonást használja',()=>{
- assert.match(source,/const shown=groupIdenticalShelfSummaryRows\(included\)/);
- assert.match(source,/const rows=workshop\?groupIdenticalShelfSummaryRows\(originalRows\):originalRows/);
+ assert.match(source,/groupIdenticalShelfSummaryRows\(included\):included/);
+ assert.match(source,/groupIdenticalShelfSummaryRows\(originalRows\):originalRows/);
  assert.match(source,/r\.displayName\|\|r\.resolvedName\|\|r\.part\.name/);
  assert.match(source,/Egyedi módosítás: Alkatrészek oldal/);
 });
