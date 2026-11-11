@@ -408,3 +408,27 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   Eltérő élzárás, CNC-furat, anyag vagy más fontos gyártási adat
   esetén az összevonás tilos; a nyers getParts(), CNC, gépi szabás,
   xMix/xPrg és Windows mentés adatai és sorrendje érintetlen.
+
+
+2026-11-11 – NAGY, HÚZHATÓ SZERKEZETTERVEZŐ ÉS PONTOS KÖZMÉRETEK
+----------------------------------------------------------------
+- Az élő bútortervezőben nagy elölnézeti szerkesztő szerepel; 50–250%
+  között százalékosan nagyítható. Ha a rajz túlnő az előnézeten, vízszintes
+  és függőleges görgetősávokkal navigálható.
+- Az F-osztó sor vízszintesen, a V-osztó és állítható polc sora függőlegesen
+  húzható. Külön választható a teljes F/V-sor vagy egyedi alkatrész/szakasz.
+- Az egyedi mód szakaszokat kivehet és visszaállíthat; kivételkor azok
+  halványan látszanak. A darabok végpontjai és egyedi eltolása külön állítható,
+  a geometria méreteit a tervező az alkatrészlistában is frissíti.
+- A rajzon megjelenő szabad közméret száma kattintással milliméter pontosan
+  megadható. Hibás, be nem férő érték nem fogadható el.
+- A kereszteződési F/V jelölés a csomópont mellé kerül, nem a kör közepére.
+  A lapvastagság beszámítása kötelező, a rajzi módosítások mentendők és
+  visszatöltendők az adott bútorral.
+- A fixen befúrt vízszintes alkatrész neve V-osztó. Állítható polc csak
+  a polctartó csapokon nyugvó polc. Régi tervek fix polc módja a régi
+  mentések kompatibilitásához megőrizhető.
+- Az új, egyedileg elvágott, eltolott vagy rövidített szerkezeti elemek
+  CNC-furatainak kapcsolata külön hitelesítést igényel; ellenőrizetlen
+  művelet nem kerülhet automatikusan gépi gyártásra. A védett fűrészelési
+  sorrend, xMix/xPrg és Windows mentés nem módosul.
