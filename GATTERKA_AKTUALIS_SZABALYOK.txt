@@ -335,3 +335,30 @@ ellenőrizni kell. A védett gépi teszteket és a projekthez előírt további
 ellenőrzéseket a módosítás jellegének megfelelően futtatni kell. A gépi
 tesztek és a felületi vagy tényleges gépi próba eltérő dolgokat igazolnak;
 csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
+
+
+2026-11-11 – F- ÉS V-OSZTÓ VÉGPONTONKÉNT VÁLASZTHATÓ CSATLAKOZÁSA
+---------------------------------------------------------------
+- F-osztónál az alsó és felső csatlakozást egymástól függetlenül kell
+  kiválasztani: fenék/belső alsó sík, tető/belső felső sík, vagy konkrét
+  polc/V-osztó. Két polc, két V-osztó, illetve polc és V-osztó közé is
+  helyezhető. Az F-osztó hossza a két csatlakozó lap szabad felülete
+  közötti tényleges távolság, nem automatikusan a bútor belmagassága.
+- V-osztónál külön bal és jobb csatlakozásválasztó legyen: bal/jobb
+  oldallap vagy konkrét F-osztó. Lehetséges oldallap–F-osztó,
+  F-osztó–oldallap, F-osztó–F-osztó és oldallap–oldallap kapcsolat.
+  A hossza a csatlakozók belső síkja közötti tényleges szabad szélesség.
+- A találkozásoknál a már választható végigfutó F/V logika megmarad.
+  Csak a tényleges fizikai keresztezés szabdalja az osztókat: ha a V
+  csupán egy F oldalsíkjáig ér, attól az F nem válik két darabra.
+- A választott végpontok minden osztóhoz egyedileg mentendők és
+  visszaállítandók; a régi tervek alapértelmezése: F fenék–tető,
+  V bal–jobb oldallap. A 2D/3D előnézet, alkatrészlista, készméret
+  és a CNC csatlakozás ugyanazt a geometriai forrást használja.
+- Nem létező vagy fordított csatlakozási sorrendnél, az F magasságát
+  el nem érő V-végpontnál, illetve a választott V szélességén kívül
+  fekvő F-támasznál figyelmeztetés szükséges. Nem keletkezhet
+  kitalált méretű osztó, és a hiányos CNC ZIP nem exportálható.
+- A gépi fűrész xMix/xPrg, a rögzített vágási sorrend, a Windows
+  natív Mentés másként és a korábban hitelesítendő CNC makrókódolás
+  nem módosul. Az új csatlakozásokat CNC-gépen külön kell ellenőrizni.
