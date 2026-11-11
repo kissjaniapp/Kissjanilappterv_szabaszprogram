@@ -425,7 +425,7 @@ test('F-osztó alul/elöl ütközik; LAB nélkül a fenéken nincs felesleges FO
  const upper=records[0].cncInstances[0],lower=records[1].cncInstances[0],vertical=records[2].cncInstances[0];
  // A polc középpontja z=1250; az F-osztó ALSÓ ütközője z=18.
  assert.equal(vertical.operations.find(o=>o.macro==='LAPA')?.X,1232);
- assert.equal(vertical.operations.find(o=>o.macro==='LAPA')?.face,'reverse');
+ assert.equal(vertical.operations.find(o=>o.macro==='LAPA')?.face,'primary');
  assert.equal(upper.operations.find(o=>o.macro==='LAPA')?.face,'reverse');
  assert.equal(lower.operations.find(o=>o.macro==='LAPA')?.face,'reverse');
  const code=auto.compileEntry(lower,{assemblyJoint:'excenter'});
@@ -602,7 +602,7 @@ test('Pótfenék mellett a rendes fenék SOSEM kap LAB furatot, még végigmenő
   assert.match(auto.compileEntry(extra,{assemblyJoint:'excenter'}),/LAB X=59 Y=59 G=2/);
  }
 });
-test('Tető: alsó színén F-osztó és falc; FORDIT után az élfurat; fenék fordított sorrend',()=>{
+test('Tető: falc és F majd FORDIT és él; fenék: felső furatok majd FORDIT és LAB',()=>{
  const {ctx}=extractedGeometry(),p={...base(),hasFeet:true,falseBottom:false,
    rabbet:true,topHdfCut:'falc',bottomHdfCut:'falc',fCount:1};
  const f={key:'f-divider-1',name:'F-osztó',kind:'f',index:0,x1:491,x2:509,
@@ -620,8 +620,8 @@ test('Tető: alsó színén F-osztó és falc; FORDIT után az élfurat; fenék 
    if(kind==='top'){
      assert.ok(rabbet<flip&&divider<flip&&edge>flip,'tető: falc + F, fordítás, él');
    }else{
-     assert.ok(edge<flip&&rabbet>flip&&divider>flip,'fenék: él, fordítás, falc + F');
-     assert.ok(code.indexOf('LAB X=41')<flip,'fenék fonák LAB az első megmunkálási oldalon');
+     assert.ok(edge<flip&&rabbet<flip&&divider<flip,'fenék felső furatok a fordítás előtt');
+     assert.ok(code.indexOf('LAB X=41')>flip,'fenék fonák LAB kizárólag a FORDIT után');
    }
  }
  const tipli=auto.compileEntry(upper,{assemblyJoint:'tipli'});
@@ -684,7 +684,8 @@ test('Fenék: a FELSŐ oldal furatai ELŐSZÖR, FORDIT után kizárólag a LAB',
   const rabbet=program.indexOf('XFALC Q=1# G=2# T=103');
   const divider=program.indexOf('LAPA X=482');
   const lab=program.indexOf('LAB X=41 Y=59 G=2');
-  assert.ok(firstTop>=0&&rabbet>firstTop&&divider>firstTop,mode+' felső furatok');
+  assert.ok(firstTop>=0&&rabbet>=0&&divider>=0,mode+' felső furatok');
+   assert.ok(firstTop<flip&&rabbet<flip&&divider<flip,mode+' felső oldali műveletek FORDIT előtt');
   assert.ok(flip>rabbet&&flip>divider&&lab>flip,
     mode+' felső furatok -> FORDIT -> LAB');
   assert.equal((program.match(/XMSG Q=1 N="FORDIT"/g)||[]).length,1);
