@@ -136,6 +136,7 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   parent.syncCabinetDesignerParts(furniture,restored.parts);
   assert.equal(furniture.parts.length,8);
   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='top').a,'1164');
-  assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-full').b,'964');
+  assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-full').a,'964');
+   assert.equal(furniture.parts.find(x=>x.cabinetDesignKey==='back-full').b,'1164');
   assert.equal(furniture.parts.filter(x=>x.cabinetDesignKey?.startsWith('shelf-')).length,4);
 });
