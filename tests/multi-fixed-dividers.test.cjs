@@ -13,7 +13,7 @@ function section(a,b){
  return first.slice(start,end);
 }
 function setup(){
- const prefix='const fixedGaps=[],horizontalGaps=[],verticalGaps=[],fStarts=[],fEnds=[];\n'+
+ const prefix='const fixedGaps=[],horizontalGaps=[],verticalGaps=[],fStarts=[],fEnds=[],vLefts=[],vRights=[];\n'+
   'const baseShelfBack=p=>p.rabbet?p.rabbetWidth:p.fullBack?p.t+p.fullBackSetback:0;\n'+
   'const shelfBackAt=(p,i)=>baseShelfBack(p);\n'+
   'const shelfFrontAt=(p,i)=>p.front;\n'+
@@ -24,7 +24,7 @@ function setup(){
    section('function horizontalMembers(p){','function updateCustom(p){')+
    section('function fixedDividerPieces(p){','let currentParts=[]')+
    '\nthis.calc={pieces:fixedDividerPieces,list:getStructuredParts,horizontal:horizontalLayout,'+
-   'positions:positions,gaps:calculateGaps,state:{fixedGaps,horizontalGaps,verticalGaps,fStarts,fEnds}};';
+   'positions:positions,gaps:calculateGaps,state:{fixedGaps,horizontalGaps,verticalGaps,fStarts,fEnds,vLefts,vRights}};';
  const context={};
  vm.runInNewContext(code,context);
  return context.calc;
@@ -106,4 +106,48 @@ test('Egyedi F hézagok, mentési mezők, 3D polcdőlés iránya',()=>{
  assert.match(html,/const tilt=Math\.tan\(piece\.angle\*Math\.PI\/180\)\*\(y2-y1\)/);
  assert.match(html,/delta=-Math\.tan\(shelfAngleAt\(i\)\*Math\.PI\/180\)\*depthPx/);
  assert.match(html,/gatterka-designer-save/);
+});
+
+test('V-osztó két F-osztó közé rögzíthető, a szélessége a két F belső síkja',()=>{
+ const g=setup(),p=cabinet({fCount:2,vCount:1,dividerThrough:'f'});
+ g.state.vLefts[0]='f-0';g.state.vRights[0]='f-1';
+ const f=by(g.pieces(p),'f'),v=by(g.pieces(p),'v');
+ assert.equal(f.length,2);assert.equal(v.length,1);
+ close(v[0].x1,f[0].x2);close(v[0].x2,f[1].x1);
+ close(v[0].a,f[1].x1-f[0].x2);
+});
+test('V-osztó F és jobb oldallap, illetve bal oldallap és F között',()=>{
+ const g=setup(),p=cabinet({fCount:1,vCount:1,dividerThrough:'f'});
+ g.state.vLefts[0]='f-0';g.state.vRights[0]='right';
+ let v=by(g.pieces(p),'v'),f=by(g.pieces(p),'f')[0];
+ assert.equal(v.length,1);close(v[0].x1,f.x2);close(v[0].x2,p.w-p.t);
+ g.state.vLefts[0]='left';g.state.vRights[0]='f-0';
+ v=by(g.pieces(p),'v');f=by(g.pieces(p),'f')[0];
+ assert.equal(v.length,1);close(v[0].x1,p.t);close(v[0].x2,f.x1);
+});
+test('F-osztó két V-osztó vagy polc és V-osztó között pontosan méretre áll',()=>{
+ const g=setup(),p=cabinet({fCount:1,vCount:2,dividerThrough:'v'});
+ g.state.fStarts[0]='v-0';g.state.fEnds[0]='v-1';
+ let parts=g.pieces(p),f=by(parts,'f'),hs=g.horizontal(p);
+ let low=hs.find(x=>x.kind==='v'&&x.index===0).level;
+ let high=hs.find(x=>x.kind==='v'&&x.index===1).level;
+ assert.equal(f.length,1);close(f[0].a,high-low-p.t);
+ const p2=cabinet({fCount:1,vCount:1,n:1,dividerThrough:'v'});
+ g.state.fStarts[0]='shelf-0';g.state.fEnds[0]='v-0';
+ parts=g.pieces(p2);f=by(parts,'f');hs=g.horizontal(p2);
+ low=hs.find(x=>x.kind==='shelf').level;high=hs.find(x=>x.kind==='v').level;
+ assert.equal(f.length,1);close(f[0].a,high-low-p2.t);
+});
+test('Hibás vagy egymást megkerülő V-osztó csatlakozás nem ad gyártható elemet',()=>{
+ const g=setup(),p=cabinet({fCount:2,vCount:1,dividerThrough:'f'});
+ g.state.vLefts[0]='f-1';g.state.vRights[0]='f-0';
+ const shapes=g.pieces(p);
+ assert.equal(by(shapes,'v').length,0);
+ assert.ok(shapes.connectionIssues.length>0);
+ assert.equal(g.list(p)[0].ready,false);
+});
+test('V-osztó bal/jobb csatlakozások UI-ja és a visszamentés kulcsai szerepelnek',()=>{
+ assert.match(html,/data-v-left/);
+ assert.match(html,/data-v-right/);
+ assert.match(html,/vLeft-.*vRight-|vLeft:'data-v-left'/s);
 });
