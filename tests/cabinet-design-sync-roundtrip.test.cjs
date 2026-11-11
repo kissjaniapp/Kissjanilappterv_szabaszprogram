@@ -102,7 +102,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   assert.equal(saved.parts.length,8);
   assert.equal(saved.parts.find(x=>x.key==='top').a,1164);
   assert.equal(saved.parts.find(x=>x.key==='side-left').a,1000);
-  assert.equal(saved.parts.find(x=>x.key==='back-full').b,964);
+  assert.equal(saved.parts.find(x=>x.key==='back-full').a,964);
+   assert.equal(saved.parts.find(x=>x.key==='back-full').b,1164);
 
   // A mentett konfigurációból az oldal újramegnyitásakor újra felépül az űrlap.
   fields.get('w').value='1000';fields.get('h').value='910';
@@ -118,7 +119,8 @@ test('3 majd 4 polcos szekrény méretei és hátfalbeállítása megmarad az á
   assert.equal(restored.inputs.topHdfCut,'trim');
   assert.equal(restored.parts.length,8);
   assert.equal(restored.parts.find(x=>x.key==='top').a,1164);
-  assert.equal(restored.parts.find(x=>x.key==='back-full').b,964);
+  assert.equal(restored.parts.find(x=>x.key==='back-full').a,964);
+   assert.equal(restored.parts.find(x=>x.key==='back-full').b,1164);
 
   const begin=source.indexOf('  function syncCabinetDesignerParts(f,records){');
   const end=source.indexOf('  function cabinetDesignerDims(f){',begin);
