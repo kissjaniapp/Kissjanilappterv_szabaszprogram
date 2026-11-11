@@ -745,3 +745,46 @@ Xilog előnézet és fizikai szárazpróba kötelező.
   szabási sorrend és mentési rendszer változatlan.
 - Új gépi műveleteket éles használat előtt Xilog előnézettel,
   majd gépi szárazpróbával ellenőrizni kell.
+
+2026-11-11 – LEGÚJABB CNC SZABÁLY: FENÉK, TELI HÁTLAP, F-OSZTÓ, FEJLÉC
+------------------------------------------------------------------------
+FONTOS: Ez a legutóbbi tulajdonosi pontosítás a korábbi, ellenkező
+F-osztó-lapoldali és fenék-fordítási szabályt FELÜLÍRJA.
+- A FENÉK saját FELSŐ felületi furataival indul a CNC-műveletsor:
+  élfurat/összehúzó, F-osztó kötés, és falcos hát esetén XFALC.
+  HA VAN 4 LAB lábfurat a fenéken (és nincs pótfenék), ezek csak
+  az XMSG Q=1 N="FORDIT" kezelői üzenet UTÁN jöhetnek, az ALSÓ
+  fonákon. A kötésmód nem írhatja felül ezt az oldalsorrendet.
+  Ha nincs LAB a fenéken, nem szükséges emiatt FORDIT.
+  Pótfenék esetén a LAB továbbra is KIZÁRÓLAG a pótfenéké.
+- Az F-OSZTÓ jóváhagyott szerkezeti makrókiosztása és eltolt
+  Y-furatai változatlanok, de a lapoldali felrakási sorrend
+  JAVÍTVA: BAL lapoldal fúrása először az elülső Y=0 ütközőn,
+  aztán X TENGELY körüli FORDIT_X, majd JOBB lapoldal a HÁTULSÓ
+  él szerinti Y=0 ütközőn. A második oldal Y számítása továbbra
+  is pontnál DY-Y, Y irányú furatszakasznál DY-(Y+y).
+  X=0 mindkét oldalon a lap saját ALSÓ éle, felfelé növekszik.
+  A korábbi, "jobb oldal előbb" megjegyzések ELAVULTAK.
+- TELI HÁTLAP (a szekrény anyagvastagságával megegyező,
+  nem a 4 mm-es falcos HDF) ÖNÁLLÓ .XXL CNC programot kap.
+  A teli hátlap saját alsó éle X=0; a hátlap magassága DX,
+  szélessége DY. A négy igazolt él-furatmakró MIND szerepel:
+    ELF3 Y=0 y=DY  (bal él)
+    ELF2 Y=0 y=DY  (jobb él)
+    ELF4 X=0 x=DX  (elülső él)
+    ELF5 X=0 x=DX  (hátulsó él)
+  A G-értéket a kiválasztott bútor-összefúrási kötésmód adja.
+  ELF2/3 kizárólag Y/y, ELF4/5 kizárólag X/x dimenzióval
+  exportálható; hibás tengelyű makró blokkot kap.
+  A falcos, 4 mm-es HDF-hez továbbra sem készül külön XXL.
+- MINDEN CNC .XXL program H fejlécének legvégére a felhasználó
+  pontos, változtatás nélküli szövege írandó:
+    ;ABS_UTKOUIK
+  Közvetlenül a korábbi "V=1" után, ugyanazon fejlécsor végén:
+    ... BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK
+  Ezt a szöveget nem szabad átnevezni vagy automatikusan javítani.
+- A tető korábban jóváhagyott kétoldali megmunkálási sorrendje,
+  az összes védett xMix/xPrg szabási sorrend és Windows mentés
+  változatlan. A gépi Xilog előnézet és fizikai szárazpróba
+  éles használat előtt szükséges, különös tekintettel a
+  4-élű teli hátlapra és a pontos fejlécmegjegyzésre.
