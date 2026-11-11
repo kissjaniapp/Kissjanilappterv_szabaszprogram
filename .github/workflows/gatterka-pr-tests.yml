@@ -1,0 +1,39 @@
+name: Gatterka - fejlesztesi CNC es regresszios tesztek
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  node-tests:
+    name: Node.js Gatterka tesztek
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Forraskod letoltese
+        uses: actions/checkout@v7
+      - name: Node.js 22
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Minden regresszios teszt
+        run: node --test
+
+  windows-native-tests:
+    name: Windows mento es Go tesztek
+    runs-on: windows-latest
+    timeout-minutes: 12
+    steps:
+      - name: Forraskod letoltese
+        uses: actions/checkout@v7
+      - name: Go fordito
+        uses: actions/setup-go@v7
+        with:
+          go-version: '1.23.x'
+          cache: false
+      - name: Windows native bridge teszt
+        working-directory: desktop-go
+        run: go test ./launcher

@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','LAB','XFALC']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -30,6 +30,18 @@
     if(!operation||!VALID_MACROS.has(operation.macro))
       throw new Error('A megadott alkatrésznél nem támogatott CNC makró.');
     if(!core)throw new Error('A CNC makrófordító nem töltődött be.');
+    if(operation.macro==='XFALC'){
+      const q=finite(operation.Q),g=finite(operation.G),tool=finite(operation.T);
+      if(!Number.isInteger(q)||q<1||q>4||(g!==2&&g!==3)||tool!==103)
+        throw new Error('Érvénytelen XFALC: Q=1..4, G=2/3 és T=103 szükséges.');
+      return 'XFALC Q='+q+'# G='+g+'# T=103';
+    }
+    if(operation.macro==='LAB'){
+      const x=finite(operation.X),y=finite(operation.Y);
+      if(!Number.isFinite(x)||!Number.isFinite(y)||x<=0||y<=0||x>10000||y>10000)
+        throw new Error('Érvénytelen LAB X/Y pozíció.');
+      return 'LAB X='+round(x)+' Y='+round(y)+' G=2';
+    }
     if(operation.macro==='REF'){
       if(operation.DX===undefined)return 'REF';
       const dx=finite(operation.DX),bx=finite(operation.BX);
@@ -69,6 +81,59 @@
     }
     return body+' G='+G;
   }
+  // Az F-osztó X tengely körüli átfordítása után a HÁTULSÓ él a Y ütköző.
+  // A geometriai bemenet minden oldalon az elülső éltől méri Y-t,
+  // a második oldal CNC koordinátáit viszont a hátulsó élből kell számítani.
+  // Pont: Y'=DY-Y. Megmunkálási SZAKASZ: Y'=DY-(Y+y), a hossz y változatlan.
+  // X az alkatrész saját alsó szélétől számolódik, fordításkor NEM tükröződik.
+  function orientOperationAfterXFlip(operation,entry){
+    if(entry.flipAxis!=='X'||String(operation.face||'primary')!=='reverse'||
+       operation.Y===undefined)return operation;
+    const dy=finite(entry.dy),y=finite(operation.Y);
+    if(!Number.isFinite(dy)||dy<=0||!Number.isFinite(y)||y<0)
+      throw new Error('Az F-osztó hátsó ütközőjéhez hiányzik a hiteles Y/DY méret.');
+    let target;
+    if(operation.y!==undefined){
+      const span=finite(operation.y);
+      if(!Number.isFinite(span)||span<=0||y+span>dy+.001)
+        throw new Error('Az F-osztó második oldalán az Y furatszakasz kilóg az alkatrészből.');
+      target=dy-(y+span);
+    }else{
+      if(y>dy+.001)
+        throw new Error('Az F-osztó második oldalán az Y furat kilóg az alkatrészből.');
+      target=dy-y;
+    }
+    if(target<-.001||target>dy+.001)
+      throw new Error('Az F-osztó átfordított Y koordinátája a munkadarabon kívül van.');
+    return {...operation,Y:round(Math.max(0,Math.min(dy,target)))};
+  }
+  // Tető/fenék: a gépi fogás és a FORDIT sorrendje a kötésmódtól függ.
+  // Összehúzó / hosszú excenter / csavar esetén a két oldalt külön kezeljük.
+  // Tető: a szekrényben ALSÓ lapfelületén XFALC + F-osztó, FORDIT, élfurat.
+  // Fenék: először az alsó oldali élfuratok (+ LAB), FORDIT, felül XFALC + F-osztó.
+  // Egyszerű tipli esetén a szekrényben felső lapfelület az első, nincs FORDIT.
+  function boardFaces(entry,mode){
+    const operations=entry.operations||[],join=jointMode(null,mode);
+    if(entry.partRole!=='top'&&entry.partRole!=='bottom')return null;
+    const edge=o=>o.macro.startsWith('ELF');
+    const foot=o=>o.macro==='LAB';
+    if(entry.partRole==='bottom'){
+      // Fenék: először a szekrényben FELSŐ felülete (falc, F-osztó,
+      // összehúzó/élfuratok), majd FORDIT, aztán a fonák 4 LAB furata.
+      // A pótfenék jelenléte miatt LAB nélkül nem kérünk megfordítást.
+      const top=operations.filter(o=>!foot(o));
+      const underside=operations.filter(foot);
+      return {first:top.length?top:underside,other:top.length?underside:[]};
+    }
+    // Tető: excenter/csavar: az ALSÓ színén falc és F-osztó,
+    // FORDIT után az élösszehúzók. Egyszerű tiplis tető egyoldalas.
+    if(join==='tipli')return {first:operations,other:[]};
+    if(!['excenter','hosszuExcenter','csavar'].includes(join))
+      throw new Error('Ismeretlen tető/fenék megmunkálási kötésmód.');
+    const first=operations.filter(o=>!edge(o));
+    const other=operations.filter(edge);
+    return {first:first.length?first:other,other:first.length?other:[]};
+  }
   function compileEntry(entry,mode){
     const problems=Array.isArray(entry.issues)?entry.issues.filter(Boolean):[];
     if(problems.length)throw new Error(problems.join('; '));
@@ -78,15 +143,18 @@
     if(!Array.isArray(entry.operations)||!entry.operations.length)
       throw new Error('Ehhez az alkatrészhez nincs hiteles megmunkálási makró.');
     if(entry.operations.length>500)throw new Error('Túl sok megmunkálás (>500).');
-    const first=[],other=[];
-    for(const op of entry.operations){
+    const first=[],other=[],planned=boardFaces(entry,mode);
+    if(planned){
+      for(const op of planned.first)first.push(macroLine(op,mode));
+      for(const op of planned.other)other.push(macroLine(op,mode));
+    }else for(const op of entry.operations){
       const face=String(op.face||'primary');
       if(!FACES.has(face))throw new Error('Nem meghatározott megmunkálási oldal.');
-      (face==='primary'?first:other).push(macroLine(op,mode));
+      (face==='primary'?first:other).push(macroLine(orientOperationAfterXFlip(op,entry),mode));
     }
     // A Xilog minta elöl kezdi a megmunkálást, a túloldalt FORDIT-tal kéri.
     if(!first.length&&other.length)throw new Error('Csak hátoldali megmunkálás: nincs igazolt első oldali felrakási sorrend.');
-    const lines=other.length?[...first,'FORDIT',...other]:first;
+    const lines=other.length?[...first,entry.flipAxis==='X'?'FORDIT_X':'FORDIT',...other]:first;
     return core.compileXxl({dx,dy,dz,side:entry.side||'IJ',commands:lines.join('\n')});
   }
   /**
@@ -100,7 +168,7 @@
     core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
     const result={files:[],blocked:[],skipped:[],total:0};
-    const used=new Set();
+    const used=new Set(),shelfBySize=new Map();
     const name=cleanName(furniture?.name||'Butor');
     for(const part of furniture?.parts||[]){
       if(!allowed.has(String(part.id)))continue;
@@ -152,10 +220,24 @@
         }
         try{
           const content=compileEntry(entry,modes);
+          const dx=finite(entry.dx),dy=finite(entry.dy),dz=finite(entry.dz);
+          // Azonos méretű polcból csak egy CNC-program, ha a megmunkálás is azonos.
+          // Eltérő furatprogramot pusztán egyező vágásméret miatt SOHA nem vonunk össze.
+          if(String(identity).startsWith('shelf-')){
+            const sizeKey=[round(dx),round(dy),round(dz)].join('x');
+            const previous=shelfBySize.get(sizeKey);
+            if(previous){
+              if(previous!==content){
+                appendFailure(result.blocked,shown,'Azonos méretű polc, de eltérő CNC-furatozás: egy közös program nem lenne gépileg biztonságos.');
+              }else appendFailure(result.skipped,shown,'Azonos méretű és furatozású polc: a CNC-program egyszer már szerepel.');
+              continue;
+            }
+            shelfBySize.set(sizeKey,content);
+          }
           const suffix=cleanName(identity);
           const filename=(name+'_'+cleanName(part.name||entry.name)+'_'+suffix+'.xxl').slice(0,160);
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
-            commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
+            commands:(entry.operations||[]).map(op=>macroLine(orientOperationAfterXFlip(op,entry),modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
       }

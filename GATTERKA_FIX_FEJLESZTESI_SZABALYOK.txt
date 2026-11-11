@@ -617,3 +617,174 @@ xPrg/xMix a16c7e88, Windows natív mentés f49fe3b5,
 fő SVG 86d21042.
 Előző változat archiválva:
 archive/before-part-filing-and-workshop-png-20261104
+
+2026-11-10 – CNC GÉPI X-NULLPONT – ÚJ, KÖTELEZŐ TULAJDONOSI SZABÁLY
+-------------------------------------------------------------------
+A gépi CNC megmunkálásoknál MINDEN alkatrész saját ALSÓ ÉLE az
+X=0 nullpont. A furat, falc és minden más X-koordinátás megmunkálás
+X-mérete az adott alkatrészen LENTRŐL FELFELÉ növekszik.
+Kivétel nincs: oldallap, tető, fenék, polc, V-osztó, F-osztó,
+pótfenék és minden további megmunkált alkatrész egyaránt.
+A korábban az F-osztóra alkalmazott felső ütközős X=0 szabály
+ezennel VISSZAVONVA, az új alsó X=0 szabály helyettesíti.
+Az X-nullpont az alkatrészhez, nem a bútor teljes külméretéhez
+tartozik. A FORDIT során a megmunkálási oldalt változtatjuk,
+nem választunk önkényesen ellenkező X-referenciát.
+A CNC implementációt és az F-osztó korábbi felülről számított
+LAPA/REF/POLC koordinátáit külön korrigálni és ellenőrizni kell.
+A 2026-11-10-i korábbi zöld tesztek nem igazolják még ezt az új
+általános koordinátaszabályt. Xilog előnézet és fizikai szárazpróba
+kötelező éles használat előtt.
+FONTOS: kizárólag CNC-megmunkálási referenciáról szól; a korábbi,
+védett szabászgépi xMix/xPrg algoritmus, vágási sorrend, szélezés,
+és natív Windows mentési működés változatlan.
+
+2026-11-10 – F-OSZTÓ KÖTELEZŐ BEFOGÁSI ÉS FURATOZÁSI SORREND
+----------------------------------------------------------------
+A CNC-be helyezett F-osztó SAJÁT ALSÓ ÉLE az X=0 ütköző.
+A BÚTOR ELEJE a Y=0 ütköző (fizikai homlokél).
+Az F-osztó összes LAPA és REF/POLC X koordinátáját alulról
+felfelé számítjuk. A korábbi felülről számoló értékek elavultak.
+Kétoldalas megmunkálás SORRENDJE kötelező:
+1. Az F-osztó JOBB OLDALI lapfelületének fúrása.
+2. X TENGELY körüli, kezelő által végzett fordítás:
+   XMSG Q=1 N="FORDIT_X".
+3. Az F-osztó BAL OLDALI lapfelületének fúrása.
+Az IJ/LK munkatérfelek helyét, a 15 mm-es Y-eltolásokat,
+a fizikai alsó X=0 nullpontot és az excenter G-kódokat a
+FORDIT_X nem írhatja felül. A fordítás kezelői utasítás,
+nem tényleges automatikus géptengely-mozgás.
+Az xMix/xPrg szabási sorrend, a tető/fenék korábban jóváhagyott
+oldalsorrendje és a Windows natív mentés érintetlen marad.
+Xilog előnézet és fizikai szárazpróba kötelező.
+
+2026-11-10 – F-OSZTÓ FORDIT_X UTÁN HÁTULSÓ ÜTKÖZŐ: KÖTELEZŐ Y-TÜKRÖZÉS
+-----------------------------------------------------------------------
+- A JOBB oldali lapfelület fúrásakor az F-osztó ALSÓ éle X=0,
+  a BÚTOR ELEJE Y=0 (elöl ütközik).
+- A kezelői FORDIT_X (X tengely KÖRÜLI átfordítás) után a BAL oldali
+  lapfelületet a géphez tesszük. Ekkor fizikailag az ALKATRÉSZ
+  HÁTULSÓ ÉLE ütközik Y irányban! A gépi Y=0 ezért a hátulja.
+- A szerkezeti tervben tárolt elölről mért eredeti Y
+  geometriát az átfordítás után CNC-hez KÖTELEZŐ tükrözni
+  az F-osztó SAJÁT DY MÉLYSÉGÉHEZ viszonyítva:
+    Pontszerű furat: Y_gép = DY - Y_elöl.
+    Hosszú szakasz / furatsor: Y_gép = DY - (Y_elöl + y_hossz).
+    A szakaszhossz y_hossz változatlan.
+- Az F-osztó saját X koordinátája NEM fordul meg: X=0
+  mindkét oldalon az ALSÓ éle, X lentről felfelé nő.
+- A FORDIT_X előtti jobb oldali műveletek Y=0 pontja az
+  ELÜLSŐ él; a második, bal oldali műveleteké a HÁTULSÓ él.
+  Csak a FORDIT_X után, az F-osztó reverse/2. oldalán
+  alkalmazzuk a képletet; a normál FORDIT-tal fordított
+  tető, fenék vagy pótfenék műveleteit nem módosítjuk.
+- REF DX/BX X-irányú szakaszok változatlanok.
+  A REF/POLC makrók POLC Y értéke pontszerű hely,
+  ezért DY-Y szerint tükrözendő a második oldalon.
+- Az első jobb és a második bal oldali jóváhagyott
+  15 mm-es F-kötésfurat kiosztást, Y-szakaszhosszt
+  és G-kódot nem szabad találgatással módosítani.
+  Aszimmetrikus furathelyeknél külön ellenőrizni kell:
+  a gépi hátulsó referencia különbözik a tervező
+  elülső referenciájától.
+- Túlméretes vagy negatív Y/Y+y koordináta CNC exportja
+  blokkolandó; nem szabad a munkadarabon kívülre fúrni.
+- Az xMix/xPrg és a szabási sorrend változatlan.
+  Valós Xilog előnézet és CNC szárazpróba továbbra is szükséges.
+
+2026-11-11 – TETŐ/FENÉK CNC, PÓTFENÉK-LÁB, HDF ÉS MENTÉS – ÚJ SZABÁLY
+--------------------------------------------------------------------
+- Tető, összehúzós, hosszú excenteres vagy csavaros kötés esetén:
+  a szekrényben ALSÓ lapfelület („szín”) kerül elsőként a gépre;
+  falcos hátfal esetén itt készül az XFALC és itt készülnek
+  az F-osztó lapfuratai. Ezután FORDIT, majd a tető élfuratai.
+  A második oldal hiányában nincs felesleges FORDIT.
+- Fenék, összehúzós, hosszú excenteres vagy csavaros kötés:
+  az alsó oldali élfuratok és – pótfenék NÉLKÜL – a lábfuratok
+  készülnek először. FORDIT után a felső oldalon a falc
+  (ha valódi falcos HDF-csatlakozás van) és az F-osztó furatai.
+  Felesleges FORDIT nélkül, ha csak egy felületet kell fúrni.
+- Egyszerű tipli (nem összehúzós és nem csavaros) esetén
+  a tető és fenék normál felső színével kezdődik a megmunkálás,
+  nincs szükségtelen FORDIT; ha a fenék alján LAB is kellene,
+  a gépi export fordítás nélkül nem készíthet hibás programot.
+- A HDF felső és alsó csatlakozása TELJESEN FÜGGETLEN:
+  valódi 5,5 mm falcos csatlakozásnál a tető/fenék
+  MÉLYSÉGÉBŐL nem kell levonni az HDF-et és XFALC kell;
+  „visszavágott – 2 mm” csatlakozásnál nincs XFALC az adott
+  lapon és a tető/fenék teljes gyártási mélysége D-HDF vastagság.
+  Falcos HDF-nél az aktuális rendszer 4 mm HDF-fel számol.
+  A méretkorrekció az alkatrészlistában, 3D-ben, CNC DY-ben
+  és az él-/lapfuratok hosszán is érvényes.
+- Azonos méretű polcoknál csak EGY külön XXL-program készül,
+  amennyiben a tényleges furatkép is azonos. Ha azonos
+  vágásméret mellett különböző furatkép van, a program
+  tiltó hibát jelez, nem választ önkényesen egy rossz programot.
+- CNC .xxl programok ZIP csomagja a telepített Windows
+  Gatterka külön, valódi natív „Mentés másként” párbeszédablakával
+  kiválasztott mappába kerül. A felhasználó fájlnevet is választ;
+  már létező ZIP-et automatikusan nem ír felül (pl. _2.zip).
+  Az xMix/xPrg választási és mentési kódja változatlan.
+- „Kell láb?” csak „Kell fenék?” bejelölése esetén lehetséges.
+  A pótfenék BEKAPCSOLÁSA elsőbbséget élvez: a 4 LAB
+  lábfúrás KIZÁRÓLAG a pótfenékre kerül, a rendes fenék
+  SEMMILYEN LAB furatot nem kap, akkor sem, ha a fenék végigmegy!
+  Végigmenő fenék + pótfenék megengedett; a pótfenéket
+  közvetlenül a fonákjával tesszük a gépre, ha csak LAB készül.
+  Közémenő fenék + pótfenék esetén a korábbi pótfenék LAPA
+  és a FORDIT utáni LAB sorrend marad.
+  Fenék nélkül pótfenék és láb sem kerül be.
+- Pótfenék NÉLKÜL a 4 LAB a rendes fenék FONÁK oldalán:
+  végigmenő fenék: X1=59, X2=DX-59;
+  oldalak közé menő fenék: X1=59-t, X2=DX-59+t
+  (18 mm anyagnál X1=41, X2=DX-41).
+  Y1=59, Y2=DY-59; a fenék túl kis mérete blokkolja a CNC-t.
+- Az általános X=0 továbbra is MINDEN alkatrész ALSÓ éle.
+  Az F-osztó FORDIT_X utáni hátsó Y-ütközőt és tükrözést
+  nem szabad megváltoztatni. A xMix/xPrg védett
+  szabási sorrend és mentési rendszer változatlan.
+- Új gépi műveleteket éles használat előtt Xilog előnézettel,
+  majd gépi szárazpróbával ellenőrizni kell.
+
+2026-11-11 – LEGÚJABB CNC SZABÁLY: FENÉK, TELI HÁTLAP, F-OSZTÓ, FEJLÉC
+------------------------------------------------------------------------
+FONTOS: Ez a legutóbbi tulajdonosi pontosítás a korábbi, ellenkező
+F-osztó-lapoldali és fenék-fordítási szabályt FELÜLÍRJA.
+- A FENÉK saját FELSŐ felületi furataival indul a CNC-műveletsor:
+  élfurat/összehúzó, F-osztó kötés, és falcos hát esetén XFALC.
+  HA VAN 4 LAB lábfurat a fenéken (és nincs pótfenék), ezek csak
+  az XMSG Q=1 N="FORDIT" kezelői üzenet UTÁN jöhetnek, az ALSÓ
+  fonákon. A kötésmód nem írhatja felül ezt az oldalsorrendet.
+  Ha nincs LAB a fenéken, nem szükséges emiatt FORDIT.
+  Pótfenék esetén a LAB továbbra is KIZÁRÓLAG a pótfenéké.
+- Az F-OSZTÓ jóváhagyott szerkezeti makrókiosztása és eltolt
+  Y-furatai változatlanok, de a lapoldali felrakási sorrend
+  JAVÍTVA: BAL lapoldal fúrása először az elülső Y=0 ütközőn,
+  aztán X TENGELY körüli FORDIT_X, majd JOBB lapoldal a HÁTULSÓ
+  él szerinti Y=0 ütközőn. A második oldal Y számítása továbbra
+  is pontnál DY-Y, Y irányú furatszakasznál DY-(Y+y).
+  X=0 mindkét oldalon a lap saját ALSÓ éle, felfelé növekszik.
+  A korábbi, "jobb oldal előbb" megjegyzések ELAVULTAK.
+- TELI HÁTLAP (a szekrény anyagvastagságával megegyező,
+  nem a 4 mm-es falcos HDF) ÖNÁLLÓ .XXL CNC programot kap.
+  A teli hátlap saját alsó éle X=0; a hátlap magassága DX,
+  szélessége DY. A négy igazolt él-furatmakró MIND szerepel:
+    ELF3 Y=0 y=DY  (bal él)
+    ELF2 Y=0 y=DY  (jobb él)
+    ELF4 X=0 x=DX  (elülső él)
+    ELF5 X=0 x=DX  (hátulsó él)
+  A G-értéket a kiválasztott bútor-összefúrási kötésmód adja.
+  ELF2/3 kizárólag Y/y, ELF4/5 kizárólag X/x dimenzióval
+  exportálható; hibás tengelyű makró blokkot kap.
+  A falcos, 4 mm-es HDF-hez továbbra sem készül külön XXL.
+- MINDEN CNC .XXL program H fejlécének legvégére a felhasználó
+  pontos, változtatás nélküli szövege írandó:
+    ;ABS_UTKOUIK
+  Közvetlenül a korábbi "V=1" után, ugyanazon fejlécsor végén:
+    ... BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK
+  Ezt a szöveget nem szabad átnevezni vagy automatikusan javítani.
+- A tető korábban jóváhagyott kétoldali megmunkálási sorrendje,
+  az összes védett xMix/xPrg szabási sorrend és Windows mentés
+  változatlan. A gépi Xilog előnézet és fizikai szárazpróba
+  éles használat előtt szükséges, különös tekintettel a
+  4-élű teli hátlapra és a pontos fejlécmegjegyzésre.

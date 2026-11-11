@@ -60,12 +60,12 @@ test('Végigmenő tetőnél az oldallap magasságából számolja a HDF-et',()=>
   state.top='full';const {p,parts}=calculate();
   assert.equal(p.sideH,892);assert.equal(hdf(parts).a,989);assert.equal(hdf(parts).b,881);
 });
-test('Teli hátfal méretszámítása továbbra is változatlan marad',()=>{
+test('Teli hátlap CNC X=alsó él, DX=magasság, DY=szélesség',()=>{
   const {state,calculate}=make();
   state.backType='full';const {p,parts}=calculate();
   assert.equal(p.innerW,964);assert.equal(p.innerH,874);
-  assert.equal(parts.find(x=>x.key==='back-full').a,964);
-  assert.equal(parts.find(x=>x.key==='back-full').b,874);
+  assert.equal(parts.find(x=>x.key==='back-full').a,874);
+  assert.equal(parts.find(x=>x.key==='back-full').b,964);
   assert.equal(hdf(parts),undefined);
 });
 test('4 mm-es bútorlap is választható; a HDF függetlenül 4 mm',()=>{
@@ -116,7 +116,8 @@ test('Végigmenő tető és fenék, pótfenék és teli hátfal esetén is H-t k
   state.backType='full';
   ({p,parts}=calculate());
   assert.equal(p.innerH,856);
-  assert.equal(parts.find(x=>x.key==='back-full').b,856);
+  assert.equal(parts.find(x=>x.key==='back-full').a,856);
+   assert.equal(parts.find(x=>x.key==='back-full').b,964);
   assert.equal(parts.find(x=>x.key==='side-left').a,856);
 });
 

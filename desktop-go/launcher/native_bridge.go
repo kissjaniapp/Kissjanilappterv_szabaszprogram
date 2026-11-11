@@ -4,6 +4,7 @@
 package main
 
 import (
+ "archive/zip"
  "crypto/rand"
  "encoding/base64"
  "encoding/json"
@@ -30,6 +31,7 @@ type nativeBridge struct {
  mu sync.Mutex
  selectedDirectory string
  selectedMixPath string
+ selectedCncZipPath string
  lastDirectory string
 }
 type nativeFile struct {
@@ -90,6 +92,8 @@ func startNativeBridge()(int,string,func(),error){
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)
  router.HandleFunc("/native/write-files",bridge.writeFiles)
+ router.HandleFunc("/native/choose-cnc-save-as",bridge.chooseCncSaveAs)
+ router.HandleFunc("/native/write-cnc-zip",bridge.writeCncZip)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -374,6 +378,154 @@ func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
   info,err:=os.Stat(filepath.Dir(chosen))
   if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott célmappa nem érhető el.")}
   return chosen,nil
+}
+
+func chooseWindowsSaveCncZip(defaultName string,initialDir string)(string,error){
+  runtime.LockOSThread()
+  defer runtime.UnlockOSThread()
+  // A közös Windows Mentés másként ablak követi a Gatterka előtérben lévő ablakát.
+  const ofnOverwritePrompt=0x00000002
+  const ofnHideReadOnly=0x00000004
+  const ofnNoChangeDir=0x00000008
+  const ofnPathMustExist=0x00000800
+  const ofnExplorer=0x00080000
+  const ofnEnableSizing=0x00800000
+  file:=make([]uint16,32768)
+  name:=utf16.Encode([]rune(defaultName))
+  if len(name)+1>=len(file){return "",errors.New("Túl hosszú zip fájlnév.")}
+  copy(file,name)
+  filter:=utf16.Encode([]rune("zip fájlok (*.zip)\x00*.zip\x00"))
+  filter=append(filter,0)
+  title,_:=syscall.UTF16PtrFromString("Gatterka – CNC programok Mentés másként (.zip)")
+  extension,_:=syscall.UTF16PtrFromString("zip")
+  var initial *uint16
+  if initialDir!=""{
+    if st,err:=os.Stat(initialDir);err==nil&&st.IsDir(){
+      initial,_=syscall.UTF16PtrFromString(initialDir)
+    }
+  }
+  user32:=syscall.NewLazyDLL("user32.dll")
+  foreground:=user32.NewProc("GetForegroundWindow")
+  hwnd,_,_:=foreground.Call()
+  if hwnd==0{return "",errors.New("Nincs előtérben aktív Windows-ablak a Mentés másként megnyitásához.")}
+  params:=windowsSaveFileName{
+   Owner:hwnd,
+   Filter:uintptr(unsafe.Pointer(&filter[0])),
+   FilterIndex:1,
+   File:uintptr(unsafe.Pointer(&file[0])),
+   MaxFile:uint32(len(file)),
+   InitialDir:uintptr(unsafe.Pointer(initial)),
+   Title:uintptr(unsafe.Pointer(title)),
+   DefaultExt:uintptr(unsafe.Pointer(extension)),
+   Flags:ofnOverwritePrompt|ofnHideReadOnly|ofnNoChangeDir|ofnPathMustExist|ofnExplorer|ofnEnableSizing,
+  }
+  params.StructureSize=uint32(unsafe.Sizeof(params))
+  dialog:=syscall.NewLazyDLL("comdlg32.dll").NewProc("GetSaveFileNameW")
+  success,_,_:=dialog.Call(uintptr(unsafe.Pointer(&params)))
+  runtime.KeepAlive(file)
+  runtime.KeepAlive(filter)
+  runtime.KeepAlive(title)
+  runtime.KeepAlive(extension)
+  runtime.KeepAlive(initial)
+  if success==0{
+    extended,_,_:=syscall.NewLazyDLL("comdlg32.dll").NewProc("CommDlgExtendedError").Call()
+    if extended==0{return "",nil} // A felhasználó megszakította az ablakot.
+    return "",fmt.Errorf("A Windows Mentés másként ablak nem nyitható meg (kód: 0x%X).",extended)
+  }
+  chosen:=filepath.Clean(syscall.UTF16ToString(file))
+  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),".zip"){
+    return "",errors.New("A Mentés másként ablakból nem teljes .zip fájlútvonal érkezett.")
+  }
+  info,err:=os.Stat(filepath.Dir(chosen))
+  if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott célmappa nem érhető el.")}
+  return chosen,nil
+}
+
+
+type nativeCncSave struct { Programs []nativeProgram `json:"programs"` }
+var cncProgramName=regexp.MustCompile("^[A-Za-z0-9_.-]+[.]xxl$")
+func validateCncZip(req nativeCncSave) error {
+ if len(req.Programs)==0{return errors.New("Nincs menthető CNC XXL program.")}
+ names:=map[string]bool{}
+ for _,p:=range req.Programs{
+  name:=p.Name
+  if len(name)>190||!cncProgramName.MatchString(name)||strings.HasPrefix(name,".")||
+    strings.Contains(name,"..")||strings.Contains(name,"/")||strings.ContainsRune(name,'\\'){
+    return errors.New("Érvénytelen CNC .xxl fájlnév.")
+  }
+  lowered:=strings.ToLower(name)
+  if names[lowered]{return errors.New("Azonos nevű CNC program nem menthető kétszer.")}
+  names[lowered]=true
+  if !strings.HasPrefix(p.Content,"H DX=")||!strings.HasSuffix(p.Content,"VEGE\r\n"){
+    return errors.New("Érvénytelen Xilog XXL tartalom: "+name)
+  }
+ }
+ return nil
+}
+func saveCncZipFiles(target string,req nativeCncSave)(string,error){
+ if err:=validateCncZip(req);err!=nil{return "",err}
+ dir:=filepath.Dir(target)
+ if !strings.EqualFold(filepath.Ext(target),".zip")||!filepath.IsAbs(target){
+   return "",errors.New("CNC mentéshez teljes .zip útvonal szükséges.")
+ }
+ if st,err:=os.Stat(dir);err!=nil||!st.IsDir(){return "",errors.New("A CNC célmappája nem elérhető.")}
+ path:=target
+ for n:=2;;n++{
+   _,err:=os.Stat(path)
+   if os.IsNotExist(err){break}
+   if err!=nil{return "",err}
+   path=strings.TrimSuffix(target,filepath.Ext(target))+fmt.Sprintf("_%d.zip",n)
+ }
+ temp,err:=os.CreateTemp(dir,".gatterka-cnc-*.tmp")
+ if err!=nil{return "",err}
+ tempPath:=temp.Name()
+ defer os.Remove(tempPath)
+ writer:=zip.NewWriter(temp)
+ for _,p:=range req.Programs{
+   w,e:=writer.Create(p.Name)
+   if e!=nil{_ =writer.Close();_ =temp.Close();return "",e}
+   if _,e=w.Write([]byte(p.Content));e!=nil{
+     _ =writer.Close();_ =temp.Close();return "",e
+   }
+ }
+ if err=writer.Close();err!=nil{_ =temp.Close();return "",err}
+ if err=temp.Close();err!=nil{return "",err}
+ if err=os.Rename(tempPath,path);err!=nil{return "",err}
+ return path,nil
+}
+func (bridge *nativeBridge) chooseCncSaveAs(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ bridge.selectedCncZipPath=""
+ r.Body=http.MaxBytesReader(w,r.Body,4096)
+ var input struct{DefaultName string `json:"defaultName"`}
+ if err:=json.NewDecoder(r.Body).Decode(&input);err!=nil{machineError(w,400,err);return}
+ name:=strings.TrimSpace(input.DefaultName)
+ if name==""||len(name)>195||strings.Contains(name,"/")||strings.Contains(name,":")||strings.ContainsRune(name,92)||strings.Contains(name,"<")||strings.Contains(name,">")||strings.Contains(name,"\"")||strings.Contains(name,"|")||strings.Contains(name,"?")||strings.Contains(name,"*")||
+    !strings.EqualFold(filepath.Ext(name),".zip")||strings.Contains(name,".."){
+   name="Gatterka_CNC_XXL.zip"
+ }
+ chosen,err:=chooseWindowsSaveCncZip(name,bridge.lastDirectory)
+ if err!=nil{machineError(w,500,err);return}
+ if chosen==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
+ bridge.selectedCncZipPath=chosen
+ machineJSON(w,200,map[string]interface{}{"cancelled":false,"zipPath":chosen})
+}
+func (bridge *nativeBridge) writeCncZip(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ target:=bridge.selectedCncZipPath
+ bridge.selectedCncZipPath=""
+ if target==""{machineError(w,400,errors.New("Először válassz CNC mentési célmappát."));return}
+ r.Body=http.MaxBytesReader(w,r.Body,256<<20)
+ var req nativeCncSave
+ if err:=json.NewDecoder(r.Body).Decode(&req);err!=nil{machineError(w,400,err);return}
+ saved,err:=saveCncZipFiles(target,req)
+ if err!=nil{machineError(w,500,err);return}
+ bridge.lastDirectory=filepath.Dir(saved)
+ machineJSON(w,200,map[string]interface{}{"path":saved,"folder":bridge.lastDirectory,"programs":len(req.Programs)})
 }
 
 func (bridge *nativeBridge) chooseSaveAs(w http.ResponseWriter,r *http.Request){

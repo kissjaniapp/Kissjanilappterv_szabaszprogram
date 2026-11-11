@@ -11,7 +11,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','LAB','XFALC']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -38,12 +38,26 @@
     const bits=line.trim().split(/\s+/);
     const macro=bits.shift().toUpperCase();
     if(!MACROS.has(macro))throw new Error('Nem támogatott CNC makró: '+macro);
+    if(macro==='XFALC'){
+      // Gépi referencia: XFALC Q=1# G=2# T=103.
+      // Q: 1 kifutó, 2 nem kifutó, 3 bal oldalt zárt, 4 jobb oldalt zárt.
+      // G: 2 balról jobbra, 3 jobbról balra. Fix falcoló szerszám: T=103.
+      const m=/^XFALC Q=([1-4])# G=([23])# T=103$/.exec(line.trim());
+      if(!m)throw new Error('XFALC: Q=1..4, G=2/3 és T=103 szükséges.');
+      return 'XFALC Q='+m[1]+'# G='+m[2]+'# T=103';
+    }
     const fields={};
     for(const part of bits){
       const match=/^([XYxyAG])=(-?(?:\d+\.?\d*|\.\d+))$/.exec(part);
       if(!match||Object.prototype.hasOwnProperty.call(fields,match?.[1]))
         throw new Error('Érvénytelen vagy ismételt CNC makróparaméter: '+part);
       fields[match[1]]=number(match[2],match[1],true);
+    }
+    if(macro==='LAB'){
+      if(Object.keys(fields).sort().join(',')!=='G,X,Y'||fields.G!==2||
+         fields.X>dx||fields.Y>dy)
+        throw new Error('LAB: csak X/Y és G=2 engedélyezett a munkadarabon belül.');
+      return 'LAB X='+fmt(fields.X)+' Y='+fmt(fields.Y)+' G=2';
     }
     if(!Object.prototype.hasOwnProperty.call(fields,'A')||fields.A!==0)
       throw new Error('Az A forgásszög csak 0 lehet a jelenleg ellenőrzött mintákban.');
@@ -54,8 +68,12 @@
       throw new Error('LAPA: X, Y, A, y és G szükséges.');
     if(macro==='LAPF'&&(!('X'in fields)||!('Y'in fields)||!('x'in fields)||'y'in fields))
       throw new Error('LAPF: X, Y, A, x és G szükséges.');
-    if(macro.startsWith('ELF')&&!('x'in fields)&&!('y'in fields))
-      throw new Error('Élfurathoz x vagy y hossz szükséges.');
+    if((macro==='ELF2'||macro==='ELF3')&&
+       (!('Y'in fields)||!('y'in fields)||'X'in fields||'x'in fields))
+      throw new Error('Az ELF2/ELF3 él-furatmakró csak Y kezdőponttal és y hosszal használható.');
+    if((macro==='ELF4'||macro==='ELF5')&&
+       (!('X'in fields)||!('x'in fields)||'Y'in fields||'y'in fields))
+      throw new Error('Az ELF4/ELF5 él-furatmakró csak X kezdőponttal és x hosszal használható.');
     if('X'in fields&&fields.X>dx || 'Y'in fields&&fields.Y>dy ||
        'x'in fields&&fields.x>dx || 'y'in fields&&fields.y>dy ||
        'X'in fields&&'x'in fields&&fields.X+fields.x>dx ||
@@ -135,16 +153,16 @@
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
     if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
     const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
-      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
+      ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1;ABS_UTKOUIK'];
     let macrocnt=0,flips=0,justFlipped=false;
     const shelfRef={active:false,dx:0,bx:0};
     for(let i=0;i<lines.length;i++){
-      if(lines[i]==='FORDIT'){
+      if(lines[i]==='FORDIT'||lines[i]==='FORDIT_X'){
         if(shelfRef.active)throw new Error('A REF szakaszt FORDIT előtt le kell zárni.');
         if(!macrocnt||justFlipped||i===lines.length-1)
           throw new Error('A FORDIT csak két megmunkálási csoport között állhat.');
         if(++flips>1)throw new Error('A többfordításos CNC program még nincs hitelesítve.');
-        out.push(';','VEGE','XMSG Q=1 N="FORDIT"',';');
+        out.push(';','VEGE','XMSG Q=1 N="'+lines[i]+'"',';');
         justFlipped=true;
       }else if(lines[i]==='REF'||lines[i].startsWith('REF ')||lines[i].startsWith('POLC ')){
         const line=parseShelfMacro(lines[i],dx,dy,shelfRef);
