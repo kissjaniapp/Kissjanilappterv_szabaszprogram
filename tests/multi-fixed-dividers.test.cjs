@@ -151,3 +151,25 @@ test('V-osztó bal/jobb csatlakozások UI-ja és a visszamentés kulcsai szerepe
  assert.match(html,/data-v-right/);
  assert.match(html,/vLeft-.*vRight-|vLeft:'data-v-left'/s);
 });
+
+test('Az egyedi F-osztóhézagok nem engedhetnek kilógó harmadik F-osztót',()=>{
+ const g=setup(),p=cabinet({fCount:3,vCount:0,dividerThrough:'f'});
+ g.state.verticalGaps[0]=400;
+ g.state.verticalGaps[1]=200;
+ g.state.verticalGaps[2]=400; // a 3. hézag megegyezik az 1.-vel, de már nem fér el
+ const pieces=g.pieces(p);
+ assert.equal(by(pieces,'f').length,2,'csak a fizikailag beférő F-ek szerepelhetnek');
+ assert.ok(pieces.connectionIssues.some(x=>/3/.test(x)),'egyértelmű hibajelzés kell');
+ assert.ok(by(pieces,'f').every(x=>x.x1>=p.t-0.01&&x.x2<=p.w-p.t+0.01));
+ assert.equal(g.list(p).find(x=>x.key==='side-left').ready,false,'hibás szerkezettel a CNC nem mehet');
+});
+test('Három egyforma, de beférő szabad F-hézag mindhárom F-et megtartja',()=>{
+ const g=setup(),p=cabinet({fCount:3,vCount:0});
+ g.state.verticalGaps[0]=160;
+ g.state.verticalGaps[1]=160;
+ g.state.verticalGaps[2]=160;
+ const pieces=g.pieces(p);
+ assert.equal(by(pieces,'f').length,3);
+ assert.deepEqual(Array.from(pieces.connectionIssues),[]);
+ assert.ok(by(pieces,'f').every(x=>x.x2<=p.w-p.t+0.01));
+});
