@@ -7,7 +7,9 @@ const vm=require('node:vm');
 const html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
 
 test('az exportok nem nyitnak Mentés másként ablakot',()=>{
-  assert.doesNotMatch(html,/showSaveFilePicker/);
+  // Csak a külön kért CNC ZIP kap Mentés másként célválasztást; a PNG és az xPrg export továbbra is letöltés.
+  assert.match(html,/choose-cnc-save-as/);
+  assert.match(html,/write-cnc-zip/);
   assert.match(html,/function downloadBlob\(blob,filename\)/);
   assert.match(html,/function download\(data,filename,mime\)\{downloadBlob/);
   assert.match(html,/downloadBlob\(xlsxZip\(bundle\.files,'application\/zip'\)/);
