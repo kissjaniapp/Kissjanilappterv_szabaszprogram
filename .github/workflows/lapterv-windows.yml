@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main, feature/visualis-oszto-huzas-meretezes-20261111]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
