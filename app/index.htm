@@ -3167,6 +3167,7 @@
       '<p class="muted small" style="margin-top:12px">Ez a kötésmód az egész bútor szerkezeti kapcsolataira vonatkozik: oldallap, tető, fenék, polcok és F/V-osztók. '+
       'A POLC polctartó furatok G=1 értéke a külön Xilog makró része, nem kötésmód.</p>'+
       '<button class="btn primary" data-action="save-all-cnc-xxl" '+(!enabled?'disabled':'')+'>💾 Az összes alkatrész CNC-programjának mentése (.ZIP)</button>'+
+      '<button class="btn" type="button" data-action="save-verified-cnc-xxl" '+(!enabled?'disabled':'')+'>Csak az ellenőrzött CNC-programok mentése (részleges ZIP)</button>'+
       '<div id="cnc-xxl-counts" class="muted small" style="margin-top:12px"></div>'+
       '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
       '<p class="muted tiny">A kiválasztott kötésmód a bútorral mentődik. A REF szakaszok kihagyásai a bútortervező Polcfuratozás részében állíthatók. '+
@@ -3192,11 +3193,13 @@
     f.cncAssemblyJoint=mode;
     save();
   };
-  window.gatterkaDownloadAutoCnc=function(files){
+  window.gatterkaDownloadAutoCnc=function(files,options){
     if(!Array.isArray(files)||!files.length)throw Error('Nincs exportálható CNC-program.');
     const f=getFurniture();
     const data=files.map(file=>[file.filename,new TextEncoder().encode(file.content)]);
-    downloadBlob(xlsxZip(data,'application/zip'),fileName(f?.name||'Gatterka')+'_CNC_XXL.zip');
+    const partial=options?.partial===true;
+    downloadBlob(xlsxZip(data,'application/zip'),fileName(f?.name||'Gatterka')+
+      (partial?'_CNC_XXL_RESZLEGES.zip':'_CNC_XXL.zip'));
   };
   function savePage(){
     if(!result)result=computeNesting();
@@ -7231,20 +7234,38 @@
    }
  });
  document.addEventListener('click',e=>{
-   const btn=e.target?.closest?.('[data-action="save-all-cnc-xxl"]');
+   const btn=e.target?.closest?.('[data-action="save-all-cnc-xxl"],[data-action="save-verified-cnc-xxl"]');
    if(!btn){queueMicrotask(refresh);return;}
    e.preventDefault();
    if(btn.disabled)return;
+   const partial=btn.dataset.action==='save-verified-cnc-xxl';
    const status=$('cnc-xxl-save-status');
    try{
      const data=build();
      if(!data)throw Error('A CNC automata nem érhető el.');
-     if(data.blocked.length)throw Error('Ellenőrizendő alkatrészek miatt nem menthető a teljes bútor: '+
-       data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('; '));
-     if(!data.files.length)throw Error('Nincs elkészíthető CNC-program.');
-     window.gatterkaDownloadAutoCnc(data.files);
-     if(status)status.textContent=data.files.length+
-       ' önállóan elnevezett CNC .xxl program ZIP-csomagjának letöltése elindult. Gépi ellenőrzés szükséges.';
+     if(!data.files.length)throw Error('Nincs egyetlen hitelesített, menthető CNC-program sem.');
+     if(!partial&&data.blocked.length)throw Error('Ellenőrizendő alkatrészek miatt nem menthető a TELJES bútor: '+
+       data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('; ')+
+       '. A külön gombbal a hiteles programok RÉSZLEGES ZIP-je menthető.');
+     let files=data.files;
+     if(partial){
+       const report=[
+         'GATTERKA – RESZLEGES, NEM TELJES CNC-KIMENET',
+         'Az alabbi fajlok CSAK az ellenorzott megmunkalasi programokat tartalmazzak.',
+         'A teljes butor gyartasara nem alkalmas, ha ellenorizendo alkatrészek hianyoznak.',
+         '',
+         'ELLENORIZENDO, NEM EXPORTALT CNC-PROGRAMOK:'
+       ];
+       for(const item of data.blocked)report.push(item.part+' :: '+item.reason);
+       report.push('','CNC NELKULI ALKATRESZEK:');
+       for(const item of data.skipped)report.push(item.part+' :: '+(item.reason||'Nincs CNC megmunkalas.'));
+       files=[...data.files,{filename:'ELLENORIZENDO_KIMARADT.txt',content:report.join('\n')}];
+     }
+     window.gatterkaDownloadAutoCnc(files,{partial});
+     if(status)status.textContent=partial?
+       'RÉSZLEGES CNC ZIP: '+data.files.length+' hiteles program. '+data.blocked.length+
+       ' ellenőrizendő alkatrész KIMARADT! A ZIP-ben külön jelentés szerepel.':
+       data.files.length+' CNC .xxl program teljes ZIP-letöltése elindult. Gépi ellenőrzés szükséges.';
    }catch(error){
      if(status)status.textContent='CNC export hiba: '+(error?.message||'ismeretlen hiba');
    }
