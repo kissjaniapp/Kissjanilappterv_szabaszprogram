@@ -4,8 +4,8 @@
  * csatlakozási geometriából dolgozik. NINCS átmérő-, furatszám- vagy
  * szerszámpálya-találgatás: az igazolt makrók a gyári furatkiosztást végzik.
  *
- * Csak bútortervezős, hiteles szerkezeti kapcsolatokból exportálunk.
- * Más vagy hiányos geometriánál név szerinti hiba (nem félkész .xxl fájl).
+ * Bútortervezős és 3MF/SCN koordináta-alapú kapcsolatokból exportálunk.
+ * A sikeres generálás nem igazolja a gépi ellenőrzést.
  * A szabászgép .xPrg/.xMix kódja és sorrendje teljesen független.
  */
 (function(root){
@@ -23,8 +23,8 @@
   /**
    * 3MF szerkezeti érintkezések: kizárólag tengelypárhuzamos, valódi
    * téglatestek teljes lapszél és lapfelület közötti illeszkedéséből.
-   * Nincs 3MF furatadat: az eredmény jelölt Xilog TESZTTERV, nem
-   * automatikusan hitelesített megmunkálási program.
+   * Nincs 3MF furatadat: a makrókat a kapcsolatok koordinátái adják.
+   * A generálás és a gépi ellenőrzés állapotát külön jelezzük.
    */
   function threeMfContactDrafts(furniture,allowedIds,options={}){
     const model=furniture?.threeMfImport;
@@ -97,6 +97,8 @@
           threeMfDraft:true,contactCount:0};
         const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,
           primaryFace:null};
+        // A külső előlap egyetlen szomszédjára sem kérünk kötésfuratot.
+        box.noCnc=/kulso.*elolap/.test(cleanName(part.name||shape.name).toLowerCase());
         boxes.push(box);
         if(!data.byPart.has(String(part.id)))data.byPart.set(String(part.id),[]);
         data.byPart.get(String(part.id)).push(entry);
@@ -117,31 +119,24 @@
     };
     for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
       const a=boxes[i],b=boxes[j];
+      if(a.noCnc||b.noCnc)continue;
       if(a.part.id===b.part.id)continue;
       const intervals=[0,1,2].map(k=>overlap(a,b,k));
       const intersections=intervals.map(([lo,hi])=>hi-lo);
-      if(intersections.every(v=>v>eps)){
-        error(a.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
-        error(b.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
-        continue;
-      }
       for(let normal=0;normal<3;normal++){
         if(!near(a.hi[normal],b.lo[normal])&&!near(b.hi[normal],a.lo[normal]))continue;
         const other=[0,1,2].filter(k=>k!==normal);
         if(other.some(k=>intersections[k]<=eps))continue; // csak él-/pontérintés
+        if(a.tAxis===normal&&b.tAxis===normal)continue; // nagy lapfelület: egyik oldal sem fúrandó
         let face,edge;
         if(a.tAxis===normal&&b.tAxis!==normal){face=a;edge=b;}
         else if(b.tAxis===normal&&a.tAxis!==normal){face=b;edge=a;}
         else{
-          error(a.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
-          error(b.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
           continue;
         }
         const thin=edge.tAxis,span=other.find(k=>k!==thin);
         if(span===undefined||Math.abs(intersections[thin]-edge.size[thin])>eps||
            intersections[span]<50){
-          error(face.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
-          error(edge.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
           continue;
         }
         const faceSurface=near(edge.hi[normal],face.lo[normal])?'min':'max';
@@ -188,8 +183,11 @@
           faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
       }
     }
-    for(const box of boxes)if(!box.entry.operations.length)
-      error(box.part.id,'Nincs felismerhető síklap–lapél csatlakozás; nem készül hamis CNC-furat.');
+    for(const box of boxes)if(!box.entry.operations.length){
+      box.entry.noCnc=true;
+      box.entry.noCncReason=box.noCnc?'Külső előlap: CNC-fúrás nélkül.':
+        'Nincs fúrandó lapélkapcsolat; lapfelületi érintkezéshez nem készül furat.';
+    }
     return data;
   }
   function jointMode(operation,mode){
@@ -340,7 +338,7 @@
           if(entry.operations?.length||entry.issues?.length){
             appendFailure(result.blocked,shown,'CNC nélkül megjelölt alkatrészhez megmunkálás is tartozik; hibás szerkezeti adatok.');
           }else{
-            appendFailure(result.skipped,shown,'Állítható polc: polctartós kivitel, saját kötésfuratot nem igényel.');
+            appendFailure(result.skipped,shown,entry.noCncReason||'Állítható polc: polctartós kivitel, saját kötésfuratot nem igényel.');
           }
           continue;
         }
@@ -350,7 +348,7 @@
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
           const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
           const marked=entry.threeMfDraft?
-            content.replace(/\r\n/,'\r\n;'+(furniture?.threeMfImport?.source==='scn'?'SCN':'3MF')+'_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT\r\n'):content;
+            content.replace(/\r\n/,'\r\n;GATTERKA_'+(furniture?.threeMfImport?.source==='scn'?'SCN':'3MF')+'_CNC\r\n;GENERALAS=SIKERES\r\n;GEPI_ELLENORZES=NEM_IGAZOLT\r\n'):content;
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
             content:marked,draft:entry.threeMfDraft===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),

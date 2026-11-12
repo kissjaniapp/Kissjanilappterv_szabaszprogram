@@ -34,6 +34,42 @@ function options(f){
 function produce(f){
  return auto.makeAutoPrograms(f,f.parts.map(p=>p.id),options(f));
 }
+test('nagy lapfelületek érintkezése egyik lapra sem ad furatot vagy blokkolást',()=>{
+ const out=produce(furniture([
+  {name:'Lap A',lo:[0,0,0],size:[600,400,18]},
+  {name:'Lap B',lo:[0,0,18],size:[600,400,18]}
+ ]));
+ assert.equal(out.files.length,0);
+ assert.equal(out.contacts.length,0);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.skipped.length,2);
+});
+test('külső előlap és oldallapi párja kimarad, az oldal többi élkötése megmarad',()=>{
+ const out=produce(furniture([
+  {name:'Külső előlap',lo:[0,0,0],size:[600,18,700]},
+  {name:'Oldal',lo:[0,18,0],size:[18,400,700]},
+  {name:'Tető',lo:[0,18,700],size:[600,400,18]}
+ ]));
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.files.length,2);
+ assert.equal(out.contacts.length,1);
+ assert.ok(out.files.every(x=>!x.filename.includes('Kulso')));
+ assert.ok(out.contacts.every(x=>!x.faceName.includes('előlap')&&!x.edgeName.includes('előlap')));
+});
+test('lapfelületi kapcsolat mellett a valódi élkötés és SCN sikerjelzés megmarad',()=>{
+ const f=furniture([
+  {name:'A',lo:[0,0,0],size:[600,400,18]},
+  {name:'B',lo:[0,0,-18],size:[600,400,18]},
+  {name:'C',lo:[50,0,18],size:[18,400,380]}
+ ]);
+ f.threeMfImport.source='scn';
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.files.length,2);
+ assert.equal(out.skipped.length,1);
+ assert.ok(out.files.every(x=>x.content.includes(';GATTERKA_SCN_CNC')&&!x.content.includes('NEM_HITELESITETT')));
+});
 test('a csatolt 1db asztal 3MF hat téglatestje pontosan nyolc valódi lapél kapcsolattal rendelkezik',()=>{
  const f=furniture(),plan=auto.threeMfContactDrafts(f,f.parts.map(p=>p.id),options(f));
  assert.equal(plan.contacts.length,8,JSON.stringify(plan.contacts));
@@ -51,7 +87,7 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
  assert.equal(out.files.length,6,'mindegyik Body szerkezeti CNC-tervet kap');
  assert.ok(out.files.every(x=>x.draft===true&&x.filename.startsWith('3MF_TERV_')&&x.filename.endsWith('.xxl')));
- assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes(';3MF_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT')));
+ assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes(';GENERALAS=SIKERES')&&x.content.includes(';GEPI_ELLENORZES=NEM_IGAZOLT')));
  assert.ok(out.files.every(x=>/ G=1/.test(x.content)));
  const top=out.files.find(x=>x.filename.includes('Body1'));
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);
@@ -72,13 +108,12 @@ test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki
  assert.match(body3.content,/H DX=1144 DY=755 DZ=18 /);
  assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
 });
-test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésfuratot',()=>{
+test('elálló test korábbi érintkezése megszűnik; nincs külön ütközés miatti blokkolás',()=>{
  const f=furniture();
  f.threeMfImport.parts[1].originMm[2]=5;
  const out=produce(f);
  assert.ok(out.contacts.length<8,'Az elcsúsztatott test kontaktusa nem maradhat érvényes.');
- assert.ok(out.blocked.some(x=>/egymásba lóg|illeszkedő/.test(x.reason)),JSON.stringify(out.blocked));
- assert.ok(!out.files.some(x=>x.filename.includes('Body2')),'Ütköző Body2 nem kaphat gépi tesztprogramot.');
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
 });
 test('szabászati méret vagy vastagság eltérésnél a 3MF CNC terv menthető, csak figyelmeztet',()=>{
  const f=furniture();
@@ -162,7 +197,7 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  const open=app.lastIndexOf('<script>',start),end=app.indexOf('</script>',start);
  assert.equal(app.slice(open+8,end).trim(),program,'az inline és külön modul legyen azonos');
  assert.match(app,/data-action="save-cnc-xxl-as"/);
- assert.match(app,/3MF TESZTTERV/);
+ assert.match(app,/3MF\/SCN CNC/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
  assert.match(app,/data\.warnings\?\.length/);
  assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);

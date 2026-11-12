@@ -588,3 +588,22 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   kimentéseként, és nem helyettesíti a 4 db 59 mm-es LAB-lábfurat még
   hiányzó/hitelesítendő CNC-makróját. A teljes CNC gépi próba továbbra
   szükséges.
+
+2026-11-12 – 3MF/SCN CNC EXPORT: LAPFELÜLET ÉS KÜLSŐ ELŐLAP
+---------------------------------------------------------
+A tulajdonos új utasítása a 3MF/SCN érintkezésből készülő CNC-nél
+felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
+- Külső előlaphoz és annak szomszédos lapjaihoz ezen kapcsolatból
+  nem készül furat. A külső előlap saját fúróprogramja kimarad.
+- Nagy lapfelület–lapfelület találkozás egyik oldalán sem készül
+  furat. Más, valódi lapélkapcsolatok koordinátái és a meglévő
+  LAPA/LAPF/ELF2/3/4/5 makróválasztás változatlanok.
+- A 3MF testek nem fedik át egymást: nincs külön ütközésszűrés.
+  Nem besorolható érintkezés nem tiltja a többi generálható kötést.
+  Fúrandó élkapcsolat nélkül az alkatrész CNC nélkül kimarad.
+- A sikeres export jelzése GENERALAS=SIKERES, mellette kötelező
+  GEPI_ELLENORZES=NEM_IGAZOLT. Ez nem gépi hitelesítés.
+  A mentést nem szakítja meg tesztterv- vagy részlegesexport-felugró;
+  a kimaradt alkatrészek és anyageltérések a jelentésben megmaradnak.
+- A megjelenítő, fűrészelési sorrend, xMix/xPrg és natív Windows
+  fájlmentés változatlan. A tényleges gépi ellenőrzés továbbra is szükséges.
