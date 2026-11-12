@@ -4068,6 +4068,96 @@
     result=null;
   }
 
+  // Az SCN fájl eredeti bináris tartalma a KitchenDraw SDK2 pluginjához
+  // kerül, azonos sorba, mint a felhasználó meglévő SCN Viewer programjánál.
+  async function gatterkaScnImport(file){
+    if(!nativeBridge)throw Error('A közvetlen SCN importhoz a telepített Gatterka.exe szükséges.');
+    if(!file||file.size<16||file.size>50*1024*1024||!file.name.toLowerCase().endsWith('.scn'))
+      throw Error('Legfeljebb 50 MB méretű KitchenDraw .scn fájlt válassz.');
+    const res=await fetch(nativeBridge.url+'/native/scn/import',{
+      method:'POST',headers:{'Content-Type':'application/octet-stream',
+        'X-Gatterka-Token':nativeBridge.token},
+      body:file,mode:'cors',cache:'no-store'
+    });
+    const job=await res.json();
+    if(!res.ok)throw Error(job.error||'A KitchenDraw SCN export nem indult.');
+    for(let attempt=0;attempt<180;attempt++){
+      await new Promise(resolve=>setTimeout(resolve,1200));
+      const status=await requestNativeMachine('scn/status',{id:job.id});
+      if(status.state==='error')throw Error(status.message||'KitchenDraw export hiba.');
+      if(status.state==='done')return requestNativeMachine('scn/result',{id:job.id});
+    }
+    throw Error('A KitchenDraw Bridge nem végzett a feldolgozással. Ellenőrizd a futó KitchenDraw programot és a katalógusokat.');
+  }
+  function scnApplyGeometry(f,model,filename){
+    if(!model||model.source!=='scn'||!model.parts?.length)
+      throw Error('Az SCN OBJ nem tartalmaz alkatrész-objektumokat.');
+    threeMfApplyImport(f,model);
+    f.scnImport={schema:'gatterka-scn-v1',name:filename,
+      hiddenGroupIndices:[],warnings:model.warnings||[]};
+    const groups=f.threeMfImport.groups;
+    for(let index=0;index<groups.length;index++){
+      const part=f.parts.find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
+      if(part){
+        part.scnCutEnabled=groups[index].scnPartVerified===true;
+        part.scnRemoved=false;
+      }
+    }
+    // A SCN-ben elnevezett csoportok külön-külön azonosíthatók;
+    // az esetleges hibás vagy hiányzó alkatrészfa nincs kitalálva.
+    result=null;
+  }
+  function scnSplitCabinets(f){
+    const source=f?.threeMfImport;
+    if(!f?.scnImport||source?.source!=='scn')throw Error('Nincs SCN modell.');
+    const groups=source.groups||[],buckets=new Map();
+    for(let i=0;i<groups.length;i++){
+      const name=String(groups[i].scnCabinet||'').trim()||'Csoportosítatlan SCN objektumok';
+      if(!buckets.has(name))buckets.set(name,[]);
+      buckets.get(name).push(i);
+    }
+    if(![...buckets.keys()].some(k=>k!=='Csoportosítatlan SCN objektumok'))
+      throw Error('Az SCN export nem ad biztos bútor–alkatrész kapcsolatot. Írd be az objektumok szekrénynevét, majd nyomd meg újra a bontást.');
+    const prior=new Map(groups.map((g,i)=>[i,(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(i+1))]));
+    const hidden=new Set(f.scnImport.hiddenGroupIndices||[]);
+    const copy=JSON.parse(JSON.stringify(f)),originalName=f.name;
+    let first=true,count=0;
+    for(const [cabinet,groupIndices] of buckets){
+      const target=first?f:{...copy,id:uuid(),name:cabinet,parts:[],
+        threeMfImport:null,scnImport:null};
+      const sourceIndices=[...new Set(groupIndices.flatMap(i=>groups[i].indices))];
+      const mapping=new Map(sourceIndices.map((idx,i)=>[idx,i]));
+      const subset={schema:'gatterka-3mf-v1',source:'scn',
+        designName:source.designName+' / '+cabinet,
+        parts:sourceIndices.map(i=>JSON.parse(JSON.stringify(source.parts[i]))),
+        groups:groupIndices.map(index=>{
+          const g=groups[index];
+          return {...g,indices:g.indices.map(i=>mapping.get(i))};
+        }),warnings:source.warnings||[],scnCabinets:[cabinet]};
+      threeMfApplyImport(target,subset);
+      target.name=cabinet;
+      target.scnImport={...copy.scnImport,hiddenGroupIndices:sourceIndices
+        .filter(i=>hidden.has(i)).map(i=>mapping.get(i))};
+      groupIndices.forEach((originalIndex,newIndex)=>{
+        const old=prior.get(originalIndex),part=target.parts.find(p=>p.cabinetDesignKey==='3mf-'+(newIndex+1));
+        if(old&&part){
+          part.scnCutEnabled=old.scnCutEnabled;
+          part.scnRemoved=old.scnRemoved;
+          part.materialId=old.materialId;
+          part.edge=old.edge;
+          part.edgeSides=old.edgeSides;
+          part.edgeThicknesses=old.edgeThicknesses;
+          part.millDepth=old.millDepth;
+        }
+      });
+      if(!first)state.furnitures.push(target);
+      first=false;count++;
+    }
+    state.selectedFurniture=f.id;
+    result=null;save();
+    return {count,originalName};
+  }
+
   function fusionEulerAngles(matrix){
     // Z-Y-X Euler decomposition of the component-local XYZ frame in world coordinates.
     const r=matrix,sy=Math.max(-1,Math.min(1,-r[2][0]));
