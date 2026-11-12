@@ -20,6 +20,134 @@
       .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,65)||'Alkatresz';
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
+  /**
+   * 3MF szerkezeti érintkezések: kizárólag tengelypárhuzamos, valódi
+   * téglatestek teljes lapszél és lapfelület közötti illeszkedéséből.
+   * Nincs 3MF furatadat: az eredmény jelölt Xilog TESZTTERV, nem
+   * automatikusan hitelesített megmunkálási program.
+   */
+  function threeMfContactDrafts(furniture,allowedIds,options={}){
+    const model=furniture?.threeMfImport;
+    const data={byPart:new Map(),errors:new Map(),contacts:[]};
+    if(!Array.isArray(model?.parts)||!Array.isArray(model?.groups))return data;
+    const allowed=new Set((allowedIds||[]).map(String));
+    const byKey=new Map((furniture.parts||[]).filter(p=>p.threeMfGenerated&&allowed.has(String(p.id)))
+      .map(p=>[String(p.cabinetDesignKey||''),p]));
+    const boxes=[],eps=.12,near=(a,b)=>Math.abs(a-b)<=eps;
+    const error=(id,reason)=>{
+      if(!data.errors.has(id))data.errors.set(id,String(reason));
+    };
+    for(let gi=0;gi<model.groups.length;gi++){
+      const group=model.groups[gi],part=byKey.get('3mf-'+(gi+1));
+      if(!part)continue;
+      if(!Array.isArray(group.indices)||!group.indices.length){
+        error(part.id,'A 3MF csoporthoz nincs eredeti szilárdtest.');continue;
+      }
+      const q=Number(part.q);
+      if(!Number.isInteger(q)||q!==group.indices.length){
+        error(part.id,'A darabszám eltér az eredeti 3MF testpéldányok számától.');continue;
+      }
+      for(const index of group.indices){
+        const shape=model.parts[index];
+        if(!shape||shape.isRectangular!==true||!Array.isArray(shape.originMm)||
+           !Array.isArray(shape.axisBoundsMm)||shape.originMm.length!==3||
+           shape.axisBoundsMm.length!==3){
+          error(part.id,'Nem hitelesített, nem téglatest alakú vagy régi 3MF geometria.');continue;
+        }
+        const lo=shape.originMm.map(Number),size=shape.axisBoundsMm.map(Number);
+        if(![...lo,...size].every(Number.isFinite)||size.some(v=>v<1||v>10000)){
+          error(part.id,'Hibás 3MF világkoordináták vagy lapméret.');continue;
+        }
+        const hi=lo.map((v,k)=>v+size[k]);
+        const axes=[0,1,2].sort((a,b)=>size[b]-size[a]||a-b);
+        const [xAxis,yAxis,tAxis]=axes;
+        if(size[tAxis]>50){
+          error(part.id,'A 3MF testen nem azonosítható a lap vastagsági tengelye.');continue;
+        }
+        const a=Number(options.actualDimensions?.[part.id]?.a??part.a);
+        const b=Number(options.actualDimensions?.[part.id]?.b??part.b);
+        const actualZ=Number(options.actualThicknesses?.[part.id]??part.threeMfThickness??size[tAxis]);
+        if(!near(a,size[xAxis])||!near(b,size[yAxis])||!near(actualZ,size[tAxis])){
+          error(part.id,'Az alkatrész mérete vagy anyagvastagsága eltér az eredeti 3MF modelltől.');continue;
+        }
+        const entry={key:'3mf-contact-'+(gi+1)+'-'+index,
+          name:String(part.name||shape.name||'3MF test'),dx:size[xAxis],dy:size[yAxis],
+          dz:size[tAxis],side:'IJ',operations:[],issues:[],
+          threeMfDraft:true,contactCount:0};
+        const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,
+          primaryFace:null};
+        boxes.push(box);
+        if(!data.byPart.has(String(part.id)))data.byPart.set(String(part.id),[]);
+        data.byPart.get(String(part.id)).push(entry);
+      }
+    }
+    const overlap=(a,b,k)=>[Math.max(a.lo[k],b.lo[k]),Math.min(a.hi[k],b.hi[k])];
+    const coord=(p,k,value)=>round(value-p.lo[k]);
+    for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
+      const a=boxes[i],b=boxes[j];
+      if(a.part.id===b.part.id)continue;
+      const intervals=[0,1,2].map(k=>overlap(a,b,k));
+      const intersections=intervals.map(([lo,hi])=>hi-lo);
+      if(intersections.every(v=>v>eps)){
+        error(a.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
+        error(b.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
+        continue;
+      }
+      for(let normal=0;normal<3;normal++){
+        if(!near(a.hi[normal],b.lo[normal])&&!near(b.hi[normal],a.lo[normal]))continue;
+        const other=[0,1,2].filter(k=>k!==normal);
+        if(other.some(k=>intersections[k]<=eps))continue; // csak él-/pontérintés
+        let face,edge;
+        if(a.tAxis===normal&&b.tAxis!==normal){face=a;edge=b;}
+        else if(b.tAxis===normal&&a.tAxis!==normal){face=b;edge=a;}
+        else{
+          error(a.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
+          error(b.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
+          continue;
+        }
+        const thin=edge.tAxis,span=other.find(k=>k!==thin);
+        if(span===undefined||Math.abs(intersections[thin]-edge.size[thin])>eps||
+           intersections[span]<50){
+          error(face.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
+          error(edge.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
+          continue;
+        }
+        const faceSurface=near(edge.hi[normal],face.lo[normal])?'min':'max';
+        if(face.primaryFace===null)face.primaryFace=faceSurface;
+        const faceSide=face.primaryFace===faceSurface?'primary':'reverse';
+        const center=(intervals[thin][0]+intervals[thin][1])/2;
+        const from=intervals[span][0],length=round(intersections[span]);
+        let faceOp;
+        if(span===face.yAxis)
+          faceOp={macro:'LAPA',X:coord(face,face.xAxis,center),
+            Y:coord(face,face.yAxis,from),y:length,face:faceSide};
+        else if(span===face.xAxis)
+          faceOp={macro:'LAPF',X:coord(face,face.xAxis,from),
+            Y:coord(face,face.yAxis,center),x:length,y:0,face:faceSide};
+        else throw new Error('3MF felületi tengelyhiba.');
+        const edgeAtMin=near(edge.lo[normal],faceSurface==='min'?face.lo[normal]:face.hi[normal]);
+        let edgeOp;
+        if(span===edge.yAxis)
+          edgeOp={macro:edgeAtMin?'ELF3':'ELF2',
+            Y:coord(edge,edge.yAxis,from),y:length,face:'primary'};
+        else if(span===edge.xAxis)
+          edgeOp={macro:'ELF5',X:coord(edge,edge.xAxis,from),
+            x:length,face:'primary'};
+        else throw new Error('3MF él tengelyhiba.');
+        faceOp.joint='divider';edgeOp.joint='divider';
+        face.entry.operations.push(faceOp);
+        edge.entry.operations.push(edgeOp);
+        face.entry.contactCount++;
+        edge.entry.contactCount++;
+        data.contacts.push({face:face.entry.key,edge:edge.entry.key,
+          faceName:face.entry.name,edgeName:edge.entry.name,
+          normal,span,length,faceMacro:faceOp.macro,edgeMacro:edgeOp.macro});
+      }
+    }
+    for(const box of boxes)if(!box.entry.operations.length)
+      error(box.part.id,'Nincs felismerhető síklap–lapél csatlakozás; nem készül hamis CNC-furat.');
+    return data;
+  }
   function jointMode(operation,mode){
     // A teljes bútor összes szerkezeti kötésére ugyanaz a választott mód
     // vonatkozik (a POLC polctartó furat ettől független).
@@ -113,9 +241,14 @@
     const result={files:[],blocked:[],skipped:[],total:0};
     const used=new Set();
     const name=cleanName(furniture?.name||'Butor');
+    const threeMf=threeMfContactDrafts(furniture,allowedIds,options);
+    result.contacts=threeMf.contacts;
     for(const part of furniture?.parts||[]){
       if(!allowed.has(String(part.id)))continue;
-      const entries=part.cncInstances;
+      if(part.threeMfGenerated&&threeMf.errors.has(part.id)){
+        appendFailure(result.blocked,part.name,threeMf.errors.get(part.id));continue;
+      }
+      const entries=part.threeMfGenerated?threeMf.byPart.get(String(part.id)):part.cncInstances;
       if(!Array.isArray(entries)||!entries.length){
         if(part.cabinetDesignKey==='back-rabbet'||part.cabinetDesignKey==='back-full'){
           appendFailure(result.skipped,part.name,'Hátfal: nincs egyeztetett CNC megmunkálás.');
@@ -131,13 +264,15 @@
           continue;
         }
         used.add(identity);
-        if(part.dxfUnverified||part.threeMfGenerated||part.dxfGenerated){
+        if(part.dxfUnverified||part.dxfGenerated||
+           (part.threeMfGenerated&&!entry.threeMfDraft)){
           appendFailure(result.blocked,shown,'Nem hiteles 3MF/DXF alkatrész nem kaphat automatikus szerkezeti furatprogramot.');
           continue;
         }
         // A kézi méretcsere/képlet átírása után nem szabad a régi furatokat
         // automatikusan a más méretű előgyártmányra kiküldeni.
-        const a=finite(part.a),b=finite(part.b),z=finite(entry.dz);
+        const a=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.a:part.a),
+          b=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.b:part.b),z=finite(entry.dz);
         const actualZ=finite(options.actualThicknesses?.[part.id]);
         if(Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
           appendFailure(result.blocked,shown,'Az anyag vastagsága eltér a bútor szerkezeti tervétől; új CNC-terv szükséges.');
@@ -165,8 +300,11 @@
           const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
-          const filename=prefix+'_'+suffix+'.xxl';
-          result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
+          const filename=(entry.threeMfDraft?'3MF_TERV_':'')+prefix+'_'+suffix+'.xxl';
+          const marked=entry.threeMfDraft?
+            content.replace(/\r\n/,'\r\n;3MF_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT\r\n'):content;
+          result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
+            content:marked,draft:entry.threeMfDraft===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
@@ -174,7 +312,7 @@
     }
     return result;
   }
-  const api={cleanName,macroLine,compileEntry,makeAutoPrograms};
+  const api={cleanName,macroLine,compileEntry,threeMfContactDrafts,makeAutoPrograms};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCncAuto=api;
 })(typeof window!=='undefined'?window:null);
