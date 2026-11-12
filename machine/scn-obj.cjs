@@ -17,9 +17,9 @@
  }
  function solidBox(vertices,faces,lo,hi){
    const dims=hi.map((v,i)=>v-lo[i]),eps=.025;
-   if(faces.length<12||dims.some(v=>v<=0)||dims.filter(v=>v<=50).length!==1)return false;
-   const long=dims.filter(v=>v>50);
-   if(!long.length||dims.indexOf(Math.min(...dims))<0)return false;
+   if(faces.length<12||dims.some(v=>v<=0))return false;
+   const thin=dims.indexOf(Math.min(...dims));
+   if(dims[thin]>50||dims.some((v,i)=>i!==thin&&v<50))return false;
    // Nem elegendő a befoglaló téglatest! A háromszögek ténylegesen
    // lefedjék mind a hat síkot, és ne legyen belső/ferde/hiányos felület.
    const planes=Array(6).fill(0);
