@@ -7063,7 +7063,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -7106,8 +7106,14 @@
       throw new Error('LAPA: X, Y, A, y és G szükséges.');
     if(macro==='LAPF'&&(!('X'in fields)||!('Y'in fields)||!('x'in fields)||'y'in fields))
       throw new Error('LAPF: X, Y, A, x és G szükséges.');
-    if(macro.startsWith('ELF')&&!('x'in fields)&&!('y'in fields))
-      throw new Error('Élfurathoz x vagy y hossz szükséges.');
+    // Xilog 2/3=jobb/bal (Y hossz); 4/5=eleje/hátul (X hossz).
+    // A 3D találkozás vetülete szabja meg a makró lokális koordinátáját.
+    if((macro==='ELF2'||macro==='ELF3')&&
+       (!('Y'in fields)||!('y'in fields)||'X'in fields||'x'in fields))
+      throw new Error('ELF2/ELF3: a bal/jobb élhez Y és y tartozik.');
+    if((macro==='ELF4'||macro==='ELF5')&&
+       (!('X'in fields)||!('x'in fields)||'Y'in fields||'y'in fields))
+      throw new Error('ELF4/ELF5: az eleje/hátul élhez X és x tartozik.');
     if('X'in fields&&fields.X>dx || 'Y'in fields&&fields.Y>dy ||
        'x'in fields&&fields.x>dx || 'y'in fields&&fields.y>dy ||
        'X'in fields&&'x'in fields&&fields.X+fields.x>dx ||
@@ -7244,6 +7250,7 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCnc=api;
 })(typeof window!=='undefined'?window:null);
+
 </script>
 <script>
 'use strict';
@@ -7399,7 +7406,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC','XBO']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -7493,7 +7500,15 @@
     // Gépi mm-értékek: a modell 3MF transzformációs pontossága ezredmilliméteres
     // eltéréseket tartalmazhat; a DX/DY és az élfurat ugyanazon 0,01 mm-es
     // precizitással épüljön fel, hogy a kerekített makró ne lógjon túl.
-    const coord=(p,k,value)=>Math.round((value-p.lo[k])*100)/100;
+    const coord=(p,k,value)=>{
+      const raw=value-p.lo[k];
+      const max=k===p.xAxis?p.entry.dx:k===p.yAxis?p.entry.dy:p.entry.dz;
+      // A 3MF-ben a felületi síkok ±0,12 mm tűréssel kapcsolódnak.
+      // Ennek hatására sem az X/Y kezdőpont, sem az élfurat nem lóghat
+      // a kerekített DX/DY CNC-kontúron kívülre.
+      if(raw<-.12||raw>max+.12)throw new Error('A szerkezeti találkozás CNC koordinátája kívül esik a lapon.');
+      return Math.min(max,Math.max(0,Math.round(raw*100)/100));
+    };
     for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
       const a=boxes[i],b=boxes[j];
       if(a.part.id===b.part.id)continue;
@@ -7530,7 +7545,7 @@
         const from=intervals[span][0],nominalLength=round(intersections[span]);
         const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
         const freeEdge=edge.entry[span===edge.xAxis?'dx':'dy']-coord(edge,span,from);
-        const length=Math.round(Math.min(nominalLength,freeFace,freeEdge)*100)/100;
+        const length=Math.max(0,Math.floor((Math.min(nominalLength,freeFace,freeEdge)+1e-6)*100)/100);
         if(length<50){error(face.part.id,'A 3MF kötésfurat hossza a lap szélén kívülre esik.');continue;}
         let faceOp;
         if(span===face.yAxis)
@@ -7540,14 +7555,19 @@
           faceOp={macro:'LAPF',X:coord(face,face.xAxis,from),
             Y:coord(face,face.yAxis,center),x:length,face:faceSide};
         else throw new Error('3MF felületi tengelyhiba.');
-        const edgeAtMin=near(edge.lo[normal],faceSurface==='min'?face.lo[normal]:face.hi[normal]);
+        // Nem furatot keresünk: az érintkező ÉL saját min/max oldalát
+        // a valódi 3D találkozási sík dönti el, nem a másik lap színoldala.
+        const contactPlane=near(a.hi[normal],b.lo[normal])?
+          (a.hi[normal]+b.lo[normal])/2:(b.hi[normal]+a.lo[normal])/2;
+        const edgeAtMin=Math.abs(contactPlane-edge.lo[normal])<=
+          Math.abs(contactPlane-edge.hi[normal]);
         let edgeOp;
-        if(span===edge.yAxis)
+        if(normal===edge.xAxis&&span===edge.yAxis)
           edgeOp={macro:edgeAtMin?'ELF3':'ELF2',
             Y:coord(edge,edge.yAxis,from),y:length,face:'primary'};
-        else if(span===edge.xAxis)
-          edgeOp={macro:'ELF5',X:coord(edge,edge.xAxis,from),
-            x:length,face:'primary'};
+        else if(normal===edge.yAxis&&span===edge.xAxis)
+          edgeOp={macro:edgeAtMin?'ELF4':'ELF5',
+            X:coord(edge,edge.xAxis,from),x:length,face:'primary'};
         else throw new Error('3MF él tengelyhiba.');
         faceOp.joint='divider';edgeOp.joint='divider';
         face.entry.operations.push(faceOp);
@@ -7556,7 +7576,10 @@
         edge.entry.contactCount++;
         data.contacts.push({face:face.entry.key,edge:edge.entry.key,
           faceName:face.entry.name,edgeName:edge.entry.name,
-          normal,span,length,faceMacro:faceOp.macro,edgeMacro:edgeOp.macro});
+          normal,span,length,faceMacro:faceOp.macro,edgeMacro:edgeOp.macro,
+          faceStart:{X:faceOp.X,Y:faceOp.Y},edgeStart:edgeOp.X===undefined?
+            {Y:edgeOp.Y}:{X:edgeOp.X},
+          faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
       }
     }
     for(const box of boxes)if(!box.entry.operations.length)
@@ -7735,6 +7758,7 @@
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCncAuto=api;
 })(typeof window!=='undefined'?window:null);
+
 </script>
 <script>
 (function(){
@@ -7754,7 +7778,7 @@
        ' · Nem generálható: '+data.blocked.length+
        ' · CNC nélkül: '+data.skipped.length+
        (data.warnings?.length?' · 3MF anyag/méret figyelmeztetés: '+data.warnings.length:'')+
-       (data.contacts?.length?' · Felismert 3MF kapcsolatok: '+data.contacts.length:'');
+       (data.contacts?.length?' · Felismert lapkapcsolatok: '+data.contacts.length:'');
      if(status)status.textContent=data.blocked.length?
        'A TELJES CNC-mentés tiltott: '+data.blocked.slice(0,6).map(b=>b.part+': '+b.reason).join(' | ')+
        (data.files.length?' · A Mentés másként gombbal az elkészített CNC-tervek külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
@@ -7799,7 +7823,8 @@
      }
      if(draftCount&&!window.confirm('3MF/SCN GEOMETRIÁBÓL SZÁMÍTOTT CNC TESZTTERV!\n'+
        draftCount+' .xxl fájlban excenteres megmunkálási makrójavaslatok vannak. '+
-       'A 3MF nem tartalmaz tényleges furatokat, ezért a LAPF/ELF5 élirány és az átfordítás '+
+       'A program a bútorlapok találkozási vonalának X/Y koordinátájából választ LAPA/LAPF/ELF2/3/4/5 makrót, nem meglévő furatokat keres. '+
+       'A felrakási irány és az átfordítás '+
        'NEM tekinthető gépen hitelesítettnek.\n\n'+
        'Ezeket kizárólag Xilog előnézeti vizsgálatra és szárazpróbára szabad használni. '+
        'Mented a TESZTTERVEKET?')){
@@ -7809,14 +7834,17 @@
      const report=(partial||draftCount)?[
        partial?'GATTERKA – RESZLEGES CNC TESZTTERV, NEM HITELESITETT':
          'GATTERKA – 3MF CNC TESZTTERV, NEM HITELESITETT',
-       draftCount?'3MF vilagkoordinatak alapjan automatikusan szamitott geometriai erintkezesek.':'',
-       draftCount?'A 3MF nem tartalmaz furatokat: az excenter, LAPF/ELF5, felrakas es FORDIT meg NEM hitelesitett.':'',
+       draftCount?'3MF/SCN koordinatakbol szamitott LAPF/LAPA es ELF2/3/4/5 kotesei a csatlakozasi vonalak alapjan.':'',
+       draftCount?'Nincs furatfelismeres: a makro a kiszamolt geometriai talalkozasi poziciobol keszul. A felrakas es FORDIT gepi ellenorzest igenyel.':'',
        'A teljes butor CNC-megmunkalasara a Xilog ellenorzes es a gepi szarazproba elott NEM alkalmas.',
        '',
-       'FELISMERT 3MF LAPKAPCSOLATOK ('+(data.contacts?.length||0)+'):',
+       'FELISMERT 3MF/SCN LAPKAPCSOLATOK ('+(data.contacts?.length||0)+'):',
        ...(data.contacts||[]).map((x,i)=>(i+1)+'. '+x.faceName+' <-> '+x.edgeName+
          ' | tengely='+['X','Y','Z'][x.normal]+
-         ' | csatlakozasi hossz='+x.length+' mm | '+x.faceMacro+' + '+x.edgeMacro),
+         ' | erintkezesi hossz='+x.length+' mm | '+x.faceMacro+
+         ' X='+x.faceStart.X+' Y='+x.faceStart.Y+' hossz='+x.faceLength+
+         ' | '+x.edgeMacro+' '+(x.edgeStart.X===undefined?'Y='+x.edgeStart.Y:
+           'X='+x.edgeStart.X)+' hossz='+x.edgeLength),
        '',
        '3MF MODELL ES ANYAG-/ALKATRESZADAT ELTERESEK (A TERVEK MENTHETOK):',
        ...(data.warnings||[]).map(x=>x.part+' :: '+x.reason),

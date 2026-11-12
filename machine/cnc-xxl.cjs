@@ -11,7 +11,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -54,8 +54,14 @@
       throw new Error('LAPA: X, Y, A, y és G szükséges.');
     if(macro==='LAPF'&&(!('X'in fields)||!('Y'in fields)||!('x'in fields)||'y'in fields))
       throw new Error('LAPF: X, Y, A, x és G szükséges.');
-    if(macro.startsWith('ELF')&&!('x'in fields)&&!('y'in fields))
-      throw new Error('Élfurathoz x vagy y hossz szükséges.');
+    // Xilog 2/3=jobb/bal (Y hossz); 4/5=eleje/hátul (X hossz).
+    // A 3D találkozás vetülete szabja meg a makró lokális koordinátáját.
+    if((macro==='ELF2'||macro==='ELF3')&&
+       (!('Y'in fields)||!('y'in fields)||'X'in fields||'x'in fields))
+      throw new Error('ELF2/ELF3: a bal/jobb élhez Y és y tartozik.');
+    if((macro==='ELF4'||macro==='ELF5')&&
+       (!('X'in fields)||!('x'in fields)||'Y'in fields||'y'in fields))
+      throw new Error('ELF4/ELF5: az eleje/hátul élhez X és x tartozik.');
     if('X'in fields&&fields.X>dx || 'Y'in fields&&fields.Y>dy ||
        'x'in fields&&fields.x>dx || 'y'in fields&&fields.y>dy ||
        'X'in fields&&'x'in fields&&fields.X+fields.x>dx ||

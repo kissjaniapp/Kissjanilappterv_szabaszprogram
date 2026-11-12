@@ -78,3 +78,10 @@ test('Windows Mentés másként után az xMix és az xPrg fájlok közvetlenül 
  assert.match(save,/patchMixWithSavedPaths\(/);
  assert.match(save,/os\.O_EXCL/);
 });
+
+test('a háttérbe kerülő Edge/Chrome ablak nem veszti el 30 másodperc után a Mentés másként kapcsolatot',()=>{
+ const bridge=fs.readFileSync(path.join(__dirname,'../desktop-go/launcher/bridge_keepalive.go'),'utf8');
+ assert.match(go,/nativeActivity\.waitIdle\(20\*time\.Minute,time\.Second\)/);
+ assert.doesNotMatch(go,/nativeActivity\.waitIdle\(30\*time\.Second,time\.Second\)/);
+ assert.match(bridge,/for a\.idleFor\(\) < idle/);
+});

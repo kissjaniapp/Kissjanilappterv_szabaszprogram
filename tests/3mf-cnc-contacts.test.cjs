@@ -124,6 +124,37 @@ test('íves 3MF vagy régi, alakellenőrzés nélküli test nem kap tesztprogram
  assert.ok(out.blocked.some(x=>x.part==='Body1'));
  assert.ok(!out.files.some(x=>x.filename.includes('Body1')));
 });
+test('a Body1–Body6 fizikai találkozásaiból él- és lapmakró készül, furatadat keresése nélkül',()=>{
+ const f=furniture(),out=produce(f);
+ assert.equal(out.contacts.length,8);
+ assert.equal(out.files.length,6,JSON.stringify(out.blocked));
+ const body5=out.files.find(x=>x.filename.includes('Body5'));
+ assert.match(body5.content,/ELF4 X=0 A=0 x=755 G=1/,
+   'Body5 elülső éle ELF4 legyen, ne mindig ELF5');
+ const body3=out.files.find(x=>x.filename.includes('Body3'));
+ assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
+ assert.ok(out.contacts.every(c=>
+   c.faceStart&&c.edgeStart&&c.faceLength>0&&c.edgeLength>0));
+});
+test('a helyi él irányát a 3D találkozás dönti el: ELŐL ELF4, HÁTUL ELF5',()=>{
+ const shape=[
+  {name:'Sík',lo:[0,0,0],size:[600,400,18]},
+  {name:'Elöl',lo:[50,0,18],size:[18,400,380]},
+  {name:'Hátul',lo:[200,0,-380],size:[18,400,380]}
+ ];
+ const f=furniture(shape),out=produce(f);
+ assert.equal(out.contacts.length,2,JSON.stringify(out.contacts));
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.files.length,3);
+ const front=out.files.find(x=>x.filename.includes('Elol'));
+ const back=out.files.find(x=>x.filename.includes('Hatul'));
+ assert.match(front.content,/ELF4 X=0 A=0 x=400 G=1/);
+ assert.match(back.content,/ELF5 X=0 A=0 x=400 G=1/);
+ const face=out.files.find(x=>x.filename.includes('Sik'));
+ assert.match(face.content,/LAPA X=59 Y=0 A=0 y=400 G=1/);
+ assert.match(face.content,/LAPA X=209 Y=0 A=0 y=400 G=1/);
+ assert.match(face.content,/XMSG Q=1 N="FORDIT"/);
+});
 test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmust',()=>{
  const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
  const program=fs.readFileSync(path.join(__dirname,'../machine/cnc-auto.cjs'),'utf8').trim();

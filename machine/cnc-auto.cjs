@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC','XBO']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -106,7 +106,15 @@
     // Gépi mm-értékek: a modell 3MF transzformációs pontossága ezredmilliméteres
     // eltéréseket tartalmazhat; a DX/DY és az élfurat ugyanazon 0,01 mm-es
     // precizitással épüljön fel, hogy a kerekített makró ne lógjon túl.
-    const coord=(p,k,value)=>Math.round((value-p.lo[k])*100)/100;
+    const coord=(p,k,value)=>{
+      const raw=value-p.lo[k];
+      const max=k===p.xAxis?p.entry.dx:k===p.yAxis?p.entry.dy:p.entry.dz;
+      // A 3MF-ben a felületi síkok ±0,12 mm tűréssel kapcsolódnak.
+      // Ennek hatására sem az X/Y kezdőpont, sem az élfurat nem lóghat
+      // a kerekített DX/DY CNC-kontúron kívülre.
+      if(raw<-.12||raw>max+.12)throw new Error('A szerkezeti találkozás CNC koordinátája kívül esik a lapon.');
+      return Math.min(max,Math.max(0,Math.round(raw*100)/100));
+    };
     for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
       const a=boxes[i],b=boxes[j];
       if(a.part.id===b.part.id)continue;
@@ -143,7 +151,7 @@
         const from=intervals[span][0],nominalLength=round(intersections[span]);
         const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
         const freeEdge=edge.entry[span===edge.xAxis?'dx':'dy']-coord(edge,span,from);
-        const length=Math.round(Math.min(nominalLength,freeFace,freeEdge)*100)/100;
+        const length=Math.max(0,Math.floor((Math.min(nominalLength,freeFace,freeEdge)+1e-6)*100)/100);
         if(length<50){error(face.part.id,'A 3MF kötésfurat hossza a lap szélén kívülre esik.');continue;}
         let faceOp;
         if(span===face.yAxis)
@@ -153,14 +161,19 @@
           faceOp={macro:'LAPF',X:coord(face,face.xAxis,from),
             Y:coord(face,face.yAxis,center),x:length,face:faceSide};
         else throw new Error('3MF felületi tengelyhiba.');
-        const edgeAtMin=near(edge.lo[normal],faceSurface==='min'?face.lo[normal]:face.hi[normal]);
+        // Nem furatot keresünk: az érintkező ÉL saját min/max oldalát
+        // a valódi 3D találkozási sík dönti el, nem a másik lap színoldala.
+        const contactPlane=near(a.hi[normal],b.lo[normal])?
+          (a.hi[normal]+b.lo[normal])/2:(b.hi[normal]+a.lo[normal])/2;
+        const edgeAtMin=Math.abs(contactPlane-edge.lo[normal])<=
+          Math.abs(contactPlane-edge.hi[normal]);
         let edgeOp;
-        if(span===edge.yAxis)
+        if(normal===edge.xAxis&&span===edge.yAxis)
           edgeOp={macro:edgeAtMin?'ELF3':'ELF2',
             Y:coord(edge,edge.yAxis,from),y:length,face:'primary'};
-        else if(span===edge.xAxis)
-          edgeOp={macro:'ELF5',X:coord(edge,edge.xAxis,from),
-            x:length,face:'primary'};
+        else if(normal===edge.yAxis&&span===edge.xAxis)
+          edgeOp={macro:edgeAtMin?'ELF4':'ELF5',
+            X:coord(edge,edge.xAxis,from),x:length,face:'primary'};
         else throw new Error('3MF él tengelyhiba.');
         faceOp.joint='divider';edgeOp.joint='divider';
         face.entry.operations.push(faceOp);
@@ -169,7 +182,10 @@
         edge.entry.contactCount++;
         data.contacts.push({face:face.entry.key,edge:edge.entry.key,
           faceName:face.entry.name,edgeName:edge.entry.name,
-          normal,span,length,faceMacro:faceOp.macro,edgeMacro:edgeOp.macro});
+          normal,span,length,faceMacro:faceOp.macro,edgeMacro:edgeOp.macro,
+          faceStart:{X:faceOp.X,Y:faceOp.Y},edgeStart:edgeOp.X===undefined?
+            {Y:edgeOp.Y}:{X:edgeOp.X},
+          faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
       }
     }
     for(const box of boxes)if(!box.entry.operations.length)

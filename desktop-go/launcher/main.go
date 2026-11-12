@@ -146,7 +146,7 @@ func main(){
             // Ha a böngésző indítója azonnal kilépett (az ablakot egy háttérben futó,
             // már meglévő folyamat nyitotta), a mentőnek tovább kell élnie, amíg az
             // oldal jelez. Különben a Mentés másként "Failed to fetch" hibát adna.
-            if bridgeErr==nil {nativeActivity.waitIdle(30*time.Second,time.Second)}
+            if bridgeErr==nil {nativeActivity.waitIdle(20*time.Minute,time.Second)}
             return
         }
     }
@@ -155,7 +155,7 @@ func main(){
     if err=cmd.Start();err!=nil {
         message("Nem tudtam elindítani a Gatterkaet.\n"+err.Error()+"\nNyisd meg közvetlenül ezt a fájlt:\n"+page)
     } else if bridgeErr==nil {
-        nativeActivity.waitIdle(30*time.Second,time.Second)
+        nativeActivity.waitIdle(20*time.Minute,time.Second)
     }
     _=fmt.Sprint(strings.TrimSpace(version)) // reserved version marker
 }
