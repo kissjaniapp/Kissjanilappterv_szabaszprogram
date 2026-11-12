@@ -175,3 +175,22 @@ test('Eltérő élzárású F/V alkatrészek automatikus összevonása tilos',()
  assert.ok(furniture.parts.some(p=>p.cabinetDesignKey==='f-divider-1'));
  assert.ok(furniture.parts.some(p=>p.cabinetDesignKey==='f-divider-2'));
 });
+
+test('A saját második F-osztó szakasz külön élzárása -cut- utótag után is megmarad',()=>{
+ const e=edges();
+ const one={id:'first',cabinetDesignKey:'f-divider-1-section-1',name:'F-osztó 1 · 1. rész',autoCabinetName:'F-osztó 1 · 1. rész',
+  a:'300',b:'450',q:'1',edge:'1-0',edgeSides:e.sidesFromCode('1-0'),edgeThickness:2};
+ const two={id:'second',cabinetDesignKey:'f-divider-1-section-2',name:'F-osztó 1 · 2. rész',autoCabinetName:'F-osztó 1 · 2. rész',
+  a:'500',b:'450',q:'1',edge:'2-0',edgeSides:e.sidesFromCode('2-0'),
+  edgeThicknesses:{x1:.4,x2:2,y1:0,y2:0},filingSides:e.sidesFromCode('0-1')};
+ const furniture={parts:[one,two],cabinetDesign:{inputs:{},radios:{}}};
+ e.syncCabinetDesignerParts(furniture,[
+  {key:'f-divider-1-section-1',name:'F-osztó 1 · 1. rész',a:300,b:450,qty:1},
+  {key:'f-divider-1-section-2-cut-2',name:'F-osztó 1 · 2. rész',a:220,b:450,qty:1}
+ ]);
+ const cut=furniture.parts.find(p=>p.cabinetDesignKey==='f-divider-1-section-2-cut-2');
+ assert.ok(cut);
+ assert.equal(cut.edge,'2-0');
+ assert.equal(cut.edgeThicknesses.x1,.4);
+ assert.equal(e.codeFromSides(cut.filingSides),'0-1');
+});
