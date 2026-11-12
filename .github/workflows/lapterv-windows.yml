@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main, feature/20261112-oszto-szakasz-es-butorlab]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
