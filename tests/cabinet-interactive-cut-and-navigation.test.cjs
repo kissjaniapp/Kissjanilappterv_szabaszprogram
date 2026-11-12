@@ -170,3 +170,13 @@ test('Beágyazott szerkesztő: kettévágás, kivétel, visszaállítás, zoom �
  assert.match(js,/data-vis-part/);
  for(const script of scripts)assert.doesNotThrow(()=>new vm.Script(script));
 });
+
+test('Részleges CNC ZIP csak a hiteles fájlokat menti, az ellenőrizetleneket felsorolja',()=>{
+ assert.match(source,/data-action="save-verified-cnc-xxl"/);
+ assert.match(source,/data\.blocked\.length\)throw Error/);
+ assert.match(source,/RÉSZLEGES CNC ZIP/);
+ assert.match(source,/ELLENORIZENDO_KIMARADT\.txt/);
+ assert.match(source,/data\.files,\{filename:'ELLENORIZENDO_KIMARADT\.txt'/);
+ assert.match(source,/_CNC_XXL_RESZLEGES\.zip/);
+ assert.match(source,/files=\[\.\.\.data\.files,/);
+});
