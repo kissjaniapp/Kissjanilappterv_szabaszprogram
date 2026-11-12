@@ -4689,7 +4689,7 @@
     part.autoCabinetEdging=JSON.stringify({edge:part.edge,filing:codeFromSides(part.filingSides),thickness:partEdgeThicknesses(part)});
   }
   function syncCabinetDesignerParts(f,records){
-    if(!Array.isArray(records)||records.length>100)return;
+    if(!Array.isArray(records))return;
     if(!Array.isArray(f.parts))f.parts=[];
     // Az F/V/polc részletek az újratervezésnél más kulcsot kaphatnak
     // (-section- és -cut- utótag). A KÉZI ABS, reszelés, anyag és
@@ -4706,7 +4706,7 @@
       f.cabinetPartSettings:{};
     for(const part of originalCabinetParts){
       const key=String(part.cabinetDesignKey||'');
-      if(!/^[a-z0-9-]{1,45}$/.test(key))continue;
+      if(!/^[a-z0-9-]{1,110}$/.test(key))continue;
       const snapshot={};
       for(const field of settingsKeys)if(part[field]!==undefined)
         snapshot[field]=JSON.parse(JSON.stringify(part[field]));
@@ -4714,7 +4714,7 @@
     }
     f.cabinetPartSettings=cache;
     const cachedParts=Object.entries(cache).filter(([key,part])=>
-      /^[a-z0-9-]{1,45}$/.test(key)&&part&&typeof part==='object')
+      /^[a-z0-9-]{1,110}$/.test(key)&&part&&typeof part==='object')
       .map(([key,part])=>({...part,cabinetDesignKey:key}));
     const sourceFamily=key=>{
       const match=/^(?:f-divider-\d+|v-divider-\d+|shelf-\d+)(?=-|$)/.exec(String(key||''));
@@ -4729,7 +4729,7 @@
       // f-divider-1-section-2-cut-3 -> f-divider-1-section-2.
       // Különböző kézi ABS-t kapott szakaszok így nem öröklik
       // tévesen az F/V sor LEGELSŐ darabjának adatait.
-      const uncut=String(key||'').replace(/-cut-\d+$/,'');
+      const uncut=String(key||'').replace(/(?:-cut-\d+|-part-[ab])$/,'');
       if(uncut!==key){const parent=lookup(uncut);if(parent)return parent;}
       const family=sourceFamily(key);
       if(!family)return null;
@@ -4762,7 +4762,7 @@
     });
     const seen=new Set();
     for(const row of records){
-      if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,45}$/.test(row.key))continue;
+      if(!row||typeof row.key!=='string'||!/^[-a-z0-9]{1,110}$/.test(row.key))continue;
       if((f.deletedPartKeys||[]).includes(row.key))continue;
       // A bizonytalan hátlap is megjelenik szerkeszthető sorban (gépi export tiltva).
       const a=Number(row.a),b=Number(row.b),q=Number(row.qty);
@@ -4779,7 +4779,10 @@
            (/^(?:f|v)-/.test(row.key)&&/^[FV]-osztó(?:\s*\d+)?(?:\s*·\s*\d+\. rész)?$/i.test(String(part.name||''))))
           part.name=String(row.name||part.name).slice(0,100);
         part.autoCabinetName=String(row.name||row.key).slice(0,100);
-        part.dxfUnverified=row.ready===false;
+        // A szerkezeti kapcsolódás CNC-figyelmeztetése nem DXF-hiba.
+        // Korábban ettől tűnt el a lap a stock/szabász/CNC listából.
+        part.dxfUnverified=false;
+        part.cabinetCncUnverified=row.ready===false;
         // DXF alkatrésznél a felhasználó képleteit ne írja felül a rajzi szinkron.
         if(!part.dxfGenerated){part.a=String(a);part.b=String(b);}
         part.q=String(q);
@@ -4808,7 +4811,7 @@
         f.parts.push({id:uuid(),cabinetDesignKey:row.key,
           materialId:generatedHdf?(currentHdfMaterial?.id||''):'',
           materialColor:generatedHdf?(currentHdfMaterial?.color||'HDF'):'',
-          dxfUnverified:row.ready===false,
+          dxfUnverified:false,cabinetCncUnverified:row.ready===false,
           name:String(manualName?old.name:row.name||row.key).slice(0,100),
           autoCabinetName:String(row.name||row.key).slice(0,100),
           a:String(a),b:String(b),q:String(q),
@@ -4826,6 +4829,16 @@
         generated.shelfBevelDegrees=Math.abs(Number(row.shelfBevelDegrees)||0);
         generated.fixedDrilling=Boolean(row.fixedDrilling);
         generated.cncInstances=Array.isArray(row.cncInstances)?JSON.parse(JSON.stringify(row.cncInstances)):[];
+        // A szabászati alkatrész attól még érvényes, hogy egy
+        // új F/V-csatlakozás CNC-furatai nincsenek hitelesítve.
+        // Az XXL kimenet viszont az érintett programot NEM mentheti.
+        if(generated.cabinetCncUnverified){
+          for(const entry of generated.cncInstances){
+            if(!Array.isArray(entry.issues))entry.issues=[];
+            if(!entry.issues.includes('Szerkezeti kapcsolat CNC-furatai ellenőrzendők.'))
+              entry.issues.push('Szerkezeti kapcsolat CNC-furatai ellenőrzendők.');
+          }
+        }
       }
     }
     f.parts=f.parts.filter(p=>!p.cabinetDesignKey||seen.has(p.cabinetDesignKey));
