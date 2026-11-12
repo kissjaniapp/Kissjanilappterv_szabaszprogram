@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'fix/20261112-3mf-cnc-export-geometry-source']
   workflow_dispatch:
 
 permissions:
