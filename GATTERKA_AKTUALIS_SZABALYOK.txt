@@ -607,3 +607,17 @@ felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
   a kimaradt alkatrészek és anyageltérések a jelentésben megmaradnak.
 - A megjelenítő, fűrészelési sorrend, xMix/xPrg és natív Windows
   fájlmentés változatlan. A tényleges gépi ellenőrzés továbbra is szükséges.
+
+2026-11-12 – FERDE FENÉK/PÓTFENÉK CNC-KAPCSOLATAI SZAKASZONKÉNT
+-------------------------------------------------------------
+- A nem téglatest alakú 3MF lap egésze nem tiltható le, ha vannak
+  egyenes, derékszögű csatlakozó felületei. A ferde részen nincs furat,
+  a más alkatrésszel érintkező, tengelypárhuzamos egyenes részen van.
+- A valódi 3MF felületháló alapján csak a teljes lapvastagságban
+  érintkező szakasz kerül a meglévő LAPA/LAPF/ELF makrókba.
+  A befoglaló téglalap üres, levágott része nem generálhat furatot.
+- Új importnál a CNC a teljes felülethálót őrzi meg; korábbi projekt
+  a meglevő háromszögadatokból dolgozik. Hiányzó felületadat esetén
+  új import szükséges, nem szabad a befoglaló téglatestet kifúrni.
+- A 3MF-megjelenítő, téglatestek meglévő makrói és a védett
+  szabási/Windows mentési funkciók változatlanok.

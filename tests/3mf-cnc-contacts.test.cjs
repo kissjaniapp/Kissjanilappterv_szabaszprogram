@@ -34,6 +34,71 @@ function options(f){
 function produce(f){
  return auto.makeAutoPrograms(f,f.parts.map(p=>p.id),options(f));
 }
+function angledFurniture(polygon,others){
+ const f=furniture([{name:'Ferde fenék',lo:[0,0,0],size:[600,400,18]},...others]);
+ const triangles=[],bottom=polygon.map(([x,y])=>[x,y,0]),top=polygon.map(([x,y])=>[x,y,18]);
+ for(const ring of [bottom,top])for(let i=1;i<ring.length-1;i++)
+  triangles.push([...ring[0],...ring[i],...ring[i+1]]);
+ for(let i=0;i<polygon.length;i++){
+  const j=(i+1)%polygon.length;
+  triangles.push([...bottom[i],...bottom[j],...top[j]],[...bottom[i],...top[j],...top[i]]);
+ }
+ Object.assign(f.threeMfImport.parts[0],{isRectangular:false,isAngledCut:true,previewTriangles:triangles});
+ return f;
+}
+test('ferde fenék egyenes élén megmarad a furat, a ferde vég befoglaló élén nincs furat',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]},
+  {name:'Ferde vég mellett',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.files.length,2);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/ELF3 Y=0 A=0 y=400 G=1/);
+ assert.ok(out.contacts.every(x=>!x.faceName.includes('Ferde vég')));
+});
+test('ferde lap nagy felületén csak a teljes vastagságban fedett kapcsolati szakasz fúrható',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Osztó',lo:[550,0,18],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.contacts.length,1);
+ // A ferde szél x=600-y/4. Az osztó teljes 550..568 szélessége y=128-ig fér rá.
+ assert.equal(out.contacts[0].length,128);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/LAPA X=559 Y=0 A=0 y=128 G=1/);
+});
+test('teljes CNC-háló használata ritkított előnézet mellett és változatlan modelladatok',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]}
+ ]);
+ const shape=f.threeMfImport.parts[0];shape.cncTriangles=shape.previewTriangles;shape.previewTriangles=[];
+ const before=JSON.stringify(f),out=produce(f);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.blocked.length,0);
+ assert.equal(JSON.stringify(f),before);
+});
+test('levágott sarok után az egyenes élszakasz saját kezdőponttal fúrható',()=>{
+ const f=angledFurniture([[0,0],[500,0],[600,100],[600,400],[0,400]],[
+  {name:'Jobb oldal',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.contacts[0].length,300);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/ELF2 Y=100 A=0 y=300 G=1/);
+});
+test('kizárólag ferde vagy túl rövid kapcsolat nem tilt exportot és nem kap furatot',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Szélső osztó',lo:[580,0,18],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,0);
+ assert.equal(out.files.length,0);
+ assert.equal(out.skipped.length,2);
+});
 test('nagy lapfelületek érintkezése egyik lapra sem ad furatot vagy blokkolást',()=>{
  const out=produce(furniture([
   {name:'Lap A',lo:[0,0,0],size:[600,400,18]},

@@ -3663,13 +3663,20 @@
         const extents=hi.map((n,k)=>n-lo[k]);
         const isRectangular=threeMfRectangularSolid(transformed,triangleNodes,extents,lo);
         const isAngledCut=!isRectangular&&threeMfAngledPanel(transformed,triangleNodes,extents,lo);
+        // CNC-hez a teljes felületháló kell; az előnézet ritkítása változatlan.
+        const cncTriangles=isRectangular?undefined:triangleNodes.map(tri=>{
+          const indices=['v1','v2','v3'].map(key=>Number(tri.getAttribute(key)));
+          if(indices.some(i=>!Number.isInteger(i)||i<0||i>=transformed.length))
+            throw Error('Érvénytelen háromszögcsúcs: '+name);
+          return indices.flatMap(i=>transformed[i].map(roundPreview));
+        });
         const dims=[...extents].sort((a,b)=>b-a);
         if(dims[2]<.01||dims[0]>10000)throw Error('Hibás vagy túl vékony alkatrész: '+name);
         if(result.length>=100)throw Error('Legfeljebb 100 3MF alkatrészpéldány importálható.');
         const rounded=n=>Math.round(n*10000)/10000;
         result.push({id:id+'-'+result.length,name,dimensions:dims.map(rounded),
           originMm:lo.map(rounded),
-          axisBoundsMm:extents.map(rounded),previewTriangles,isRectangular,isAngledCut});
+          axisBoundsMm:extents.map(rounded),previewTriangles,cncTriangles,isRectangular,isAngledCut});
       }
       const components=first(object,'components');
       for(const component of children(components,'component'))
@@ -7414,9 +7421,56 @@
       .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,65)||'Alkatresz';
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
+  // Csak a kapcsolódó felületet vetítjük, nem az egész test alakját tiltjuk.
+  // A ferde felület nem kerül a tengelypárhuzamos sík háromszögei közé.
+  function contactSpans(box,normal,plane,thin,span,width,range){
+    if(box.rectangular)return [range];
+    const triangles=box.triangles.filter(t=>[0,3,6].every(i=>Math.abs(t[i+normal]-plane)<=.12))
+      .map(t=>[0,3,6].map(i=>[t[i+thin],t[i+span]]));
+    const cuts=[...range];
+    for(const tri of triangles)for(let i=0;i<3;i++){
+      const a=tri[i],b=tri[(i+1)%3];
+      cuts.push(a[1]);
+      for(const x of width)if(Math.abs(b[0]-a[0])>1e-9){
+        const u=(x-a[0])/(b[0]-a[0]);
+        if(u>0&&u<1)cuts.push(a[1]+u*(b[1]-a[1]));
+      }
+    }
+    const sorted=[...new Set(cuts.filter(y=>y>=range[0]&&y<=range[1]))].sort((a,b)=>a-b);
+    function clip(poly,axis,bound,sign){
+      const out=[];
+      for(let i=0;i<poly.length;i++){
+        const a=poly[i],b=poly[(i+1)%poly.length];
+        const insideA=sign*(a[axis]-bound)>=-1e-9,insideB=sign*(b[axis]-bound)>=-1e-9;
+        if(insideA)out.push(a);
+        if(insideA!==insideB){
+          const u=(bound-a[axis])/(b[axis]-a[axis]);
+          out.push(a.map((v,k)=>v+u*(b[k]-v)));
+        }
+      }
+      return out;
+    }
+    const result=[];
+    for(let i=1;i<sorted.length;i++){
+      const lo=sorted[i-1],hi=sorted[i],expected=(width[1]-width[0])*(hi-lo);
+      if(expected<=1e-8)continue;
+      let area=0;
+      for(let poly of triangles){
+        poly=clip(poly,0,width[0],1);poly=clip(poly,0,width[1],-1);
+        poly=clip(poly,1,lo,1);poly=clip(poly,1,hi,-1);
+        area+=Math.abs(poly.reduce((sum,a,j)=>{
+          const b=poly[(j+1)%poly.length];return sum+a[0]*b[1]-b[0]*a[1];
+        },0))/2;
+      }
+      if(Math.abs(area-expected)>Math.max(.001,expected*1e-6))continue;
+      const last=result[result.length-1];
+      if(last&&Math.abs(last[1]-lo)<1e-7)last[1]=hi;else result.push([lo,hi]);
+    }
+    return result;
+  }
   /**
-   * 3MF szerkezeti érintkezések: kizárólag tengelypárhuzamos, valódi
-   * téglatestek teljes lapszél és lapfelület közötti illeszkedéséből.
+   * 3MF szerkezeti érintkezések: tengelypárhuzamos lapszél és lapfelület
+   * illeszkedéséből, ferde lapnál csak a valóban fedett egyenes szakaszon.
    * Nincs 3MF furatadat: a makrókat a kapcsolatok koordinátái adják.
    * A generálás és a gépi ellenőrzés állapotát külön jelezzük.
    */
@@ -7448,10 +7502,15 @@
       }
       for(const index of group.indices){
         const shape=model.parts[index];
-        if(!shape||shape.isRectangular!==true||!Array.isArray(shape.originMm)||
+        if(!shape||!Array.isArray(shape.originMm)||
            !Array.isArray(shape.axisBoundsMm)||shape.originMm.length!==3||
            shape.axisBoundsMm.length!==3){
-          error(part.id,'Nem hitelesített, nem téglatest alakú vagy régi 3MF geometria.');continue;
+          error(part.id,'Hiányoznak az eredeti 3MF felületkoordináták; importáld újra a modellt.');continue;
+        }
+        const triangles=(shape.cncTriangles||shape.previewTriangles||[]).filter(t=>
+          Array.isArray(t)&&t.length===9&&t.every(Number.isFinite));
+        if(shape.isRectangular!==true&&!triangles.length){
+          error(part.id,'Hiányoznak az eredeti 3MF felületadatok; importáld újra a modellt.');continue;
         }
         const lo=shape.originMm.map(Number),size=shape.axisBoundsMm.map(Number);
         if(![...lo,...size].every(Number.isFinite)||size.some(v=>v<1||v>10000)){
@@ -7489,7 +7548,8 @@
           dy:Math.round(size[yAxis]*100)/100,
           dz:Math.round(size[tAxis]*100)/100,side:'IJ',operations:[],issues:[],
           threeMfDraft:true,contactCount:0};
-        const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,
+        const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,triangles,
+          rectangular:shape.isRectangular===true,
           primaryFace:null};
         // A külső előlap egyetlen szomszédjára sem kérünk kötésfuratot.
         box.noCnc=/kulso.*elolap/.test(cleanName(part.name||shape.name).toLowerCase());
@@ -7533,11 +7593,20 @@
            intersections[span]<50){
           continue;
         }
+        const planeA=near(a.hi[normal],b.lo[normal])?a.hi[normal]:a.lo[normal];
+        const planeB=near(a.hi[normal],b.lo[normal])?b.lo[normal]:b.hi[normal];
+        const rangesA=contactSpans(a,normal,planeA,thin,span,intervals[thin],intervals[span]);
+        const rangesB=contactSpans(b,normal,planeB,thin,span,intervals[thin],intervals[span]);
+        for(const ra of rangesA)for(const rb of rangesB){
+        const rectangular=a.rectangular&&b.rectangular;
+        const fromSpan=rectangular?Math.max(ra[0],rb[0]):Math.ceil((Math.max(ra[0],rb[0])-1e-7)*100)/100,
+          toSpan=rectangular?Math.min(ra[1],rb[1]):Math.floor((Math.min(ra[1],rb[1])+1e-7)*100)/100;
+        if(toSpan-fromSpan<50)continue;
         const faceSurface=near(edge.hi[normal],face.lo[normal])?'min':'max';
         if(face.primaryFace===null)face.primaryFace=faceSurface;
         const faceSide=face.primaryFace===faceSurface?'primary':'reverse';
         const center=(intervals[thin][0]+intervals[thin][1])/2;
-        const from=intervals[span][0],nominalLength=round(intersections[span]);
+        const from=fromSpan,nominalLength=round(toSpan-fromSpan);
         const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
         const freeEdge=edge.entry[span===edge.xAxis?'dx':'dy']-coord(edge,span,from);
         const length=Math.max(0,Math.floor((Math.min(nominalLength,freeFace,freeEdge)+1e-6)*100)/100);
@@ -7575,6 +7644,7 @@
           faceStart:{X:faceOp.X,Y:faceOp.Y},edgeStart:edgeOp.X===undefined?
             {Y:edgeOp.Y}:{X:edgeOp.X},
           faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
+        }
       }
     }
     for(const box of boxes)if(!box.entry.operations.length){
