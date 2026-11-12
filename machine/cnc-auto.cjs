@@ -28,7 +28,7 @@
    */
   function threeMfContactDrafts(furniture,allowedIds,options={}){
     const model=furniture?.threeMfImport;
-    const data={byPart:new Map(),errors:new Map(),contacts:[]};
+    const data={byPart:new Map(),errors:new Map(),warnings:new Map(),contacts:[]};
     if(!Array.isArray(model?.parts)||!Array.isArray(model?.groups))return data;
     const allowed=new Set((allowedIds||[]).map(String));
     const byKey=new Map((furniture.parts||[]).filter(p=>p.threeMfGenerated&&allowed.has(String(p.id)))
@@ -36,6 +36,11 @@
     const boxes=[],eps=.12,near=(a,b)=>Math.abs(a-b)<=eps;
     const error=(id,reason)=>{
       if(!data.errors.has(id))data.errors.set(id,String(reason));
+    };
+    const warn=(id,reason)=>{
+      const messages=data.warnings.get(id)||[];
+      if(!messages.includes(String(reason)))messages.push(String(reason));
+      data.warnings.set(id,messages);
     };
     for(let gi=0;gi<model.groups.length;gi++){
       const group=model.groups[gi],part=byKey.get('3mf-'+(gi+1));
@@ -67,8 +72,23 @@
         const a=Number(options.actualDimensions?.[part.id]?.a??part.a);
         const b=Number(options.actualDimensions?.[part.id]?.b??part.b);
         const actualZ=Number(options.actualThicknesses?.[part.id]??part.threeMfThickness??size[tAxis]);
-        if(!near(a,size[xAxis])||!near(b,size[yAxis])||!near(actualZ,size[tAxis])){
-          error(part.id,'Az alkatrész mérete vagy anyagvastagsága eltér az eredeti 3MF modelltől.');continue;
+        // A 3MF CNC-TESZTTERVET mindig a tényleges 3MF test geometriája
+        // határozza meg. A getParts() szabászati alapanyaga lehet más
+        // vastagságú (pl. 18 mm a 3MF-ben 36 mm helyett), a szálirány
+        // felcserélhető, a képlet átszámolhatja a lapméretet.
+        // Ilyenkor a CNC-modellt nem dobhatjuk el: az eredeti 3MF-tervet
+        // külön FIGYELMEZTETÉSSEL kimentjük, nem gyártásra hitelesítve.
+        const dimMismatch=![a,b].every(Number.isFinite)||
+          !(near(a,size[xAxis])&&near(b,size[yAxis])||
+            near(a,size[yAxis])&&near(b,size[xAxis]));
+        const thickMismatch=!Number.isFinite(actualZ)||!near(actualZ,size[tAxis]);
+        if(dimMismatch||thickMismatch){
+          const modelDims=round(size[xAxis])+' × '+round(size[yAxis])+' × '+round(size[tAxis]);
+          const currentDims=[a,b,actualZ].map(v=>Number.isFinite(v)?round(v):'?').join(' × ');
+          warn(part.id,'3MF CNC TESZTTERV az eredeti '+modelDims+
+            ' mm modell szerint készül. A jelenlegi alkatrész-/anyagadat '+
+            currentDims+' mm; az eltérés nem állítja meg a tervek mentését. '+
+            'A gépi megmunkálás előtt az anyagot és a készméretet egyeztesd.');
         }
         const entry={key:'3mf-contact-'+(gi+1)+'-'+index,
           name:String(part.name||shape.name||'3MF test'),dx:size[xAxis],dy:size[yAxis],
@@ -238,11 +258,15 @@
     const modes={assemblyJoint:String(options.assemblyJoint||options.dividerJoint||'excenter')};
     core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
-    const result={files:[],blocked:[],skipped:[],total:0};
+    const result={files:[],blocked:[],skipped:[],warnings:[],total:0};
     const used=new Set();
     const name=cleanName(furniture?.name||'Butor');
     const threeMf=threeMfContactDrafts(furniture,allowedIds,options);
     result.contacts=threeMf.contacts;
+    for(const part of furniture?.parts||[]){
+      for(const reason of threeMf.warnings.get(part.id)||[])
+        appendFailure(result.warnings,part.name,reason);
+    }
     for(const part of furniture?.parts||[]){
       if(!allowed.has(String(part.id)))continue;
       if(part.threeMfGenerated&&threeMf.errors.has(part.id)){
@@ -274,13 +298,13 @@
         const a=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.a:part.a),
           b=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.b:part.b),z=finite(entry.dz);
         const actualZ=finite(options.actualThicknesses?.[part.id]);
-        if(Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
+        if(!entry.threeMfDraft&&Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
           appendFailure(result.blocked,shown,'Az anyag vastagsága eltér a bútor szerkezeti tervétől; új CNC-terv szükséges.');
           continue;
         }
         const same=Number.isFinite(a)&&Number.isFinite(b)&&
           Math.abs(a-finite(entry.dx))<=.11&&Math.abs(b-finite(entry.dy))<=.11;
-        if(!same){
+        if(!entry.threeMfDraft&&!same){
           appendFailure(result.blocked,shown,'A szabásméret eltér a szerkezeti CNC-rajztól; előbb frissítsd a bútortervezőben.');
           continue;
         }

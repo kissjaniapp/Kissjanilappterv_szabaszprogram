@@ -3167,11 +3167,11 @@
       '<p class="muted small" style="margin-top:12px">Ez a kötésmód az egész bútor szerkezeti kapcsolataira vonatkozik: oldallap, tető, fenék, polcok és F/V-osztók. '+
       'A POLC polctartó furatok G=1 értéke a külön Xilog makró része, nem kötésmód.</p>'+
       '<button class="btn primary" type="button" data-action="save-cnc-xxl-as" '+(!enabled?'disabled':'')+'>💾 Mentés másként</button>'+
-      '<p class="muted small">Windows Mentés másként: kiválasztod az első .xxl fájl nevét és mappáját; az összes többi ellenőrzött CNC-program közvetlenül ugyanoda kerül. Nincs ZIP letöltés.</p>'+
+      '<p class="muted small">Windows Mentés másként: kiválasztod az első .xxl fájl nevét és mappáját; az összes többi elkészített CNC-terv közvetlenül ugyanoda kerül. Nincs ZIP letöltés.</p>'+
       '<div id="cnc-xxl-counts" class="muted small" style="margin-top:12px"></div>'+
       '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
       '<p class="muted tiny">A kiválasztott kötésmód a bútorral mentődik. A REF szakaszok kihagyásai a bútortervező Polcfuratozás részében állíthatók. '+
-      'A nem hitelesített furatprogramok mentése tiltott; éles CNC-munka előtt Xilog előnézet és szárazpróba szükséges.</p></div></div>';
+      'A 3MF-alapú, jelölt CNC TESZTTERVEK menthetők. Ezek éles megmunkálás előtt Xilog ellenőrzést, a felrakási és furatkiosztási adatok igazolását, valamint szárazpróbát igényelnek.</p></div></div>';
   }
   window.gatterkaBuildAutoCnc=function(options){
     const f=getFurniture();
@@ -7064,7 +7064,7 @@
    */
   function threeMfContactDrafts(furniture,allowedIds,options={}){
     const model=furniture?.threeMfImport;
-    const data={byPart:new Map(),errors:new Map(),contacts:[]};
+    const data={byPart:new Map(),errors:new Map(),warnings:new Map(),contacts:[]};
     if(!Array.isArray(model?.parts)||!Array.isArray(model?.groups))return data;
     const allowed=new Set((allowedIds||[]).map(String));
     const byKey=new Map((furniture.parts||[]).filter(p=>p.threeMfGenerated&&allowed.has(String(p.id)))
@@ -7072,6 +7072,11 @@
     const boxes=[],eps=.12,near=(a,b)=>Math.abs(a-b)<=eps;
     const error=(id,reason)=>{
       if(!data.errors.has(id))data.errors.set(id,String(reason));
+    };
+    const warn=(id,reason)=>{
+      const messages=data.warnings.get(id)||[];
+      if(!messages.includes(String(reason)))messages.push(String(reason));
+      data.warnings.set(id,messages);
     };
     for(let gi=0;gi<model.groups.length;gi++){
       const group=model.groups[gi],part=byKey.get('3mf-'+(gi+1));
@@ -7103,8 +7108,23 @@
         const a=Number(options.actualDimensions?.[part.id]?.a??part.a);
         const b=Number(options.actualDimensions?.[part.id]?.b??part.b);
         const actualZ=Number(options.actualThicknesses?.[part.id]??part.threeMfThickness??size[tAxis]);
-        if(!near(a,size[xAxis])||!near(b,size[yAxis])||!near(actualZ,size[tAxis])){
-          error(part.id,'Az alkatrész mérete vagy anyagvastagsága eltér az eredeti 3MF modelltől.');continue;
+        // A 3MF CNC-TESZTTERVET mindig a tényleges 3MF test geometriája
+        // határozza meg. A getParts() szabászati alapanyaga lehet más
+        // vastagságú (pl. 18 mm a 3MF-ben 36 mm helyett), a szálirány
+        // felcserélhető, a képlet átszámolhatja a lapméretet.
+        // Ilyenkor a CNC-modellt nem dobhatjuk el: az eredeti 3MF-tervet
+        // külön FIGYELMEZTETÉSSEL kimentjük, nem gyártásra hitelesítve.
+        const dimMismatch=![a,b].every(Number.isFinite)||
+          !(near(a,size[xAxis])&&near(b,size[yAxis])||
+            near(a,size[yAxis])&&near(b,size[xAxis]));
+        const thickMismatch=!Number.isFinite(actualZ)||!near(actualZ,size[tAxis]);
+        if(dimMismatch||thickMismatch){
+          const modelDims=round(size[xAxis])+' × '+round(size[yAxis])+' × '+round(size[tAxis]);
+          const currentDims=[a,b,actualZ].map(v=>Number.isFinite(v)?round(v):'?').join(' × ');
+          warn(part.id,'3MF CNC TESZTTERV az eredeti '+modelDims+
+            ' mm modell szerint készül. A jelenlegi alkatrész-/anyagadat '+
+            currentDims+' mm; az eltérés nem állítja meg a tervek mentését. '+
+            'A gépi megmunkálás előtt az anyagot és a készméretet egyeztesd.');
         }
         const entry={key:'3mf-contact-'+(gi+1)+'-'+index,
           name:String(part.name||shape.name||'3MF test'),dx:size[xAxis],dy:size[yAxis],
@@ -7274,11 +7294,15 @@
     const modes={assemblyJoint:String(options.assemblyJoint||options.dividerJoint||'excenter')};
     core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
-    const result={files:[],blocked:[],skipped:[],total:0};
+    const result={files:[],blocked:[],skipped:[],warnings:[],total:0};
     const used=new Set();
     const name=cleanName(furniture?.name||'Butor');
     const threeMf=threeMfContactDrafts(furniture,allowedIds,options);
     result.contacts=threeMf.contacts;
+    for(const part of furniture?.parts||[]){
+      for(const reason of threeMf.warnings.get(part.id)||[])
+        appendFailure(result.warnings,part.name,reason);
+    }
     for(const part of furniture?.parts||[]){
       if(!allowed.has(String(part.id)))continue;
       if(part.threeMfGenerated&&threeMf.errors.has(part.id)){
@@ -7310,13 +7334,13 @@
         const a=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.a:part.a),
           b=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.b:part.b),z=finite(entry.dz);
         const actualZ=finite(options.actualThicknesses?.[part.id]);
-        if(Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
+        if(!entry.threeMfDraft&&Number.isFinite(actualZ)&&Math.abs(z-actualZ)>.11){
           appendFailure(result.blocked,shown,'Az anyag vastagsága eltér a bútor szerkezeti tervétől; új CNC-terv szükséges.');
           continue;
         }
         const same=Number.isFinite(a)&&Number.isFinite(b)&&
           Math.abs(a-finite(entry.dx))<=.11&&Math.abs(b-finite(entry.dy))<=.11;
-        if(!same){
+        if(!entry.threeMfDraft&&!same){
           appendFailure(result.blocked,shown,'A szabásméret eltér a szerkezeti CNC-rajztól; előbb frissítsd a bútortervezőben.');
           continue;
         }
@@ -7368,13 +7392,16 @@
      const draftCount=data.files.filter(f=>f.draft).length;
      if(count)count.textContent='Előkészített CNC-fájlok: '+data.files.length+
        (draftCount?' (ebből 3MF TESZTTERV: '+draftCount+')':'')+
-       ' · Ellenőrizendő: '+data.blocked.length+
+       ' · Nem generálható: '+data.blocked.length+
        ' · CNC nélkül: '+data.skipped.length+
+       (data.warnings?.length?' · 3MF anyag/méret figyelmeztetés: '+data.warnings.length:'')+
        (data.contacts?.length?' · Felismert 3MF kapcsolatok: '+data.contacts.length:'');
      if(status)status.textContent=data.blocked.length?
        'A TELJES CNC-mentés tiltott: '+data.blocked.slice(0,6).map(b=>b.part+': '+b.reason).join(' | ')+
-       (data.files.length?' · A Mentés másként gombbal a hiteles CNC-programok külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
-       (draftCount?'A 3MF-ből számított programok TESZTTERVEK, nem hitelesített gyártási programok. A koordinátákat, LAPF/ELF5 felrakást és az excenter kötést Xilogban, majd szárazpróbával ellenőrizni kell.':
+       (data.files.length?' · A Mentés másként gombbal az elkészített CNC-tervek külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
+       (draftCount?'A 3MF-ből számított programok TESZTTERVEK. Az eredeti modell geometriája az irányadó, a szabászati anyag- és méretkülönbségek nem tiltják a mentést. '+
+       (data.warnings?.length?'Az eltérések a mentési jelentésben olvashatók. ':'')+
+       'A LAPF/ELF5 felrakást és az excenter kötést Xilogban, majd szárazpróbával ellenőrizni kell.':
        (data.skipped.length?'CNC nélkül: '+data.skipped.map(x=>x.part).join(', '):''));
    }catch(error){
      if(status)status.textContent='CNC adatellenőrzés: '+(error?.message||'ismeretlen hiba');
@@ -7397,7 +7424,7 @@
    try{
      const data=build();
      if(!data)throw Error('A CNC automata nem érhető el.');
-     if(!data.files.length)throw Error('Nincs egyetlen hitelesített, menthető CNC-program sem. '+
+     if(!data.files.length)throw Error('Nem sikerült menthető CNC-teszttervet készíteni. '+
        (data.blocked.length?'Első ellenőrizendő alkatrész: '+data.blocked[0].part+' – '+data.blocked[0].reason:
        'A bútortervező szerkezeti adatait menteni kell, vagy nincs CNC-megmunkálásra váró alkatrész.'));
      const partial=data.blocked.length>0;
@@ -7406,7 +7433,7 @@
        const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\n');
        if(!window.confirm('A TELJES CNC-programkészlet nem menthető: '+data.blocked.length+
           ' ellenőrizendő alkatrész kimarad.\n'+reasons+
-          '\n\nA '+data.files.length+' ellenőrzött .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
+          '\n\nA '+data.files.length+' előkészített .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
          if(status)status.textContent='A CNC mentést megszakítottad; nem hitelesített program nem került ki.';
          return;
        }
@@ -7421,7 +7448,8 @@
        return;
      }
      const report=(partial||draftCount)?[
-       'GATTERKA – 3MF CNC TESZTTERV / RESZLEGES KIMENET, NEM HITELESITETT',
+       partial?'GATTERKA – RESZLEGES CNC TESZTTERV, NEM HITELESITETT':
+         'GATTERKA – 3MF CNC TESZTTERV, NEM HITELESITETT',
        draftCount?'3MF vilagkoordinatak alapjan automatikusan szamitott geometriai erintkezesek.':'',
        draftCount?'A 3MF nem tartalmaz furatokat: az excenter, LAPF/ELF5, felrakas es FORDIT meg NEM hitelesitett.':'',
        'A teljes butor CNC-megmunkalasara a Xilog ellenorzes es a gepi szarazproba elott NEM alkalmas.',
@@ -7431,7 +7459,10 @@
          ' | tengely='+['X','Y','Z'][x.normal]+
          ' | csatlakozasi hossz='+x.length+' mm | '+x.faceMacro+' + '+x.edgeMacro),
        '',
-       'ELLENORIZENDO, NEM EXPORTALT CNC-PROGRAMOK:',
+       '3MF MODELL ES ANYAG-/ALKATRESZADAT ELTERESEK (A TERVEK MENTHETOK):',
+       ...(data.warnings||[]).map(x=>x.part+' :: '+x.reason),
+       '',
+       'NEM GENERÁLHATO CNC-PROGRAMOK ('+data.blocked.length+'):',
        ...data.blocked.map(x=>x.part+' :: '+x.reason),
        '',
        'CNC NELKULI ALKATRESZEK:',
