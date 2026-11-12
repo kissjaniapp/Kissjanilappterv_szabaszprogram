@@ -59,9 +59,52 @@ test('ferde vágású trapéz és háromszög befoglaló mérettel szabható',()
     assert.equal(angled(p,tris.slice(2),extents,lo),false,'hiányos mesh nem megengedett');
   }
 });
-test('íves és homorú test továbbra sem kap automatikusan előgyártmányt',()=>{
+test('sarokkivágott szögletes lap is befoglaló téglalapként szabható',()=>{
   const concave=extrudedPanel([[0,0],[900,0],[900,200],[500,200],[500,500],[0,500]]);
-  assert.equal(angled(concave.p,concave.tris,concave.extents,concave.lo),false);
+  assert.equal(angled(concave.p,concave.tris,concave.extents,concave.lo),true);
+  assert.deepEqual(concave.extents,[900,500,18]);
+});
+
+test('szöges előgyártmány bekerül a szabáslistába és továbbjut az eredeti felületeivel a CNC-hez',()=>{
+ const code=block('  function threeMfApplyImport(','  function fusionEulerAngles(');
+ let sequence=0;
+ const apply=vm.runInNewContext('(function(){'+code+';return threeMfApplyImport;})()',{
+  uuid:()=>String(++sequence),threeMfCombinedCuttingGroups:data=>data.groups,
+  threeMfGroupMeetsMinimum:minimum,sidesFromCode:()=>({}),
+  threeMfViewStates:new Map(),cabinetAutoEdging:()=>{},result:{},Math,Number,String
+ });
+ const auto=require('../machine/cnc-auto.cjs');
+ for(const outline of [
+  [[0,0],[900,0],[760,500],[0,500]],
+  [[0,0],[900,0],[0,500]],
+  [[0,0],[900,0],[900,200],[500,200],[500,500],[0,500]]
+ ]){
+  const panel=extrudedPanel(outline);
+  const triangles=panel.tris.map(tri=>['v1','v2','v3'].flatMap(k=>panel.p[Number(tri.getAttribute(k))]));
+  const source={id:'blank',name:'Szöges fenék',originMm:[0,0,0],axisBoundsMm:[900,500,18],
+   dimensions:[900,500,18],isRectangular:false,
+   isAngledCut:angled(panel.p,panel.tris,panel.extents,panel.lo),cncTriangles:triangles};
+  const data={parts:[source,{id:'side',name:'Oldal',originMm:[-18,0,0],
+   axisBoundsMm:[18,500,700],dimensions:[700,500,18],isRectangular:true}],
+   groups:[{name:source.name,dimensions:source.dimensions,indices:[0],
+     isRectangular:false,isAngledCut:source.isAngledCut},
+    {name:'Oldal',dimensions:[700,500,18],indices:[1],isRectangular:true}]};
+  const f={id:'test',w:1,ht:1,d:1,parts:[]};
+  apply(f,data);
+  const blank=f.parts.find(p=>p.name===source.name);
+  assert.ok(blank,'A szöges lapnak szerepelnie kell a szabáslistában');
+  assert.equal(blank.a,'900');assert.equal(blank.b,'500');
+  assert.equal(blank.threeMfThickness,18);assert.equal(blank.angledBlank,true);
+  assert.equal(blank.q,'1');
+  const cnc=auto.makeAutoPrograms(f,f.parts.map(p=>p.id));
+  assert.equal(cnc.blocked.length,0,JSON.stringify(cnc.blocked));
+  assert.equal(cnc.files.length,2);
+  assert.equal(cnc.contacts.length,1);
+  assert.equal(cnc.contacts[0].length,500);
+  assert.match(cnc.files.find(p=>p.id.startsWith(blank.id+'::')).content,/H DX=900 DY=500 DZ=18 /);
+  assert.equal(source.isRectangular,false,'Az előgyártmány nem változtatja téglatestté a CNC-modellt');
+  assert.deepEqual(source.cncTriangles,triangles);
+ }
 });
 test('3MF-ben a 50 × 50 mm a minimum, a 38 mm munkalap nem alkatrész',()=>{
  assert.equal(minimum({dimensions:[37,30,18]}),false);

@@ -46,6 +46,108 @@ function angledFurniture(polygon,others){
  Object.assign(f.threeMfImport.parts[0],{isRectangular:false,isAngledCut:true,previewTriangles:triangles});
  return f;
 }
+function rotateFurniture(f){
+ const rad=Math.PI/180,az=23*rad,ax=31*rad;
+ const rotate=([x,y,z])=>{
+  const u=Math.cos(az)*x-Math.sin(az)*y,v=Math.sin(az)*x+Math.cos(az)*y;
+  return [u+137,Math.cos(ax)*v-Math.sin(ax)*z-83,Math.sin(ax)*v+Math.cos(ax)*z+51];
+ };
+ for(let i=0;i<f.parts.length;i++){
+  const shape=f.threeMfImport.parts[i];
+  let triangles=shape.cncTriangles||shape.previewTriangles;
+  if(!triangles){
+   const p=[];for(let mask=0;mask<8;mask++)p.push(shape.originMm.map((v,k)=>v+((mask&(1<<k))?shape.axisBoundsMm[k]:0)));
+   triangles=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]]
+    .flatMap(([a,b,c,d])=>[[...p[a],...p[b],...p[c]],[...p[a],...p[c],...p[d]]]);
+  }
+  const mesh=triangles.map(t=>[0,3,6].flatMap(k=>rotate(t.slice(k,k+3))));
+  const points=mesh.flatMap(t=>[t.slice(0,3),t.slice(3,6),t.slice(6,9)]);
+  shape.originMm=[0,1,2].map(k=>Math.min(...points.map(p=>p[k])));
+  shape.axisBoundsMm=[0,1,2].map(k=>Math.max(...points.map(p=>p[k]))-shape.originMm[k]);
+  shape.cncTriangles=mesh;shape.isRectangular=false;shape.isAngledCut=false;
+  const frame=auto.localPanelFrame(mesh);assert.ok(frame,'Saját lapkoordináták kellenek');
+  shape.cncFrame=frame;
+  const dims=frame.dimensions.slice().sort((a,b)=>b-a);
+  Object.assign(f.parts[i],{a:String(dims[0]),b:String(dims[1]),threeMfThickness:dims[2]});
+ }
+ return f;
+}
+test('térben megdöntött és szögbevágott lap saját Z tengelye a nagy lapra merőleges',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]}
+ ]));
+ const frame=f.threeMfImport.parts[0].cncFrame;
+ assert.deepEqual(frame.dimensions,[600,400,18]);
+ for(let i=0;i<3;i++)for(let j=0;j<3;j++){
+  const dot=frame.axes[i].reduce((s,v,k)=>s+v*frame.axes[j][k],0);
+  assert.ok(Math.abs(dot-(i===j?1:0))<1e-8);
+ }
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.files.length,2);assert.equal(out.contacts.length,1);
+ assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/H DX=600 DY=400 DZ=18 /);
+ assert.equal(out.contacts[0].length,400);
+ assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/;CNC_Z_VILAG=/);
+ for(const shape of f.threeMfImport.parts)delete shape.cncFrame;
+ const legacy=produce(f);
+ assert.equal(legacy.blocked.length,0);
+ assert.equal(legacy.contacts.length,1);
+ assert.equal(legacy.contacts[0].length,400);
+});
+test('megdöntött 3MF importja a saját 600×400×18 előgyártmányt adja, nem a világdobozát',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[600,0],[500,400],[0,400]],[]));
+ const mesh=f.threeMfImport.parts[0].cncTriangles;
+ const points=mesh.flatMap(t=>[t.slice(0,3),t.slice(3,6),t.slice(6,9)]);
+ const node=(localName,attrs={},children=[])=>({localName,children,getAttribute:key=>attrs[key]??null});
+ const root=node('model',{unit:'millimeter'},[
+  node('resources',{},[node('object',{id:'1',name:'Döntött fenék'},[
+   node('mesh',{},[
+    node('vertices',{},points.map(([x,y,z])=>node('vertex',{x:String(x),y:String(y),z:String(z)}))),
+    node('triangles',{},mesh.map((_,i)=>node('triangle',{v1:String(i*3),v2:String(i*3+1),v3:String(i*3+2)})))
+   ])
+  ])]),node('build',{},[node('item',{objectid:'1'})])
+ ]);
+ const vm=require('node:vm'),html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+ const extract=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a))).trim();
+ const rectangular=vm.runInNewContext('('+extract('  function threeMfRectangularSolid(','  // A szögben leszabott')+')');
+ const angled=vm.runInNewContext('('+extract('  function threeMfAngledPanel(','  // Standalone 3MF/ZIP reader.')+')');
+ const parse=vm.runInNewContext('('+extract('  function threeMfParse(','  // A 3MF csak eredeti geometriát')+')',{
+  DOMParser:class{parseFromString(){return {documentElement:root,querySelector:()=>null};}},
+  threeMfRectangularSolid:rectangular,threeMfAngledPanel:angled,window:{GatterkaCncAuto:auto}
+ });
+ const result=parse('mock document');
+ assert.deepEqual(Array.from(result.groups[0].dimensions),[600,400,18]);
+ assert.equal(result.groups[0].isAngledCut,true);
+ assert.ok(result.parts[0].cncFrame);
+ assert.equal(result.parts[0].cncTriangles.length,mesh.length);
+ assert.ok(result.parts[0].axisBoundsMm[2]>100,'A világkoordinátás döntés megmarad a megjelenítőhöz');
+});
+test('ferdén alávágott él kimarad, térbeli döntéssel együtt is megmarad a 90 fokos él CNC-je',()=>{
+ const f=angledFurniture([[0,0],[600,0],[600,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]},
+  {name:'Ferde él mellett',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const shape=f.threeMfImport.parts[0];
+ shape.previewTriangles=shape.previewTriangles.map(t=>t.map((v,k)=>k%3===0&&v===600&&t[Math.floor(k/3)*3+2]===18?590:v));
+ shape.isAngledCut=false;
+ for(const candidate of [f,rotateFurniture(JSON.parse(JSON.stringify(f)))]){
+  const out=produce(candidate);
+  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+  assert.equal(out.contacts.length,1);
+  assert.equal(out.files.length,2);
+  assert.equal(out.contacts[0].length,400);
+  assert.ok(out.contacts.every(c=>!c.faceName.includes('Ferde él')));
+ }
+});
+test('döntött, levágott sarok utáni furat saját kezdőpontja megmarad',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[500,0],[600,100],[600,400],[0,400]],[
+  {name:'Jobb oldal',lo:[600,0,0],size:[18,400,700]}
+ ]));
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/ELF2 Y=100 A=0 y=300 G=1/);
+});
 test('ferde fenék egyenes élén megmarad a furat, a ferde vég befoglaló élén nincs furat',()=>{
  const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
   {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]},

@@ -621,3 +621,28 @@ felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
   új import szükséges, nem szabad a befoglaló téglatestet kifúrni.
 - A 3MF-megjelenítő, téglatestek meglévő makrói és a védett
   szabási/Windows mentési funkciók változatlanok.
+
+2026-11-12 – SZÖGES LAP SZABÁSZATI ELŐGYÁRTMÁNYA
+----------------------------------------------
+- A szöges, ferde végű, háromszög, trapéz és sarokkivágott síklap
+  a legnagyobb külső X/Y befoglaló méreteivel, téglalap alakú
+  előgyártmányként szerepel a szabáslistában, plusz ráhagyás nélkül.
+- A lapvastagság és darabszám megmarad. A homorú szögletes kontúr
+  önmagában nem zárhatja ki a lapot a szabáslistából, így a CNC-ből sem.
+- A téglalap csak a szabászati előgyártmány alakja: az eredeti 3MF
+  felületháló nem írható felül. A CNC a valódi egyenes csatlakozásokat
+  használja; a ferde részen továbbra sincs furat.
+- Az optimalizáló, gépi vágássorrend és xMix/xPrg nem változik.
+
+2026-11-12 – TÉRBEN DÖNTÖTT ÉS ALÁVÁGOTT LAP SAJÁT TENGELYEI
+-----------------------------------------------------------
+- Térbeli döntés és kontúr-szögbevágás együttesen is megengedett.
+  Az előgyártmány méretét a lap saját derékszögű rendszerében kell
+  számolni: X/Y az egyenes derékszögű élekhez igazodik, Z a nagy
+  lapfelületre merőleges. Nem a világkoordinátás doboz vastagsága kell.
+- A ferde alávágás nem zárja ki a lap többi, 90 fokos kötését.
+  A csatlakozások a saját tengelyekre vetítve kapják a meglévő makrókat.
+  Csak a teljes vastagságban fedett, derékszögű makróval megadható
+  egyenes kapcsolat fúrható; ferde felületre nincs új furatmakró.
+- A saját tengelyek és origin külön CNC-adatként tárolódnak.
+  Az eredeti világkoordinátás 3MF felületháló és megjelenítő változatlan.
