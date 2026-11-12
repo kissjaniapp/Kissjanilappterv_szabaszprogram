@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF5','REF','POLC','XBO']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -45,6 +45,17 @@
       // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
       // a két felhasználói PGM minta kifejezetten G=1# F=1.
       return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    if(operation.macro==='XBO'){
+      const X=finite(operation.X),Y=finite(operation.Y),z=finite(operation.z),
+        V=finite(operation.V),R=finite(operation.R),x=finite(operation.x),
+        y=finite(operation.y),D=finite(operation.D),F=finite(operation.F);
+      if(![X,Y,z,V,R,x,y,D,F].every(Number.isFinite)||X<0||Y<0||
+         z!==13||V!==1||D!==5||F!==1||y!==0||x<8||x>200||
+         !Number.isInteger(R)||R<1||R>99||operation.N!=='P')
+        throw new Error('Hibás XBO polctartó furatcsoport.');
+      return 'XBO X='+round(X)+' Y='+round(Y)+' z=13 V=1 R='+R+
+        ' x='+round(x)+' y=0 D=5 N=P F=1';
     }
     const joint=jointMode(operation,mode),codes=core.jointCodes(joint);
     // A beküldött F-osztó + polc referenciák G=2 eltolt ELF furata
