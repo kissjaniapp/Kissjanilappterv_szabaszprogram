@@ -38,9 +38,8 @@ test('dekorációt, metaadat nélküli és hiányos OBJ csoportokat nem nyilván
 });
 test('hiányos, csak egy síkból álló OBJ nem kaphat automatikus szabászati/CNC jóváhagyást',()=>{
  const obj='o Bútor 4/Oldal\nv 0 0 0\nv 500 0 0\nv 0 400 0\nf 1 2 3';
- const r=engine.parseObj(obj,null);
- assert.equal(r.groups[0].isRectangular,false);
- assert.equal(r.groups[0].scnPartVerified,false);
+ assert.throws(()=>engine.parseObj(obj,null),/Nincs használható OBJ-objektum|érvénytelen/);
+ // Ez még a 3D-ben sem értelmezhető térfogat; nem lehet alkatrész.
 });
 test('SCN OBJ geometria nem képezhető automatikusan hibás aránnyal vagy csúccsal',()=>{
  assert.throws(()=>engine.parseObj('o demo\nv 0 0 0\nf 1 2 3'),/érvénytelen csúcs|nem tartalmaz|Hibás/);
