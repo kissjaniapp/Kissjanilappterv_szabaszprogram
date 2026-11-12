@@ -90,8 +90,9 @@ test('Az új szerkesztő a tető és fenék közé menő vagy végigmenő módj�
 test('A láb nem alkatrész, a hiányzó LAB-CNC makró exportját megtiltjuk',()=>{
  const parts=section('function getStructuredParts(p){','let currentParts=[]');
  assert.doesNotMatch(parts,/\bhasLegs\b|\blegHeight\b|\bLAB\b/);
- assert.match(first,/59 × 59 mm-es középpontok/);
- assert.match(first,/még nincsenek hitelesített CNC-makróba kötve/);
+ assert.match(first,/A 4 bútorláb LAB-furata \(59 × 59 mm\)/);
+ assert.match(first,/még nincs hitelesített Xilog makróval megvalósítva/);
+ assert.match(first,/\?make\('false-bottom','Pótfenék'/);
 });
 test('A beágyazott JS szintaktikailag helyes',()=>{
  for(const code of scripts)assert.doesNotThrow(()=>new vm.Script(code));
