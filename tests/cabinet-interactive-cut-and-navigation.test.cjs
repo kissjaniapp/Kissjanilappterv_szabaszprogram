@@ -178,7 +178,8 @@ test('Egyetlen natív CNC Mentés másként: közvetlen XXL fájlok, részleges 
  assert.match(source,/choose-cnc-save-as/);
  assert.match(source,/write-cnc-files/);
  assert.match(source,/window\.gatterkaSaveAutoCncAs/);
- assert.match(source,/ELLENORIZENDO, NEM EXPORTALT CNC-PROGRAMOK:/);
+ assert.match(source,/NEM GENERÁLHATO CNC-PROGRAMOK/);
+ assert.match(source,/3MF MODELL ES ANYAG-\/ALKATRESZADAT ELTERESEK/);
  assert.match(source,/RÉSZLEGES CNC-mentés sikeres/);
  assert.doesNotMatch(source,/window\.gatterkaDownloadAutoCnc/);
 });
