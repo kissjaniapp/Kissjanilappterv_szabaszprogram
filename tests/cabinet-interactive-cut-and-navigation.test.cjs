@@ -99,7 +99,7 @@ test('Paraméteres szerkesztő és alkatrészösszesítő azonos fizikai darabaz
  const rec=ctx.makeList(defaultP);
  const actual=g.parts().map(x=>x.key).sort();
  const fromList=rec.flatMap(x=>x.sourceKeys||[x.key]).filter(x=>x.startsWith('f-divider-')).sort();
- assert.deepEqual(Array.from(fromList),actual);
+ assert.deepEqual(Array.from(fromList),Array.from(actual));
  assert.equal(rec.reduce((a,r)=>a+r.qty,0),4+actual.length);
  // Ugyanaz a fizikai lista megy az anyagkészletre és a CNC-kapcsolatokhoz.
 });
