@@ -7258,10 +7258,10 @@
        'A bútortervező szerkezeti adatait menteni kell, vagy nincs CNC-megmunkálásra váró alkatrész.'));
      const partial=data.blocked.length>0;
      if(partial){
-       const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\\n');
+       const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\n');
        if(!window.confirm('A TELJES CNC-programkészlet nem menthető: '+data.blocked.length+
-          ' ellenőrizendő alkatrész kimarad.\\n'+reasons+
-          '\\n\\nA '+data.files.length+' ellenőrzött .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
+          ' ellenőrizendő alkatrész kimarad.\n'+reasons+
+          '\n\nA '+data.files.length+' ellenőrzött .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
          if(status)status.textContent='A CNC mentést megszakítottad; nem hitelesített program nem került ki.';
          return;
        }
@@ -7276,7 +7276,7 @@
        '',
        'CNC NELKULI ALKATRESZEK:',
        ...data.skipped.map(x=>x.part+' :: '+(x.reason||'Nincs CNC megmunkalas.'))
-     ].join('\\n'):'';
+     ].join('\n'):'';
      if(status)status.textContent='A Windows Mentés másként ablak megnyitása…';
      const saved=await window.gatterkaSaveAutoCncAs(data.files,report);
      if(saved.cancelled){
