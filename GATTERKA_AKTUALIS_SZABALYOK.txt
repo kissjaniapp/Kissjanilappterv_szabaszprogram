@@ -543,3 +543,38 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - A fentiek a szerkezeti tervező és a hozzá kapcsolódó anyagmetaadat
   módosításai, NEM érintik a védett gépi vágási sorrendet,
   az xPrg/xMix exportot vagy a Windows natív mentést.
+
+
+2026-11-12 – F/V KÖZÖS DARABOLÁS ÉS EGYSÉGES ALKATRÉSZJEGYZÉK
+-------------------------------------------------------------
+- A nagy szerkezeti szerkesztőben az F-osztó és a V-osztó
+  AZONOS kiválasztás / saját kettévágás / önálló húzás /
+  darab kivétele / darab visszaállítása műveleteket támogat.
+  A fixen befúrt vízszintes elem továbbra is V-osztó.
+- A „Kijelölt darab kettévágása” az aktuális F vagy V fizikai
+  alkatrészt azonosítható A/B részekre bontja, kezdetben a
+  középvonalnál 30 mm-es szabad hézaggal. A két új darab
+  külön húzható, lapvégei szerkeszthetők és újra is darabolható.
+  A szülő/gyermek stabil kulcsa a mentett rajzállapot része.
+- A „Darab kivétele” a kiválasztott fizikai részt veszi ki az
+  AKTÍV alkatrészek közül, halványan megőrzi visszakapcsoláshoz.
+  A „Darab visszaállítása” azonos kulccsal, kézi ABS-szel,
+  reszeléssel, anyagszínnel és önálló méretekkel állítja vissza.
+- A bútortervező paraméteres alkatrészlistája, a Gatterka
+  Alkatrészek oldal, az Alkatrész-összesítő és a szabászati
+  alapadat azonos AKTÍV fizikai alkatrészekre és darabszámra épül.
+  Az összesítő a valóban azonos méretű, élzárású, anyagú és
+  CNC-technológiájú lapokat összevonhatja, de azok alapazonosítója
+  és teljes darabszáma nem változhat. Kivett darab nem szerepelhet
+  sem az összesítőben, sem a szabászati állományban.
+- Az élzárás tároló régi alkatrészazonosítók esetén is megőrzi
+  a kézzel beállított adatokat, a rekurzív -part-a/-part-b
+  gyermekek a közvetlen legközelebbi szülő adataiból indulnak.
+- A szerkezeti vagy kézi darabolási CNC-kötés ellenőrizetlensége
+  NEM jelent DXF oldalnézeti mérethibát és NEM blokkolhatja
+  az Anyagkészlet / Táblák oldal megnyitását, a szabászati
+  alkatrészek számítását vagy egyéb navigációt.
+  Az érintett, nem hitelesített CNC .xxl program tényleges
+  kimentése ellenőrzésig továbbra is TILOS.
+- A gépi vágási sorrend, xMix/xPrg készítése, a natív Windows
+  Mentés másként és a jóváhagyott szalagvágási kód változatlan.
