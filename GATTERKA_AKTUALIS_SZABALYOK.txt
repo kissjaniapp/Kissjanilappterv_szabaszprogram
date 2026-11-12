@@ -578,3 +578,13 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   kimentése ellenőrzésig továbbra is TILOS.
 - A gépi vágási sorrend, xMix/xPrg készítése, a natív Windows
   Mentés másként és a jóváhagyott szalagvágási kód változatlan.
+
+
+- CNC mentési kiegészítés: a továbbra is tiltott TELJES XXL export mellett
+  külön gombbal menthető a már hitelesített részegységek RÉSZLEGES ZIP-je.
+  A ZIP neve egyértelműen „RESZLEGES”, és tartalmaz egy
+  ELLENORIZENDO_KIMARADT.txt jelentést az összes elutasított
+  alkatrésszel és okkal. A részleges ZIP nem állítható be teljes bútor
+  kimentéseként, és nem helyettesíti a 4 db 59 mm-es LAB-lábfurat még
+  hiányzó/hitelesítendő CNC-makróját. A teljes CNC gépi próba továbbra
+  szükséges.
