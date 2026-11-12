@@ -4700,10 +4700,18 @@
       return match?.[0]||null;
     };
     const sourcePartFor=key=>{
-      const exact=originalCabinetParts.find(p=>p.cabinetDesignKey===key);
+      const lookup=source=>originalCabinetParts.find(p=>p.cabinetDesignKey===source);
+      const exact=lookup(key);
       if(exact)return exact;
+      // Előbb az adott egyedi lap korábbi azonosítóját keressük:
+      // f-divider-1-section-2-cut-3 -> f-divider-1-section-2.
+      // Különböző kézi ABS-t kapott szakaszok így nem öröklik
+      // tévesen az F/V sor LEGELSŐ darabjának adatait.
+      const uncut=String(key||'').replace(/-cut-\d+$/,'');
+      if(uncut!==key){const parent=lookup(uncut);if(parent)return parent;}
       const family=sourceFamily(key);
-      return family?originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family):null;
+      if(!family)return null;
+      return lookup(family)||originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family);
     };
     // A régi, külön szerkesztett darabok csak egyező beállításokkal egyesíthetők.
     const autoName=part=>{
