@@ -3167,11 +3167,11 @@
       '<p class="muted small" style="margin-top:12px">Ez a kötésmód az egész bútor szerkezeti kapcsolataira vonatkozik: oldallap, tető, fenék, polcok és F/V-osztók. '+
       'A POLC polctartó furatok G=1 értéke a külön Xilog makró része, nem kötésmód.</p>'+
       '<button class="btn primary" type="button" data-action="save-cnc-xxl-as" '+(!enabled?'disabled':'')+'>💾 Mentés másként</button>'+
-      '<p class="muted small">Windows Mentés másként: kiválasztod az első .xxl fájl nevét és mappáját; az összes többi ellenőrzött CNC-program közvetlenül ugyanoda kerül. Nincs ZIP letöltés.</p>'+
+      '<p class="muted small">Windows Mentés másként: kiválasztod az első .xxl fájl nevét és mappáját; az összes többi elkészített CNC-terv közvetlenül ugyanoda kerül. Nincs ZIP letöltés.</p>'+
       '<div id="cnc-xxl-counts" class="muted small" style="margin-top:12px"></div>'+
       '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
       '<p class="muted tiny">A kiválasztott kötésmód a bútorral mentődik. A REF szakaszok kihagyásai a bútortervező Polcfuratozás részében állíthatók. '+
-      'A nem hitelesített furatprogramok mentése tiltott; éles CNC-munka előtt Xilog előnézet és szárazpróba szükséges.</p></div></div>';
+      'A 3MF-alapú, jelölt CNC TESZTTERVEK menthetők. Ezek éles megmunkálás előtt Xilog ellenőrzést, a felrakási és furatkiosztási adatok igazolását, valamint szárazpróbát igényelnek.</p></div></div>';
   }
   window.gatterkaBuildAutoCnc=function(options){
     const f=getFurniture();
@@ -7398,7 +7398,7 @@
        (data.contacts?.length?' · Felismert 3MF kapcsolatok: '+data.contacts.length:'');
      if(status)status.textContent=data.blocked.length?
        'A TELJES CNC-mentés tiltott: '+data.blocked.slice(0,6).map(b=>b.part+': '+b.reason).join(' | ')+
-       (data.files.length?' · A Mentés másként gombbal a hiteles CNC-programok külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
+       (data.files.length?' · A Mentés másként gombbal az elkészített CNC-tervek külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
        (draftCount?'A 3MF-ből számított programok TESZTTERVEK. Az eredeti modell geometriája az irányadó, a szabászati anyag- és méretkülönbségek nem tiltják a mentést. '+
        (data.warnings?.length?'Az eltérések a mentési jelentésben olvashatók. ':'')+
        'A LAPF/ELF5 felrakást és az excenter kötést Xilogban, majd szárazpróbával ellenőrizni kell.':
@@ -7433,7 +7433,7 @@
        const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\n');
        if(!window.confirm('A TELJES CNC-programkészlet nem menthető: '+data.blocked.length+
           ' ellenőrizendő alkatrész kimarad.\n'+reasons+
-          '\n\nA '+data.files.length+' ellenőrzött .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
+          '\n\nA '+data.files.length+' előkészített .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
          if(status)status.textContent='A CNC mentést megszakítottad; nem hitelesített program nem került ki.';
          return;
        }
