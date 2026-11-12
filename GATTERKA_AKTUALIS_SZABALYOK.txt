@@ -466,3 +466,45 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   tévesen már elkészített furatnak tekinteni.
   A jóváhagyott gépi vágási sorrend, xMix/xPrg és Windows Mentés
   másként kód változatlan marad.
+
+
+2026-11-12 – EGYEDI POLCTARTÓ FURATCSOPORTOK XBO CNC PARANCCSAL
+----------------------------------------------------------------
+- A „Furat / polc / oldal” szabály mind a rajz, mind a CNC furat
+  geometriai forrása: a polc elejétől és hátuljától a beállított
+  polctartó távolság, a tényleges polc homlok/hátsó visszaállásával.
+- A végigfúrás („Teljes rasztersor”) a korábbi REF DX/BX, POLC Y/Q/s,
+  REF parancscsoportokat használja változatlanul.
+- Az egyedi polctartó kiosztásnál az oldallapokra minden érintkező
+  polchoz két külön XBO furatcsoport készül (elöl/hátul), a polc
+  tényleges szintjéhez igazítva. Az első és hátsó furatpozícióhoz
+  a polc Y0/Y1 végétől a megadott polctartó befelé eső távolságot
+  adjuk/levonjuk.
+- Az XBO paraméterei: X, Y, z=13, V=1, R=<beállított furatok száma>,
+  x=<beállított raszter>, y=0, D=5, N=P, F=1.
+  A Gatterka furatok száma / polc mezője 1–9 db, a raszter 8–200 mm.
+- A megadott polc alsó síkjának magassága: z1. A furatcsoport
+  alsó, a bútor alja felől mért lyukának magassága:
+  z1 − 2,5 − (R−1)×raszter/2. Három furat / 32 mm raszter esetén:
+  z1−2,5−32 mm; az egyes furatok lépcsője 32 mm.
+  Az oldallapi CNC X-pozitív iránya azonban felülről LEFELÉ halad.
+  Ezért az XBO X paramétere a LEGELSŐ, legfelső lyukra mutat
+  az oldallap saját felső CNC-nullpontjától:
+  X = oldallap felső külső Z síkja − [z1−2,5+(R−1)×raszter/2].
+  Ez ugyanazt a fizikai furatkiosztást adja, mint az alsó furat
+  alulról történő mérésével, és a gép pozitív x rasztere megfelelő.
+- A polctartók a tervező oldalnézetén ugyanezekből a fizikai
+  magasság- és mélységkoordinátákból rajzolódnak. Vagy a rajz és CNC
+  megegyezik, vagy mindkettő ellenőrzendő.
+- Az oldallapon kívülre eső XBO csoport, V-osztó furatkiosztásba
+  ütközés, túlságosan keskeny polc, hibás furatszám / raszter vagy
+  13 mm-nél vékonyabb oldal esetén a CNC export tiltott.
+- Az állítható polc továbbra sem kap saját kötésfuratot; fixen
+  befúrt vízszintes elem továbbra is V-osztó. Az F-osztó oldalán
+  külön XBO kiosztás még nincs hitelesítve, az érintett eset CNC-n
+  ellenőrzendő/tiltott.
+- Az új XBO formátumot a gépi és a Windowsba beágyazott CNC-fordító
+  azonosan ellenőrzi. A védett xPrg/xMix szabászgép-kód,
+  vágási sorrend és Windows Mentés másként nem módosul.
+- A tényleges Xilog oldallapi próba ellenőrizendő a CNC gépen,
+  a forrás- és GitHub-tesztek nem helyettesítik.
