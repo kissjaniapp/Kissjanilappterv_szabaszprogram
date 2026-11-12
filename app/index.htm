@@ -1915,10 +1915,11 @@
           <div><label>Lapvastagság (T) · az alapanyag-adatbázisból</label><div class="input-unit"><strong style="padding:10px" data-material-thickness-view="${h(f.id)}">${nfmt(materialCatalog.find(m=>m.id===f.materialId)?.thickness??f.t??18)} mm</strong></div><div class="field-hint">A vastagságot az alapanyag legördülőjében választod, nem külön számmal.</div></div>
         </div>
         ${customParametersPanel(f)}
-        ${designWorkflowMode()==='parts'?threeMfUploadBlock(f):designWorkflowMode()==='scn'?scnImportControls(f):''}
+        ${designWorkflowMode()==='parts'?threeMfUploadBlock(f):''}
+        ${designWorkflowMode()==='scn'?scnImportControls(f):''}
         ${['parts','scn'].includes(designWorkflowMode())?
           (f.threeMfImport?.parts?.length?
-            '<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div><div class="panel-title">Élő szekrényrajz · betöltött ${designWorkflowMode()==='scn'?'SCN':'3MF'} modell</div><div class="panel-sub">Az elöl-, oldal- és 3D nézet a fájl valódi geometriáját mutatja.</div></div></div><div class="panel-body">'+threeMfImportPreview(f)+'</div></section>':
+            '<section class="panel" style="grid-column:1/-1;padding:14px"><div class="panel-head"><div><div class="panel-title">Élő szekrényrajz · betöltött '+(designWorkflowMode()==='scn'?'SCN':'3MF')+' modell</div><div class="panel-sub">Az elöl-, oldal- és 3D nézet a fájl valódi geometriáját mutatja.</div></div></div><div class="panel-body">'+threeMfImportPreview(f)+'</div></section>':
             '<div class="mini-info">'+(designWorkflowMode()==='scn'?'SCN munkamód: az SCN Viewer KitchenDraw Bridge szükséges. Válassz egy SCN rajzot a fenti gombbal.':'3MF munkamód: tölts be 3MF rajzot a fenti gombbal.')+' A külméreteket és paramétereket addig is szerkesztheted.</div>'):
           designWorkflowMode()==='manual'?
           '<div class="mini-info">Kézi alkatrészbevitel: add meg a bútor külméreteit és paramétereit, majd az Alkatrészek oldalon az X/Y méreteket, darabszámokat és IF-feltételeket. A szabás és a mentés ugyanúgy használható.</div>':
@@ -3839,8 +3840,8 @@
     const furniture=getFurniture(),model=furniture?.threeMfImport;
     if(!model?.parts?.some(p=>p.previewTriangles?.length))return;
     // A betöltött 3MF geometriáját képlet vagy bútorméret nem módosíthatja.
+    const effectiveParts=model.parts;
     const hidden=furniture?.scnImport?.hiddenGroupIndices||[];
-    const effectiveParts=model.parts.map((part,index)=>hidden.includes(index)?{...part,previewTriangles:[]}:part);
     const id=String(furniture.id);
     if(!threeMfViewStates.has(id))threeMfViewStates.set(id,{azimuth:-.62,elevation:.45,zoom:1,selectedGroup:-1,showNearSide:false});
     const state3d=threeMfViewStates.get(id);
@@ -3868,7 +3869,7 @@
       let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
       let surfaceId=0;
       for(let partIndex=0;partIndex<effectiveParts.length;partIndex++){
-        if(partIndex===hide)continue;
+        if(partIndex===hide||hidden.includes(partIndex))continue;
         const part=effectiveParts[partIndex];
         const active=selected<0||model.groups[selected]?.indices.includes(partIndex);
         const groups=threeMfPlanarFaces(part.previewTriangles||[],project);
