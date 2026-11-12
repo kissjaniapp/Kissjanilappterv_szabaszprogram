@@ -52,7 +52,9 @@ test('a CNC teljes bútorra ad egyetlen közös mentést, a kódok rejtve maradn
  assert.match(app,/window\.gatterkaSetAssemblyJoint=function/);
  assert.match(app,/GatterkaCncAuto=api/);
  assert.match(app,/Az egész bútor összefúrásának kötésmódja/);
- assert.match(app,/data-action="save-all-cnc-xxl"/);
+ assert.match(app,/data-action="save-cnc-xxl-as"/);
+ assert.doesNotMatch(app,/data-action="save-all-cnc-xxl"/);
+ assert.doesNotMatch(app,/data-action="save-verified-cnc-xxl"/);
  assert.doesNotMatch(app,/data-action="save-cnc-xxl"/);
  assert.doesNotMatch(app,/id="cnc-xxl-commands"/);
  assert.match(app,/cncInstances=Array\.isArray\(row\.cncInstances\)/);
