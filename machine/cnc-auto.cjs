@@ -164,7 +164,8 @@
         try{
           const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
-          const filename=(name+'_'+cleanName(part.name||entry.name)+'_'+suffix+'.xxl').slice(0,160);
+          const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
+          const filename=prefix+'_'+suffix+'.xxl';
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,content,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
