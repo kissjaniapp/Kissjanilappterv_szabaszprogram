@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main, fix/20261112-fv-snap-elozaras-es-kotesjeloles]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
