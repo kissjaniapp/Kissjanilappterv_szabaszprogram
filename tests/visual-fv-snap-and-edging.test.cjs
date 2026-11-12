@@ -194,3 +194,21 @@ test('A saját második F-osztó szakasz külön élzárása -cut- utótag után
  assert.equal(cut.edgeThicknesses.x1,.4);
  assert.equal(e.codeFromSides(cut.filingSides),'0-1');
 });
+
+test('Kivett és később visszaállított osztó kézi élzárása a projekttel megmarad',()=>{
+ const e=edges();
+ const furniture={parts:[{
+  id:'old-v',cabinetDesignKey:'v-divider-2',name:'V-osztó 2',autoCabinetName:'V-osztó 2',
+  a:'500',b:'400',q:'1',edge:'2-0',edgeSides:e.sidesFromCode('2-0'),
+  edgeThickness:2,edgeThicknesses:{x1:.4,x2:2,y1:0,y2:0}
+ }],cabinetDesign:{inputs:{},radios:{}}};
+ e.syncCabinetDesignerParts(furniture,[]);
+ assert.equal(furniture.parts.length,0,'a teljesen kivett osztó nem szabászati alkatrész');
+ assert.ok(furniture.cabinetPartSettings['v-divider-2']);
+ e.syncCabinetDesignerParts(furniture,[
+  {key:'v-divider-2',name:'V-osztó 2',a:490,b:400,qty:1}
+ ]);
+ assert.equal(furniture.parts.length,1);
+ assert.equal(furniture.parts[0].edge,'2-0');
+ assert.equal(furniture.parts[0].edgeThicknesses.x1,.4);
+});
