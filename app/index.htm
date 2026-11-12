@@ -4741,6 +4741,79 @@
     if(e.target.closest('[data-action="cabinet-fusion-choose"]')){e.preventDefault();document.getElementById('gatterka-fusion-file')?.click();}
   });
   document.addEventListener('click',e=>{
+    const choice=e.target.closest?.('[data-action="cabinet-scn-choose"]');
+    const obj=e.target.closest?.('[data-action="cabinet-scn-obj-choose"]');
+    if(choice){e.preventDefault();document.getElementById('gatterka-scn-file')?.click();return;}
+    if(obj){e.preventDefault();document.getElementById('gatterka-scn-obj-file')?.click();return;}
+    const toggle=e.target.closest?.('[data-action="scn-toggle-object"]');
+    if(toggle){
+      e.preventDefault();
+      const f=getFurniture(),i=Number(toggle.dataset.scnIndex),g=f?.threeMfImport?.groups?.[i];
+      if(!f?.scnImport||!g)return;
+      const hidden=new Set(f.scnImport.hiddenGroupIndices||[]);
+      const removed=g.indices.every(idx=>hidden.has(idx));
+      for(const idx of g.indices){if(removed)hidden.delete(idx);else hidden.add(idx);}
+      f.scnImport.hiddenGroupIndices=[...hidden];
+      const part=f.parts.find(p=>p.cabinetDesignKey==='3mf-'+(i+1));
+      if(part)part.scnRemoved=!removed;
+      result=null;save();render();return;
+    }
+    const cut=e.target.closest?.('[data-action="scn-toggle-cut"]');
+    if(cut){
+      e.preventDefault();
+      const f=getFurniture(),i=Number(cut.dataset.scnIndex);
+      if(!f?.scnImport)return;
+      const part=f.parts.find(p=>p.cabinetDesignKey==='3mf-'+(i+1));
+      if(!part)return;
+      part.scnCutEnabled=part.scnCutEnabled===false;
+      result=null;save();render();return;
+    }
+    const split=e.target.closest?.('[data-action="scn-split-cabinets"]');
+    if(split){
+      e.preventDefault();
+      try{
+        const summary=scnSplitCabinets(getFurniture());
+        showNotice('SCN szekrények különválasztva: '+summary.count+
+          ' önálló bútor, saját alkatrészlistával és külön szabás/CNC előkészítéssel.');
+      }catch(err){showNotice('SCN szekrénybontás: '+err.message);}
+    }
+  });
+  document.addEventListener('change',e=>{
+    if(!e.target.matches?.('[data-scn-cabinet-index]'))return;
+    const f=getFurniture(),idx=Number(e.target.dataset.scnCabinetIndex);
+    const group=f?.threeMfImport?.groups?.[idx];
+    if(!f?.scnImport||!group)return;
+    group.scnCabinet=String(e.target.value||'').trim().slice(0,80);
+    save();
+  });
+  document.addEventListener('change',async e=>{
+    const isScn=e.target.id==='gatterka-scn-file';
+    const isObj=e.target.id==='gatterka-scn-obj-file';
+    if(!isScn&&!isObj)return;
+    const file=e.target.files?.[0],f=getFurniture();
+    if(!file||!f)return;
+    try{
+      const mmPerUnit=Number(document.getElementById('scn-mm-scale')?.value||1);
+      let geometry;
+      if(isScn){
+        const converted=await gatterkaScnImport(file);
+        geometry=window.GatterkaScn.parseObj(converted.obj,converted.manifest,
+          {filename:file.name,mmPerUnit});
+      }else{
+        if(file.size>24*1024*1024||!file.name.toLowerCase().endsWith('.obj'))
+          throw Error('Legfeljebb 24 MB méretű .obj modellt válassz.');
+        geometry=window.GatterkaScn.parseObj(await file.text(),null,
+          {filename:file.name,mmPerUnit});
+      }
+      scnApplyGeometry(f,geometry,file.name);
+      if(!save())throw Error('Az SCN geometriájának mentése nem sikerült. A projekt túl nagy lehet a helyi tárolóhoz.');
+      showNotice('SCN geometria importálva: '+geometry.parts.length+' objektum. '+
+        'A biztosan beazonosított téglatest lapok azonnal szabhatók; a többi objektum az SCN-listában kézzel engedélyezhető, törölhető vagy szekrényhez rendelhető. '+
+        'KitchenDraw katalógus- vagy alkatrészazonosító hiányában a CNC-k csak jelölt TESZTTERVEK.');
+    }catch(err){showNotice('SCN import hiba: '+(err?.message||'ismeretlen hiba'));}
+    e.target.value='';
+  });
+  document.addEventListener('click',e=>{
     if(e.target.closest('[data-action="cabinet-3mf-choose"]')){e.preventDefault();document.getElementById('gatterka-3mf-file')?.click();}
   });
   document.addEventListener('change',async e=>{
@@ -7724,10 +7797,10 @@
          return;
        }
      }
-     if(draftCount&&!window.confirm('3MF GEOMETRIÁBÓL SZÁMÍTOTT CNC TESZTTERV!\\n'+
+     if(draftCount&&!window.confirm('3MF/SCN GEOMETRIÁBÓL SZÁMÍTOTT CNC TESZTTERV!\n'+
        draftCount+' .xxl fájlban excenteres megmunkálási makrójavaslatok vannak. '+
        'A 3MF nem tartalmaz tényleges furatokat, ezért a LAPF/ELF5 élirány és az átfordítás '+
-       'NEM tekinthető gépen hitelesítettnek.\\n\\n'+
+       'NEM tekinthető gépen hitelesítettnek.\n\n'+
        'Ezeket kizárólag Xilog előnézeti vizsgálatra és szárazpróbára szabad használni. '+
        'Mented a TESZTTERVEKET?')){
        if(status)status.textContent='A 3MF CNC-teszttervek mentését megszakítottad.';
