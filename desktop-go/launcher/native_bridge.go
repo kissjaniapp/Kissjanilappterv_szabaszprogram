@@ -30,6 +30,7 @@ type nativeBridge struct {
  mu sync.Mutex
  selectedDirectory string
  selectedMixPath string
+ selectedCncPath string
  lastDirectory string
 }
 type nativeFile struct {
@@ -46,7 +47,106 @@ type nativeChoose struct {
 
 var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
 var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
-var machineXmixName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xMix$`)
+var machineXmixName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xMix// A Gatterka Windows futtatókörnyezet helyi mappaválasztója és xMix mentője.
+// A véletlenszerű munkamenet-token és a localhost kötés megakadályozza,
+// hogy távoli weboldalak hozzáférjenek a felhasználó gépi fájljaihoz.
+package main
+
+import (
+ "crypto/rand"
+ "encoding/base64"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "html"
+ "runtime"
+ "net"
+ "net/http"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "regexp"
+ "strings"
+ "sync"
+ "syscall"
+ "time"
+ "unicode/utf16"
+ "unsafe"
+)
+
+type nativeBridge struct {
+ token string
+ mu sync.Mutex
+ selectedDirectory string
+ selectedMixPath string
+ selectedCncPath string
+ lastDirectory string
+}
+type nativeFile struct {
+ Path string `json:"path"`
+ Content string `json:"content"`
+}
+type nativeSave struct {
+ CabinetFolder string `json:"cabinetFolder"`
+ Files []nativeFile `json:"files"`
+}
+type nativeChoose struct {
+ Initial string `json:"initial"`
+}
+
+var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
+var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
+)
+var machineXxlName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xxl// A Gatterka Windows futtatókörnyezet helyi mappaválasztója és xMix mentője.
+// A véletlenszerű munkamenet-token és a localhost kötés megakadályozza,
+// hogy távoli weboldalak hozzáférjenek a felhasználó gépi fájljaihoz.
+package main
+
+import (
+ "crypto/rand"
+ "encoding/base64"
+ "encoding/json"
+ "errors"
+ "fmt"
+ "html"
+ "runtime"
+ "net"
+ "net/http"
+ "os"
+ "os/exec"
+ "path/filepath"
+ "regexp"
+ "strings"
+ "sync"
+ "syscall"
+ "time"
+ "unicode/utf16"
+ "unsafe"
+)
+
+type nativeBridge struct {
+ token string
+ mu sync.Mutex
+ selectedDirectory string
+ selectedMixPath string
+ selectedCncPath string
+ lastDirectory string
+}
+type nativeFile struct {
+ Path string `json:"path"`
+ Content string `json:"content"`
+}
+type nativeSave struct {
+ CabinetFolder string `json:"cabinetFolder"`
+ Files []nativeFile `json:"files"`
+}
+type nativeChoose struct {
+ Initial string `json:"initial"`
+}
+
+var machineFolderName=regexp.MustCompile(`^[A-Za-z0-9_-]{1,90}$`)
+var machineXprgName=regexp.MustCompile(`^[A-Za-z0-9_.-]+\.xPrg$`)
+)
 var machineMixRows=regexp.MustCompile(`<RigaMix[ \t]+File="[^"]+"[^>]*\/>`)
 var machineMixFileAttribute=regexp.MustCompile(`File="[^"]+"`)
 
@@ -90,6 +190,8 @@ func startNativeBridge()(int,string,func(),error){
  router.HandleFunc("/native/save",bridge.save)
  router.HandleFunc("/native/choose-save-as",bridge.chooseSaveAs)
  router.HandleFunc("/native/write-files",bridge.writeFiles)
+ router.HandleFunc("/native/choose-cnc-save-as",bridge.chooseCncSaveAs)
+ router.HandleFunc("/native/write-cnc-files",bridge.writeCncFiles)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
@@ -315,7 +417,7 @@ type windowsSaveFileName struct {
  ReservedDword uint32
  FlagsEx uint32
 }
-func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
+func chooseWindowsSaveFile(defaultName string,initialDir string,extension string,titleText string)(string,error){
   runtime.LockOSThread()
   defer runtime.UnlockOSThread()
   // A közös Windows Mentés másként ablak követi a Gatterka előtérben lévő ablakát.
@@ -327,12 +429,14 @@ func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
   const ofnEnableSizing=0x00800000
   file:=make([]uint16,32768)
   name:=utf16.Encode([]rune(defaultName))
-  if len(name)+1>=len(file){return "",errors.New("Túl hosszú xMix fájlnév.")}
+  if len(name)+1>=len(file){return "",errors.New("Túl hosszú gépi fájlnév.")}
   copy(file,name)
-  filter:=utf16.Encode([]rune("xMix fájlok (*.xMix)\x00*.xMix\x00"))
+  label:="Xilog XXL"
+  if extension=="xMix"{label="xMix"}
+  filter:=utf16.Encode([]rune(label+" fájlok (*."+extension+")\x00*."+extension+"\x00"))
   filter=append(filter,0)
-  title,_:=syscall.UTF16PtrFromString("Gatterka – Mentés másként (xMix + xPrg)")
-  extension,_:=syscall.UTF16PtrFromString("xMix")
+  title,_:=syscall.UTF16PtrFromString(titleText)
+  defaultExtension,_:=syscall.UTF16PtrFromString(extension)
   var initial *uint16
   if initialDir!=""{
     if st,err:=os.Stat(initialDir);err==nil&&st.IsDir(){
@@ -351,7 +455,7 @@ func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
    MaxFile:uint32(len(file)),
    InitialDir:uintptr(unsafe.Pointer(initial)),
    Title:uintptr(unsafe.Pointer(title)),
-   DefaultExt:uintptr(unsafe.Pointer(extension)),
+   DefaultExt:uintptr(unsafe.Pointer(defaultExtension)),
    Flags:ofnOverwritePrompt|ofnHideReadOnly|ofnNoChangeDir|ofnPathMustExist|ofnExplorer|ofnEnableSizing,
   }
   params.StructureSize=uint32(unsafe.Sizeof(params))
@@ -360,7 +464,7 @@ func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
   runtime.KeepAlive(file)
   runtime.KeepAlive(filter)
   runtime.KeepAlive(title)
-  runtime.KeepAlive(extension)
+  runtime.KeepAlive(defaultExtension)
   runtime.KeepAlive(initial)
   if success==0{
     extended,_,_:=syscall.NewLazyDLL("comdlg32.dll").NewProc("CommDlgExtendedError").Call()
@@ -368,12 +472,18 @@ func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
     return "",fmt.Errorf("A Windows Mentés másként ablak nem nyitható meg (kód: 0x%X).",extended)
   }
   chosen:=filepath.Clean(syscall.UTF16ToString(file))
-  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),".xMix"){
-    return "",errors.New("A Mentés másként ablakból nem teljes .xMix fájlútvonal érkezett.")
+  if !filepath.IsAbs(chosen) || !strings.EqualFold(filepath.Ext(chosen),"."+extension){
+    return "",errors.New("A Mentés másként ablakból nem teljes ."+extension+" fájlútvonal érkezett.")
   }
   info,err:=os.Stat(filepath.Dir(chosen))
   if err!=nil||!info.IsDir(){return "",errors.New("A kiválasztott célmappa nem érhető el.")}
   return chosen,nil
+}
+func chooseWindowsSaveXmix(defaultName string,initialDir string)(string,error){
+ return chooseWindowsSaveFile(defaultName,initialDir,"xMix","Gatterka – Mentés másként (xMix + xPrg)")
+}
+func chooseWindowsSaveXxl(defaultName string,initialDir string)(string,error){
+ return chooseWindowsSaveFile(defaultName,initialDir,"xxl","Gatterka – CNC XXL programok Mentés másként")
 }
 
 func (bridge *nativeBridge) chooseSaveAs(w http.ResponseWriter,r *http.Request){
@@ -404,6 +514,42 @@ func (bridge *nativeBridge) writeFiles(w http.ResponseWriter,r *http.Request){
  var request nativeMixSave
  if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
  saved,err:=saveMixAndPrograms(path,request)
+ if err!=nil{machineError(w,500,err);return}
+ bridge.lastDirectory=saved.Folder
+ machineJSON(w,200,saved)
+}
+
+// A CNC ugyanazt a natív Win32 Mentés másként párbeszédablakot használja,
+// mint a szabász xMix/xPrg. Az első valódi .xxl nevét választod ki;
+// a többi ellenőrzött .xxl ugyanabba a könyvtárba kerül.
+func (bridge *nativeBridge) chooseCncSaveAs(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ bridge.selectedCncPath=""
+ r.Body=http.MaxBytesReader(w,r.Body,4096)
+ var input struct{DefaultName string `json:"defaultName"`}
+ if err:=json.NewDecoder(r.Body).Decode(&input);err!=nil{machineError(w,400,err);return}
+ defaultName:=strings.TrimSpace(input.DefaultName)
+ if !machineXxlName.MatchString(defaultName)||strings.Contains(defaultName,"..")||strings.HasPrefix(defaultName,"."){
+  defaultName="Gatterka_CNC_01.xxl"
+ }
+ path,err:=chooseWindowsSaveXxl(defaultName,bridge.lastDirectory)
+ if err!=nil{machineError(w,500,err);return}
+ if path==""{machineJSON(w,200,map[string]bool{"cancelled":true});return}
+ bridge.selectedCncPath=path
+ machineJSON(w,200,map[string]interface{}{"cancelled":false,"xxlPath":path})
+}
+func (bridge *nativeBridge) writeCncFiles(w http.ResponseWriter,r *http.Request){
+ if !bridge.allow(w,r){return}
+ bridge.mu.Lock()
+ defer bridge.mu.Unlock()
+ path:=bridge.selectedCncPath
+ bridge.selectedCncPath=""
+ if path==""{machineError(w,400,errors.New("Először válassz célmappát a CNC Mentés másként ablakban."));return}
+ var request nativeCncSave
+ if err:=json.NewDecoder(r.Body).Decode(&request);err!=nil{machineError(w,400,err);return}
+ saved,err:=saveCncAndPrograms(path,request)
  if err!=nil{machineError(w,500,err);return}
  bridge.lastDirectory=saved.Folder
  machineJSON(w,200,saved)
