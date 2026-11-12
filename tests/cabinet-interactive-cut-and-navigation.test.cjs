@@ -171,14 +171,14 @@ test('Beágyazott szerkesztő: kettévágás, kivétel, visszaállítás, zoom �
  for(const script of scripts)assert.doesNotThrow(()=>new vm.Script(script));
 });
 
-test('Részleges CNC ZIP csak a hiteles fájlokat menti, az ellenőrizetleneket felsorolja',()=>{
- assert.match(source,/data-action="save-verified-cnc-xxl"/);
- assert.match(source,/if\(!partial&&data\.blocked\.length\)\{/);
- assert.match(source,/window\.confirm\('A TELJES CNC mentés nem biztonságos/);
- assert.match(source,/partial=true;/);
- assert.match(source,/RÉSZLEGES CNC ZIP/);
- assert.match(source,/ELLENORIZENDO_KIMARADT\.txt/);
- assert.match(source,/data\.files,\{filename:'ELLENORIZENDO_KIMARADT\.txt'/);
- assert.match(source,/_CNC_XXL_RESZLEGES\.zip/);
- assert.match(source,/files=\[\.\.\.data\.files,/);
+test('Egyetlen natív CNC Mentés másként: közvetlen XXL fájlok, részleges kimaradt jelentés',()=>{
+ assert.match(source,/data-action="save-cnc-xxl-as"/);
+ assert.doesNotMatch(source,/data-action="save-all-cnc-xxl"/);
+ assert.doesNotMatch(source,/data-action="save-verified-cnc-xxl"/);
+ assert.match(source,/choose-cnc-save-as/);
+ assert.match(source,/write-cnc-files/);
+ assert.match(source,/window\.gatterkaSaveAutoCncAs/);
+ assert.match(source,/ELLENORIZENDO, NEM EXPORTALT CNC-PROGRAMOK:/);
+ assert.match(source,/RÉSZLEGES CNC-mentés sikeres/);
+ assert.doesNotMatch(source,/window\.gatterkaDownloadAutoCnc/);
 });
