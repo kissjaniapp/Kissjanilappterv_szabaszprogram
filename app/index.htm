@@ -4658,6 +4658,10 @@
     let role='';
     if(/^side(?:-|$)/.test(key)||/^(?:(?:bal|jobb)\s*)?oldal(?:lap)?$/.test(name))role='side';
     else if(key==='top'||/^teto(?:lap)?$/.test(name))role='top';
+    else if(key==='bottom'||/^fenek(?:lap)?$/.test(name))role='bottom';
+    else if(key==='false-bottom'||/^potfenek(?:lap)?$/.test(name))role='false-bottom';
+    else if(/^f-divider-/.test(key)||/^f-oszto/.test(name))role='f';
+    else if(/^v-divider-/.test(key)||/^v-oszto/.test(name))role='v';
     else if(/^shelf-/.test(key)||/^polc(?:\s*\d+)?$/.test(name))role='shelf';
     else if(/^back-(?:full|rabbet)$/.test(key)||/^(?:teli|falcos)?\s*hat(?:fal|lap)(?:.*)?$/.test(name))role='back';
     if(!role)return;
@@ -4669,6 +4673,11 @@
       const count=Number(upper)+Number(lower);edge='1-'+count;filing='0-'+count;
     }else if(role==='top'){
       const full=radios.top==='full';edge=full?'1-2':'1-0';filing=full?'0-2':'0-0';
+    }else if(role==='false-bottom'){
+      edge='1-2';filing='0-2';
+    }else if(role==='bottom'||role==='f'||role==='v'){
+      // A korábbi Gatterka alap-élzárás: egy elülső hosszú ABS él.
+      edge='1-0';
     }else if(role==='shelf')edge=part.autoCabinetShelfAxis==='y'?'0-1':'1-0';
     const previous=part.autoCabinetEdging;
     const current=JSON.stringify({edge:part.edge||'0-0',filing:codeFromSides(part.filingSides||{}),thickness:partEdgeThicknesses(part)});
@@ -4682,6 +4691,20 @@
   function syncCabinetDesignerParts(f,records){
     if(!Array.isArray(records)||records.length>100)return;
     if(!Array.isArray(f.parts))f.parts=[];
+    // Az F/V/polc részletek az újratervezésnél más kulcsot kaphatnak
+    // (-section- és -cut- utótag). A KÉZI ABS, reszelés, anyag és
+    // marás ilyenkor az eredeti családon belül megmarad.
+    const originalCabinetParts=f.parts.slice();
+    const sourceFamily=key=>{
+      const match=/^(?:f-divider-\d+|v-divider-\d+|shelf-\d+)(?=-|$)/.exec(String(key||''));
+      return match?.[0]||null;
+    };
+    const sourcePartFor=key=>{
+      const exact=originalCabinetParts.find(p=>p.cabinetDesignKey===key);
+      if(exact)return exact;
+      const family=sourceFamily(key);
+      return family?originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family):null;
+    };
     // A régi, külön szerkesztett darabok csak egyező beállításokkal egyesíthetők.
     const autoName=part=>{
       const name=String(part.name||'');
@@ -4698,8 +4721,11 @@
       if(!Array.isArray(row?.sourceKeys)||row.sourceKeys.length<2)return [row];
       const keys=row.sourceKeys.filter(k=>!(f.deletedPartKeys||[]).includes(k));
       if(!keys.length)return [];
-      const existing=keys.map(k=>f.parts.find(p=>p.cabinetDesignKey===k)).filter(Boolean);
-      const different=existing.length>1&&new Set(existing.map(signature)).size>1;
+      const profiles=keys.map(sourcePartFor);
+      // Egyetlen eltérő kézi élzárású darabot sem szabad más lapok
+      // közé összevonni; az új rekord még nem ismert beállítás.
+      const different=profiles.some(Boolean)&&
+        new Set(profiles.map(part=>part?signature(part):'__new-part__')).size>1;
       if(!different)return [{...row,key:keys[0],qty:keys.length,cncInstances:(row.cncInstances||[]).filter(entry=>keys.includes(entry.key))}];
       return keys.map((key,i)=>({...row,key,qty:1,name:row.name+' '+(i+1),cncInstances:(row.cncInstances||[]).filter(entry=>entry.key===key)}));
     });
@@ -4732,14 +4758,36 @@
           part.materialColor=currentHdfMaterial?.color||'HDF';
         }
       }
-      else f.parts.push({id:uuid(),cabinetDesignKey:row.key,
-        materialId:generatedHdf?(currentHdfMaterial?.id||''):'',
-        materialColor:generatedHdf?(currentHdfMaterial?.color||'HDF'):'',
-        dxfUnverified:row.ready===false,
-        name:String(row.name||row.key).slice(0,100),autoCabinetName:String(row.name||row.key).slice(0,100),a:String(a),b:String(b),q:String(q),
-        edge:'0-0',edgeSides:sidesFromCode('0-0'),
-        filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
-        mill:true,millDepth:1,rot:false,grainRequired:true});
+      else{
+        const old=sourcePartFor(row.key);
+        const manualName=old?.name&&old.name!==old.autoCabinetName;
+        // Csak kezelői és automatikus élzárási metaadatot örökítünk:
+        // az új alkatrész saját azonosítót, méretet és CNC-geometriát kap.
+        const restored=old?{
+          materialId:old.materialId||'',materialColor:old.materialColor||'',
+          edge:old.edge||'0-0',
+          edgeSides:old.edgeSides?{...old.edgeSides}:sidesFromCode(old.edge||'0-0'),
+          edgeThickness:old.edgeThickness??2,
+          edgeThicknesses:old.edgeThicknesses?{...old.edgeThicknesses}:undefined,
+          filingSides:old.filingSides?{...old.filingSides}:{x1:false,x2:false,y1:false,y2:false},
+          autoCabinetEdging:old.autoCabinetEdging,
+          mill:old.mill??true,millDepth:old.millDepth??1,
+          rot:old.rot??false,grainRequired:old.grainRequired??true
+        }:{};
+        f.parts.push({id:uuid(),cabinetDesignKey:row.key,
+          materialId:generatedHdf?(currentHdfMaterial?.id||''):'',
+          materialColor:generatedHdf?(currentHdfMaterial?.color||'HDF'):'',
+          dxfUnverified:row.ready===false,
+          name:String(manualName?old.name:row.name||row.key).slice(0,100),
+          autoCabinetName:String(row.name||row.key).slice(0,100),
+          a:String(a),b:String(b),q:String(q),
+          edge:'0-0',edgeSides:sidesFromCode('0-0'),
+          filingSides:{x1:false,x2:false,y1:false,y2:false},edgeThickness:2,
+          mill:true,millDepth:1,rot:false,grainRequired:true,
+          ...restored,
+          ...(generatedHdf?{materialId:currentHdfMaterial?.id||'',materialColor:currentHdfMaterial?.color||'HDF'}:{})
+        });
+      }
       // Ugyanaz a döntési/gyártási metaadat követi a méretfrissítést is.
       const generated=f.parts.find(p=>p.cabinetDesignKey===row.key);
       if(generated){
