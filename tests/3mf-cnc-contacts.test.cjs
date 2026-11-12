@@ -68,16 +68,43 @@ test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésf
  assert.ok(out.blocked.some(x=>/egymásba lóg|illeszkedő/.test(x.reason)),JSON.stringify(out.blocked));
  assert.ok(!out.files.some(x=>x.filename.includes('Body2')),'Ütköző Body2 nem kaphat gépi tesztprogramot.');
 });
-test('kézzel megváltoztatott méret és anyagvastagság esetén nem exportál régi CNC koordinátát',()=>{
+test('szabászati méret vagy vastagság eltérésnél a 3MF CNC terv menthető, csak figyelmeztet',()=>{
  const f=furniture();
- f.parts[0].a='1491';
+ f.parts[0].a='1491'; // valódi alkatrészméret eltérése; a CNC nem veheti át a 1491-et
  const out=produce(f);
- assert.ok(out.blocked.some(x=>x.part==='Body1'&&/eltér/.test(x.reason)));
- assert.ok(!out.files.some(x=>x.filename.includes('Body1')));
+ assert.equal(out.files.length,6,JSON.stringify(out.blocked));
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.ok(out.warnings.some(x=>x.part==='Body1'&&/eltérés/.test(x.reason)));
+ const top=out.files.find(x=>x.filename.includes('Body1'));
+ assert.ok(top.content.startsWith('H DX=1490 DY=1450 DZ=36 '),
+   'A megmunkálási tesztterv az eredeti, nem módosított 3MF-kontúrt használja');
  const f2=furniture();
  const opts=options(f2);opts.actualThicknesses['body-3']=19;
  const other=auto.makeAutoPrograms(f2,f2.parts.map(p=>p.id),opts);
- assert.ok(other.blocked.some(x=>x.part==='Body3'&&/vastagsága/.test(x.reason)));
+ assert.equal(other.files.length,6);
+ assert.ok(other.warnings.some(x=>x.part==='Body3'&&/vastagsága|anyagadat/.test(x.reason)));
+});
+test('hibás anyagadatbázisbeli vastagsággal mind a 6 összekapcsolt 3MF alkatrész CNC-terve menthető',()=>{
+ const f=furniture(),opts=options(f);
+ for(const part of f.parts){
+   opts.actualThicknesses[part.id]=25; // a felhasználó projektjében beállított anyag NEM a 3MF vastagsága
+   opts.actualDimensions[part.id]={a:1700,b:800}; // a szabászati képlettel elrontott méret sem írhatja át a 3MF-et
+ }
+ const out=auto.makeAutoPrograms(f,f.parts.map(p=>p.id),opts);
+ assert.equal(out.contacts.length,8);
+ assert.equal(out.files.length,6,JSON.stringify(out.blocked));
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.warnings.length,6);
+ assert.ok(out.files.every(x=>x.draft===true&&x.filename.startsWith('3MF_TERV_')));
+ const header=out.files.find(x=>x.filename.includes('Body6')).content.split('\\r\\n')[0];
+ assert.match(header,/H DX=755 DY=550 DZ=36 /);
+});
+test('forgatott X/Y alkatrészméret nem változtatja a 3MF valódi lapkapcsolatait',()=>{
+ const f=furniture(),opts=options(f);
+ opts.actualDimensions['body-3']={a:755,b:1144};
+ const out=auto.makeAutoPrograms(f,f.parts.map(p=>p.id),opts);
+ assert.equal(out.files.length,6);
+ assert.equal(out.warnings.length,0,'a szabászati X/Y felcserélés nem a geometria hibája');
 });
 test('íves 3MF vagy régi, alakellenőrzés nélküli test nem kap tesztprogramot sem',()=>{
  const f=furniture();f.threeMfImport.parts[0].isRectangular=false;
@@ -94,4 +121,6 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  assert.match(app,/data-action="save-cnc-xxl-as"/);
  assert.match(app,/3MF TESZTTERV/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
+ assert.match(app,/data\.warnings\?\.length/);
+ assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);
 });
