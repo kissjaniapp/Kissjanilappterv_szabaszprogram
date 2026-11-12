@@ -7426,6 +7426,11 @@
        draftCount?'A 3MF nem tartalmaz furatokat: az excenter, LAPF/ELF5, felrakas es FORDIT meg NEM hitelesitett.':'',
        'A teljes butor CNC-megmunkalasara a Xilog ellenorzes es a gepi szarazproba elott NEM alkalmas.',
        '',
+       'FELISMERT 3MF LAPKAPCSOLATOK ('+(data.contacts?.length||0)+'):',
+       ...(data.contacts||[]).map((x,i)=>(i+1)+'. '+x.faceName+' <-> '+x.edgeName+
+         ' | tengely='+['X','Y','Z'][x.normal]+
+         ' | csatlakozasi hossz='+x.length+' mm | '+x.faceMacro+' + '+x.edgeMacro),
+       '',
        'ELLENORIZENDO, NEM EXPORTALT CNC-PROGRAMOK:',
        ...data.blocked.map(x=>x.part+' :: '+x.reason),
        '',
