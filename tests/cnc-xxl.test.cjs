@@ -108,3 +108,16 @@ test('a Windows beágyazott CNC-moduljai megegyeznek az ellenőrzött modulokkal
      fs.readFileSync(path.join(__dirname,'../machine/',file),'utf8').trim());
  }
 });
+
+test('SCM ELF3/ELF2: Y-koord, ELF4/ELF5: X-koord a tényleges lapélen',()=>{
+ const xxl=cnc.compileXxl({dx:600,dy:400,dz:18,side:'IJ',
+   commands:'ELF4 X=25 A=0 x=500 G=1\nELF5 X=30 A=0 x=400 G=1\n'+
+     'ELF3 Y=15 A=0 y=350 G=1\nELF2 Y=0 A=0 y=400 G=1'});
+ assert.match(xxl,/ELF4 X=25 A=0 x=500 G=1/);
+ assert.match(xxl,/ELF5 X=30 A=0 x=400 G=1/);
+ assert.match(xxl,/ELF3 Y=15 A=0 y=350 G=1/);
+ assert.throws(()=>cnc.compileXxl({dx:600,dy:400,dz:18,
+   commands:'ELF4 Y=0 A=0 y=400 G=1'}),/ELF4\/ELF5/);
+ assert.throws(()=>cnc.compileXxl({dx:600,dy:400,dz:18,
+   commands:'ELF3 X=0 A=0 x=400 G=1'}),/ELF2\/ELF3/);
+});
