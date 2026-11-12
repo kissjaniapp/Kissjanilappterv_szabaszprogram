@@ -73,8 +73,10 @@ ALKATRÉSZEK, ÉLZÁRÁS, RESZELÉS
   él és a két rövid él 2 mm ABS, mindkét rövid él reszelve.
 - Polc: a bútor szélessége irányába eső első él 2 mm ABS-t kap. Ez a méret
   nem minden alkatrészen feltétlenül a hosszabbik méret.
-- Teli hátlap: nincs automatikus élzárás. A fenék, pótfenék, F- és V-osztó
-  további automatikus élzárási szabályai külön egyeztetésig nincsenek rögzítve.
+- Teli hátlap: nincs automatikus élzárás.
+- Fenék: 1-0, pótfenék: 1-2 és a két rövid él reszelve (2Rresz).
+  F-osztó és V-osztó: alapértelmezésben 1-0 (elülső él, 2 mm ABS).
+  Az előző, egyeztetésig üresen hagyott élzárási bejegyzés ezzel felülírva.
 - Az élzárás és a reszelés külön jelölés; a reszelés nem módosítja a
   szabási méretet. A pontos jelöléseket a védett szabályfájl is rögzíti.
 
@@ -508,3 +510,36 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   vágási sorrend és Windows Mentés másként nem módosul.
 - A tényleges Xilog oldallapi próba ellenőrizendő a CNC gépen,
   a forrás- és GitHub-tesztek nem helyettesítik.
+
+2026-11-12 – F/V-CSATLAKOZÁS ÁTHELYEZÉSKOR; ÉLZÁRÁS-HELYREÁLLÍTÁS
+-------------------------------------------------------------------
+- Egyedi szerkesztési módban az F-osztó vízszintesen áthelyezett,
+  különálló alkatrészéhez az arra ténylegesen csatlakozó vízszintes
+  V-osztó és polc végpontja az F új oldalsíkjához igazodik.
+- Ugyanez fordítva: a külön fel/le húzott V-osztóhoz kapcsolódó
+  függőleges F-osztó szakaszok felső/alsó végpontja a V új
+  alsó/felső lapfelületéhez igazodik. A lapvastagságot levonva
+  számított, új valódi alkatrészhossz kerül a 2D/3D rajzra,
+  az alkatrészlistába és a CNC-geometriai forrásba.
+- Kizárólag a tényleges fizikai, eredetileg is csatlakozó végpont
+  igazodik; a kézzel szándékosan visszavágott lapvég nem tapad vissza.
+  A külön elhúzott alkatrészek közös rácsvonaltól függetlenül
+  szerkeszthetők maradnak, a gyártásra nem hitelesített kapcsolatok
+  CNC kimentése ellenőrzésig blokkolt.
+- A nagy szerkesztőben az F/V kötésjelölés a fehér csomópontkör
+  NÉLKÜL jelenik meg; megmarad a szaggatott vezetővonal és
+  az F/V betű, kattintható megjelenítéssel. Az egyedi alkatrészek
+  végpontfogantyúi külön szerkesztési vezérlők, nem kötésjelölők.
+- Az automatikus élzárás visszaállított alapértékei:
+  fenék 1-0, pótfenék 1-2 (két rövid él reszelve, 2Rresz),
+  F-osztó 1-0, V-osztó 1-0; a tető, oldal, állítható polc
+  és hátlap már működő szabályai megmaradnak.
+- A régi projektekben kézzel választott ABS-él, ABS-vastagság,
+  reszelés, marásmélység, anyag és szín NEM íródhat felül.
+  Ha a szerkesztés miatt a lap kulcsa -section-/-cut- utótaggal
+  módosul, az eredeti alkatrész beállításai a hozzá tartozó új
+  részre átvitelre kerülnek. Eltérő beállítású lapok nem vonhatók
+  össze ugyanabba a darabszámos sorba.
+- A fentiek a szerkezeti tervező és a hozzá kapcsolódó anyagmetaadat
+  módosításai, NEM érintik a védett gépi vágási sorrendet,
+  az xPrg/xMix exportot vagy a Windows natív mentést.
