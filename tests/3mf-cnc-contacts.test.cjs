@@ -87,7 +87,7 @@ test('térben megdöntött és szögbevágott lap saját Z tengelye a nagy lapra
  assert.equal(out.files.length,2);assert.equal(out.contacts.length,1);
  assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/H DX=600 DY=400 DZ=18 /);
  assert.equal(out.contacts[0].length,400);
- assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/;CNC_Z_VILAG=/);
+ assert.ok(out.files.every(p=>!/^;.+/m.test(p.content)),'A saját tengelyek sem kerülnek megjegyzésként a gépi kódba');
  for(const shape of f.threeMfImport.parts)delete shape.cncFrame;
  const legacy=produce(f);
  assert.equal(legacy.blocked.length,0);
@@ -235,7 +235,7 @@ test('lapfelületi kapcsolat mellett a valódi élkötés és SCN sikerjelzés m
  assert.equal(out.contacts.length,1);
  assert.equal(out.files.length,2);
  assert.equal(out.skipped.length,1);
- assert.ok(out.files.every(x=>x.content.includes(';GATTERKA_SCN_CNC')&&!x.content.includes('NEM_HITELESITETT')));
+ assert.ok(out.files.every(x=>!/^;.+/m.test(x.content)&&x.filename.startsWith('SCN_TERV_')));
 });
 test('a csatolt 1db asztal 3MF hat téglatestje pontosan nyolc valódi lapél kapcsolattal rendelkezik',()=>{
  const f=furniture(),plan=auto.threeMfContactDrafts(f,f.parts.map(p=>p.id),options(f));
@@ -254,7 +254,7 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
  assert.equal(out.files.length,6,'mindegyik Body szerkezeti CNC-tervet kap');
  assert.ok(out.files.every(x=>x.draft===true&&x.filename.startsWith('3MF_TERV_')&&x.filename.endsWith('.xxl')));
- assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes(';GENERALAS=SIKERES')&&x.content.includes(';GEPI_ELLENORZES=NEM_IGAZOLT')));
+ assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&!/^;.+/m.test(x.content)));
  assert.ok(out.files.every(x=>/ G=1/.test(x.content)));
  const top=out.files.find(x=>x.filename.includes('Body1'));
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);

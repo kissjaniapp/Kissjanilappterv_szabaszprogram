@@ -486,12 +486,8 @@
           const suffix=cleanName(identity);
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
           const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
-          const frameNote=entry.cncFrame?['NULLPONT', 'X', 'Y', 'Z'].map((label,i)=>
-            ';CNC_'+label+'_VILAG='+(i?entry.cncFrame.axes[i-1]:entry.cncFrame.origin).map(round).join(',')+'\r\n').join(''):'';
-          const marked=entry.threeMfDraft?
-            content.replace(/\r\n/,'\r\n;GATTERKA_'+(furniture?.threeMfImport?.source==='scn'?'SCN':'3MF')+'_CNC\r\n;GENERALAS=SIKERES\r\n;GEPI_ELLENORZES=NEM_IGAZOLT\r\n'+frameNote):content;
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
-            content:marked,draft:entry.threeMfDraft===true,
+            content,draft:entry.threeMfDraft===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}

@@ -646,3 +646,12 @@ felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
   egyenes kapcsolat fúrható; ferde felületre nincs új furatmakró.
 - A saját tengelyek és origin külön CNC-adatként tárolódnak.
   Az eredeti világkoordinátás 3MF felületháló és megjelenítő változatlan.
+
+2026-11-12 – CNC PROGRAMBAN CSAK GÉPI KÓD
+---------------------------------------
+- Új tulajdonosi utasítás: a kész .xxl programban nincs szöveges
+  megjegyzés, generálási/hitelesítési címke vagy tengelyleírás.
+  A fejléc, makrók, FORDIT/XMSG, VEGE és gépi elválasztók megmaradnak.
+- A sikeres generálás és nem igazolt gépi ellenőrzés jelzése kizárólag
+  a felületen és a külön mentési jelentésben szerepel. A korábbi
+  fejléc-megjegyzésekről szóló szabályt ez az utasítás felülírja.
