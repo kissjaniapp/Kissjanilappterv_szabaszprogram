@@ -3152,7 +3152,7 @@
   // CNC – teljes bútor: nincs kézi programlista, egyetlen közös mentés.
   function cncXxlPanel(){
     const f=getFurniture(),rows=getParts().rows.filter(r=>f&&r.furniture?.id===f.id&&!r.skipped&&!r.error&&r.qty>0);
-    const enabled=!!f&&rows.length>0; // Hibás/hiányzó CNC adatnál is jelezzük az okot, ne legyen néma, inaktív gomb.
+    const enabled=!!f; // Hiba esetén is kattintható, így pontosan kiírhatjuk a CNC-mentés akadályát.
     const selected=f?.cncAssemblyJoint||'excenter';
     const opt=(value,label)=>'<option value="'+value+'" '+(selected===value?'selected':'')+'>'+label+'</option>';
     return '<div class="panel top-gap" id="cnc-xxl-panel">'+
