@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main]
+    branches: [main, fix/cnc-face-contact-export]
   workflow_dispatch:
 
 permissions:
