@@ -4729,8 +4729,14 @@
       // f-divider-1-section-2-cut-3 -> f-divider-1-section-2.
       // Különböző kézi ABS-t kapott szakaszok így nem öröklik
       // tévesen az F/V sor LEGELSŐ darabjának adatait.
-      const uncut=String(key||'').replace(/(?:-cut-\d+|-part-[ab])$/,'');
-      if(uncut!==key){const parent=lookup(uncut);if(parent)return parent;}
+      let ancestor=String(key||'');
+      for(let depth=0;depth<8;depth++){
+        const parentKey=ancestor.replace(/(?:-cut-\d+|-part-[ab])$/,'');
+        if(parentKey===ancestor)break;
+        const parent=lookup(parentKey);
+        if(parent)return parent;
+        ancestor=parentKey;
+      }
       const family=sourceFamily(key);
       if(!family)return null;
       return lookup(family)||originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family)||
