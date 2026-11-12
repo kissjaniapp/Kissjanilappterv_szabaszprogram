@@ -1768,6 +1768,47 @@
         '<div class="tiny muted" style="margin-top:8px">Betöltve: <strong>'+h(f.threeMfImport.designName||'3MF modell')+'</strong> · '+f.threeMfImport.parts.length+' test · '+f.threeMfImport.groups.length+' alkatrészsor</div>':'')+
       '</section>';
   }
+  // SCN Viewer-kompatibilis objektumlista: a 3D, az alkatrészlista és
+  // a CNC mind ugyanazt az SCN objektumonkénti kizárást veszi figyelembe.
+  function scnImportControls(f){
+    const model=f?.scnImport&&f?.threeMfImport?.source==='scn'?f.threeMfImport:null;
+    const hidden=f?.scnImport?.hiddenGroupIndices||[];
+    const rows=model?.groups?.map((g,index)=>{
+      const part=(f.parts||[]).find(p=>p.cabinetDesignKey==='3mf-'+(index+1));
+      const removed=g.indices.every(idx=>hidden.includes(idx));
+      const verified=g.scnPartVerified===true;
+      const cutting=!!part&&part.scnCutEnabled!==false&&!removed;
+      const dims=g.dimensions?.map(nfmt).join(' × ')||'?';
+      return '<div class="scn-object-row" style="padding:10px;border:1px solid var(--line);margin:5px 0;border-radius:8px">'+
+        '<div class="toolbar" style="align-items:center;flex-wrap:wrap">'+
+        '<strong>'+h(g.name)+'</strong> <span class="tiny muted">'+h(dims)+' mm</span>'+
+        (g.isRectangular?'<span class="tiny muted">'+(verified?'KitchenDraw alkatrész':'OBJ-téglatest · kézi ellenőrzést igényel')+'</span>':'<span class="tiny muted">Csak 3D, nem szabható</span>')+
+        '<button class="btn sm" data-action="scn-toggle-object" data-scn-index="'+index+'">'+(removed?'↶ Visszaállítás':'✕ Objektum törlése')+'</button>'+
+        (!removed&&part?'<button class="btn sm" data-action="scn-toggle-cut" data-scn-index="'+index+'">'+
+           (cutting?'Szabás/CNC kizárása':'Szabás/CNC engedélyezése')+'</button>':'')+
+        '</div>'+
+        '<label class="tiny" style="margin-top:6px">Szekrény neve (ha ismert; külön bontáshoz)</label>'+
+        '<input data-scn-cabinet-index="'+index+'" value="'+h(g.scnCabinet||'')+'" placeholder="Pl. Bútor 1 – csak biztos csoportosítás esetén">'+
+        '</div>';
+    }).join('')||'';
+    return '<section class="panel gatterka-scn-card" style="padding:13px;grid-column:1/-1;margin-bottom:14px">'+
+      '<div class="toolbar"><strong>🏠 KitchenDraw SCN import / SCN Viewer</strong>'+
+      '<button type="button" class="btn" data-action="cabinet-scn-choose">📁 SCN fájl betöltése</button>'+
+      '<input id="gatterka-scn-file" type="file" accept=".scn" style="display:none">'+
+      '<button type="button" class="btn" data-action="cabinet-scn-obj-choose">OBJ export betöltése</button>'+
+      '<input id="gatterka-scn-obj-file" type="file" accept=".obj" style="display:none"></div>'+
+      '<div class="tiny muted" style="margin-top:8px">Az SCN Viewer KitchenDraw SDK2 Bridge bővítményét használja. Az eredeti .scn nem módosul. '+
+      'OBJ importnál az objektum nevéhez nem társított alkatrészek kézi jóváhagyást igényelnek. '+
+      'A CNC a 3D modellel egyező, egyetlen közös alkatrészlistából dolgozik.</div>'+
+      '<div class="toolbar" style="margin:9px 0;align-items:center"><label style="margin:0">OBJ méretarány, mm / modell-egység <input type="number" id="scn-mm-scale" style="width:120px" min="0.001" max="1000" step="any" value="1"></label>'+
+      (model?'<button class="btn" data-action="scn-split-cabinets">Szekrényenként szétválasztás</button>':'')+'</div>'+
+      (model?'<strong>'+h(model.designName)+'</strong> · '+model.parts.length+' objektum · '+(model.scnCabinets||[]).length+
+        ' név szerint felismerhető szekrénycsoport'+
+        '<div class="tiny muted">A törölt objektumok nem szerepelnek a 3D-nézetben, alkatrészlistában, szabásban és CNC-ben. A visszaállítás az eredeti importból történik.</div>'+
+        rows:
+        '<div class="tiny muted">Válaszd a SCN fájlt, vagy a KitchenDraw/SCN Viewer által exportált OBJ modellt.</div>')+
+      '</section>';
+  }
   function designWorkflowMode(){return ['parts','scn','design','manual'].includes(state.designMode)?state.designMode:'design';}
   function modeChoiceView(){
     return intro('MUNKAMÓD','Mit szeretnél készíteni?',
@@ -3702,6 +3743,7 @@
   // A hossz/szélesség tengelyét a beolvasáskor használt csökkenő befoglalóméret-sorrend határozza meg.
   function threeMfRowsHtml(f){
     return threeMfResolvedGroups(f).filter(({group})=>
+      !group.indices.some(i=>(f.scnImport?.hiddenGroupIndices||[]).includes(i))&&
       threeMfGroupMeetsMinimum(group)&&
       !(f.deletedPartKeys||[]).includes('3mf-'+(f.threeMfImport.groups.indexOf(group)+1)))
       .map(({group:g,part,dimensions,valid})=>{
