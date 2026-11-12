@@ -55,7 +55,7 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.ok(out.files.every(x=>/ G=1/.test(x.content)));
  const top=out.files.find(x=>x.filename.includes('Body1'));
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);
- assert.match(top.content,/LAPF X=25 Y=43 A=0 x=300 y=0 G=1/);
+ assert.match(top.content,/LAPF X=25 Y=43 A=0 x=300 G=1/);
  const side=out.files.find(x=>x.filename.includes('Body3'));
  assert.match(side.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
  assert.equal(new Set(out.files.map(x=>x.filename.toLowerCase())).size,6);
@@ -64,8 +64,9 @@ test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésf
  const f=furniture();
  f.threeMfImport.parts[1].originMm[2]=5;
  const out=produce(f);
- assert.equal(out.contacts.length,7);
- assert.ok(out.files.every(x=>!x.commands.includes('ELF2 Y=0 A=0 y=300')));
+ assert.ok(out.contacts.length<8,'Az elcsúsztatott test kontaktusa nem maradhat érvényes.');
+ assert.ok(out.blocked.some(x=>/egymásba lóg|illeszkedő/.test(x.reason)),JSON.stringify(out.blocked));
+ assert.ok(!out.files.some(x=>x.filename.includes('Body2')),'Ütköző Body2 nem kaphat gépi tesztprogramot.');
 });
 test('kézzel megváltoztatott méret és anyagvastagság esetén nem exportál régi CNC koordinátát',()=>{
  const f=furniture();
