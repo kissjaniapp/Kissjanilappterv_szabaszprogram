@@ -4695,12 +4695,34 @@
     // (-section- és -cut- utótag). A KÉZI ABS, reszelés, anyag és
     // marás ilyenkor az eredeti családon belül megmarad.
     const originalCabinetParts=f.parts.slice();
+    // Ha egy darab ideiglenesen eltűnik a rajzról (kivett szakasz),
+    // nem törlődhet vele az összes korábbi, kézi élzárás és anyagadat.
+    // A cache a bútor projektrekordjával együtt mentődik, gyártási
+    // alkatrészként és CNC-programként SOSEM jelenik meg.
+    const settingsKeys=['name','autoCabinetName','materialId','materialColor',
+      'edge','edgeSides','edgeThickness','edgeThicknesses','filingSides',
+      'autoCabinetEdging','mill','millDepth','rot','grainRequired','autoCabinetShelfAxis'];
+    const cache=f.cabinetPartSettings&&typeof f.cabinetPartSettings==='object'?
+      f.cabinetPartSettings:{};
+    for(const part of originalCabinetParts){
+      const key=String(part.cabinetDesignKey||'');
+      if(!/^[a-z0-9-]{1,45}$/.test(key))continue;
+      const snapshot={};
+      for(const field of settingsKeys)if(part[field]!==undefined)
+        snapshot[field]=JSON.parse(JSON.stringify(part[field]));
+      cache[key]=snapshot;
+    }
+    f.cabinetPartSettings=cache;
+    const cachedParts=Object.entries(cache).filter(([key,part])=>
+      /^[a-z0-9-]{1,45}$/.test(key)&&part&&typeof part==='object')
+      .map(([key,part])=>({...part,cabinetDesignKey:key}));
     const sourceFamily=key=>{
       const match=/^(?:f-divider-\d+|v-divider-\d+|shelf-\d+)(?=-|$)/.exec(String(key||''));
       return match?.[0]||null;
     };
     const sourcePartFor=key=>{
-      const lookup=source=>originalCabinetParts.find(p=>p.cabinetDesignKey===source);
+      const lookup=source=>originalCabinetParts.find(p=>p.cabinetDesignKey===source)||
+        cachedParts.find(p=>p.cabinetDesignKey===source);
       const exact=lookup(key);
       if(exact)return exact;
       // Előbb az adott egyedi lap korábbi azonosítóját keressük:
@@ -4711,7 +4733,8 @@
       if(uncut!==key){const parent=lookup(uncut);if(parent)return parent;}
       const family=sourceFamily(key);
       if(!family)return null;
-      return lookup(family)||originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family);
+      return lookup(family)||originalCabinetParts.find(p=>sourceFamily(p.cabinetDesignKey)===family)||
+        cachedParts.find(p=>sourceFamily(p.cabinetDesignKey)===family);
     };
     // A régi, külön szerkesztett darabok csak egyező beállításokkal egyesíthetők.
     const autoName=part=>{
