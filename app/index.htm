@@ -4787,8 +4787,8 @@
         part.autoCabinetName=String(row.name||row.key).slice(0,100);
         // A szerkezeti kapcsolódás CNC-figyelmeztetése nem DXF-hiba.
         // Korábban ettől tűnt el a lap a stock/szabász/CNC listából.
-        part.dxfUnverified=false;
-        part.cabinetCncUnverified=row.ready===false;
+        part.dxfUnverified=generatedHdf&&row.ready===false;
+        part.cabinetCncUnverified=!generatedHdf&&row.ready===false;
         // DXF alkatrésznél a felhasználó képleteit ne írja felül a rajzi szinkron.
         if(!part.dxfGenerated){part.a=String(a);part.b=String(b);}
         part.q=String(q);
@@ -4817,7 +4817,7 @@
         f.parts.push({id:uuid(),cabinetDesignKey:row.key,
           materialId:generatedHdf?(currentHdfMaterial?.id||''):'',
           materialColor:generatedHdf?(currentHdfMaterial?.color||'HDF'):'',
-          dxfUnverified:false,cabinetCncUnverified:row.ready===false,
+          dxfUnverified:generatedHdf&&row.ready===false,cabinetCncUnverified:!generatedHdf&&row.ready===false,
           name:String(manualName?old.name:row.name||row.key).slice(0,100),
           autoCabinetName:String(row.name||row.key).slice(0,100),
           a:String(a),b:String(b),q:String(q),
