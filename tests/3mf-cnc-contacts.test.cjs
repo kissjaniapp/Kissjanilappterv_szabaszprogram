@@ -60,6 +60,18 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.match(side.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
  assert.equal(new Set(out.files.map(x=>x.filename.toLowerCase())).size,6);
 });
+test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki',()=>{
+ const f=furniture();
+ // Valós 3MF exportnál a kerek szándékolt méret lebegőpontos:
+ f.threeMfImport.parts[2].axisBoundsMm=[18,1143.9997,754.9998];
+ const out=produce(f);
+ assert.equal(out.contacts.length,8,JSON.stringify(out.contacts));
+ assert.equal(out.files.length,6,JSON.stringify(out.blocked));
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ const body3=out.files.find(x=>x.filename.includes('Body3'));
+ assert.match(body3.content,/H DX=1144 DY=755 DZ=18 /);
+ assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
+});
 test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésfuratot',()=>{
  const f=furniture();
  f.threeMfImport.parts[1].originMm[2]=5;
