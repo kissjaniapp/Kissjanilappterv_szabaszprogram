@@ -332,9 +332,9 @@
           const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
-          const filename=(entry.threeMfDraft?'3MF_TERV_':'')+prefix+'_'+suffix+'.xxl';
+          const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
           const marked=entry.threeMfDraft?
-            content.replace(/\r\n/,'\r\n;3MF_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT\r\n'):content;
+            content.replace(/\r\n/,'\r\n;'+(furniture?.threeMfImport?.source==='scn'?'SCN':'3MF')+'_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT\r\n'):content;
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
             content:marked,draft:entry.threeMfDraft===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
