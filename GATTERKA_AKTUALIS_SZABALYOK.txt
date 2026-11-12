@@ -1,5 +1,5 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
-Frissítve: 2026-11-11
+Frissítve: 2026-11-12
 
 Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
 jelöl: önmagában nem bizonyítja, hogy minden eset már helyesen működik.
@@ -432,3 +432,37 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   CNC-furatainak kapcsolata külön hitelesítést igényel; ellenőrizetlen
   művelet nem kerülhet automatikusan gépi gyártásra. A védett fűrészelési
   sorrend, xMix/xPrg és Windows mentés nem módosul.
+
+2026-11-12 – BONTOTT F/V-ALKATRÉSZEK ÖNÁLLÓ MOZGATÁSA; BÚTORLÁB
+------------------------------------------------------------------
+- A szerkesztő korábbi teljes F-/V-sor mozgatása változatlanul elérhető.
+  Ha az osztóból egy szakasz kikerül, az egyedi szerkesztési módra váltás
+  után MINDEN megmaradt fizikai F- és V-darab a saját, kirajzolt helyén
+  külön megfogható, elhúzható és lapvégenként méretezhető.
+  Egy darab mozgatása nem mozdítja a másik külön alkatrészt.
+  A kivett rész halványan látszik, kattintással visszaállítható.
+- A darabok egyedi, mentett X/Z eltolása és végpontkorrekciója az
+  alkatrész-összesítőben és az összes 2D/3D előnézetben is érvényesüljön.
+  A bontás utáni szakaszhatár az érintett rácsvonal megfelelő LAPÉLE,
+  egyetlen rekeszt sem szabad átugrani.
+- A nagy felső szerkesztős rajz tetője és feneke a megadott beépítés
+  szerint oldalakat KÖZREFOGÓ teljes szélességű vagy OLDALAK KÖZÉ
+  szerelt lap legyen, az oldallapok magassági csatlakozásával együtt.
+- „Kell bútorláb?” külön választó, alapértéke NEM. Láb csak fenék
+  (vagy a fenékhez tartozó pótfenék) esetén helyezhető el.
+  A láb vizuálisan 28 × 28 mm négyzetes keresztmetszetű, 100 mm magas.
+  Négy sarokláb közepe X=59 és W−59 mm, mélységben Y=59 és D−59 mm.
+  Ha van pótfenék, alá kerül; különben a fenék alá.
+- A megadott H bútortestméret megmarad a lapok számításához,
+  a TELJES KÜLSŐ magasság lábbal H+100 mm, láb nélkül H.
+  Ezt az elölnézeten, oldalnézeten, nagy szerkesztőrajzon és 3D-ben
+  azonosan kell kirajzolni és méretezni.
+  A 4 láb NEM önálló szabászati alkatrész, nem kerülhet az
+  alkatrész-összesítőbe vagy a szabáslistába.
+- A láb kiválasztása a tervvel együtt megmarad mentés/visszatöltés után.
+- A LAB CNC-makró még nincs hitelesítve ebben a megvalósításban:
+  lábas bútornál a 4 furat tényleges generálása előtt a CNC XXL
+  program KIMENTÉSE TILOS, hogy a 59 mm-es pozíciót ne lehessen
+  tévesen már elkészített furatnak tekinteni.
+  A jóváhagyott gépi vágási sorrend, xMix/xPrg és Windows Mentés
+  másként kód változatlan marad.
