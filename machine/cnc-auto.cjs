@@ -123,7 +123,7 @@
             Y:coord(face,face.yAxis,from),y:length,face:faceSide};
         else if(span===face.xAxis)
           faceOp={macro:'LAPF',X:coord(face,face.xAxis,from),
-            Y:coord(face,face.yAxis,center),x:length,y:0,face:faceSide};
+            Y:coord(face,face.yAxis,center),x:length,face:faceSide};
         else throw new Error('3MF felületi tengelyhiba.');
         const edgeAtMin=near(edge.lo[normal],faceSurface==='min'?face.lo[normal]:face.hi[normal]);
         let edgeOp;
