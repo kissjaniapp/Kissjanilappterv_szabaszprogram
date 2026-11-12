@@ -94,6 +94,9 @@ func startNativeBridge()(int,string,func(),error){
  router.HandleFunc("/native/write-files",bridge.writeFiles)
  router.HandleFunc("/native/choose-cnc-save-as",bridge.chooseCncSaveAs)
  router.HandleFunc("/native/write-cnc-files",bridge.writeCncFiles)
+ router.HandleFunc("/native/scn/import",bridge.scnImport)
+ router.HandleFunc("/native/scn/status",bridge.scnStatus)
+ router.HandleFunc("/native/scn/result",bridge.scnResult)
  server:=&http.Server{Handler:router,ReadHeaderTimeout:10*time.Second}
  go func(){_ = server.Serve(listener)}()
  return listener.Addr().(*net.TCPAddr).Port,token,func(){
