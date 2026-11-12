@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main]
+    branches: [main, 'fix/20261112-contact-coordinates-xilog-and-bridge']
   workflow_dispatch:
 
 permissions:
