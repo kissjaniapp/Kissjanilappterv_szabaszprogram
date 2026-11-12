@@ -2,7 +2,7 @@ name: Gatterka - Windows telepito automatikus epites
 
 on:
   push:
-    branches: [main, 'fix/20261112-cnc-native-mentes-maskent']
+    branches: [main]
   workflow_dispatch:
 
 permissions:
