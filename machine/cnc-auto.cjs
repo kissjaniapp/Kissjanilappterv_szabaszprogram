@@ -91,8 +91,9 @@
             'A gépi megmunkálás előtt az anyagot és a készméretet egyeztesd.');
         }
         const entry={key:'3mf-contact-'+(gi+1)+'-'+index,
-          name:String(part.name||shape.name||'3MF test'),dx:size[xAxis],dy:size[yAxis],
-          dz:size[tAxis],side:'IJ',operations:[],issues:[],
+          name:String(part.name||shape.name||'3MF test'),dx:Math.round(size[xAxis]*100)/100,
+          dy:Math.round(size[yAxis]*100)/100,
+          dz:Math.round(size[tAxis]*100)/100,side:'IJ',operations:[],issues:[],
           threeMfDraft:true,contactCount:0};
         const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,
           primaryFace:null};
@@ -102,7 +103,10 @@
       }
     }
     const overlap=(a,b,k)=>[Math.max(a.lo[k],b.lo[k]),Math.min(a.hi[k],b.hi[k])];
-    const coord=(p,k,value)=>round(value-p.lo[k]);
+    // Gépi mm-értékek: a modell 3MF transzformációs pontossága ezredmilliméteres
+    // eltéréseket tartalmazhat; a DX/DY és az élfurat ugyanazon 0,01 mm-es
+    // precizitással épüljön fel, hogy a kerekített makró ne lógjon túl.
+    const coord=(p,k,value)=>Math.round((value-p.lo[k])*100)/100;
     for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
       const a=boxes[i],b=boxes[j];
       if(a.part.id===b.part.id)continue;
@@ -136,7 +140,11 @@
         if(face.primaryFace===null)face.primaryFace=faceSurface;
         const faceSide=face.primaryFace===faceSurface?'primary':'reverse';
         const center=(intervals[thin][0]+intervals[thin][1])/2;
-        const from=intervals[span][0],length=round(intersections[span]);
+        const from=intervals[span][0],nominalLength=round(intersections[span]);
+        const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
+        const freeEdge=edge.entry[span===edge.xAxis?'dx':'dy']-coord(edge,span,from);
+        const length=Math.round(Math.min(nominalLength,freeFace,freeEdge)*100)/100;
+        if(length<50){error(face.part.id,'A 3MF kötésfurat hossza a lap szélén kívülre esik.');continue;}
         let faceOp;
         if(span===face.yAxis)
           faceOp={macro:'LAPA',X:coord(face,face.xAxis,center),
