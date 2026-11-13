@@ -49,8 +49,9 @@ test('Gatterka SCN import, szekrénybontás és objektumtörlés mindkét listá
  const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
  const module=fs.readFileSync(path.join(__dirname,'../machine/scn-obj.cjs'),'utf8').trim();
  assert.ok(app.includes(module),'a böngészős Gatterka SCN-modulja és a tesztelt OBJ-értelmező azonos');
+ assert.ok(!app.includes('data-mode="scn"'),'Az eltávolított SCN munkamódgomb nem térhet vissza');
  for(const snippet of [
- 'data-mode="scn"','data-action="cabinet-scn-choose"',
+ 'data-action="cabinet-scn-choose"',
  'data-action="scn-toggle-object"','data-action="scn-split-cabinets"',
  'data-scn-cabinet-index','scnImportControls(f)',
  'scnApplyGeometry(f,geometry,file.name)',
