@@ -1,4 +1,9 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+2026-11-13 – Az F/V szakasz kivételére, darabolására és egyedi végpontjára
+vonatkozó általános CNC-ellenőrzési megjegyzés nem tilthatja le az oldal
+már kiszámított furatait. A megjegyzések a külön jelentésben megmaradnak.
+Ez a korábbi, pusztán e megjegyzések miatti exporttiltást felülírja.
+A tényleges koordináta-/mérethiba és a hiányzó LAB makró nem megjegyzés.
 2026-11-13 – Lapvég illesztése: narancssárga pontok helyett a kijelölt
 lap végén láthatatlan húzófelület van. A húzott vég a közelben lévő,
 keresztirányban csatlakozó lap közeli vagy túlsó élére illeszkedik.

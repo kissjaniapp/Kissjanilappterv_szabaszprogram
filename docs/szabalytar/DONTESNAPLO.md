@@ -1,5 +1,13 @@
 # Gatterka döntésnapló
 
+## 2026-11-13 – Oldalak indokolatlan CNC-kimaradása
+
+A tulajdonos ELLENORIZENDO_KIMARADT.txt jelentése szerint mindkét oldalt
+az F/V szerkesztési ellenőrzés általános megjegyzései tiltották le.
+Ezek a konkrét megjegyzések jelentésbeli figyelmeztetéssé váltak; a valódi
+geometriai hibák ellenőrzése megmarad. A pótfenék külön LAB-hiánya még
+megoldandó, nem helyettesíthető üres, késznek látszó CNC-programmal.
+
 ## 2026-11-13 – Sarkokra illeszkedő lapvég, látható pontok nélkül
 
 A tulajdonos pontosította: a lapvég húzáskor a másik lap közeli vagy túlsó
