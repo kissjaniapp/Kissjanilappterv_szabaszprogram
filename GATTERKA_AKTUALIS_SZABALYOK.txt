@@ -1,4 +1,9 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+2026-11-13 – Narancssárga lapvégfogantyúk: az F/V egyedi lapvégek
+nemcsak rövidíthetők, hanem az eredeti rekesz határán túl is hosszabbíthatók.
+A végpontkorrekció előjeles: negatív érték hosszabbít, pozitív rövidít.
+A lap hossza pozitív marad; az egész alkatrész mozgatásának korlátai
+nem változnak. A hosszabbítás a mentett tervben is megmarad.
 2026-11-13 – Az F/V csatlakozás átváltása csak az átmenő lapot és
 a csatlakozó lapvégeket módosítja. A kivett szakasz, egyedi eltolás és
 végpontkorrekció ugyanahhoz a fizikai rekeszhez tartozzon váltás után is.

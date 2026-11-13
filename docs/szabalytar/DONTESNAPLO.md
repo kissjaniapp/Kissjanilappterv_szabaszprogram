@@ -1,5 +1,12 @@
 # Gatterka döntésnapló
 
+## 2026-11-13 – Lapvégek szabad hosszabbítása
+
+A tulajdonos kéri, hogy a narancssárga fogantyú az eredeti belméreten túl,
+akár a másik lap túlsó éléig is húzható legyen. Az előjeles végpontérték
+a rajz, méretszámítás és mentés része; csak a nem pozitív hossz tiltott.
+Ez a végpontkorlátot módosítja, nem az egész lap mozgatásának határait.
+
 ## 2026-11-13 – F/V betűre kattintás utáni szakaszállapot
 
 A tulajdonos két képernyőképen jelezte: a kapcsolási irány váltása más
