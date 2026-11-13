@@ -38,14 +38,14 @@ test('Egyedi polc: két XBO sor oldalanként a pontos rajzi 59/eltolás helyén'
   const xbo=side.operations.filter(o=>o.macro==='XBO');
   assert.equal(xbo.length,2);
   assert.deepEqual(Array.from(xbo.map(o=>o.Y)),[60,340]);
-  assert.equal(xbo[0].X,870.5,'a felső CNC nullponttól a legfelső furatig');
+  assert.equal(xbo[0].X,565.5,'az alsó CNC nullponttól a legalsó furatig');
   assert.equal(xbo[0].R,3);assert.equal(xbo[0].x,32);
   assert.deepEqual(Array.from(xbo.map(o=>[o.z,o.V,o.y,o.D,o.N,o.F])),
    [[13,1,0,5,'P',1],[13,1,0,5,'P',1]]);
   assert.equal(side.operations.some(o=>o.macro==='REF'||o.macro==='POLC'),false);
   const generated=auto.compileEntry(side,{assemblyJoint:'excenter'});
-  assert.match(generated,/XBO X=870\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
-  assert.match(generated,/XBO X=870\.5 Y=340 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
+  assert.match(generated,/XBO X=565\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
+  assert.match(generated,/XBO X=565\.5 Y=340 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
  }
  const coord=ctx.cncShelfHoleGroup(p,board);
  assert.equal(coord.bottom,565.5,'polc alja − 2.5 − 32');
@@ -57,8 +57,8 @@ test('A Gatterka furatszám és raszter felülírja az XBO 3/32 mintáját',()=>
  const xbo=r[0].cncInstances[0].operations.filter(q=>q.macro==='XBO');
  assert.equal(xbo.length,2);
  assert.equal(xbo[0].R,5);assert.equal(xbo[0].x,40);
- assert.equal(xbo[0].X,822.5);
- assert.match(auto.compileEntry(r[0].cncInstances[0]),/XBO X=822\.5 Y=60 z=13 V=1 R=5 x=40 y=0 D=5 N=P F=1/);
+ assert.equal(xbo[0].X,517.5);
+ assert.match(auto.compileEntry(r[0].cncInstances[0]),/XBO X=517\.5 Y=60 z=13 V=1 R=5 x=40 y=0 D=5 N=P F=1/);
 });
 test('Végig furatsor: a korábbi REF/POLC páros tovább él, nem keletkezik XBO',()=>{
  const p=cabinet({drilling:'full',distribution:'equal'}),ctx=setup([shelf()]),r=records();
@@ -75,7 +75,7 @@ test('A csak beállítható, nem egyenlő polcköz is kap XBO-t, nincs POLC Q hi
  const left=r[0].cncInstances[0];
  assert.equal(left.issues.length,0);
  assert.equal(left.operations.filter(op=>op.macro==='XBO').length,2);
- assert.equal(left.operations.find(op=>op.macro==='XBO').X,739.5);
+ assert.equal(left.operations.find(op=>op.macro==='XBO').X,696.5);
 });
 test('Külön első/hátsó polcvisszaállásból származik az XBO Y',()=>{
  const p=cabinet(),ctx=setup([shelf(600,{y0:35,y1:355})]),r=records();
