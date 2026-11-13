@@ -1809,13 +1809,12 @@
         '<div class="tiny muted">Válaszd a SCN fájlt, vagy a KitchenDraw/SCN Viewer által exportált OBJ modellt.</div>')+
       '</section>';
   }
-  function designWorkflowMode(){return ['parts','scn','design','manual'].includes(state.designMode)?state.designMode:'design';}
+  function designWorkflowMode(){return state.designMode==='scn'?'parts':(['parts','design','manual'].includes(state.designMode)?state.designMode:'design');}
   function modeChoiceView(){
     return intro('MUNKAMÓD','Mit szeretnél készíteni?',
-      'Válassz a négy munkamód közül. Mindegyikben elérhető a bútor külmérete, a paraméterek, az alkatrészképletek és az IF-feltételek. A meglévő alkatrészek módváltáskor megmaradnak.','')+
+      'Válassz a három munkamód közül. Mindegyikben elérhető a bútor külmérete, a paraméterek, az alkatrészképletek és az IF-feltételek. A meglévő alkatrészek módváltáskor megmaradnak.','')+
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:18px">'+
       '<button class="panel" data-action="choose-workflow-mode" data-mode="parts" style="padding:26px;text-align:left;cursor:pointer"><h2>📐 3MF rajzzal dolgozom</h2><p>3MF rajz betöltése, alkatrészek ellenőrzése, szabásterv és mentés.</p><strong>3MF munkamód →</strong></button>'+
-      '<button class="panel" data-action="choose-workflow-mode" data-mode="scn" style="padding:26px;text-align:left;cursor:pointer"><h2>🏠 SCN rajzzal dolgozom</h2><p>KitchenDraw SCN megjelenítés, objektumok kizárása, szekrényenkénti alkatrészek, szabás és CNC teszttervek.</p><strong>SCN munkamód →</strong></button>'+ 
       '<button class="panel" data-action="choose-workflow-mode" data-mode="design" style="padding:26px;text-align:left;cursor:pointer"><h2>🧰 Egyszerű bútortervező</h2><p>A korábbi beépített szekrénytervező 2D és forgatható 3D rajzzal. Külméretek, paraméterek, alkatrészek és IF.</p><strong>Bútortervező megnyitása →</strong></button>'+ 
       '<button class="panel" data-action="choose-workflow-mode" data-mode="manual" style="padding:26px;text-align:left;cursor:pointer"><h2>📋 Kézi alkatrészbevitel</h2><p>Rajz nélkül megadható alkatrészek, külméretek, paraméterek, képletek és IF-feltételek.</p><strong>Alkatrészek beírása →</strong></button>'+
       '</div>';
@@ -3211,12 +3210,39 @@
       '<p class="muted small" style="margin-top:12px">Ez a kötésmód az egész bútor szerkezeti kapcsolataira vonatkozik: oldallap, tető, fenék, polcok és F/V-osztók. '+
       'A POLC polctartó furatok G=1 értéke a külön Xilog makró része, nem kötésmód.</p>'+
       '<button class="btn primary" type="button" data-action="save-cnc-xxl-as" '+(!enabled?'disabled':'')+'>💾 Mentés másként</button>'+
+      '<button class="btn" type="button" data-action="download-cnc-pgm-probe" style="margin-left:8px">🧪 PGM próba letöltése</button>'+
+      '<p class="muted small">A PGM próba egy külön szöveges vizsgálati fájl az ismert Xilog makrókkal. Nem változtatja meg a működő XXL-mentést. Először Xilog szerkesztőben / szimulátorban ellenőrizd; gyártáshoz még nincs igazolva.</p>'+
       '<p class="muted small">Windows Mentés másként: kiválasztod az első .xxl fájl nevét és mappáját; az összes többi elkészített CNC-terv közvetlenül ugyanoda kerül. Nincs ZIP letöltés.</p>'+
       '<div id="cnc-xxl-counts" class="muted small" style="margin-top:12px"></div>'+
       '<div id="cnc-xxl-save-status" class="muted small" role="status" aria-live="polite" style="margin-top:8px"></div>'+
       '<p class="muted tiny">A kiválasztott kötésmód a bútorral mentődik. A REF szakaszok kihagyásai a bútortervező Polcfuratozás részében állíthatók. '+
       'A 3MF-alapú, jelölt CNC TESZTTERVEK menthetők. Ezek éles megmunkálás előtt Xilog ellenőrzést, a felrakási és furatkiosztási adatok igazolását, valamint szárazpróbát igényelnek.</p></div></div>';
   }
+  // Külön, gyártásra NEM hitelesített PGM szöveges formátumpróba.
+  // A bevált XXL export, a makrófordító és a CNC mentési sorrend érintetlen.
+  window.gatterkaDownloadPgmProbe=function(){
+    if(!window.GatterkaCnc?.compileXxl)throw Error('Hiányzik a CNC/Xilog makrófordító.');
+    const commands=[
+      'LAPA X=120 Y=40 A=0 y=280 G=1',
+      'LAPF X=60 Y=180 A=0 x=480 G=1',
+      'ELF3 Y=40 A=0 y=280 G=1',
+      'ELF2 Y=40 A=0 y=280 G=1',
+      'ELF4 X=60 A=0 x=480 G=1',
+      'ELF5 X=60 A=0 x=480 G=1',
+      'REF DX=400 BX=80',
+      'POLC Y=50 Q=0# s=32 G=1# F=1',
+      'REF',
+      'FORDIT',
+      'LAPA X=300 Y=80 A=0 y=240 G=1',
+      'XBO X=100 Y=50 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1'
+    ];
+    const program=window.GatterkaCnc.compileXxl({
+      dx:600,dy:400,dz:18,side:'IJ',commands:commands.join('\n')
+    });
+    // Csak a kiterjesztést teszteljük: a belső adat továbbra is XXL-szöveg.
+    download(program,'GATTERKA_PGM_FORMATUM_PROBA.pgm','text/plain;charset=utf-8');
+    return program;
+  };
   window.gatterkaBuildAutoCnc=function(options){
     const f=getFurniture();
     if(!f)throw new Error('Nincs kiválasztott bútor.');
@@ -6526,9 +6552,9 @@
       }
     }
     else if(action==='choose-workflow-mode'){
-      if(!['design','parts','scn','manual'].includes(el.dataset.mode))return;
+      if(!['design','parts','manual'].includes(el.dataset.mode))return;
       state.designMode=el.dataset.mode;
-      if(['parts','scn'].includes(el.dataset.mode)){
+      if(el.dataset.mode==='parts'){
         const furniture=getFurniture();
         if(furniture&&!String(furniture.name||'').trim())furniture.name='Alkatrészlista';
       }
@@ -7795,6 +7821,16 @@
      window.gatterkaSetAssemblyJoint?.(e.target.value);
      refresh();
    }
+ });
+ document.addEventListener('click',e=>{
+   const btn=e.target?.closest?.('[data-action="download-cnc-pgm-probe"]');
+   if(!btn)return;
+   e.preventDefault();
+   const status=$('cnc-xxl-save-status');
+   try{
+     window.gatterkaDownloadPgmProbe();
+     if(status)status.textContent='PGM szöveges próba letöltve. A működő XXL programok nem változtak. A PGM-et először csak Xilogban ellenőrizd.';
+   }catch(error){if(status)status.textContent='PGM próba hiba: '+(error?.message||error);}
  });
  document.addEventListener('click',async e=>{
    const btn=e.target?.closest?.('[data-action="save-cnc-xxl-as"]');
