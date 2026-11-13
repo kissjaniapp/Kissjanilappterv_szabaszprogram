@@ -588,3 +588,32 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   kimentéseként, és nem helyettesíti a 4 db 59 mm-es LAB-lábfurat még
   hiányzó/hitelesítendő CNC-makróját. A teljes CNC gépi próba továbbra
   szükséges.
+
+
+2026-11-13 – XFALC HÁTFALFALC: KIFUTÁSI SZABÁLYOK (G=2)
+----------------------------------------------------
+- A Gatterka Xilog XXL kimenete a bútortervező Falcos hátfal
+  beállításánál létrehozza az XFALC makrót a két oldallapon,
+  továbbá a tetőn és a fenéken, HA az adott HDF-csatlakozás
+  külön is „Falcos – 5,5 mm” (nem „Visszavágott – 2 mm”).
+- Az XFALC mindig a felhasználó által megadott formában készül:
+    XFALC Q=1# G=2#  – mindkét végén kifutó, végigmenő
+    XFALC Q=2# G=2#  – egyik végén sem kifutó
+    XFALC Q=3# G=2#  – bal oldalon nem kifutó
+    XFALC Q=4# G=2#  – jobb oldalon nem kifutó
+- Az X tengely két végét vizsgáljuk. Az oldallap X=0 vége
+  a felső, a másik az alsó vége. A „közémenő” tető/fenék
+  az adott oldallap végén lezárást igényel:
+  csak felső lezárás: Q=3; csak alsó: Q=4;
+  mindkettő: Q=2; egyik sem: Q=1.
+- A tető/fenék saját hátfal-falcánál a közémenő lap Q=1
+  (két rejtett vég); a végigmenő lap Q=2 (két külső vég).
+  Ha a tető vagy fenék HDF-csatlakozása „Visszavágott”,
+  arra az alkatrészre XFALC NEM kerül.
+- Teli hátlapnál és hátfal nélkül XFALC NEM készül.
+- XFALC külön makró: G=2 rögzített. Az összehúzós/csavaros/
+  tiplis kötés G-értékével nem keverendő.
+- A már SCM gépen tesztelt LAPA/LAPF/ELF, FORDIT, tető,
+  fenék és pótfenék CNC fúrási sorrend NEM módosítható.
+  A falc makró csak kiegészítés; az új falc lefutását
+  először Xilog előnézettel és szárazpróbával ellenőrizzük.
