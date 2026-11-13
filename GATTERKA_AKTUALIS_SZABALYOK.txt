@@ -621,14 +621,21 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 
 2026-11-13 – OLDALLAP CNC ÜTKÖZÉSE ÉS REF DX/BX VÉGLEGES KÉPLETE
 ----------------------------------------------------------------
-- Az SCM Xilog oldallap CNC-felrakásának nullpontja MINDIG:
-  X=0 a fizikai oldallap ALSÓ élén; Y=0 a bútor ELÜLSŐ élén.
-  A bútor tetejétől lefelé történő CNC X-számítás hibás.
-- Oldallap LAPA fix furatok: X = a furat globális Z-magassága
-  mínusz az oldallap tényleges alsó Z-pozíciója.
-  Az egyedi XBO polctartó-csoport első X értéke az ALSÓ furaté;
-  a pozitív x raszter alulról FELFELÉ lépked.
-  Y továbbra is elölről hátrafelé nő.
+- Az oldallapot fizikailag ALUL és ELÖL ütköztetjük. A REF BX
+  alsó kezdőpontja és az IJ/LK LAPA program X-koordinátája azonban
+  a gyakorlatban NEM ugyanaz a koordinátaváltás.
+- A már SCM-en helyesen működő oldallapi LAPA kód az IJ/LK
+  programban a lap FELSŐ végétől lefelé növő X-et alkalmaz:
+  X = oldallap felső globális Z - furat globális Z.
+  900 mm valós oldallaphosszon, 18 mm közémenő tető/fenék esetén
+  a TETŐ csatlakozás X=9, a FENÉK csatlakozás X=891.
+  A 2026-11-13-i fordított X=891/9 felcserélést visszavontuk,
+  mert a fenék furatait a tetőhöz tette.
+- A REF továbbra is a gépen megadott ALSÓ ütközési referencia:
+  DX a szabad belső hossz, BX csak közémenő fenéknél van.
+  Az egyedi XBO furatcsoport jelenlegi X-kiosztása külön
+  ellenőrzendő; a felcserélt LAPA javítása nem módosította.
+  Y minden esetben az ELÜLSŐ élről hátrafelé nő.
 - REF: a DX kiindulása a valós, szabászatban szereplő OLDALLAP
   vágott hossza (sideH), nem a végigmenő tető/fenék miatt nagyobb
   teljes bútor-külmagasság. Csak az oldallapok KÖZÉ kerülő lapok
