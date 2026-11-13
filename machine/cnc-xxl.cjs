@@ -71,6 +71,14 @@
     return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
   }
 
+  // A Xilog3 Progr1.pgm XFALC Q=1# G=2# mintájából; a Q értékeket
+  // a felhasználó határozta meg: 1 végig; 2 egyik vég sem; 3 bal nem;
+  // 4 jobb nem. G mindig 2.
+  function parseXfalc(line){
+    const m=/^XFALC Q=([1-4])# G=2#$/.exec(String(line).trim());
+    if(!m)throw new Error('XFALC: Q=1#/2#/3#/4# és G=2# szükséges.');
+    return 'XFALC Q='+m[1]+'# G=2#';
+  }
   // A csatolt Xilog3 .pgm referenciákból ellenőrzött formátum:
   // REF DX=491 BX=0; POLC Y=50 Q=0# s=32 G=1# F=1; REF (visszaállítás).
   function parseShelfMacro(line,dx,dy,state){
@@ -184,7 +192,8 @@
         justFlipped=false;
       }else{
         if(shelfRef.active)throw new Error('A REF szakaszba csak POLC-makró írható.');
-        out.push(lines[i].startsWith('XBO ')?parseXbo(lines[i],dx,dy,dz):parseMacro(lines[i],dx,dy));
+        out.push(lines[i].startsWith('XBO ')?parseXbo(lines[i],dx,dy,dz):
+          lines[i].startsWith('XFALC ')?parseXfalc(lines[i]):parseMacro(lines[i],dx,dy));
         macrocnt++;
         justFlipped=false;
       }
@@ -194,7 +203,7 @@
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
   }
-  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,parseXbo,cncToolCode,cncHeader,compileXxl};
+  const api={JOINT_G,jointCodes,centerline,mirroredX,parseMacro,parseXfalc,parseXbo,cncToolCode,cncHeader,compileXxl};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCnc=api;
 })(typeof window!=='undefined'?window:null);
