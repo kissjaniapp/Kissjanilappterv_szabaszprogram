@@ -78,29 +78,29 @@ test('REF: a lapvastagság és a fizikai oldallaphossz számít, nem a bútor k�
  assert.equal(ref.segments[0].DX,864);
  assert.equal(ref.segments[0].BX,18,'A pótfenék nem tolhatja el a lap saját alsó nullpontját');
 });
-test('Oldallap LAPA: a fix tető/fenék furat X-je 891/9; bal és jobb lap alulról ütközik',()=>{
+test('Oldallap LAPA: a korábban gépen bevált tető X=9, fenék X=891, mindkét oldalnál',()=>{
  for(const [top,bottom,, ,Q] of combinations){
   const p=cabinet({top,bottom,drilling:'fixed'});
   const result=run(p);
   for(const key of ['side-left','side-right']){
    const points=ops(result,key,'LAPA').map(x=>x.X);
-   assert.equal(points.includes(891),top==='between',key+' tető X');
-   assert.equal(points.includes(9),bottom==='between',key+' fenék X');
+   assert.equal(points.includes(9),top==='between',key+' tető X');
+   assert.equal(points.includes(891),bottom==='between',key+' fenék X');
    assert.ok(ops(result,key,'LAPA').every(x=>x.Y===0&&x.y===600),
     'A front Y=0 marad');
    assert.equal(ops(result,key,'XFALC')[0].Q,Q,'Az XFALC kifutási irány az ALSÓ ütközőt követi');
   }
  }
 });
-test('Fix polc oldalcsatlakozása középvonalról alulról és elejétől számít',()=>{
+test('Fix polc oldalcsatlakozása a visszaállított, működő LAPA X-iránnyal készül',()=>{
  const p=cabinet({drilling:'fixed',rabbet:false});
  const shelf={kind:'shelf',key:'shelf-1',index:1,name:'Polc',
-  x1:18,x2:982,y0:20,y1:550,z1:441,z2:459,a:964,b:530,undercutDegrees:0};
+  x1:18,x2:982,y0:20,y1:550,z1:291,z2:309,a:964,b:530,undercutDegrees:0};
  const result=run(p,[shelf]);
  for(const key of ['side-left','side-right']){
   const contact=ops(result,key,'LAPA').find(x=>x.Y===20);
   assert.ok(contact,key);
-  assert.equal(contact.X,450,'Alulról mért polcmagasság');
+  assert.equal(contact.X,600,'A felső CNC programvég felől számított LAPA X=600');
   assert.equal(contact.y,530,'Első-hátsó tényleges polcmélység');
  }
 });
