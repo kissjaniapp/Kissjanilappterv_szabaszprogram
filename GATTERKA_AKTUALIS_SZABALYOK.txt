@@ -655,3 +655,18 @@ felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
 - A sikeres generálás és nem igazolt gépi ellenőrzés jelzése kizárólag
   a felületen és a külön mentési jelentésben szerepel. A korábbi
   fejléc-megjegyzésekről szóló szabályt ez az utasítás felülírja.
+
+2026-11-13 – F/V SZAKASZKIJELÖLÉS, DELETE ÉS BEÁLLÍTÓBLOKKOK SORRENDJE
+-------------------------------------------------------------------
+- Teljes F/V-sor módban az egész sor kap kijelölést és együtt mozdul.
+- Egyedi alkatrész/szakasz módban az átmenő F-osztó is rekeszenként
+  jelölhető ki, a V-osztóval azonos módon. A kijelölés önmagában nem
+  vágja szét a fizikai lapot; mozgatás, végpontmódosítás, kettévágás
+  vagy kivétel csak a kijelölt szakaszt érinti.
+- A Delete a szerkesztőben a kijelölt F/V-szakaszt veszi ki, visszaállítható
+  formában. Szám- vagy szövegmezőben a Delete továbbra is szöveget töröl.
+  A darabkulcsok, saját méretek, anyag és élzárás mentve megmaradnak.
+- A bal oldali beállítóblokkok a fejlécük ⠿ fogantyújával átrendezhetők.
+  A fogantyún a fel/le nyilak is átrendeznek. A sorrend a tervvel együtt
+  mentendő és visszaállítandó, a beállított értékek nem változnak.
+- A védett gépi vágássorrend, xMix/xPrg és Windows mentés változatlan.
