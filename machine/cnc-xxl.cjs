@@ -97,10 +97,13 @@
           throw new Error('Érvénytelen REF paraméter: '+part);
         fields[m[1]]=number(m[2],m[1],true);
       }
-      if(!(fields.DX>0)||!(fields.BX>=0)||fields.BX+fields.DX>dx+.001)
+      // A BX opcionális: ha hiányzik, a munkadarab alsó X nullpontja él.
+      const bx=fields.BX===undefined?0:fields.BX;
+      if(!(fields.DX>0)||bx+fields.DX>dx+.001)
         throw new Error('A REF szakasz kezdőpontja/hossza kilóg az oldallapból.');
-      state.active=true;state.dx=fields.DX;state.bx=fields.BX;
-      return 'REF DX='+fmt(fields.DX)+' BX='+fmt(fields.BX);
+      state.active=true;state.dx=fields.DX;state.bx=bx;
+      return 'REF DX='+fmt(fields.DX)+
+        (fields.BX===undefined?'':' BX='+fmt(fields.BX));
     }
     if(name==='POLC'){
       if(!state.active)throw new Error('POLC csak előzetes REF szakaszon belül használható.');
