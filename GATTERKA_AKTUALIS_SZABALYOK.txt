@@ -677,3 +677,32 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   FORDIT, LAPA műveletek eredeti sorrendje változatlan.
 - A REF DX/BX, a polctartó-szabály és az oldallap fizikai
   elöl/alul ütközése érintetlen.
+
+
+2026-11-13 – KIPRÓBÁLT CNC PROGRAMOK: KÜLÖN MINŐSÍTÉSI TILTÁS NINCS
+-----------------------------------------------------------------
+- A felhasználó igazolta, hogy a saját SCM/Xilog gépén a korábbi
+  helyes CNC-programok kipróbálása megtörtént. A rajzi eredethez
+  vagy a korábbi "nem hitelesített" jelzőhöz kapcsolt önkényes
+  mentésblokkolás megszűnik; a már létrehozott XXL utasításokat
+  nem lehet pusztán ezen ok miatt elhagyni.
+- A bútortervezőnek a fenék, a tető és az F-osztó saját, tényleges
+  csatlakozási műveletei alapján külön-külön CNC fájlt kell adnia.
+  Végigmenő fenék + pótfenék esetén a fenék önálló programja
+  nem maradhat ki a pótfenék külön LAB-csatlakozásának állapota miatt.
+- Közémenő tető oldallapi LAPA furata a saját lap vastagságának
+  FELÉNÉL van: a már bevált CNC iránnyal X=t/2 a felső végétől.
+  Példa: 900 mm hosszú oldallap, t=18 mm -> tető X=9 mm,
+  közémenő fenék X=891 mm. A tető saját CNC-programja nem változik.
+- A végigmenő tető oldallapi élén ELF2, a végigmenő fenékén ELF3;
+  a REF DX/BX és a korábbi tető/fenék/FORDIT megmunkálási
+  sorrend változatlan.
+- Az F-osztó meglévő és kiszámított kapcsolati furatai akkor is
+  exportálhatók, ha beállítható polcokat használunk. Amennyiben
+  a belső polctartó-furatsor tényleges makrója még nincs előállítva,
+  ezt külön figyelmeztetés közli; meg nem írt furatot nem tekintünk
+  elkészültnek.
+- A hiányzó/mérethibás geometria, ismeretlen Xilog-makró,
+  koordináta- vagy anyagvastagság-eltérés valódi ellenőrzése
+  megmarad; a felhasználói jóváhagyás nem teszi helyessé a
+  nem létező megmunkálást.
