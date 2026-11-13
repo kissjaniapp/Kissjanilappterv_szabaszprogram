@@ -122,6 +122,37 @@ test('XBO polctartó: első X az ALSÓ furat, raszter felfelé; Y továbbra is e
   }
  }
 });
+test('Az oldallap FELSŐ élén ELF2, ALSÓ élén ELF3 készül minden tető/fenék-elrendezésnél',()=>{
+ for(const [top,bottom] of [
+  ['between','between'],['between','full'],['full','between'],['full','full']
+ ]){
+  const p=cabinet({top,bottom,drilling:'fixed',rabbet:false});
+  const result=run(p);
+  const expected=[...(top==='full'?['ELF2']:[]),
+    ...(bottom==='full'?['ELF3']:[])];
+  for(const key of ['side-left','side-right']){
+   const sideEntry=side(result,key);
+   const edges=sideEntry.operations.filter(op=>op.macro==='ELF2'||op.macro==='ELF3');
+   assert.deepEqual(edges.map(op=>op.macro),expected,
+    key+' / '+top+' / '+bottom);
+   assert.ok(edges.every(op=>op.Y===0&&op.y===600),
+    'Az oldallapi élmakrók az elülső ütközőtől számolnak');
+   const lapX=sideEntry.operations.filter(op=>op.macro==='LAPA').map(op=>op.X);
+   assert.deepEqual(lapX,[...(top==='between'?[9]:[]),
+     ...(bottom==='between'?[891]:[])],
+    'A helyes LAPA tető/fenék kötésfuratok változatlanok');
+  }
+  // Nem szabad a tető/fenék saját élfuratainak sorrendjét megváltoztatni.
+  for(const key of ['top','bottom']){
+   const panel=side(result,key);
+   const panelEdges=panel.operations.filter(op=>op.macro==='ELF2'||op.macro==='ELF3')
+      .map(op=>op.macro);
+   if((key==='top'?top:bottom)==='between')
+    assert.deepEqual(panelEdges,['ELF3','ELF2'],
+     'A tető/fenék saját bevált ELF sorrendje marad');
+  }
+ }
+});
 test('REF BX csak szükség esetén íródik, a normál CNC makró és sorrend érintetlen',()=>{
  const full=cabinet({top:'full',bottom:'full'});
  const between=cabinet();
