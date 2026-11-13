@@ -51,7 +51,8 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
  assert.equal(out.files.length,6,'mindegyik Body szerkezeti CNC-tervet kap');
  assert.ok(out.files.every(x=>x.draft===true&&x.filename.startsWith('3MF_TERV_')&&x.filename.endsWith('.xxl')));
- assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes(';3MF_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT')));
+ assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&!x.content.includes('NEM_HITELESITETT')),
+   'A saját gépen kipróbált program nem kap önkényes minősítési figyelmeztetést');
  assert.ok(out.files.every(x=>/ G=1/.test(x.content)));
  const top=out.files.find(x=>x.filename.includes('Body1'));
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);
