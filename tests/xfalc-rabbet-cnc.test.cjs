@@ -47,11 +47,11 @@ test('XFALC Q=1..4 G=2 pontos Xilog makróformátum, más Q/G tiltva',()=>{
  assert.throws(()=>core.parseXfalc('XFALC Q=1# G=1#'));
 });
 
-test('Oldallap XFALC kifutás: két zárt vég Q2, csak felső Q3, csak alsó Q4, átmenő Q1',()=>{
+test('Oldallap alul ütköztetve: két zárt vég Q2, csak alsó Q3, csak felső Q4, átmenő Q1',()=>{
  for(const [setup,Q] of [
   [{top:'between',bottom:'between'},2],
-  [{top:'between',bottom:'full'},3],
-  [{top:'full',bottom:'between'},4],
+  [{top:'between',bottom:'full'},4],
+  [{top:'full',bottom:'between'},3],
   [{top:'full',bottom:'full'},1]
  ]){
   const parts=geometry(setup);
