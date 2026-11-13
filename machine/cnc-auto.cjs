@@ -265,9 +265,9 @@
     if(problems.length)throw new Error(problems.join('; '));
     const dx=finite(entry.dx),dy=finite(entry.dy),dz=finite(entry.dz);
     if(![dx,dy,dz].every(v=>v>0&&v<=10000))
-      throw new Error('Nincs hiteles DX/DY/DZ szerkezeti méret.');
+      throw new Error('Érvénytelen DX/DY/DZ szerkezeti méret.');
     if(!Array.isArray(entry.operations)||!entry.operations.length)
-      throw new Error('Ehhez az alkatrészhez nincs hiteles megmunkálási makró.');
+      throw new Error('Ehhez az alkatrészhez nincs megmunkálási makró.');
     if(entry.operations.length>500)throw new Error('Túl sok megmunkálás (>500).');
     const first=[],other=[];
     for(const op of entry.operations){
@@ -320,11 +320,12 @@
           continue;
         }
         used.add(identity);
-        if(part.dxfUnverified||part.dxfGenerated||
-           (part.threeMfGenerated&&!entry.threeMfDraft)){
-          appendFailure(result.blocked,shown,'Nem hiteles 3MF/DXF alkatrész nem kaphat automatikus szerkezeti furatprogramot.');
-          continue;
-        }
+        // A felhasználó saját gépi ellenőrzése alapján a külön
+        // "nem hitelesített" eredetjelző nem zárja ki az exportot.
+        // A méreteltérés, ismeretlen makró és hibás koordináta
+        // változatlanul a tényleges geometriai ellenőrzésen bukik el.
+        for(const warning of entry.warnings||[])
+          appendFailure(result.warnings,shown,warning);
         // A kézi méretcsere/képlet átírása után nem szabad a régi furatokat
         // automatikusan a más méretű előgyártmányra kiküldeni.
         const a=finite(part.threeMfGenerated?options.actualDimensions?.[part.id]?.a:part.a),
@@ -357,10 +358,11 @@
           const suffix=cleanName(identity);
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
           const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
-          const marked=entry.threeMfDraft?
-            content.replace(/\r\n/,'\r\n;'+(furniture?.threeMfImport?.source==='scn'?'SCN':'3MF')+'_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT\r\n'):content;
+          // A gépen kipróbált 3MF programokból nem írunk önkényes
+          // NEM_HITELESITETT fejlécet; az eredet továbbra is látszik
+          // a fájlnévben és a belső draft metaadatban.
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
-            content:marked,draft:entry.threeMfDraft===true,
+            content,draft:entry.threeMfDraft===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
