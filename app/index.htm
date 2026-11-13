@@ -1810,6 +1810,23 @@
       '</section>';
   }
   function designWorkflowMode(){return state.designMode==='scn'?'parts':(['parts','design','manual'].includes(state.designMode)?state.designMode:'design');}
+  // Munkamódonként külön alkatrészkészlet: a 3MF, a bútorrajz és a kézi
+  // lista nem írhatja felül egymás szabászati és CNC-adatait.
+  // A tárolás a bútorral együtt mentődik; módváltáskor a régi mód nem vész el.
+  function switchFurnitureWorkflowParts(f,previous,next){
+    if(!f||previous===next)return;
+    const valid=['parts','design','manual'];
+    if(!valid.includes(previous)||!valid.includes(next))return;
+    if(!f.workflowPartLists||typeof f.workflowPartLists!=='object')f.workflowPartLists={};
+    const clone=items=>JSON.parse(JSON.stringify(Array.isArray(items)?items:[]));
+    f.workflowPartLists[previous]=clone(f.parts);
+    f.parts=clone(f.workflowPartLists[next]);
+    // Első bútortervező-váltáskor a korábban már elmentett rajzi
+    // alkatrészekből építjük fel az új, aktuális készletet.
+    if(next==='design'&&!f.workflowPartLists.design&&Array.isArray(f.cabinetDesign?.parts))
+      syncCabinetDesignerParts(f,f.cabinetDesign.parts);
+    result=null;
+  }
   function modeChoiceView(){
     return intro('MUNKAMÓD','Mit szeretnél készíteni?',
       'Válassz a három munkamód közül. Mindegyikben elérhető a bútor külmérete, a paraméterek, az alkatrészképletek és az IF-feltételek. A meglévő alkatrészek módváltáskor megmaradnak.','')+
@@ -5145,8 +5162,12 @@
       if(rule)rule.value=next;
       if(changed){syncCustomParameterParts(f);result=null;}
     }
-    if(!f.threeMfImport?.parts?.length&&!f.dxfDrawings?.front&&Array.isArray(design.parts))
+    // Az aktuális bútorrajz minden mentése frissíti a szabás- és CNC-listát.
+    // Egy korábbi 3MF-modell tárolt adata nem blokkolhatja a szerkesztőt.
+    if(designWorkflowMode()==='design'&&Array.isArray(design.parts)){
       syncCabinetDesignerParts(f,design.parts);
+      result=null;
+    }
   }
   window.gatterkaCabinetDirectSave=function(source,design){
     const slot=document.querySelector('.gatterka-cabinet-inline');
@@ -6553,13 +6574,19 @@
     }
     else if(action==='choose-workflow-mode'){
       if(!['design','parts','manual'].includes(el.dataset.mode))return;
-      state.designMode=el.dataset.mode;
-      if(el.dataset.mode==='parts'){
+      const previous=designWorkflowMode(),next=el.dataset.mode;
+      // Az iframe aktuális rajzát még az üzemmódváltás előtt átvesszük.
+      captureCabinetDesignerBeforePageChange();
+      if(previous!==next)for(const furniture of state.furnitures)
+        switchFurnitureWorkflowParts(furniture,previous,next);
+      state.designMode=next;
+      if(next==='parts'){
         const furniture=getFurniture();
         if(furniture&&!String(furniture.name||'').trim())furniture.name='Alkatrészlista';
       }
+      result=null;
       state.active='furniture';
-      notice='';render();window.scrollTo({top:0,behavior:'smooth'});
+      notice='';save();render();window.scrollTo({top:0,behavior:'smooth'});
     }
     else if(action==='workflow-choice'){
       state.active='mode';notice='';render();window.scrollTo({top:0,behavior:'smooth'});
