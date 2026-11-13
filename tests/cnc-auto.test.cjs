@@ -98,7 +98,8 @@ test('Végigmenő fenék és pótfenék együtt külön CNC ellenőrzést igény
  const records=[{key:'side-left',sourceKeys:['side-left','side-right']},
    {key:'top'},{key:'bottom'},{key:'false-bottom'}];
  ctx.buildCncInstancesForParts(p,records);
- assert.match(records.find(r=>r.key==='bottom').cncInstances[0].issues.join(' '),/pótfenék/);
+ assert.deepEqual(Array.from(records.find(r=>r.key==='bottom').cncInstances[0].issues),[],
+   'A végigmenő fenék saját programját a pótfenék nem tilthatja le');
  assert.match(records.find(r=>r.key==='false-bottom').cncInstances[0].issues.join(' '),/LAB/);
 });
 
