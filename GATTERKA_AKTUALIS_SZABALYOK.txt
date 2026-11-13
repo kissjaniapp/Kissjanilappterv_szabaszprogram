@@ -1,5 +1,48 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
-Frissítve: 2026-11-12
+2026-11-13 – LAB visszaállítva a korábbi 26-os PR és a Gatterka v6 csev
+alapján. A korábbi „nincs megvalósítva, export tiltott” LAB-bejegyzések
+felülírva: LAB X/Y G=2, négy furat a tartólapon; pótfenék elsőbbséget élvez.
+A pontos pozíció- és felrakási szabály: docs/cnc-makromintak/LAB.md.
+2026-11-13 – Az F/V szakasz kivételére, darabolására és egyedi végpontjára
+vonatkozó általános CNC-ellenőrzési megjegyzés nem tilthatja le az oldal
+már kiszámított furatait. A megjegyzések a külön jelentésben megmaradnak.
+Ez a korábbi, pusztán e megjegyzések miatti exporttiltást felülírja.
+A tényleges koordináta-/mérethiba és a hiányzó LAB makró nem megjegyzés.
+2026-11-13 – Lapvég illesztése: narancssárga pontok helyett a kijelölt
+lap végén láthatatlan húzófelület van. A húzott vég a közelben lévő,
+keresztirányban csatlakozó lap közeli vagy túlsó élére illeszkedik.
+Kijelölés után pontos hossz és két vég túlnyúlása írható be; a hossz
+megadása az első véget megtartva a másik véget állítja. A túlnyúlás
+az eredeti csatlakozási síktól értendő, pozitív érték hosszabbít.
+2026-11-13 – Narancssárga lapvégfogantyúk: az F/V egyedi lapvégek
+nemcsak rövidíthetők, hanem az eredeti rekesz határán túl is hosszabbíthatók.
+A végpontkorrekció előjeles: negatív érték hosszabbít, pozitív rövidít.
+A lap hossza pozitív marad; az egész alkatrész mozgatásának korlátai
+nem változnak. A hosszabbítás a mentett tervben is megmarad.
+2026-11-13 – Az F/V csatlakozás átváltása csak az átmenő lapot és
+a csatlakozó lapvégeket módosítja. A kivett szakasz, egyedi eltolás és
+végpontkorrekció ugyanahhoz a fizikai rekeszhez tartozzon váltás után is.
+2026-11-13 – Tartós CNC makrómintatár: docs/cnc-makromintak/README.md.
+Az eredeti KOMPONENSEK.zip és kibontott bináris PGM mintái megőrzendők.
+CNC-módosítás előtt a kapcsolódó mintát kötelező áttekinteni; a kereshető
+kivonat segédlet, nem helyettesíti az eredetit. A FALC mintában a makró
+pontos neve XFALC: Q=1# G=2# T=103. A Q típusokat és G irányokat a
+mintatár README-je rögzíti. A tárolás nem jelenti az export megvalósítását.
+
+Frissítve: 2026-11-13
+
+2026-11-13 – KÖZPONTI SZABÁLYTÁR ÉS VÁLTOZTATÁSI HATÓKÖR
+---------------------------------------------------------
+A docs/szabalytar/README.md kötelező kiindulópont minden módosításhoz.
+A tulajdonos által nem kért működésváltozás nem végezhető el önállóan;
+a korábbi jóváhagyott működés hibajavítás címén sem írható felül.
+A már megadott egyértelmű tulajdonosi felhatalmazás érvényben marad.
+A szabályütközés tisztázásának és a védett gépi részek módosításának
+meglévő követelményeit a szabálytár nem oldja fel.
+A docs/szabalytar/DONTESNAPLO.md a döntést, a megvalósítást és az
+ellenőrzés állapotát külön rögzíti. Egy leírt szabály nem kész funkció.
+A részletes szabályzatok és a makróminták a meglévő helyükön maradnak;
+a szabálytár rájuk mutat, nem készít eltérő párhuzamos szabálymásolatot.
 
 Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
 jelöl: önmagában nem bizonyítja, hogy minden eset már helyesen működik.
@@ -588,3 +631,85 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   kimentéseként, és nem helyettesíti a 4 db 59 mm-es LAB-lábfurat még
   hiányzó/hitelesítendő CNC-makróját. A teljes CNC gépi próba továbbra
   szükséges.
+
+2026-11-12 – 3MF/SCN CNC EXPORT: LAPFELÜLET ÉS KÜLSŐ ELŐLAP
+---------------------------------------------------------
+A tulajdonos új utasítása a 3MF/SCN érintkezésből készülő CNC-nél
+felülírja a korábbi, pusztán ellenőrizetlenség miatti exporttiltást.
+- Külső előlaphoz és annak szomszédos lapjaihoz ezen kapcsolatból
+  nem készül furat. A külső előlap saját fúróprogramja kimarad.
+- Nagy lapfelület–lapfelület találkozás egyik oldalán sem készül
+  furat. Más, valódi lapélkapcsolatok koordinátái és a meglévő
+  LAPA/LAPF/ELF2/3/4/5 makróválasztás változatlanok.
+- A 3MF testek nem fedik át egymást: nincs külön ütközésszűrés.
+  Nem besorolható érintkezés nem tiltja a többi generálható kötést.
+  Fúrandó élkapcsolat nélkül az alkatrész CNC nélkül kimarad.
+- A sikeres export jelzése GENERALAS=SIKERES, mellette kötelező
+  GEPI_ELLENORZES=NEM_IGAZOLT. Ez nem gépi hitelesítés.
+  A mentést nem szakítja meg tesztterv- vagy részlegesexport-felugró;
+  a kimaradt alkatrészek és anyageltérések a jelentésben megmaradnak.
+- A megjelenítő, fűrészelési sorrend, xMix/xPrg és natív Windows
+  fájlmentés változatlan. A tényleges gépi ellenőrzés továbbra is szükséges.
+
+2026-11-12 – FERDE FENÉK/PÓTFENÉK CNC-KAPCSOLATAI SZAKASZONKÉNT
+-------------------------------------------------------------
+- A nem téglatest alakú 3MF lap egésze nem tiltható le, ha vannak
+  egyenes, derékszögű csatlakozó felületei. A ferde részen nincs furat,
+  a más alkatrésszel érintkező, tengelypárhuzamos egyenes részen van.
+- A valódi 3MF felületháló alapján csak a teljes lapvastagságban
+  érintkező szakasz kerül a meglévő LAPA/LAPF/ELF makrókba.
+  A befoglaló téglalap üres, levágott része nem generálhat furatot.
+- Új importnál a CNC a teljes felülethálót őrzi meg; korábbi projekt
+  a meglevő háromszögadatokból dolgozik. Hiányzó felületadat esetén
+  új import szükséges, nem szabad a befoglaló téglatestet kifúrni.
+- A 3MF-megjelenítő, téglatestek meglévő makrói és a védett
+  szabási/Windows mentési funkciók változatlanok.
+
+2026-11-12 – SZÖGES LAP SZABÁSZATI ELŐGYÁRTMÁNYA
+----------------------------------------------
+- A szöges, ferde végű, háromszög, trapéz és sarokkivágott síklap
+  a legnagyobb külső X/Y befoglaló méreteivel, téglalap alakú
+  előgyártmányként szerepel a szabáslistában, plusz ráhagyás nélkül.
+- A lapvastagság és darabszám megmarad. A homorú szögletes kontúr
+  önmagában nem zárhatja ki a lapot a szabáslistából, így a CNC-ből sem.
+- A téglalap csak a szabászati előgyártmány alakja: az eredeti 3MF
+  felületháló nem írható felül. A CNC a valódi egyenes csatlakozásokat
+  használja; a ferde részen továbbra sincs furat.
+- Az optimalizáló, gépi vágássorrend és xMix/xPrg nem változik.
+
+2026-11-12 – TÉRBEN DÖNTÖTT ÉS ALÁVÁGOTT LAP SAJÁT TENGELYEI
+-----------------------------------------------------------
+- Térbeli döntés és kontúr-szögbevágás együttesen is megengedett.
+  Az előgyártmány méretét a lap saját derékszögű rendszerében kell
+  számolni: X/Y az egyenes derékszögű élekhez igazodik, Z a nagy
+  lapfelületre merőleges. Nem a világkoordinátás doboz vastagsága kell.
+- A ferde alávágás nem zárja ki a lap többi, 90 fokos kötését.
+  A csatlakozások a saját tengelyekre vetítve kapják a meglévő makrókat.
+  Csak a teljes vastagságban fedett, derékszögű makróval megadható
+  egyenes kapcsolat fúrható; ferde felületre nincs új furatmakró.
+- A saját tengelyek és origin külön CNC-adatként tárolódnak.
+  Az eredeti világkoordinátás 3MF felületháló és megjelenítő változatlan.
+
+2026-11-12 – CNC PROGRAMBAN CSAK GÉPI KÓD
+---------------------------------------
+- Új tulajdonosi utasítás: a kész .xxl programban nincs szöveges
+  megjegyzés, generálási/hitelesítési címke vagy tengelyleírás.
+  A fejléc, makrók, FORDIT/XMSG, VEGE és gépi elválasztók megmaradnak.
+- A sikeres generálás és nem igazolt gépi ellenőrzés jelzése kizárólag
+  a felületen és a külön mentési jelentésben szerepel. A korábbi
+  fejléc-megjegyzésekről szóló szabályt ez az utasítás felülírja.
+
+2026-11-13 – F/V SZAKASZKIJELÖLÉS, DELETE ÉS BEÁLLÍTÓBLOKKOK SORRENDJE
+-------------------------------------------------------------------
+- Teljes F/V-sor módban az egész sor kap kijelölést és együtt mozdul.
+- Egyedi alkatrész/szakasz módban az átmenő F-osztó is rekeszenként
+  jelölhető ki, a V-osztóval azonos módon. A kijelölés önmagában nem
+  vágja szét a fizikai lapot; mozgatás, végpontmódosítás, kettévágás
+  vagy kivétel csak a kijelölt szakaszt érinti.
+- A Delete a szerkesztőben a kijelölt F/V-szakaszt veszi ki, visszaállítható
+  formában. Szám- vagy szövegmezőben a Delete továbbra is szöveget töröl.
+  A darabkulcsok, saját méretek, anyag és élzárás mentve megmaradnak.
+- A bal oldali beállítóblokkok a fejlécük ⠿ fogantyújával átrendezhetők.
+  A fogantyún a fel/le nyilak is átrendeznek. A sorrend a tervvel együtt
+  mentendő és visszaállítandó, a beállított értékek nem változnak.
+- A védett gépi vágássorrend, xMix/xPrg és Windows mentés változatlan.

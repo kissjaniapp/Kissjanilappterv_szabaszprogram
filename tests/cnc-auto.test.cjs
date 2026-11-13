@@ -65,7 +65,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
-test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó oldalprogramok menthetők',()=>{
+test('Bútorlábnál a kijelölt tartólap négy LAB furata és az oldalak menthetők',()=>{
   const {ctx}=extractedGeometry();
   for(const falseBottom of [false,true]){
     const p={...base(),hasLegs:true,falseBottom,bottom:'between'};
@@ -78,7 +78,7 @@ test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó o
     assert.equal(sides[0].issues.length,0,'A LAB nem a bal oldallapot tiltja');
     assert.equal(sides[1].issues.length,0,'A LAB nem a jobb oldallapot tiltja');
     const target=records.find(x=>x.key===(falseBottom?'false-bottom':'bottom'));
-    assert.match(target.cncInstances[0].issues.join(' '),/LAB/);
+    assert.equal(target.cncInstances[0].operations.filter(o=>o.macro==='LAB').length,4);
     const parts=records.map(row=>{
       const entry=row.cncInstances[0];
       return board(row.key,row.key,entry.dx,entry.dy,row.cncInstances);
@@ -88,18 +88,18 @@ test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó o
       'A hiteles bal oldal CNC-programjának menthetőnek kell maradnia');
     assert.ok(out.files.some(x=>x.filename.includes('side-right')),
       'A hiteles jobb oldal CNC-programjának menthetőnek kell maradnia');
-    assert.ok(out.blocked.some(x=>/LAB/.test(x.reason)),
-      'A nem hitelesített LAB az alkatrészlistában tiltott marad');
+    assert.ok(out.files.some(x=>(x.content.match(/LAB X=/g)||[]).length===4),
+      'A tartólap négy LAB furata ténylegesen a mentett programba kerül');
   }
 });
-test('Végigmenő fenék és pótfenék együtt külön CNC ellenőrzést igényel',()=>{
+test('Végigmenő fenék mellett a pótfenék kapja mind a négy LAB furatot',()=>{
  const {ctx}=extractedGeometry(),p={...base(),hasLegs:true,falseBottom:true,bottom:'full'};
  ctx.fixedDividerPieces=()=>[];
  const records=[{key:'side-left',sourceKeys:['side-left','side-right']},
    {key:'top'},{key:'bottom'},{key:'false-bottom'}];
  ctx.buildCncInstancesForParts(p,records);
- assert.match(records.find(r=>r.key==='bottom').cncInstances[0].issues.join(' '),/pótfenék/);
- assert.match(records.find(r=>r.key==='false-bottom').cncInstances[0].issues.join(' '),/LAB/);
+ assert.equal(records.find(r=>r.key==='bottom').cncInstances[0].operations.filter(o=>o.macro==='LAB').length,0);
+ assert.equal(records.find(r=>r.key==='false-bottom').cncInstances[0].operations.filter(o=>o.macro==='LAB').length,4);
 });
 
 test('F-osztó csatlakozásánál a megfelelő makró saját G kódja automatikus',()=>{

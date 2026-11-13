@@ -1,0 +1,47 @@
+[
+  {
+    "file": "eredeti/KOMPONENSEK/ELFURAT.pgm",
+    "bytes": 12808,
+    "sha256": "6eb4e3ee63757ab2cce24d3c5de700ed221799ff7c85982d7f6d5cfc10e11a36"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/ELFURAT_LOGIKA.pgm",
+    "bytes": 12594,
+    "sha256": "6adadfbf9214ef933d3f37121f23e082b1f32d2e1cb51266fbf63d762e7b56b4"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/FALC.pgm",
+    "bytes": 12927,
+    "sha256": "6c596c6c8974c57ed3d96afe9eba85e19f0ee5890dc5f2848f749f96ac2f9b17"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/LAPA.pgm",
+    "bytes": 13589,
+    "sha256": "e04696a39d4a2c3eec7c6133a082bcfff989847eac360f80ed4f8c416f4f96ac"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/LAPF.pgm",
+    "bytes": 13658,
+    "sha256": "e36e02b47e2c3844dc848a52d6d8fcfa797d629773a310e9ced958a12ef4fc78"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/PANT_FURAT.pgm",
+    "bytes": 12939,
+    "sha256": "14eccaeb055fedb2892dede0a6dadbaefc1597c09edad675803bd01c9431ed37"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/PANT_TALP.pgm",
+    "bytes": 12414,
+    "sha256": "8d9020e7d6ccd47744dac51d8c71026fc247bd75b05b9f082c6c77f0507f3810"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/PANT_TALP_3TALP.pgm",
+    "bytes": 12730,
+    "sha256": "553d38a266b3bf93b0ec67987b65d39f1cad29346b46397bc3de46756ea7f87a"
+  },
+  {
+    "file": "eredeti/KOMPONENSEK/POLC_FURAT.pgm",
+    "bytes": 14081,
+    "sha256": "92147acb3ddefc417dd65f4835f9ed3f3a654b4800a9283c4d4e5b42863cfba5"
+  }
+]

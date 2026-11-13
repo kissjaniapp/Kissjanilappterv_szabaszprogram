@@ -34,6 +34,209 @@ function options(f){
 function produce(f){
  return auto.makeAutoPrograms(f,f.parts.map(p=>p.id),options(f));
 }
+function angledFurniture(polygon,others){
+ const f=furniture([{name:'Ferde fenék',lo:[0,0,0],size:[600,400,18]},...others]);
+ const triangles=[],bottom=polygon.map(([x,y])=>[x,y,0]),top=polygon.map(([x,y])=>[x,y,18]);
+ for(const ring of [bottom,top])for(let i=1;i<ring.length-1;i++)
+  triangles.push([...ring[0],...ring[i],...ring[i+1]]);
+ for(let i=0;i<polygon.length;i++){
+  const j=(i+1)%polygon.length;
+  triangles.push([...bottom[i],...bottom[j],...top[j]],[...bottom[i],...top[j],...top[i]]);
+ }
+ Object.assign(f.threeMfImport.parts[0],{isRectangular:false,isAngledCut:true,previewTriangles:triangles});
+ return f;
+}
+function rotateFurniture(f){
+ const rad=Math.PI/180,az=23*rad,ax=31*rad;
+ const rotate=([x,y,z])=>{
+  const u=Math.cos(az)*x-Math.sin(az)*y,v=Math.sin(az)*x+Math.cos(az)*y;
+  return [u+137,Math.cos(ax)*v-Math.sin(ax)*z-83,Math.sin(ax)*v+Math.cos(ax)*z+51];
+ };
+ for(let i=0;i<f.parts.length;i++){
+  const shape=f.threeMfImport.parts[i];
+  let triangles=shape.cncTriangles||shape.previewTriangles;
+  if(!triangles){
+   const p=[];for(let mask=0;mask<8;mask++)p.push(shape.originMm.map((v,k)=>v+((mask&(1<<k))?shape.axisBoundsMm[k]:0)));
+   triangles=[[0,1,3,2],[4,5,7,6],[0,1,5,4],[2,3,7,6],[0,2,6,4],[1,3,7,5]]
+    .flatMap(([a,b,c,d])=>[[...p[a],...p[b],...p[c]],[...p[a],...p[c],...p[d]]]);
+  }
+  const mesh=triangles.map(t=>[0,3,6].flatMap(k=>rotate(t.slice(k,k+3))));
+  const points=mesh.flatMap(t=>[t.slice(0,3),t.slice(3,6),t.slice(6,9)]);
+  shape.originMm=[0,1,2].map(k=>Math.min(...points.map(p=>p[k])));
+  shape.axisBoundsMm=[0,1,2].map(k=>Math.max(...points.map(p=>p[k]))-shape.originMm[k]);
+  shape.cncTriangles=mesh;shape.isRectangular=false;shape.isAngledCut=false;
+  const frame=auto.localPanelFrame(mesh);assert.ok(frame,'Saját lapkoordináták kellenek');
+  shape.cncFrame=frame;
+  const dims=frame.dimensions.slice().sort((a,b)=>b-a);
+  Object.assign(f.parts[i],{a:String(dims[0]),b:String(dims[1]),threeMfThickness:dims[2]});
+ }
+ return f;
+}
+test('térben megdöntött és szögbevágott lap saját Z tengelye a nagy lapra merőleges',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]}
+ ]));
+ const frame=f.threeMfImport.parts[0].cncFrame;
+ assert.deepEqual(frame.dimensions,[600,400,18]);
+ for(let i=0;i<3;i++)for(let j=0;j<3;j++){
+  const dot=frame.axes[i].reduce((s,v,k)=>s+v*frame.axes[j][k],0);
+  assert.ok(Math.abs(dot-(i===j?1:0))<1e-8);
+ }
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.files.length,2);assert.equal(out.contacts.length,1);
+ assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/H DX=600 DY=400 DZ=18 /);
+ assert.equal(out.contacts[0].length,400);
+ assert.ok(out.files.every(p=>!/^;.+/m.test(p.content)),'A saját tengelyek sem kerülnek megjegyzésként a gépi kódba');
+ for(const shape of f.threeMfImport.parts)delete shape.cncFrame;
+ const legacy=produce(f);
+ assert.equal(legacy.blocked.length,0);
+ assert.equal(legacy.contacts.length,1);
+ assert.equal(legacy.contacts[0].length,400);
+});
+test('megdöntött 3MF importja a saját 600×400×18 előgyártmányt adja, nem a világdobozát',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[600,0],[500,400],[0,400]],[]));
+ const mesh=f.threeMfImport.parts[0].cncTriangles;
+ const points=mesh.flatMap(t=>[t.slice(0,3),t.slice(3,6),t.slice(6,9)]);
+ const node=(localName,attrs={},children=[])=>({localName,children,getAttribute:key=>attrs[key]??null});
+ const root=node('model',{unit:'millimeter'},[
+  node('resources',{},[node('object',{id:'1',name:'Döntött fenék'},[
+   node('mesh',{},[
+    node('vertices',{},points.map(([x,y,z])=>node('vertex',{x:String(x),y:String(y),z:String(z)}))),
+    node('triangles',{},mesh.map((_,i)=>node('triangle',{v1:String(i*3),v2:String(i*3+1),v3:String(i*3+2)})))
+   ])
+  ])]),node('build',{},[node('item',{objectid:'1'})])
+ ]);
+ const vm=require('node:vm'),html=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+ const extract=(a,b)=>html.slice(html.indexOf(a),html.indexOf(b,html.indexOf(a))).trim();
+ const rectangular=vm.runInNewContext('('+extract('  function threeMfRectangularSolid(','  // A szögben leszabott')+')');
+ const angled=vm.runInNewContext('('+extract('  function threeMfAngledPanel(','  // Standalone 3MF/ZIP reader.')+')');
+ const parse=vm.runInNewContext('('+extract('  function threeMfParse(','  // A 3MF csak eredeti geometriát')+')',{
+  DOMParser:class{parseFromString(){return {documentElement:root,querySelector:()=>null};}},
+  threeMfRectangularSolid:rectangular,threeMfAngledPanel:angled,window:{GatterkaCncAuto:auto}
+ });
+ const result=parse('mock document');
+ assert.deepEqual(Array.from(result.groups[0].dimensions),[600,400,18]);
+ assert.equal(result.groups[0].isAngledCut,true);
+ assert.ok(result.parts[0].cncFrame);
+ assert.equal(result.parts[0].cncTriangles.length,mesh.length);
+ assert.ok(result.parts[0].axisBoundsMm[2]>100,'A világkoordinátás döntés megmarad a megjelenítőhöz');
+});
+test('ferdén alávágott él kimarad, térbeli döntéssel együtt is megmarad a 90 fokos él CNC-je',()=>{
+ const f=angledFurniture([[0,0],[600,0],[600,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]},
+  {name:'Ferde él mellett',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const shape=f.threeMfImport.parts[0];
+ shape.previewTriangles=shape.previewTriangles.map(t=>t.map((v,k)=>k%3===0&&v===600&&t[Math.floor(k/3)*3+2]===18?590:v));
+ shape.isAngledCut=false;
+ for(const candidate of [f,rotateFurniture(JSON.parse(JSON.stringify(f)))]){
+  const out=produce(candidate);
+  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+  assert.equal(out.contacts.length,1);
+  assert.equal(out.files.length,2);
+  assert.equal(out.contacts[0].length,400);
+  assert.ok(out.contacts.every(c=>!c.faceName.includes('Ferde él')));
+ }
+});
+test('döntött, levágott sarok utáni furat saját kezdőpontja megmarad',()=>{
+ const f=rotateFurniture(angledFurniture([[0,0],[500,0],[600,100],[600,400],[0,400]],[
+  {name:'Jobb oldal',lo:[600,0,0],size:[18,400,700]}
+ ]));
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.match(out.files.find(p=>p.filename.includes('Ferde_fenek')).content,/ELF2 Y=100 A=0 y=300 G=1/);
+});
+test('ferde fenék egyenes élén megmarad a furat, a ferde vég befoglaló élén nincs furat',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]},
+  {name:'Ferde vég mellett',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.files.length,2);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/ELF3 Y=0 A=0 y=400 G=1/);
+ assert.ok(out.contacts.every(x=>!x.faceName.includes('Ferde vég')));
+});
+test('ferde lap nagy felületén csak a teljes vastagságban fedett kapcsolati szakasz fúrható',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Osztó',lo:[550,0,18],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.contacts.length,1);
+ // A ferde szél x=600-y/4. Az osztó teljes 550..568 szélessége y=128-ig fér rá.
+ assert.equal(out.contacts[0].length,128);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/LAPA X=559 Y=0 A=0 y=128 G=1/);
+});
+test('teljes CNC-háló használata ritkított előnézet mellett és változatlan modelladatok',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Bal oldal',lo:[-18,0,0],size:[18,400,700]}
+ ]);
+ const shape=f.threeMfImport.parts[0];shape.cncTriangles=shape.previewTriangles;shape.previewTriangles=[];
+ const before=JSON.stringify(f),out=produce(f);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.blocked.length,0);
+ assert.equal(JSON.stringify(f),before);
+});
+test('levágott sarok után az egyenes élszakasz saját kezdőponttal fúrható',()=>{
+ const f=angledFurniture([[0,0],[500,0],[600,100],[600,400],[0,400]],[
+  {name:'Jobb oldal',lo:[600,0,0],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.contacts[0].length,300);
+ assert.match(out.files.find(x=>x.filename.includes('Ferde_fenek')).content,/ELF2 Y=100 A=0 y=300 G=1/);
+});
+test('kizárólag ferde vagy túl rövid kapcsolat nem tilt exportot és nem kap furatot',()=>{
+ const f=angledFurniture([[0,0],[600,0],[500,400],[0,400]],[
+  {name:'Szélső osztó',lo:[580,0,18],size:[18,400,700]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,0);
+ assert.equal(out.files.length,0);
+ assert.equal(out.skipped.length,2);
+});
+test('nagy lapfelületek érintkezése egyik lapra sem ad furatot vagy blokkolást',()=>{
+ const out=produce(furniture([
+  {name:'Lap A',lo:[0,0,0],size:[600,400,18]},
+  {name:'Lap B',lo:[0,0,18],size:[600,400,18]}
+ ]));
+ assert.equal(out.files.length,0);
+ assert.equal(out.contacts.length,0);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.skipped.length,2);
+});
+test('külső előlap és oldallapi párja kimarad, az oldal többi élkötése megmarad',()=>{
+ const out=produce(furniture([
+  {name:'Külső előlap',lo:[0,0,0],size:[600,18,700]},
+  {name:'Oldal',lo:[0,18,0],size:[18,400,700]},
+  {name:'Tető',lo:[0,18,700],size:[600,400,18]}
+ ]));
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.files.length,2);
+ assert.equal(out.contacts.length,1);
+ assert.ok(out.files.every(x=>!x.filename.includes('Kulso')));
+ assert.ok(out.contacts.every(x=>!x.faceName.includes('előlap')&&!x.edgeName.includes('előlap')));
+});
+test('lapfelületi kapcsolat mellett a valódi élkötés és SCN sikerjelzés megmarad',()=>{
+ const f=furniture([
+  {name:'A',lo:[0,0,0],size:[600,400,18]},
+  {name:'B',lo:[0,0,-18],size:[600,400,18]},
+  {name:'C',lo:[50,0,18],size:[18,400,380]}
+ ]);
+ f.threeMfImport.source='scn';
+ const out=produce(f);
+ assert.equal(out.blocked.length,0);
+ assert.equal(out.contacts.length,1);
+ assert.equal(out.files.length,2);
+ assert.equal(out.skipped.length,1);
+ assert.ok(out.files.every(x=>!/^;.+/m.test(x.content)&&x.filename.startsWith('SCN_TERV_')));
+});
 test('a csatolt 1db asztal 3MF hat téglatestje pontosan nyolc valódi lapél kapcsolattal rendelkezik',()=>{
  const f=furniture(),plan=auto.threeMfContactDrafts(f,f.parts.map(p=>p.id),options(f));
  assert.equal(plan.contacts.length,8,JSON.stringify(plan.contacts));
@@ -51,7 +254,7 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
  assert.equal(out.files.length,6,'mindegyik Body szerkezeti CNC-tervet kap');
  assert.ok(out.files.every(x=>x.draft===true&&x.filename.startsWith('3MF_TERV_')&&x.filename.endsWith('.xxl')));
- assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes(';3MF_ERINTKEZES_ALAPU_TERV_NEM_HITELESITETT')));
+ assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&!/^;.+/m.test(x.content)));
  assert.ok(out.files.every(x=>/ G=1/.test(x.content)));
  const top=out.files.find(x=>x.filename.includes('Body1'));
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);
@@ -72,13 +275,12 @@ test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki
  assert.match(body3.content,/H DX=1144 DY=755 DZ=18 /);
  assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
 });
-test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésfuratot',()=>{
+test('elálló test korábbi érintkezése megszűnik; nincs külön ütközés miatti blokkolás',()=>{
  const f=furniture();
  f.threeMfImport.parts[1].originMm[2]=5;
  const out=produce(f);
  assert.ok(out.contacts.length<8,'Az elcsúsztatott test kontaktusa nem maradhat érvényes.');
- assert.ok(out.blocked.some(x=>/egymásba lóg|illeszkedő/.test(x.reason)),JSON.stringify(out.blocked));
- assert.ok(!out.files.some(x=>x.filename.includes('Body2')),'Ütköző Body2 nem kaphat gépi tesztprogramot.');
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
 });
 test('szabászati méret vagy vastagság eltérésnél a 3MF CNC terv menthető, csak figyelmeztet',()=>{
  const f=furniture();
@@ -162,7 +364,7 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  const open=app.lastIndexOf('<script>',start),end=app.indexOf('</script>',start);
  assert.equal(app.slice(open+8,end).trim(),program,'az inline és külön modul legyen azonos');
  assert.match(app,/data-action="save-cnc-xxl-as"/);
- assert.match(app,/3MF TESZTTERV/);
+ assert.match(app,/3MF\/SCN CNC/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
  assert.match(app,/data\.warnings\?\.length/);
  assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);

@@ -1,5 +1,9 @@
 # Gatterka: kötelező fejlesztési szabályok
 
+Minden módosítás előtt kötelező kiindulópont: `docs/szabalytar/README.md`. A tulajdonos kérésének hatókörén kívüli működés nem változtatható meg önállóan. A korábbi jóváhagyott működést hibajavítás vagy átszervezés címén sem szabad hallgatólagosan felülírni. Az új döntéseket és a megvalósítás tényleges állapotát a `docs/szabalytar/DONTESNAPLO.md` fájlban is vezetni kell; a részletes funkcionális szabályok elsődleges helye továbbra is a két gyökérszintű szabályzat.
+
+CNC-fejlesztés előtt kötelező elolvasni a `docs/cnc-makromintak/README.md` fájlt és az érintett eredeti makrómintát. A tulajdonosi minták tartósan a `docs/cnc-makromintak/` mappában vannak; hiányzó mintaként nem szabad újra bekérni őket e mappa ellenőrzése nélkül.
+
 A fejlesztések megkezdése előtt olvasd el a gyökérben található `GATTERKA_FIX_FEJLESZTESI_SZABALYOK.txt` fájlt, és tartsd be minden pontját.
 
 Olvasd el a `GATTERKA_AKTUALIS_SZABALYOK.txt` fájlt is, és a megállapodott új vagy módosított funkcionális szabályokat az érintett változtatással együtt vezesd át rajta. Ha egy új kérés rögzített szabállyal ütközik, jelezd a tulajdonosnak és tisztázzátok az új szabályt vagy kivételt az ütköző rész megváltoztatása előtt.
