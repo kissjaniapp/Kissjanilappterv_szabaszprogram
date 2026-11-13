@@ -660,3 +660,20 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - A tető/fenék/pótfenék saját CNC-programja, furatai, FORDIT
   és a már hitelesített XXL programírási sorrend nem módosul.
   Az új oldallap-koordinátákat a gépen próbadarabon ellenőrizni kell.
+
+
+2026-11-13 – OLDALLAP ÉLFURAT: FELSŐ ELF2, ALSÓ ELF3
+---------------------------------------------------
+- Ha a tető VÉGIGMEGY az oldallap felett, az OLDALLAP FELSŐ
+  ÉLÉRE a CNC-kódban: ELF2 Y=0 A=0 y=lapmélység G=kötés
+- Ha a fenék VÉGIGMEGY az oldallap alatt, az OLDALLAP ALSÓ
+  ÉLÉRE a CNC-kódban: ELF3 Y=0 A=0 y=lapmélység G=kötés
+- A korábban felcserélt (felső ELF3 / alsó ELF2) kód hibás,
+  mert a fenék élfuratát a tető élére tette. Ezt javítottuk.
+- Ha a tető/fenék az OLDALLAPOK KÖZÉ kerül, ott az ismert,
+  helyes LAPA furat marad. Ezeket NEM fordítjuk meg.
+- Csak az OLDALLAP két élének ELF-kiosztását változtattuk:
+  a tető és fenék saját CNC-programjánál az ELF3/ELF2,
+  FORDIT, LAPA műveletek eredeti sorrendje változatlan.
+- A REF DX/BX, a polctartó-szabály és az oldallap fizikai
+  elöl/alul ütközése érintetlen.
