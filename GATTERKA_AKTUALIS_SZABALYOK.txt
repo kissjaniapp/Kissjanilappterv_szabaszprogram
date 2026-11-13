@@ -6,7 +6,20 @@ kivonat segédlet, nem helyettesíti az eredetit. A FALC mintában a makró
 pontos neve XFALC: Q=1# G=2# T=103. A Q típusokat és G irányokat a
 mintatár README-je rögzíti. A tárolás nem jelenti az export megvalósítását.
 
-Frissítve: 2026-11-12
+Frissítve: 2026-11-13
+
+2026-11-13 – KÖZPONTI SZABÁLYTÁR ÉS VÁLTOZTATÁSI HATÓKÖR
+---------------------------------------------------------
+A docs/szabalytar/README.md kötelező kiindulópont minden módosításhoz.
+A tulajdonos által nem kért működésváltozás nem végezhető el önállóan;
+a korábbi jóváhagyott működés hibajavítás címén sem írható felül.
+A már megadott egyértelmű tulajdonosi felhatalmazás érvényben marad.
+A szabályütközés tisztázásának és a védett gépi részek módosításának
+meglévő követelményeit a szabálytár nem oldja fel.
+A docs/szabalytar/DONTESNAPLO.md a döntést, a megvalósítást és az
+ellenőrzés állapotát külön rögzíti. Egy leírt szabály nem kész funkció.
+A részletes szabályzatok és a makróminták a meglévő helyükön maradnak;
+a szabálytár rájuk mutat, nem készít eltérő párhuzamos szabálymásolatot.
 
 Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
 jelöl: önmagában nem bizonyítja, hogy minden eset már helyesen működik.
