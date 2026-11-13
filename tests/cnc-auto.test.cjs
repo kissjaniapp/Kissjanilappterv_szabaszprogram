@@ -289,11 +289,14 @@ test('állítható polc + F-osztó találkozásánál a belső polctartómakró 
    index:0,x1:491,x2:509,y0:0,y1:396,z1:18,z2:1482,a:1464,b:396}];
  const records=[{key:'f-divider-1'}];ctx.buildCncInstancesForParts(p,records);
  const entry=records[0].cncInstances[0];
- assert.match(entry.issues.join(' '),/F-osztó oldalainak polctartó/);
+ assert.equal(entry.issues.length,0);
+ assert.match((entry.warnings||[]).join(' '),/belső polctartó/);
  const out=auto.makeAutoPrograms({name:'Teszt',parts:[
    board('f','F-osztó',1464,396,[entry])]},['f']);
- assert.equal(out.files.length,0);
- assert.equal(out.blocked.length,1);
+ assert.equal(out.files.length,1,'Az F-osztó ismert csatlakozási furatai menthetők');
+ assert.equal(out.blocked.length,0);
+ assert.ok(out.warnings.some(x=>/belső polctartó/.test(x.reason)),
+   'A külön polctartó-furatsor hiányát továbbra is jelezzük');
 });
 
 test('az automatikus CNC mentés DX=1350+ és DY=800+ esetén AD/DA összevont térfelet kap',()=>{
