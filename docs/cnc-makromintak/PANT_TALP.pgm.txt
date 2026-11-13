@@ -1,0 +1,2 @@
+H DX=600 DY=400 DZ=18 -IJ C=0 T=196608 R=100 *MM /"def" BX=0 BY=0 BZ=0 V=1
+XBO X=-32/2 Y=37 Z=3 R=2# x=32 y=0 D=5 N="L" F=1

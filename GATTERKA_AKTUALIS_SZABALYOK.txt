@@ -1,4 +1,11 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+2026-11-13 – Tartós CNC makrómintatár: docs/cnc-makromintak/README.md.
+Az eredeti KOMPONENSEK.zip és kibontott bináris PGM mintái megőrzendők.
+CNC-módosítás előtt a kapcsolódó mintát kötelező áttekinteni; a kereshető
+kivonat segédlet, nem helyettesíti az eredetit. A FALC mintában a makró
+pontos neve XFALC: Q=1# G=2# T=103. A Q típusokat és G irányokat a
+mintatár README-je rögzíti. A tárolás nem jelenti az export megvalósítását.
+
 Frissítve: 2026-11-12
 
 Ez a fájl a tulajdonossal egyeztetett működést rögzíti. A szabály célállapotot
