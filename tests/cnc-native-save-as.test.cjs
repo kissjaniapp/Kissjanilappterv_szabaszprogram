@@ -62,6 +62,6 @@ test('Gatterka.exe hiányában nem állíthatja a program, hogy fájlt mentett',
 });
 test('üres CNC-programlistához nem nyílik meg a Windows Mentés másként',async()=>{
  const {save,calls}=harness();
- await assert.rejects(()=>save([]),/Nincs hitelesített/);
+ await assert.rejects(()=>save([]),/Nincs menthető/);
  assert.equal(calls.length,0);
 });
