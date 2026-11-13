@@ -1,5 +1,13 @@
 # Gatterka döntésnapló
 
+## 2026-11-13 – F/V betűre kattintás utáni szakaszállapot
+
+A tulajdonos két képernyőképen jelezte: a kapcsolási irány váltása más
+rekeszre helyezi a kivett szakaszt. A virtuális és fizikai szakaszok eltérő
+számozását váltáskor össze kell rendelni; a kivétel és eltolás helye maradjon.
+A javítás az F/V betű kattintáskezelőjét és a hozzá tartozó állapotát érinti.
+A gépi szabáskód változatlan. Kétirányú állapotmegőrzési regressziós teszt készült.
+
 A 2026-11-13. előtti részletes döntések a [fix](../../GATTERKA_FIX_FEJLESZTESI_SZABALYOK.txt) és az [aktuális](../../GATTERKA_AKTUALIS_SZABALYOK.txt) szabályzat dátumozott részeiben maradnak. Ez a napló nem helyettesíti őket.
 
 ## 2026-11-13 – Makróminták tartós megőrzése

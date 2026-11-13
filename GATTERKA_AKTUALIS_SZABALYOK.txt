@@ -1,4 +1,7 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+2026-11-13 – Az F/V csatlakozás átváltása csak az átmenő lapot és
+a csatlakozó lapvégeket módosítja. A kivett szakasz, egyedi eltolás és
+végpontkorrekció ugyanahhoz a fizikai rekeszhez tartozzon váltás után is.
 2026-11-13 – Tartós CNC makrómintatár: docs/cnc-makromintak/README.md.
 Az eredeti KOMPONENSEK.zip és kibontott bináris PGM mintái megőrzendők.
 CNC-módosítás előtt a kapcsolódó mintát kötelező áttekinteni; a kereshető
