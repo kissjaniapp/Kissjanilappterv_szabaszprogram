@@ -1,4 +1,10 @@
 GATTERKA – AKTUÁLIS FUNKCIONÁLIS SZABÁLYOK
+2026-11-13 – Lapvég illesztése: narancssárga pontok helyett a kijelölt
+lap végén láthatatlan húzófelület van. A húzott vég a közelben lévő,
+keresztirányban csatlakozó lap közeli vagy túlsó élére illeszkedik.
+Kijelölés után pontos hossz és két vég túlnyúlása írható be; a hossz
+megadása az első véget megtartva a másik véget állítja. A túlnyúlás
+az eredeti csatlakozási síktól értendő, pozitív érték hosszabbít.
 2026-11-13 – Narancssárga lapvégfogantyúk: az F/V egyedi lapvégek
 nemcsak rövidíthetők, hanem az eredeti rekesz határán túl is hosszabbíthatók.
 A végpontkorrekció előjeles: negatív érték hosszabbít, pozitív rövidít.

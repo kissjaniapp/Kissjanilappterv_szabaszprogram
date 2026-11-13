@@ -1,5 +1,13 @@
 # Gatterka döntésnapló
 
+## 2026-11-13 – Sarkokra illeszkedő lapvég, látható pontok nélkül
+
+A tulajdonos pontosította: a lapvég húzáskor a másik lap közeli vagy túlsó
+sarkára illeszkedjen; a narancssárga pontok ne jelenjenek meg. A kijelölt
+lap hossza és végeinek túlnyúlása számmal szerkeszthető. A megvalósítás
+közeli csatlakozó lapélekhez illeszt, a végén átlátszó húzófelületet használ.
+Az első véget a pontos hossz megadása megtartja. F/V geometriai teszt készült.
+
 ## 2026-11-13 – Lapvégek szabad hosszabbítása
 
 A tulajdonos kéri, hogy a narancssárga fogantyú az eredeti belméreten túl,
