@@ -44,7 +44,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   assert.equal(side.length,2);
   assert.equal(side[0].side,'IJ');
   assert.equal(side[1].side,'LK');
-  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===891&&op.Y===0&&op.y===396));
+  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===609&&op.Y===0&&op.y===396));
   assert.deepEqual(Array.from(shelf.operations,op=>op.macro),['ELF3','ELF2']);
   const parts=[
     board('sides','Oldal',1500,400,side),
@@ -61,7 +61,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
   assert.match(left.content,/-IL C=0 T=16973825/);
   assert.match(right.content,/-LI C=0 T=16973825/);
-  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
+  assert.match(left.content,/LAPA X=609 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
@@ -171,7 +171,7 @@ test('REF: 1500-as oldallapnál a 609 mm magasságú V-osztó alul BX=0 DX=600',
  const result=ctx.cncSupportRegions(p,boards,'left');
  assert.equal(result.issues.length,0);
  assert.equal(result.segments.length,2);
- assert.equal(result.segments[0].BX,0);
+ assert.equal(result.segments[0].BX,undefined,'A BX=0 elmarad az alsó gépi nullpontnál');
  assert.equal(result.segments[0].DX,600);
  assert.equal(result.segments[1].BX,618);
  assert.equal(result.segments[1].DX,882);
@@ -251,7 +251,7 @@ test('egyedileg pozicionált V-osztó mellett a REF Q=1 működik, ha a polc a s
  // Alsó közép 300 mm, felső közép: (618+1500)/2=1059 mm.
  const v=ctx.cncSupportRegions(p,boards,'left');
  assert.equal(v.issues.length,0);
- assert.deepEqual(Array.from(v.segments,s=>[s.BX,s.DX,s.Q]),[[0,600,1],[618,882,1]]);
+ assert.deepEqual(Array.from(v.segments,s=>[s.BX,s.DX,s.Q]),[[undefined,600,1],[618,882,1]]);
 });
 
 test('állítható polc kizárólag polctartót kap: nincs mellette fix LAPA/ELF kötésfurat',()=>{
