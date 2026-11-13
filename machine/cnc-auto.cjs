@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','XFALC']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -217,6 +217,12 @@
       // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
       // a két felhasználói PGM minta kifejezetten G=1# F=1.
       return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    if(operation.macro==='XFALC'){
+      const q=Number(operation.Q);
+      if(!Number.isInteger(q)||q<1||q>4||Number(operation.G)!==2)
+        throw new Error('XFALC: Q=1–4 és G=2 kötelező.');
+      return 'XFALC Q='+q+'# G=2#';
     }
     if(operation.macro==='XBO'){
       const X=finite(operation.X),Y=finite(operation.Y),z=finite(operation.z),
