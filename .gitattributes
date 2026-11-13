@@ -1,0 +1,3 @@
+# Embedded browser modules must retain the same line endings as their sources.
+app/index.htm text eol=lf
+machine/*.cjs text eol=lf
