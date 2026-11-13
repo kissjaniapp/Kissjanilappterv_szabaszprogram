@@ -602,9 +602,9 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
     XFALC Q=3# G=2#  – bal oldalon nem kifutó
     XFALC Q=4# G=2#  – jobb oldalon nem kifutó
 - Az X tengely két végét vizsgáljuk. Az oldallap X=0 vége
-  a felső, a másik az alsó vége. A „közémenő” tető/fenék
+  az ALSÓ ütközőél, a másik a FELSŐ vég. A közémenő tető/fenék
   az adott oldallap végén lezárást igényel:
-  csak felső lezárás: Q=3; csak alsó: Q=4;
+  csak alsó lezárás: Q=3; csak felső: Q=4;
   mindkettő: Q=2; egyik sem: Q=1.
 - A tető/fenék saját hátfal-falcánál a közémenő lap Q=1
   (két rejtett vég); a végigmenő lap Q=2 (két külső vég).
@@ -617,3 +617,39 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   fenék és pótfenék CNC fúrási sorrend NEM módosítható.
   A falc makró csak kiegészítés; az új falc lefutását
   először Xilog előnézettel és szárazpróbával ellenőrizzük.
+
+
+2026-11-13 – OLDALLAP CNC ÜTKÖZÉSE ÉS REF DX/BX VÉGLEGES KÉPLETE
+----------------------------------------------------------------
+- Az SCM Xilog oldallap CNC-felrakásának nullpontja MINDIG:
+  X=0 a fizikai oldallap ALSÓ élén; Y=0 a bútor ELÜLSŐ élén.
+  A bútor tetejétől lefelé történő CNC X-számítás hibás.
+- Oldallap LAPA fix furatok: X = a furat globális Z-magassága
+  mínusz az oldallap tényleges alsó Z-pozíciója.
+  Az egyedi XBO polctartó-csoport első X értéke az ALSÓ furaté;
+  a pozitív x raszter alulról FELFELÉ lépked.
+  Y továbbra is elölről hátrafelé nő.
+- REF: a DX kiindulása a valós, szabászatban szereplő OLDALLAP
+  vágott hossza (sideH), nem a végigmenő tető/fenék miatt nagyobb
+  teljes bútor-külmagasság. Csak az oldallapok KÖZÉ kerülő lapok
+  vastagságát vonjuk le:
+  DX = sideH - (tető közémenő ? t : 0) - (fenék közémenő ? t : 0).
+  REF BX = t csak KÖZÉMENŐ fenéknél; egyébként BX NINCS kiírva,
+  ha az első szakasz X=0-ról indul.
+- Példák: sideH=900 mm, t=18 mm esetén:
+  tető közé, fenék közé:        REF DX=864 BX=18
+  tető közé, fenék végig:       REF DX=882
+  tető végig, fenék közé:       REF DX=882 BX=18
+  tető végig, fenék végig:      REF DX=900
+- Ha V-osztó külön REF-rekeszeket hoz létre, vagy az ügyfél
+  további egyedi furatkiosztási kihagyást állít be, az adott
+  NEM nulla BX mindig az oldallap alsó ütközőélétől mért szakasz-
+  kezdőpont. BX=0 esetén a paramétert teljesen kihagyjuk.
+- Az oldallap tényleges vágott hossza eltérhet a bútor teljes
+  külmagasságától, ha a tető vagy fenék végigmenő; a fenti
+  900 mm-es példák mind 900 mm hosszú oldallapra vonatkoznak.
+- Az XFALC Q=3/Q=4 oldallapi iránya ezt az alsó nullpontot követi
+  (Q=3 alsó kifutás tiltva, Q=4 felső kifutás tiltva).
+- A tető/fenék/pótfenék saját CNC-programja, furatai, FORDIT
+  és a már hitelesített XXL programírási sorrend nem módosul.
+  Az új oldallap-koordinátákat a gépen próbadarabon ellenőrizni kell.
