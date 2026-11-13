@@ -204,10 +204,12 @@
     if(!core)throw new Error('A CNC makrófordító nem töltődött be.');
     if(operation.macro==='REF'){
       if(operation.DX===undefined)return 'REF';
-      const dx=finite(operation.DX),bx=finite(operation.BX);
+      const dx=finite(operation.DX);
+      const hasBx=operation.BX!==undefined&&operation.BX!==null;
+      const bx=hasBx?finite(operation.BX):0;
       if(!Number.isFinite(dx)||dx<=0||!Number.isFinite(bx)||bx<0)
         throw new Error('Hibás REF DX vagy BX érték.');
-      return 'REF DX='+round(dx)+' BX='+round(bx);
+      return 'REF DX='+round(dx)+(hasBx?' BX='+round(bx):'');
     }
     if(operation.macro==='POLC'){
       const y=finite(operation.Y),q=finite(operation.Q),sp=finite(operation.s);
