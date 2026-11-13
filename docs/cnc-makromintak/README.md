@@ -1,5 +1,7 @@
 # Tulajdonosi CNC makróminták
 
+A korábbi csevegésből és működő forrásból visszakeresett [LAB lábfurat-szabály](LAB.md) szintén kötelező referencia.
+
 A 2026-11-13-án átadott `KOMPONENSEK.zip` eredeti, változatlan példányát és kibontott tartalmát ez a mappa őrzi. A `.pgm` fájlok bináris Xilog programok, nem egyszerű szövegfájlok. A mellettük található `.pgm.txt` kivonatok kereshető segédletek; a teljes eredeti program az elsődleges forrás.
 
 Új CNC-fejlesztés előtt a megfelelő mintát és a `GATTERKA_AKTUALIS_SZABALYOK.txt` aktuális szabályait együtt kell áttekinteni. A minták tárolása önmagában nem jelenti valamennyi makró automatikus exportjának megvalósítását vagy gépi ellenőrzését. Új paramétert nem szabad találgatással hozzáadni.

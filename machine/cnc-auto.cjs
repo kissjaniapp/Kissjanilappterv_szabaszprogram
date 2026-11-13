@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','LAB']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -339,6 +339,11 @@
     if(!operation||!VALID_MACROS.has(operation.macro))
       throw new Error('A megadott alkatrésznél nem támogatott CNC makró.');
     if(!core)throw new Error('A CNC makrófordító nem töltődött be.');
+    if(operation.macro==='LAB'){
+      const x=finite(operation.X),y=finite(operation.Y);
+      if(!(x>0&&y>0&&x<=10000&&y<=10000))throw new Error('Érvénytelen LAB X/Y.');
+      return 'LAB X='+round(x)+' Y='+round(y)+' G=2';
+    }
     if(operation.macro==='REF'){
       if(operation.DX===undefined)return 'REF';
       const dx=finite(operation.DX),bx=finite(operation.BX);

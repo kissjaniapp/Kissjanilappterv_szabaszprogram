@@ -11,7 +11,7 @@
     hosszuExcenter:Object.freeze({lap:1,el:2}),
     csavar:Object.freeze({lap:2,el:0})
   });
-  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5']);
+  const MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','LAB']);
   function number(value,name,allowZero){
     const n=Number(value);
     if(value==null||String(value).trim()===''||!Number.isFinite(n)||n<0||(!allowZero&&n===0)||n>10000)
@@ -44,6 +44,11 @@
       if(!match||Object.prototype.hasOwnProperty.call(fields,match?.[1]))
         throw new Error('Érvénytelen vagy ismételt CNC makróparaméter: '+part);
       fields[match[1]]=number(match[2],match[1],true);
+    }
+    if(macro==='LAB'){
+      if(Object.keys(fields).sort().join(',')!=='G,X,Y'||fields.G!==2||fields.X<=0||fields.Y<=0||fields.X>dx||fields.Y>dy)
+        throw new Error('LAB: X/Y a munkadarabon belül és G=2 szükséges.');
+      return 'LAB X='+fmt(fields.X)+' Y='+fmt(fields.Y)+' G=2';
     }
     if(!Object.prototype.hasOwnProperty.call(fields,'A')||fields.A!==0)
       throw new Error('Az A forgásszög csak 0 lehet a jelenleg ellenőrzött mintákban.');

@@ -1,5 +1,12 @@
 # Gatterka döntésnapló
 
+## 2026-11-13 – Korábbi LAB megvalósítás visszaállítása
+
+A Gatterka v6 csev és PR #26 alapján a LAB X/Y G=2 hívás, a pótfenék
+elsőbbsége és a közémenő fenék X-eltolása visszaállítva. A korábbi LAB-hiány
+miatti tiltás megszűnt, a koordinátahatárok ellenőrzése megmarad.
+A részletes, tartós referencia a makrómintatár LAB.md fájlja.
+
 ## 2026-11-13 – Oldalak indokolatlan CNC-kimaradása
 
 A tulajdonos ELLENORIZENDO_KIMARADT.txt jelentése szerint mindkét oldalt
