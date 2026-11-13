@@ -150,7 +150,8 @@ test('Szerkezeti CNC-figyelmeztetés nem alakulhat DXF-hibává (anyagkészlet m
  assert.equal(f.parts.length,1);
  assert.equal(f.parts[0].dxfUnverified,false);
  assert.equal(f.parts[0].cabinetCncUnverified,true);
- assert.ok(f.parts[0].cncInstances[0].issues.length>0,'az ellenőrizetlen CNC-mentés továbbra is tiltott');
+ assert.deepEqual(Array.from(f.parts[0].cncInstances[0].issues||[]),[],
+  'A kezelő által elfogadott CNC-geometriához nem kerülhet automatikus minősítési tiltás');
 });
 test('Kivett F/V-darab visszatéve megőrzi a személyre szabott ABS-ét',()=>{
  const c=sync(),f={parts:[{id:'s',cabinetDesignKey:'v-divider-1-part-b',
