@@ -89,11 +89,11 @@ test('Az új szerkesztő a tető és fenék közé menő vagy végigmenő módj�
  assert.match(first,/p\.bottom==='full'\?p\.t:0/);
  assert.match(first,/p\.top==='full'\?p\.t:0/);
 });
-test('A láb nem alkatrész, a hiányzó LAB-CNC makró exportját megtiltjuk',()=>{
+test('A láb nem alkatrész, de a négy LAB makró a fenék vagy pótfenék CNC-jébe kerül',()=>{
  const parts=section('function getStructuredParts(p){','let currentParts=[]');
  assert.doesNotMatch(parts,/\bhasLegs\b|\blegHeight\b|\bLAB\b/);
- assert.match(first,/A 4 bútorláb LAB-furata \(59 × 59 mm\)/);
- assert.match(first,/még nincs hitelesített Xilog makróval megvalósítva/);
+ assert.match(first,/4 db LAB-makró a tényleges tartólapon/);
+ assert.match(first,/op\(target,'LAB',\{X,Y,G:2\}/);
  assert.match(first,/\?make\('false-bottom','Pótfenék'/);
 });
 test('A beágyazott JS szintaktikailag helyes',()=>{
