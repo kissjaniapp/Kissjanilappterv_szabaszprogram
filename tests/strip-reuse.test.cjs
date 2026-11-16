@@ -67,3 +67,36 @@ test('tábla, szálirány, kerf és alkatrészpozíciók konzisztensen megmaradn
     validateNoOverlap(result);
   }
 });
+
+test('Helykitöltő: az első csík szabad helyére későbbi, beférő darabot választ',()=>{
+ const parts={rows:[row('Nagy',1800,600,1),row('Közepes',1200,600,1),
+  row('Kitöltő',900,400,1)],errors:[],total:3};
+ const previous=state.layoutMode;state.layoutMode='fill';
+ try{
+  const result=pack(0,parts,'x');
+  assert.equal(result.failed.length,0);
+  assert.equal(result.bins.length,1);
+  const strips=result.bins[0].machine.strips;
+  assert.deepEqual(Array.from(strips[0].items,p=>p.item.name),['Nagy','Kitöltő']);
+  assert.equal(strips[1].items[0].item.name,'Közepes');
+  validateNoOverlap(result);
+ }finally{state.layoutMode=previous;}
+});
+test('Helykitöltő: minden darab pontosan egyszer, szálirány és vágásrés megtartva',()=>{
+ const previous=state.layoutMode;state.layoutMode='fill';
+ try{
+  for(const axis of ['x','y','auto'])for(const mode of [0,6,12,24,42]){
+   const result=pack(mode,model(),axis);
+   assert.equal(result.failed.length,0);
+   const placements=result.bins.flatMap(b=>b.placements);
+   assert.equal(placements.length,14);
+   assert.equal(placements.filter(p=>p.part.name==='él').length,8);
+   assert.equal(placements.filter(p=>p.part.name==='fenék').length,5);
+   for(const bin of result.bins)for(const p of bin.placements){
+    assert.equal(p.turned,false);
+    assert.ok(p.x>=0&&p.y>=0&&p.x+p.realW<=bin.a+.001&&p.y+p.realH<=bin.b+.001);
+   }
+   validateNoOverlap(result);
+  }
+ }finally{state.layoutMode=previous;}
+});

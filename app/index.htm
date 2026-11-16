@@ -760,7 +760,7 @@
   }catch(e){console.warn('A korábbi anyagszín javítása nem sikerült:',e);}
   normalizeFurnitureSizes(state.furnitures);
   normalizeLabelSettings(state);
-  if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='auto';
+  if(!['machine','economy','auto','mosaic','rows','fill'].includes(state.layoutMode))state.layoutMode='auto';
   if(['machine','rows'].includes(state.layoutMode))state.layoutMode='auto';
   if (!paneNames[state.active]) state.active = 'furniture';
   if (!state.selectedFurniture || !state.furnitures.some(f=>f.id===state.selectedFurniture)) state.selectedFurniture=state.furnitures[0]?.id || null;
@@ -1457,7 +1457,7 @@
     normalizeFurnitureMeta(state.furnitures,state);
     normalizeFurnitureSizes(state.furnitures);
     normalizeLabelSettings(state);
-    if(!['machine','economy','auto','mosaic','rows'].includes(state.layoutMode))state.layoutMode='auto';
+    if(!['machine','economy','auto','mosaic','rows','fill'].includes(state.layoutMode))state.layoutMode='auto';
   if(['machine','rows'].includes(state.layoutMode))state.layoutMode='auto';
     state.selectedFurniture=state.furnitures.some(f=>f.id===furnitureId)?furnitureId:state.furnitures[0]?.id||null;
     state.active=isCombinedSelectionWorkspace(entry)?'collector':'furniture';currentProjectId=entry.id;projectScreen='editor';
@@ -2431,7 +2431,7 @@
     ];
     items.sort(sorters[mode%sorters.length]);
     const isValidRemainder=value=>value>=-eps&&(value<eps||value+eps>=kerf);
-    function bestOn(item,pool){
+    function bestOn(item,pool,existingOnly=false){
       let best=null;
       for(const bin of pool){
         if(Math.abs(bin.thickness-item.thickness)>.001)continue;
@@ -2486,9 +2486,12 @@
             const ripLoss=gap*len;
             const gapWeight=[.05,.08,.025,.12,.035,.075,.015,.16,.20,.015,.25,.008,.12,.003,.10,.30][strategy]??.05;
             const endWeight=[.005,.002,.008,.001,.012,.006,.002,.003,.02,.0005,.03,.001,.015,.0002,.008,.05][strategy]??.005;
-            const score=bin.a*bin.b*1e5+ripLoss*gapWeight+left*endWeight;
+            const score=existingOnly?
+              m.strips.indexOf(strip)*1e12+ripLoss+left*strip.width:
+              bin.a*bin.b*1e5+ripLoss*gapWeight+left*endWeight;
             if(!best||score<best.score)best={bin,strip,score,orientation:o,bw,len,machine:m};
           }
+          if(existingOnly)continue;
           const separator=m.strips.length?kerf:0;
           const remaining=m.feedSize-m.feedUsed-separator-bw;
           const longRemaining=m.crossSize-len;
@@ -2560,9 +2563,31 @@
         reserved.add(selected.item);
       }
     }
-    for(const item of items){
-      if(reserved.has(item))continue;
-      let choice=null;
+    const pending=items.filter(item=>!reserved.has(item));
+    while(pending.length){
+      let item=pending[0],choice=null,selectedIndex=0;
+      if(state.layoutMode==='fill'){
+        // A legkorábbi leválasztandó csíkok szabad hosszát töltjük fel
+        // a még hátralévő alkatrészek közül a legjobban illeszkedővel.
+        const open=[...bins,...standardBins].filter(bin=>bin.machine?.strips.length);
+        let fitted=null;
+        for(let i=0;i<pending.length;i++){
+          for(let j=0;j<open.length;j++){
+            const candidate=bestOn(pending[i],[open[j]],true);
+            if(!candidate)continue;
+            const stripIndex=candidate.machine.strips.indexOf(candidate.strip);
+            const tail=candidate.machine.crossSize-candidate.strip.usedLength-
+              (candidate.strip.usedLength?kerf:0)-candidate.len;
+            const loss=(candidate.strip.width-candidate.bw)*candidate.len+
+              tail*candidate.strip.width;
+            if(!fitted||j<fitted.binIndex||j===fitted.binIndex&&
+              (stripIndex<fitted.stripIndex||stripIndex===fitted.stripIndex&&loss<fitted.loss))
+              fitted={choice:candidate,index:i,binIndex:j,stripIndex,loss};
+          }
+        }
+        if(fitted){choice=fitted.choice;selectedIndex=fitted.index;item=pending[selectedIndex];}
+      }
+      pending.splice(selectedIndex,1);
       // A később megnyitott táblák helyett több keresési változatban
       // először a legkorábbi megkezdett táblákba próbálunk visszatölteni.
       // Csak teljes, gépileg vágható csíkokba helyezhetünk alkatrészt.
@@ -2913,6 +2938,7 @@
     if(!parts.total)return {error:'Nincsenek vágható alkatrészek. Adj meg legalább egy darabot.'};
     let best=null;
     const economyMode=state.layoutMode==='economy';
+    const fillMode=state.layoutMode==='fill';
     const machineMode=true; // a szabad/mozaikos/polcos keresés is gépi csíkterv
     const selectedFeed=state.cutDirection||'auto';
     const axes=machineMode?
@@ -2923,7 +2949,7 @@
     // Nagy közös munkánál kevesebb alternatív keresést futtatunk, különben
     // a fő szál túl sokáig foglalt és a Mentés másként gomb nem érhető el.
     // A meglévő gépi terv és vágássorrend minden próbában változatlan.
-    const effort=parts.total>2000?4:parts.total>700?8:
+    const effort=fillMode?(parts.total>700?4:parts.total>150?12:48):parts.total>2000?4:parts.total>700?8:
       economyMode?(parts.total<=150?96:48):
       // A korábbi 'machine' projektek 48 próbája marad. Ez kizárólag a
       // tervválasztó keresés kerete; a védett vágási sorrendhez nem nyúlunk.
@@ -2972,7 +2998,7 @@
         (state.layoutMode==='auto'? -earlyFill*.05:0)+
         (economyMode? -largestReusable*.06-reuseConcentration*8000:0);
       if(!best||score<best.score){best={...trial,score,missingMandatory,cutAxis:axis,
-        layoutDescription:economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
+        layoutDescription:fillMode?'Helykitöltő · első csíkok feltöltése, kevesebb alapanyag':economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
           state.layoutMode==='machine'?'Gépi csíkos':
           (state.layoutMode==='rows'?'Polcos':state.layoutMode==='mosaic'?'Mozaikos':'Szabad')+
           ' keresés · gépi, kétmenetes csíkterv',
@@ -3317,7 +3343,7 @@
     // a szabásterv automatikusan elkészül. Kézi újraszámolás nem szükséges.
     if(!result)result=computeNesting();
     const run='';
-    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. A munkalap speciális szabását a program nem támogatja; csak bútorlapok gépi csíktervét készítjük.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. A munkalap speciális szabását a program nem támogatja; csak bútorlapok gépi csíktervét készítjük.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="fill" ${state.layoutMode==='fill'?'selected':''}>Helykitöltő · első csíkok feltöltése, kevesebb tábla</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
 </div></div></div>`;
     let body='';
     if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><span class="muted small">A terv az adatok megadásakor automatikusan elkészül.</span><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}

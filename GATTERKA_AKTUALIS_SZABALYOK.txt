@@ -860,3 +860,14 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - Tulajdonosi pontosítás: R csak pozitív egész szám lehet. Példa:
   1500 mm lap, 32 mm raszter -> floor(1200/32)=37. Ha R<1,
   a furatsor kimarad, az egyéb elkészíthető CNC műveletek megmaradnak.
+
+
+2026-11-16 – HELYKITÖLTŐ ELRENDEZÉS (ÚJ TULAJDONOSI KÉRÉS)
+- Új, külön választható Helykitöltő mód: a legkorábbi gépi csík szabad
+  hosszába a hátralévő alkatrészek közül választja a legjobban beférőt.
+- Új csík/tábla előtt minden nyitott csíkot ellenőriz. Anyagszín,
+  vastagság, szálirány, forgathatóság, kerf és parancskorlát megmarad.
+- Több induló sorrend közül a kisebb alapanyagigényű terv nyer;
+  heurisztikus keresés, nem garantált globális optimum.
+- Régi módok és védett finalize/gyártási sorrend/xMix/xPrg/natív mentés
+  változatlanok. Csak az új mód alkatrészválasztása változik.
