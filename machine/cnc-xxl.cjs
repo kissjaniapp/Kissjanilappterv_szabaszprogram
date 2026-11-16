@@ -138,7 +138,7 @@
   function parseXbo(line,dx,dy,dz){
     const fields={};
     for(const bit of line.split(/\s+/).slice(1)){
-      const match=/^([XYzVRxyDNF])=(P|-?(?:\d+\.?\d*|\.\d+))$/.exec(bit);
+      const match=/^([XYzVRxyDNF])=("P"|P|-?(?:\d+\.?\d*|\.\d+))$/.exec(bit);
       if(!match||Object.prototype.hasOwnProperty.call(fields,match[1]))
         throw new Error('Érvénytelen vagy ismétlődő XBO paraméter: '+bit);
       fields[match[1]]=match[1]==='N'?match[2]:Number(match[2]);
@@ -146,15 +146,16 @@
     const names=['X','Y','z','V','R','x','y','D','N','F'];
     if(names.length!==Object.keys(fields).length||names.some(key=>!Object.prototype.hasOwnProperty.call(fields,key)))
       throw new Error('Az XBO X/Y/z/V/R/x/y/D/N/F paraméterei kötelezők.');
-    if(fields.N!=='P'||fields.z!==13||fields.V!==1||fields.D!==5||fields.F!==1||
-       !Number.isInteger(fields.R)||fields.R<1||fields.R>99||
+    if(names.filter(key=>key!=='N').some(key=>!Number.isFinite(fields[key]))||
+       !['P','"P"'].includes(fields.N)||fields.z!==13||fields.V!==1||fields.D!==5||fields.F!==1||
+       (fields.R<=0||fields.R>10000)||
        !Number.isFinite(fields.X)||fields.X<0||!Number.isFinite(fields.Y)||fields.Y<0||
        !Number.isFinite(fields.x)||fields.x<8||fields.x>200||fields.y!==0)
       throw new Error('Az XBO csak a jóváhagyott polctartó furatcsoporttal használható.');
-    if(fields.z>dz||fields.X+(fields.R-1)*fields.x>dx+.001||
+    if(fields.z>dz||fields.X+Math.max(0,fields.R-1)*fields.x>dx+.001||
        fields.Y+(fields.R-1)*fields.y>dy+.001)
       throw new Error('Az XBO furatcsoport az alkatrész méretén kívülre kerül.');
-    return 'XBO '+names.map(key=>key+'='+(key==='N'?fields.N:fmt(fields[key]))).join(' ');
+    return 'XBO '+names.map(key=>key+'='+(key==='N'?fields.N:key==='R'?String(fields.R):fmt(fields[key]))).join(' ');
   }
   // Xilog CNC fejléc: a DX/DY szabja meg a megmunkálási térfélkódot.
   // A bal oldali alap térfél IJ, a jobb oldali LK; a különböző

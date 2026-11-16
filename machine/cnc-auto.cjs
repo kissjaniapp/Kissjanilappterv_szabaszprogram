@@ -245,10 +245,10 @@
         y=finite(operation.y),D=finite(operation.D),F=finite(operation.F);
       if(![X,Y,z,V,R,x,y,D,F].every(Number.isFinite)||X<0||Y<0||
          z!==13||V!==1||D!==5||F!==1||y!==0||x<8||x>200||
-         !Number.isInteger(R)||R<1||R>99||operation.N!=='P')
+         (R<=0||R>10000)||operation.N!=='P')
         throw new Error('Hibás XBO polctartó furatcsoport.');
       return 'XBO X='+round(X)+' Y='+round(Y)+' z=13 V=1 R='+R+
-        ' x='+round(x)+' y=0 D=5 N=P F=1';
+        ' x='+round(x)+' y=0 D=5 N='+ (operation.fullRow?'"P"':'P')+' F=1';
     }
     const joint=jointMode(operation,mode),codes=core.jointCodes(joint);
     // A beküldött F-osztó + polc referenciák G=2 eltolt ELF furata
@@ -286,20 +286,19 @@
       throw new Error('Érvénytelen DX/DY/DZ szerkezeti méret.');
     if(!Array.isArray(entry.operations))
       throw new Error('Hiányzó CNC-műveletlista.');
-    if(!entry.operations.length&&!entry.threeMfDraft)
-      throw new Error('Ehhez az alkatrészhez nincs megmunkálási makró.');
     if(entry.operations.length>500)throw new Error('Túl sok megmunkálás (>500).');
     const first=[],other=[];
     for(const op of entry.operations){
       const face=String(op.face||'primary');
       if(!FACES.has(face))throw new Error('Nem meghatározott megmunkálási oldal.');
-      (face==='primary'?first:other).push(macroLine(op,mode));
+      const target=face==='primary'?first:other;
+      target.push(macroLine(op,mode));
     }
     // A Xilog minta elöl kezdi a megmunkálást, a túloldalt FORDIT-tal kéri.
     if(!first.length&&other.length)throw new Error('Csak hátoldali megmunkálás: nincs igazolt első oldali felrakási sorrend.');
     const lines=other.length?[...first,'FORDIT',...other]:first;
     return core.compileXxl({dx,dy,dz,side:entry.side||'IJ',
-      commands:lines.join('\n'),allowEmpty:entry.threeMfDraft===true});
+      commands:lines.join('\n'),allowEmpty:true});
   }
   /**
    * @param {object} furniture - az aktív bútor; part.cncInstances a designerből

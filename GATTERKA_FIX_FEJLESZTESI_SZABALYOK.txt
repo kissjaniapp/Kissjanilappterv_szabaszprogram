@@ -617,3 +617,30 @@ xPrg/xMix a16c7e88, Windows natív mentés f49fe3b5,
 fő SVG 86d21042.
 Előző változat archiválva:
 archive/before-part-filing-and-workshop-png-20261104
+
+
+2026-11-16 – TELJES POLCTARTÓ FURATSOR: XBO (REF/POLC HELYETT)
+----------------------------------------------------------------
+- A teljes raszterfuratos mód az oldallapokon és az F-osztó mindkét
+  érintett oldalán XBO furatsort készít, REF és POLC nélkül.
+- Kezdés X=150 mm, R=(az adott fizikai lap hossza−2×150 mm)/beállított raszter.
+  R a felhasználó által pontosított hányados, hozzáadott +1 nélkül. x a beállított raszter (alap 32 mm).
+  z=13, V=1, y=0, D=5, N="P", F=1.
+- Első sor Y=polc első visszaállása+beállított furat-széltávolság;
+  hátsó sor Y=polc hátsó éle−ugyanaz a széltávolság (alap 50 mm).
+  F-osztón a saját első éléhez számolunk. Eltérő polcvisszaállások
+  külön sorokat kapnak; az azonos sorok nem duplázódnak.
+- Az oldallap és az F-osztó eltérő X-nullpontja és a szükséges
+  FORDIT megmarad; mindkét lapvégtől legalább 150 mm kihagyás van.
+- Legfeljebb 300 mm hosszú lapon nincs hely pozitív hosszú sornak,
+  ezért arra nem találunk ki furatot. A többi művelet kiadható.
+- Az egyedi, darabszámos polctartó korábbi XBO csoportja változatlan.
+  A régi mentett N=P darabszámos csoport továbbra is olvasható;
+  az új teljes sor a kért N="P" formát kapja.
+- A menthető CNC-programok kiadása nem állhat le egy másik alkatrész
+  figyelmeztetése miatt. A meglévő mentési folyamat ezt megőrzi.
+- A kezelőfelület stílusa és elrendezése változatlan. Az oldalnézeti
+  furatok a teljes XBO-val azonos 150 mm-es végkihagyást követik.
+- A korábbi, teljes furatsorra vonatkozó REF/POLC bejegyzéseket
+  ez a tulajdonosi kérés felülírja. Régi kézi REF programok olvashatók.
+- A védett fűrészgép-vágás és xMix/xPrg export érintetlen.

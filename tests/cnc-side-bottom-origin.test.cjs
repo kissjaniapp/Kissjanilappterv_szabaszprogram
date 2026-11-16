@@ -169,16 +169,12 @@ test('Az oldallap FELSŐ élén ELF2, ALSÓ élén ELF3 készül minden tető/fe
   }
  }
 });
-test('REF BX csak szükség esetén íródik, a normál CNC makró és sorrend érintetlen',()=>{
- const full=cabinet({top:'full',bottom:'full'});
- const between=cabinet();
- const parse=p=>run(p).find(x=>x.key==='side-left').operations;
- const lines0=parse(full);
- const lines1=parse(between);
- const ref0=lines0.find(x=>x.macro==='REF'&&x.DX!==undefined);
- const ref1=lines1.find(x=>x.macro==='REF'&&x.DX!==undefined);
- assert.equal(cnc.macroLine(ref0,{}),'REF DX=900');
- assert.equal(cnc.macroLine(ref1,{}),'REF DX=864 BX=18');
- assert.deepEqual(lines1.filter(x=>x.macro==='REF').map(x=>x.DX),[864,undefined]);
- assert.deepEqual(lines0.filter(x=>x.macro==='REF').map(x=>x.DX),[900,undefined]);
+test('A teljes sor a valós oldallaphosszból hagy ki 150–150 mm-t',()=>{
+ for(const p of [cabinet({top:'full',bottom:'full'}),cabinet()]){
+  const entry=run(p).find(x=>x.key==='side-left');
+  assert.equal(entry.operations.some(x=>x.macro==='REF'||x.macro==='POLC'),false);
+  for(const row of entry.operations.filter(x=>x.macro==='XBO')){
+   assert.equal(row.X,150);assert.equal(row.R,(entry.dx-300)/row.x);
+  }
+ }
 });

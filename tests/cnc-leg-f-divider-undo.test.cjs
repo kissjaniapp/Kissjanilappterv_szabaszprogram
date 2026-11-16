@@ -45,15 +45,14 @@ test('F-osztó helyi polctartó: minden csatlakozó polc előtt/hátul mindkét 
  assert.match(program,/XMSG Q=1 N="FORDIT"/);
  assert.equal((program.match(/XBO X=/g)||[]).length,4);
 });
-test('F-osztó teljes raszter: külön REF/POLC szakaszt kap mindkét csatlakozó lapoldal',()=>{
+test('F-osztó teljes raszter: két XBO mindkét lapoldalon, fordítással',()=>{
  const f=build('full')[0].cncInstances[0];
  assert.deepEqual(Array.from(f.issues),[]);
- assert.equal(f.operations.filter(x=>x.macro==='REF').length,4);
- assert.equal(f.operations.filter(x=>x.macro==='POLC').length,4);
- assert.deepEqual(Array.from(f.operations.filter(x=>x.macro==='POLC'),x=>x.Y),[60,340,60,340]);
+ assert.equal(f.operations.some(x=>x.macro==='REF'||x.macro==='POLC'),false);
+ const rows=f.operations.filter(x=>x.macro==='XBO');
+ assert.deepEqual(Array.from(rows,x=>[x.X,x.Y,x.R]),[[150,60,36.375],[150,340,36.375],[150,60,36.375],[150,340,36.375]]);
  const program=auto.compileEntry(f,{assemblyJoint:'excenter'});
- assert.equal((program.match(/REF DX=1464/g)||[]).length,2);
- assert.match(program,/POLC Y=60 Q=0# s=32 G=1# F=1/);
+ assert.equal((program.match(/XBO X=150/g)||[]).length,4);
  assert.match(program,/XMSG Q=1 N="FORDIT"/);
 });
 test('A fix polc meglévő F-osztó LAPA kapcsolata nem cserélhető XBO-ra',()=>{

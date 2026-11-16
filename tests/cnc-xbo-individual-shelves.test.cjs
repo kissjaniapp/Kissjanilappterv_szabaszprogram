@@ -60,14 +60,14 @@ test('A Gatterka furatszám és raszter felülírja az XBO 3/32 mintáját',()=>
  assert.equal(xbo[0].X,822.5);
  assert.match(auto.compileEntry(r[0].cncInstances[0]),/XBO X=822\.5 Y=60 z=13 V=1 R=5 x=40 y=0 D=5 N=P F=1/);
 });
-test('Végig furatsor: a korábbi REF/POLC páros tovább él, nem keletkezik XBO',()=>{
+test('Végig furatsor: két XBO, 150 mm kétoldali kihagyás, R=(laphossz−300)/raszter',()=>{
  const p=cabinet({drilling:'full',distribution:'equal'}),ctx=setup([shelf()]),r=records();
  ctx.buildCncInstancesForParts(p,r);
- const left=r[0].cncInstances[0],macros=left.operations.map(q=>q.macro);
- assert.equal(macros.filter(s=>s==='XBO').length,0);
- assert.equal(macros.filter(s=>s==='REF').length,2);
- assert.equal(macros.filter(s=>s==='POLC').length,2);
- assert.match(auto.compileEntry(left),/POLC Y=/);
+ const left=r[0].cncInstances[0],ops=left.operations;
+ assert.equal(ops.some(q=>q.macro==='REF'||q.macro==='POLC'),false);
+ const rows=ops.filter(q=>q.macro==='XBO');
+ assert.deepEqual(Array.from(rows,q=>[q.X,q.Y,q.R,q.x]),[[150,60,37.5,32],[150,340,37.5,32]]);
+ assert.match(auto.compileEntry(left),/XBO X=150 Y=60 z=13 V=1 R=37.5 x=32 y=0 D=5 N="P" F=1/);
 });
 test('A csak beállítható, nem egyenlő polcköz is kap XBO-t, nincs POLC Q hiba',()=>{
  const p=cabinet({distribution:'manual'}),ctx=setup([shelf(731)]),r=records();
@@ -128,4 +128,29 @@ test('Az oldalnézet az XBO-val közös furatcsoport-geometriát rajzolja',()=>{
  assert.match(draw,/height=group\.bottom\+j\*group\.step/);
  assert.match(draw,/group\.Y\[0\]/);
  assert.match(draw,/group\.Y\[1\]/);
+});
+
+test('Teljes sor: egyedi visszaállás, más raszter, tört laphossz és újrafordítható szöveg',()=>{
+ const p=cabinet({drilling:'full',raster:40,sideH:1500.5,h:1500.5});
+ const ctx=setup([shelf(600,{y0:35,y1:355})]),r=records();
+ ctx.buildCncInstancesForParts(p,r);
+ const entry=r[0].cncInstances[0],rows=entry.operations.filter(q=>q.macro==='XBO');
+ assert.deepEqual(Array.from(rows,q=>[q.X,q.Y,q.R,q.x]),[[150,85,30.0125,40],[150,305,30.0125,40]]);
+ const program=auto.compileEntry(entry);
+ assert.match(program,/R=30.0125 x=40/);
+ assert.doesNotThrow(()=>core.compileXxl({dx:entry.dx,dy:entry.dy,dz:entry.dz,
+  commands:entry.operations.map(q=>auto.macroLine(q)).join('\n')}));
+});
+test('Teljes XBO sorhossz: végpont, Y, számérték és 300 mm alatti lap',()=>{
+ const spec={dx:1500,dy:450,dz:18};
+ const command='XBO X=150 Y=50 z=13 V=1 R=37.5 x=32 y=0 D=5 N="P" F=1';
+ assert.doesNotThrow(()=>core.compileXxl({...spec,commands:command}));
+ for(const bad of [command.replace('R=37.5','R=50'),command.replace('Y=50','Y=451'),
+  command.replace('R=37.5','R=P'),command.replace('R=37.5','R=0')])
+  assert.throws(()=>core.compileXxl({...spec,commands:bad}),/XBO/);
+ const p=cabinet({drilling:'full',sideH:280,h:280,hasTop:false,hasBottom:false});
+ const ctx=setup([]),r=records();ctx.buildCncInstancesForParts(p,r);
+ const entry=r[0].cncInstances[0];
+ assert.equal(entry.operations.filter(q=>q.macro==='XBO').length,0);
+ assert.match(auto.compileEntry(entry),/H DX=280[\s\S]*VEGE/);
 });

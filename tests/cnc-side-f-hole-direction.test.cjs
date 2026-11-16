@@ -68,14 +68,13 @@ test('F-osztó fix polc LAPA iránya és két élének makrója az ALSÓ origó 
  assert.ok(e.operations.some(op=>op.macro==='ELF3'));
  assert.ok(e.operations.filter(op=>op.macro==='LAPA').some(op=>op.face==='reverse'));
 });
-test('Teljes polcfuratsor REF/POLC: az oldallap BX alsó ütközésű, az F saját hossza',()=>{
- const e=generate('full');
- for(const side of ['side-left','side-right']){
-  const ref=e[side].operations.find(op=>op.macro==='REF'&&op.DX!==undefined);
-  assert.equal(ref.DX,1464);
-  assert.equal(ref.BX,18);
+test('Teljes polcfuratsor XBO: a saját lap hosszából számolt sor',()=>{
+ const entries=generate('full');
+ for(const key of ['side-left','side-right','f-divider-1']){
+  const entry=entries[key];
+  assert.equal(entry.operations.some(op=>op.macro==='REF'||op.macro==='POLC'),false);
+  const rows=entry.operations.filter(op=>op.macro==='XBO');
+  assert.ok(rows.length>=2);
+  for(const row of rows){assert.equal(row.X,150);assert.equal(row.R,(entry.dx-300)/row.x);}
  }
- const f=e['f-divider-1'];
- assert.ok(f.operations.some(op=>op.macro==='REF'&&op.DX===1464));
- assert.ok(f.operations.some(op=>op.macro==='POLC'));
 });
