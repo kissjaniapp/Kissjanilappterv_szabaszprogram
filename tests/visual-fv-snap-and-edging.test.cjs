@@ -51,7 +51,8 @@ test('Eltolt F-darabhoz a két V-szakasz végpontja csatlakozik, méretük újra
  assert.equal(left.a,533);
  assert.equal(right.a,413);
  assert.equal(out.find(b=>b.kind==='f').x1,551);
- assert.ok(out.connectionIssues.some(x=>/CNC/.test(x)));
+ assert.deepEqual(Array.from(out.connectionIssues),[],'Az eltolás nem mentést tiltó CNC-hiba');
+ assert.ok(out.connectionWarnings.some(x=>/CNC/.test(x)));
 });
 test('Eltolt vízszintes V-laphoz az alsó/felső F-darab végpontjai igazodnak',()=>{
  const scene=geometry({'v-divider-1':{shift:80}});
