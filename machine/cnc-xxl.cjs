@@ -148,7 +148,7 @@
       throw new Error('Az XBO X/Y/z/V/R/x/y/D/N/F paraméterei kötelezők.');
     if(names.filter(key=>key!=='N').some(key=>!Number.isFinite(fields[key]))||
        !['P','"P"'].includes(fields.N)||fields.z!==13||fields.V!==1||fields.D!==5||fields.F!==1||
-       (fields.R<=0||fields.R>10000)||
+       (!Number.isInteger(fields.R)||fields.R<1||fields.R>10000)||
        !Number.isFinite(fields.X)||fields.X<0||!Number.isFinite(fields.Y)||fields.Y<0||
        !Number.isFinite(fields.x)||fields.x<8||fields.x>200||fields.y!==0)
       throw new Error('Az XBO csak a jóváhagyott polctartó furatcsoporttal használható.');

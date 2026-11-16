@@ -50,7 +50,7 @@ test('F-osztó teljes raszter: két XBO mindkét lapoldalon, fordítással',()=>
  assert.deepEqual(Array.from(f.issues),[]);
  assert.equal(f.operations.some(x=>x.macro==='REF'||x.macro==='POLC'),false);
  const rows=f.operations.filter(x=>x.macro==='XBO');
- assert.deepEqual(Array.from(rows,x=>[x.X,x.Y,x.R]),[[150,60,36.375],[150,340,36.375],[150,60,36.375],[150,340,36.375]]);
+ assert.deepEqual(Array.from(rows,x=>[x.X,x.Y,x.R]),[[150,60,36],[150,340,36],[150,60,36],[150,340,36]]);
  const program=auto.compileEntry(f,{assemblyJoint:'excenter'});
  assert.equal((program.match(/XBO X=150/g)||[]).length,4);
  assert.match(program,/XMSG Q=1 N="FORDIT"/);

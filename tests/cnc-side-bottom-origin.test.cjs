@@ -174,7 +174,7 @@ test('A teljes sor a valós oldallaphosszból hagy ki 150–150 mm-t',()=>{
   const entry=run(p).find(x=>x.key==='side-left');
   assert.equal(entry.operations.some(x=>x.macro==='REF'||x.macro==='POLC'),false);
   for(const row of entry.operations.filter(x=>x.macro==='XBO')){
-   assert.equal(row.X,150);assert.equal(row.R,(entry.dx-300)/row.x);
+   assert.equal(row.X,150);assert.equal(row.R,Math.floor((entry.dx-300)/row.x));
   }
  }
 });

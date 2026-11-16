@@ -835,8 +835,8 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 ----------------------------------------------------------------
 - A teljes raszterfuratos mód az oldallapokon és az F-osztó mindkét
   érintett oldalán XBO furatsort készít, REF és POLC nélkül.
-- Kezdés X=150 mm, R=(az adott fizikai lap hossza−2×150 mm)/beállított raszter.
-  R a felhasználó által pontosított hányados, hozzáadott +1 nélkül. x a beállított raszter (alap 32 mm).
+- Kezdés X=150 mm, R=floor((az adott fizikai lap hossza−2×150 mm)/beállított raszter).
+  R mindig egész: a hányados lefelé kerekítve, hozzáadott +1 nélkül. x a beállított raszter (alap 32 mm).
   z=13, V=1, y=0, D=5, N="P", F=1.
 - Első sor Y=polc első visszaállása+beállított furat-széltávolság;
   hátsó sor Y=polc hátsó éle−ugyanaz a széltávolság (alap 50 mm).
@@ -856,3 +856,7 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - A korábbi, teljes furatsorra vonatkozó REF/POLC bejegyzéseket
   ez a tulajdonosi kérés felülírja. Régi kézi REF programok olvashatók.
 - A védett fűrészgép-vágás és xMix/xPrg export érintetlen.
+
+- Tulajdonosi pontosítás: R csak pozitív egész szám lehet. Példa:
+  1500 mm lap, 32 mm raszter -> floor(1200/32)=37. Ha R<1,
+  a furatsor kimarad, az egyéb elkészíthető CNC műveletek megmaradnak.

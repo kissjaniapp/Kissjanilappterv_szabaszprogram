@@ -75,6 +75,6 @@ test('Teljes polcfuratsor XBO: a saját lap hosszából számolt sor',()=>{
   assert.equal(entry.operations.some(op=>op.macro==='REF'||op.macro==='POLC'),false);
   const rows=entry.operations.filter(op=>op.macro==='XBO');
   assert.ok(rows.length>=2);
-  for(const row of rows){assert.equal(row.X,150);assert.equal(row.R,(entry.dx-300)/row.x);}
+  for(const row of rows){assert.equal(row.X,150);assert.equal(row.R,Math.floor((entry.dx-300)/row.x));}
  }
 });

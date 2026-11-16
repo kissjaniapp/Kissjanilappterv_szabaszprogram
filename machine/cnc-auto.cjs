@@ -245,7 +245,7 @@
         y=finite(operation.y),D=finite(operation.D),F=finite(operation.F);
       if(![X,Y,z,V,R,x,y,D,F].every(Number.isFinite)||X<0||Y<0||
          z!==13||V!==1||D!==5||F!==1||y!==0||x<8||x>200||
-         (R<=0||R>10000)||operation.N!=='P')
+         (!Number.isInteger(R)||R<1||R>10000)||operation.N!=='P')
         throw new Error('Hibás XBO polctartó furatcsoport.');
       return 'XBO X='+round(X)+' Y='+round(Y)+' z=13 V=1 R='+R+
         ' x='+round(x)+' y=0 D=5 N='+ (operation.fullRow?'"P"':'P')+' F=1';
