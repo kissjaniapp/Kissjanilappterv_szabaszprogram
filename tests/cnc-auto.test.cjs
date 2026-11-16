@@ -59,8 +59,8 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const left=result.files.find(f=>f.filename.includes('side-left'));
   const right=result.files.find(f=>f.filename.includes('side-right'));
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
-  assert.match(left.content,/-IL C=0 T=16973825/);
-  assert.match(right.content,/-LI C=0 T=16973825/);
+  assert.match(left.content,/-LI C=0 T=16973825/);
+  assert.match(right.content,/-IL C=0 T=16973825/);
   assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
