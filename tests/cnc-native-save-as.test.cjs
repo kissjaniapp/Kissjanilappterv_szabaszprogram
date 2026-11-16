@@ -22,7 +22,7 @@ function harness({cancelled=false,bridge=true}={}){
    if(action==='write-cnc-files')
      return {firstPath:'C:\\CNC\\elso.xxl',folder:'C:\\CNC',
        programs:payload.programs.map(p=>'C:\\CNC\\'+p.name),
-       reportPath:payload.report?'C:\\CNC\\ELLENORIZENDO_KIMARADT.txt':''};
+       reportPath:payload.report?'C:\\CNC\\GATTERKA_CNC_JELENTES.txt':''};
    throw Error('Ismeretlen native művelet: '+action);
   }
  };
