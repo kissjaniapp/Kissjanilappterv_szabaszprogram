@@ -706,3 +706,21 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   koordináta- vagy anyagvastagság-eltérés valódi ellenőrzése
   megmarad; a felhasználói jóváhagyás nem teszi helyessé a
   nem létező megmunkálást.
+
+
+2026-11-16 – KIPRÓBÁLT CNC KIMENET ÉS RÉGI KEZELŐELEMEK
+-----------------------------------------------------
+- A felhasználó saját gépén kipróbált CNC programok kiadását az egyedi
+  darabolás, alkatrész-kivétel vagy lapvég-eltolás miatti, kizárólag
+  „ellenőrizendő” jelzés nem tilthatja. A tényleges furatokat továbbra
+  is a geometriai csatlakozásokból számoljuk.
+- A vizuális szerkesztő minősítési jelzései külön connectionWarnings
+  mezőbe kerülnek, nem a mentést megakadályozó connectionIssues listába.
+- A régi CNC REF kihagyási beállítások (fenék, tető, V-osztó) mindig
+  0 mm alapértékkel működnek, rejtett beállításuk sem állítható vissza.
+  A REF DX/BX és XBO makrók tényleges számítása megmarad.
+- A V-osztó bal/jobb csatlakozás-választó sorok és az F-osztó külön
+  hézag/alsó-felső csatlakozás sorok eltűnnek. Az automatikus
+  méretezés, a 3D és a rajzos szerkesztő változatlanul használható.
+- Hibás DX/DY/DZ, érvénytelen makró vagy ténylegesen hiányzó művelet
+  esetén továbbra sem állítható elő hamis CNC-fájl.
