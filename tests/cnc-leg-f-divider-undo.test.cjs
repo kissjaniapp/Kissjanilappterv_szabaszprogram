@@ -143,3 +143,12 @@ test('F-osztó: a V-osztó csak saját lapoldalán bontja a teljes sort, alulró
  assert.match(text,/XMSG Q=1 N="FORDIT"/);
  assert.match(text,/XBO X=750/);
 });
+
+test('Szűk F-osztó: mindkét lapoldal automatikusan 100 mm kezdést kap',()=>{
+ const boards=scene();boards[0].z2=298;boards[0].a=280;
+ for(const shelf of boards.filter(q=>q.kind==='shelf')){shelf.z1=150;shelf.z2=168;}
+ const f=build('full',boards)[0].cncInstances[0];
+ const rows=f.operations.filter(q=>q.macro==='XBO');
+ assert.equal(rows.length,4);assert.ok(rows.every(q=>q.X===100&&q.R===2));
+ assert.doesNotThrow(()=>auto.compileEntry(f,{assemblyJoint:'excenter'}));
+});

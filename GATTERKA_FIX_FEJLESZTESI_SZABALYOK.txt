@@ -708,3 +708,16 @@ archive/before-part-filing-and-workshop-png-20261104
   csíkmodell kezeli (X/U), kerf és kötelező szálirány megtartásával.
 - A kisebb darabok nem fedhetik egymást; vastagság/szín nem keverhető.
   A védett finalize/vágási sorrend/xMix/xPrg/Windows mentés változatlan.
+
+
+2026-11-16 – SZŰK POLCREKESZ: 150 HELYETT 100 MM KEZDÉS
+- Teljes polctartó furatsornál minden szabad rekeszt külön vizsgálunk.
+  Alap a 150–150 mm kihagyás, R=floor((köz−300)/raszter).
+- Ha így R<1, automatikusan 100–100 mm kihagyásra váltunk:
+  R=floor((köz−200)/raszter), kezdés a rekesz alsó lapjától 100 mm.
+- Ha 100 mm mellett is R<1, abba a rekeszbe nem készül sor.
+  Más rekeszek 150 mm-es kiosztása változatlan marad.
+- Ugyanez érvényes az oldallapokra és az F-osztó mindkét lapoldalára.
+  A rajzi furatok ugyanebből a számításból készülnek; R egész szám,
+  a raszter a beállított érték. Nullpontok: bal IJ, jobb LK, alul X=0.
+- A kinézet és a védett szabászati/vágási/mentési logika változatlan.

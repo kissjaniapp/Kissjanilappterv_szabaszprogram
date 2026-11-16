@@ -151,7 +151,7 @@ test('Teljes XBO sorhossz: végpont, Y, számérték és 300 mm alatti lap',()=>
  const p=cabinet({drilling:'full',sideH:280,h:280,hasTop:false,hasBottom:false});
  const ctx=setup([]),r=records();ctx.buildCncInstancesForParts(p,r);
  const entry=r[0].cncInstances[0];
- assert.equal(entry.operations.filter(q=>q.macro==='XBO').length,0);
+ assert.deepEqual(Array.from(entry.operations.filter(q=>q.macro==='XBO'),q=>[q.X,q.R]),[[100,2],[100,2]]);
  assert.match(auto.compileEntry(entry),/H DX=280[\s\S]*VEGE/);
 });
 
@@ -178,4 +178,21 @@ test('V-osztó csak a csatlakozó oldalt bontja; túl alacsony rekeszbe nem kés
  const rows=left.operations.filter(q=>q.macro==='XBO');
  assert.equal(rows.length,2);assert.ok(rows.every(q=>q.X===368&&q.R===30));
  assert.ok(right.operations.filter(q=>q.macro==='XBO').every(q=>q.X===150&&q.R===37));
+});
+
+test('Szűk rekeszek: a 150→100 váltás raszterfüggő és csak az adott közre érvényes',()=>{
+ const ctx=setup([]);
+ for(const [length,step,margin,R] of [[332,32,150,1],[331,32,100,4],
+  [232,32,100,1],[231,32,100,0],[340,40,150,1],[339,40,100,3]]){
+  const result=ctx.cncFullRowSpacing(length,step);
+  assert.equal(result.margin,margin);assert.equal(result.R,R);
+ }
+ const p=cabinet({drilling:'full'});
+ const v={kind:'v',x1:18,x2:982,y0:0,y1:450,z1:298,z2:316};
+ const split=setup([v]),r=records();split.buildCncInstancesForParts(p,r);
+ for(const entry of r[0].cncInstances){
+  const rows=entry.operations.filter(q=>q.macro==='XBO');
+  assert.deepEqual(Array.from(rows,q=>[q.X,q.R]),[[118,2],[118,2],[466,27],[466,27]]);
+  assert.doesNotThrow(()=>auto.compileEntry(entry));
+ }
 });
