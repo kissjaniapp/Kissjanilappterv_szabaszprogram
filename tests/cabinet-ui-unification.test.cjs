@@ -28,7 +28,7 @@ test('a polcszám 0 alapértékű legördülő, a polcfurat ugyanabban a panelbe
 
 test('az alkatrészek automatikusan a Gatterkához kerülnek, külön gomb nélkül',()=>{
   assert.doesNotMatch(designer,/id="exportParts"/);
-  assert.match(designer,/last='';notify\(\)/);
+  assert.match(designer,/last='';resetHistory\(\);notify\(true\)/);
   assert.match(designer,/gatterka-designer-save/);
   assert.match(source,/applyCabinetDesignerSnapshot\(f,event.data.design\)/);
 });
