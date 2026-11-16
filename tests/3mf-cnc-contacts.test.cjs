@@ -192,7 +192,7 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  const open=app.lastIndexOf('<script>',start),end=app.indexOf('</script>',start);
  assert.equal(app.slice(open+8,end).trim(),program,'az inline és külön modul legyen azonos');
  assert.match(app,/data-action="save-cnc-xxl-as"/);
- assert.match(app,/3MF TESZTTERV/);
+ assert.match(app,/FURAT NÉLKÜLI XXL PROGRAMOK/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
  assert.match(app,/data\.warnings\?\.length/);
  assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);
