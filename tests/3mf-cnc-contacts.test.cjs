@@ -58,7 +58,7 @@ test('a hat alkatrész 3MF CNC TERV .xxl-t kap az excenter G=1 beállításával
  assert.match(top.content,/LAPA X=36 Y=61 A=0 y=1144 G=1/);
  assert.match(top.content,/LAPF X=25 Y=43 A=0 x=300 G=1/);
  const side=out.files.find(x=>x.filename.includes('Body3'));
- assert.match(side.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
+ assert.match(side.content,/LAPF X=0 Y=309 A=0 x=755 G=1/);
  assert.equal(new Set(out.files.map(x=>x.filename.toLowerCase())).size,6);
 });
 test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki',()=>{
@@ -70,8 +70,8 @@ test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki
  assert.equal(out.files.length,6,JSON.stringify(out.blocked));
  assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
  const body3=out.files.find(x=>x.filename.includes('Body3'));
- assert.match(body3.content,/H DX=1144 DY=755 DZ=18 /);
- assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
+ assert.match(body3.content,/H DX=755 DY=1144 DZ=18 /);
+ assert.match(body3.content,/LAPF X=0 Y=309 A=0 x=755 G=1/);
 });
 test('3MF átfedésnél nem találunk ki furatot, de mind a hat lap CNC-programját mentjük',()=>{
  const f=furniture();
@@ -159,14 +159,14 @@ test('a Body1–Body6 fizikai találkozásaiból él- és lapmakró készül, fu
  assert.equal(out.contacts.length,8);
  assert.equal(out.files.length,6,JSON.stringify(out.blocked));
  const body5=out.files.find(x=>x.filename.includes('Body5'));
- assert.match(body5.content,/ELF4 X=0 A=0 x=755 G=1/,
-   'Body5 elülső éle ELF4 legyen, ne mindig ELF5');
+ assert.match(body5.content,/ELF3 Y=0 A=0 y=755 G=1/,
+   'A hátsík X=0 rövid éle a bútortervezővel azonos ELF3');
  const body3=out.files.find(x=>x.filename.includes('Body3'));
- assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
+ assert.match(body3.content,/LAPF X=0 Y=309 A=0 x=755 G=1/);
  assert.ok(out.contacts.every(c=>
    c.faceStart&&c.edgeStart&&c.faceLength>0&&c.edgeLength>0));
 });
-test('a helyi él irányát a 3D találkozás dönti el: ELŐL ELF4, HÁTUL ELF5',()=>{
+test('a függőleges lap alsó/felső élét a 3D találkozás dönti el: ELF3 és ELF2',()=>{
  const shape=[
   {name:'Sík',lo:[0,0,0],size:[600,400,18]},
   {name:'Elöl',lo:[50,0,18],size:[18,400,380]},
@@ -178,8 +178,8 @@ test('a helyi él irányát a 3D találkozás dönti el: ELŐL ELF4, HÁTUL ELF5
  assert.equal(out.files.length,3);
  const front=out.files.find(x=>x.filename.includes('Elol'));
  const back=out.files.find(x=>x.filename.includes('Hatul'));
- assert.match(front.content,/ELF4 X=0 A=0 x=400 G=1/);
- assert.match(back.content,/ELF5 X=0 A=0 x=400 G=1/);
+ assert.match(front.content,/ELF3 Y=0 A=0 y=400 G=1/);
+ assert.match(back.content,/ELF2 Y=0 A=0 y=400 G=1/);
  const face=out.files.find(x=>x.filename.includes('Sik'));
  assert.match(face.content,/LAPA X=59 Y=0 A=0 y=400 G=1/);
  assert.match(face.content,/LAPA X=209 Y=0 A=0 y=400 G=1/);

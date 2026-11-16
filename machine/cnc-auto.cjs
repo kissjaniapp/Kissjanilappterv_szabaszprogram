@@ -4,8 +4,8 @@
  * csatlakozási geometriából dolgozik. NINCS átmérő-, furatszám- vagy
  * szerszámpálya-találgatás: az igazolt makrók a gyári furatkiosztást végzik.
  *
- * Csak bútortervezős, hiteles szerkezeti kapcsolatokból exportálunk.
- * Más vagy hiányos geometriánál név szerinti hiba (nem félkész .xxl fájl).
+ * A bútortervező és a 3MF tényleges lap-él kapcsolatai exportálhatók.
+ * Hiányos geometriánál név szerinti hiba, meglévő művelet nem veszhet el.
  * A szabászgép .xPrg/.xMix kódja és sorrendje teljesen független.
  */
 (function(root){
@@ -20,12 +20,49 @@
       .replace(/[^A-Za-z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0,65)||'Alkatresz';
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
+  // A munkalap csak a SZABÁSBÓL marad ki. Az eredeti 3MF-testekből
+  // külön CNC-rekordot készítünk, a mentett alkatrészlistát nem bővítjük.
+  function threeMfCncFurniture(furniture,allowedIds){
+    const parts=[...(furniture?.parts||[])],allowed=new Set((allowedIds||[]).map(String));
+    const model=furniture?.threeMfImport,deleted=new Set(furniture?.deletedPartKeys||[]);
+    const hidden=new Set(furniture?.scnImport?.hiddenGroupIndices||[]);
+    for(const [index,group] of (Array.isArray(model?.groups)?model.groups:[]).entries()){
+      const key='3mf-'+(index+1),dims=group.dimensions;
+      if(parts.some(p=>p.cabinetDesignKey===key)||deleted.has(key)||
+          !Array.isArray(dims)||dims.length!==3||Number(dims[0])<50||Number(dims[1])<50||
+          !(Math.abs(Number(dims[2])-38)<.001||/munkalap|worktop/i.test(group.name||''))||
+          !Array.isArray(group.indices)||!group.indices.length)continue;
+      const indices=group.indices.filter(i=>!hidden.has(i));
+      if(!indices.length)continue;
+      const part={id:'3mf-cnc-only-'+(index+1),cabinetDesignKey:key,
+        name:group.name||'Munkalap',a:String(dims[0]),b:String(dims[1]),
+        q:String(indices.length),threeMfThickness:Number(dims[2]),
+        threeMfGenerated:true,cncOnly:true};
+      parts.push(part);allowed.add(part.id);
+    }
+    return {furniture:{...furniture,parts},allowedIds:[...allowed]};
+  }
+  function threeMfRole(name){
+    const text=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/[_–—-]+/g,' ').replace(/\s+/g,' ').trim();
+    if(/(?:^|\b)f\s*(?:oszto|divider)(?:\b|\d)/.test(text))return 'f';
+    if(/(?:^|\b)v\s*(?:oszto|divider)(?:\b|\d)/.test(text))return 'v';
+    if(/munkalap|worktop/.test(text))return 'worktop';
+    if(/oldal|side/.test(text))return 'side';
+    if(/hatfal|hatlap|back/.test(text))return 'back';
+    if(/teto|(?:^|\b)top(?:\b|\d)/.test(text))return 'top';
+    if(/fenek|bottom/.test(text))return 'bottom';
+    if(/polc|shelf/.test(text))return 'flat';
+    return '';
+  }
   /**
    * 3MF szerkezeti csatlakozások: a tényleges lapszél-találkozásból
    * számolt CNC makrókat mindig megőrizzük. A lap-lap érintkezés és
    * a befoglaló téglatestek átfedése önmagában NEM exporttiltás.
    */
   function threeMfContactDrafts(furniture,allowedIds,options={}){
+    const cncInput=threeMfCncFurniture(furniture,allowedIds);
+    furniture=cncInput.furniture;allowedIds=cncInput.allowedIds;
     const model=furniture?.threeMfImport;
     const data={byPart:new Map(),errors:new Map(),warnings:new Map(),contacts:[]};
     if(!Array.isArray(model?.parts)||!Array.isArray(model?.groups))return data;
@@ -33,6 +70,27 @@
     const byKey=new Map((furniture.parts||[]).filter(p=>p.threeMfGenerated&&allowed.has(String(p.id)))
       .map(p=>[String(p.cabinetDesignKey||''),p]));
     const boxes=[],eps=.12,near=(a,b)=>Math.abs(a-b)<=eps;
+    const hidden=new Set(furniture?.scnImport?.hiddenGroupIndices||[]);
+    // A név szerinti szerkezeti lapok vastagsági tengelyei adják a
+    // bútor keretét. Így Y-felfelé exportált modell is használható.
+    const vote=(values,fallback)=>values.length?values.sort((a,b)=>
+      values.filter(x=>x===b).length-values.filter(x=>x===a).length)[0]:fallback;
+    const thicknessAxis=shape=>{
+      const size=Array.isArray(shape?.axisBoundsMm)?shape.axisBoundsMm.map(Number):null;
+      return Array.isArray(size)&&size.length===3&&size.every(Number.isFinite)?size.indexOf(Math.min(...size)):-1;
+    };
+    const anchors=model.parts.filter(shape=>thicknessAxis(shape)>=0)
+      .map(shape=>({role:threeMfRole(shape.name),axis:thicknessAxis(shape)}));
+    const up=vote(anchors.filter(a=>['v','flat','top','bottom','worktop'].includes(a.role)).map(a=>a.axis),2);
+    const width=vote(anchors.filter(a=>['f','side'].includes(a.role)&&a.axis!==up).map(a=>a.axis),up===0?1:0);
+    const depth=[0,1,2].find(axis=>axis!==up&&axis!==width);
+    const verticalColumns=model.parts.filter(shape=>shape?.isRectangular===true&&
+      Array.isArray(shape.originMm)&&shape.originMm.length===3&&
+      shape.originMm.every(value=>Number.isFinite(Number(value)))&&thicknessAxis(shape)===width);
+    const minColumn=verticalColumns.length?Math.min(...verticalColumns.map(b=>b.originMm[width])):0;
+    const maxColumn=verticalColumns.length?Math.max(...verticalColumns.map(b=>b.originMm[width])):0;
+    const minVertical=verticalColumns.length?Math.min(...verticalColumns.map(b=>b.originMm[up])):0;
+    const maxVertical=verticalColumns.length?Math.max(...verticalColumns.map(b=>b.originMm[up]+b.axisBoundsMm[up])):0;
     const error=(id,reason)=>{
       if(!data.errors.has(id))data.errors.set(id,String(reason));
     };
@@ -47,11 +105,12 @@
       if(!Array.isArray(group.indices)||!group.indices.length){
         error(part.id,'A 3MF csoporthoz nincs eredeti szilárdtest.');continue;
       }
+      const indices=group.indices.filter(index=>!hidden.has(index));
       const q=Number(part.q);
-      if(!Number.isInteger(q)||q!==group.indices.length){
+      if(!Number.isInteger(q)||q!==(part.cncOnly?indices.length:group.indices.length)){
         error(part.id,'A darabszám eltér az eredeti 3MF testpéldányok számától.');continue;
       }
-      for(const index of group.indices){
+      for(const index of indices){
         const shape=model.parts[index];
         if(!shape||shape.isRectangular!==true||!Array.isArray(shape.originMm)||
            !Array.isArray(shape.axisBoundsMm)||shape.originMm.length!==3||
@@ -64,7 +123,22 @@
         }
         const hi=lo.map((v,k)=>v+size[k]);
         const axes=[0,1,2].sort((a,b)=>size[b]-size[a]||a-b);
-        const [xAxis,yAxis,tAxis]=axes;
+        let [xAxis,yAxis,tAxis]=axes;
+        let role=threeMfRole(shape.name)||threeMfRole(part.name);
+        // A névtelen Body testek is az importáló rögzített X=szélesség,
+        // Y=mélység, Z=magasság keretében szerkezeti lapok. A szerepet
+        // és a CNC tengelyeit ilyenkor a fizikai sík és a hely határozza meg.
+        if(!role){
+          if(tAxis===width)role=maxColumn-minColumn>eps&&
+            (near(lo[width],minColumn)||near(lo[width],maxColumn))?'side':'f';
+          else if(tAxis===up)role=near(size[tAxis],38)?'worktop':
+            verticalColumns.length&&(near(lo[up],maxVertical)||near(hi[up],maxVertical))?'top':
+            verticalColumns.length&&(near(hi[up],minVertical)||near(lo[up],minVertical))?'bottom':'v';
+          else if(tAxis===depth)role='back';
+        }
+        if(['f','side'].includes(role)&&tAxis===width){xAxis=up;yAxis=depth;}
+        else if(['v','flat','top','bottom','worktop'].includes(role)&&tAxis===up){xAxis=width;yAxis=depth;}
+        else if(role==='back'&&tAxis===depth){xAxis=width;yAxis=up;}
         if(size[tAxis]>50){
           error(part.id,'A 3MF testen nem azonosítható a lap vastagsági tengelye.');continue;
         }
@@ -95,10 +169,22 @@
           dz:Math.round(size[tAxis]*100)/100,side:'IJ',operations:[],issues:[],
           threeMfDraft:true,contactCount:0};
         const box={part,index,lo,hi,size,xAxis,yAxis,tAxis,entry,
-          primaryFace:null};
+          primaryFace:null,role};
         boxes.push(box);
         if(!data.byPart.has(String(part.id)))data.byPart.set(String(part.id),[]);
         data.byPart.get(String(part.id)).push(entry);
+      }
+    }
+    const fColumns=[...new Set(boxes.filter(b=>b.role==='f').map(b=>round(b.lo[width])))].sort((a,b)=>a-b);
+    const sideBoxes=boxes.filter(b=>b.role==='side');
+    const leftSide=sideBoxes.length?Math.min(...sideBoxes.map(b=>b.lo[width])):0;
+    const rightSide=sideBoxes.length?Math.max(...sideBoxes.map(b=>b.lo[width])):0;
+    for(const box of boxes){
+      if(box.role==='f')box.entry.side=fColumns.indexOf(round(box.lo[width]))%2===0?'IJ':'LK';
+      if(box.role==='side'){
+        const name=String(model.parts[box.index].name||box.part.name).toLowerCase();
+        box.rightSide=/jobb|right/.test(name)||(!/bal|left/.test(name)&&rightSide>leftSide&&near(box.lo[width],rightSide));
+        box.entry.side=box.rightSide?'LK':'IJ';
       }
     }
     const overlap=(a,b,k)=>[Math.max(a.lo[k],b.lo[k]),Math.min(a.hi[k],b.hi[k])];
@@ -116,7 +202,8 @@
     };
     for(let i=0;i<boxes.length;i++)for(let j=i+1;j<boxes.length;j++){
       const a=boxes[i],b=boxes[j];
-      if(a.part.id===b.part.id)continue;
+      // Azonos alkatrészsor több különálló fizikai példánya is
+      // találkozhat. A sorazonosító nem jelent azonos testet.
       const intervals=[0,1,2].map(k=>overlap(a,b,k));
       const intersections=intervals.map(([lo,hi])=>hi-lo);
       if(intersections.every(v=>v>eps)){
@@ -148,7 +235,12 @@
         }
         const faceSurface=near(edge.hi[normal],face.lo[normal])?'min':'max';
         if(face.primaryFace===null)face.primaryFace=faceSurface;
-        const faceSide=face.primaryFace===faceSurface?'primary':'reverse';
+        let faceSide=face.primaryFace===faceSurface?'primary':'reverse';
+        if(face.role==='f'&&normal===width)faceSide=faceSurface==='min'?'primary':'reverse';
+        else if(face.role==='side'&&normal===width)
+          faceSide=faceSurface===(face.rightSide?'min':'max')?'primary':'reverse';
+        else if(['v','flat'].includes(face.role)&&normal===up)
+          faceSide=faceSurface==='max'?'primary':'reverse';
         const center=(intervals[thin][0]+intervals[thin][1])/2;
         const from=intervals[span][0],nominalLength=round(intersections[span]);
         const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
@@ -177,6 +269,29 @@
           edgeOp={macro:edgeAtMin?'ELF4':'ELF5',
             X:coord(edge,edge.xAxis,from),x:length,face:'primary'};
         else throw new Error('3MF él tengelyhiba.');
+        // Tető/fenék: a bútortervezőben az F végfurataival érintkező
+        // lapfelület az első oldal; a két oldallapi él FORDIT után készül.
+        if(['top','bottom'].includes(face.role)&&normal===up)faceOp.face='primary';
+        if(['top','bottom'].includes(edge.role)&&normal===width&&
+            boxes.some(box=>box.role==='f'&&
+              (near(box.hi[up],edge.lo[up])||near(box.lo[up],edge.hi[up]))&&
+              overlap(box,edge,depth)[1]-overlap(box,edge,depth)[0]>eps&&
+              overlap(box,edge,width)[1]-overlap(box,edge,width)[0]>eps))
+          edgeOp.face='reverse';
+        // Ugyanaz a jobb/belső F-oldali 15–15 mm-es eltolás és
+        // excenteres G=2 élfurat, mint a bútortervező fJoint szabálya.
+        if(face.role==='f'&&normal===width&&span===depth&&edge.tAxis===up){
+          const shifted=faceSurface==='max'||fColumns.indexOf(round(face.lo[width]))>0;
+          if(shifted){
+            if(length<=30){
+              warn(edge.part.id,'Az F-osztó eltolt furatsorához 30 mm-nél nagyobb mélység kell.');
+              continue;
+            }
+            faceOp.Y=round(faceOp.Y+15);faceOp.y=round(length-30);faceOp.shiftedF=true;
+            edgeOp.Y=round(edgeOp.Y+15);edgeOp.y=round(length-30);edgeOp.shiftedF=true;
+            edgeOp.gOverride=2;
+          }
+        }
         faceOp.joint='divider';edgeOp.joint='divider';
         face.entry.operations.push(faceOp);
         edge.entry.operations.push(edgeOp);
@@ -189,6 +304,12 @@
             {Y:edgeOp.Y}:{X:edgeOp.X},
           faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
       }
+    }
+    // Ha csak az egyik fizikai lapoldal fúrandó, az az első felrakás.
+    // Kétoldali megmunkálásnál a bevált FORDIT továbbra is megmarad.
+    for(const box of boxes){
+      if(box.entry.operations.length&&box.entry.operations.every(op=>op.face==='reverse'))
+        for(const op of box.entry.operations)op.face='primary';
     }
     for(const box of boxes)if(!box.entry.operations.length){
       // Nincs automatikusan felismerhető fúrás: a felhasználó ettől
@@ -307,6 +428,8 @@
    */
   function makeAutoPrograms(furniture,allowedIds,options={}){
     if(!core)throw new Error('A CNC makrómodul hiányzik.');
+    const cncInput=threeMfCncFurniture(furniture,allowedIds);
+    furniture=cncInput.furniture;allowedIds=cncInput.allowedIds;
     const modes={assemblyJoint:String(options.assemblyJoint||options.dividerJoint||'excenter')};
     core.jointCodes(modes.assemblyJoint);
     const allowed=new Set((allowedIds||[]).map(String));
@@ -390,7 +513,7 @@
     }
     return result;
   }
-  const api={cleanName,macroLine,compileEntry,threeMfContactDrafts,makeAutoPrograms};
+  const api={cleanName,macroLine,compileEntry,threeMfCncFurniture,threeMfContactDrafts,makeAutoPrograms};
   if(typeof module!=='undefined'&&module.exports)module.exports=api;
   if(root)root.GatterkaCncAuto=api;
 })(typeof window!=='undefined'?window:null);

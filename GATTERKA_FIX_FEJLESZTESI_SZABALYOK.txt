@@ -752,3 +752,32 @@ archive/before-part-filing-and-workshop-png-20261104
   A natív mentés d6ced248 és a fő SVG 86d21042 változatlan.
 - A tesztek nem helyettesítik az új U/V-program WinCut előnézeti és
   gépi próbaszabását. Az algoritmus heurisztikus, nem garantált optimum.
+
+
+2026-11-16 – 3MF MUNKALAP CNC ÉS BÚTORTERVEZŐVEL AZONOS F/V-KÖTÉSEK (1.3.9)
+- A munkalap kizárólag a SZABÁSBÓL marad ki. Az eredeti 3MF csoportok
+  38 mm-es vagy munkalap nevű téglatestjéből külön, csak CNC-hez használt
+  rekord készül. Nem kerül vissza az alkatrészlistába, optimalizálóba,
+  szabászati xPrg/xMix-be. Régi mentett 3MF modellnél is működik.
+- A munkalap minden valódi lap-él csatlakozása mindkét résztvevőn
+  megmunkálást ad: a munkalapon lapfurat, a hozzá érő oldal/F-osztó
+  megfelelő élén élfurat. Munkalap nélküli szabászlistából is menthető.
+- Törölt/elrejtett munkalap nem támadhat fel. A CNC csak a megőrzött,
+  érvényes téglatest-geometriát használja; teli lapfelület-lapfelület
+  találkozásból a korábbi szabálynak megfelelően nem talál ki fúrást.
+- A 3MF CNC-tengelyek szerkezeti irányt követnek, nem hosszabb méret
+  szerinti rendezést: függőleges lap X=magasság alulról, Y=mélység
+  elölről; vízszintes lap X=szélesség, Y=mélység. Bal oldal IJ, jobb LK;
+  F-osztók balról jobbra IJ/LK váltakozással, a méretfüggő kapcsolásokkal.
+  Névvel azonosított, más tengelyű modellnél a lapok síkja adja a keretet;
+  névtelen Body testeknél az importáló X/Y/Z bútor-koordinátáit használjuk.
+- F-en végződő V-osztó/fix polc: mindkét érintkező alkatrész kap furatot.
+  Az első F bal oldalán normál kötés, jobb oldalán és a további belső
+  kötéseknél Y+15, hossz−30 és excenteres ELF G=2, a bevált fJoint szerint.
+  Az F két felületén szükség szerint FORDIT. V-n álló/végződő F esetén
+  a V lapfuratot, az F alsó/felső éle ELF3/ELF2 makrót kap.
+- Egy összevont alkatrészsor két külön fizikai 3MF példánya is
+  csatlakozhat egymáshoz: az azonos sorazonosító nem kihagyási ok.
+- A bútortervező működése, a kinézet, a Helykitöltő és minden védett
+  szabászati/vágási/mentési kód változatlan. A 3MF F/V koordinátákat és
+  makrókat közvetlenül a bútortervező kimenetével is összevető teszt védi.
