@@ -260,8 +260,13 @@
     }
     return body+' G='+G;
   }
+  function cncAdvisoryIssue(reason){
+    // Régi projektekből megmaradt minősítési jelzések nem tilthatják
+    // a már létező programot; valós méret- és CNC hibák továbbra is tiltanak.
+    return /(?:egyedi eltolás\/végpont CNC-csatlakozása ellenőrizendő|kivett darab, CNC-csatlakozás ellenőrizendő|kézi F\/V darabolás, CNC-kötések ellenőrzendők|egyedi lapvég\/eltolás CNC-csatlakozását ellenőrizni kell|Rajzon kivett osztószakasz: a csatlakozó CNC-furatok ellenőrzendők)/i.test(String(reason||''));
+  }
   function compileEntry(entry,mode){
-    const problems=Array.isArray(entry.issues)?entry.issues.filter(Boolean):[];
+    const problems=Array.isArray(entry.issues)?entry.issues.filter(issue=>issue&&!cncAdvisoryIssue(issue)):[];
     if(problems.length)throw new Error(problems.join('; '));
     const dx=finite(entry.dx),dy=finite(entry.dy),dz=finite(entry.dz);
     if(![dx,dy,dz].every(v=>v>0&&v<=10000))
