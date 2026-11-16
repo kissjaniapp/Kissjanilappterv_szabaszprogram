@@ -73,13 +73,17 @@ test('Body3: 3MF ezredmilliméteres kerekítése mellett a makró nem lóghat ki
  assert.match(body3.content,/H DX=1144 DY=755 DZ=18 /);
  assert.match(body3.content,/LAPA X=309 Y=0 A=0 y=755 G=1/);
 });
-test('3MF ütköző vagy 0.3 mm-nél jobban elálló test nem kap hamis kötésfuratot',()=>{
+test('3MF átfedésnél nem találunk ki furatot, de mind a hat lap CNC-programját mentjük',()=>{
  const f=furniture();
  f.threeMfImport.parts[1].originMm[2]=5;
  const out=produce(f);
  assert.ok(out.contacts.length<8,'Az elcsúsztatott test kontaktusa nem maradhat érvényes.');
- assert.ok(out.blocked.some(x=>/egymásba lóg|illeszkedő/.test(x.reason)),JSON.stringify(out.blocked));
- assert.ok(!out.files.some(x=>x.filename.includes('Body2')),'Ütköző Body2 nem kaphat gépi tesztprogramot.');
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.files.length,6,'Egy vélt 3MF ütközés nem dobhat el kész CNC programot');
+ assert.ok(out.files.some(x=>x.filename.includes('Body2')),
+   'A Body2 külön szerkeszthető XXL fájlját is meg kell őrizni');
+ assert.ok(out.files.every(x=>x.content.startsWith('H DX=')&&x.content.includes('VEGE')),
+   'Minden alkatrész külön, szintaktikailag teljes XXL fájlt kap');
 });
 test('szabászati méret vagy vastagság eltérésnél a 3MF CNC terv menthető, csak figyelmeztet',()=>{
  const f=furniture();
@@ -119,6 +123,31 @@ test('forgatott X/Y alkatrészméret nem változtatja a 3MF valódi lapkapcsolat
  assert.equal(out.files.length,6);
  assert.equal(out.warnings.length,0,'a szabászati X/Y felcserélés nem a geometria hibája');
 });
+test('Lapfelület-lapfelület érintkezés nem ad hamis furatot és nem tiltja a két XXL fájlt',()=>{
+ const f=furniture([
+   {name:'Külső előlap',lo:[0,0,0],size:[600,400,18]},
+   {name:'Előlap',lo:[0,0,18],size:[600,400,18]}
+ ]);
+ const out=produce(f);
+ assert.equal(out.blocked.length,0,JSON.stringify(out.blocked));
+ assert.equal(out.files.length,2);
+ assert.equal(out.contacts.length,0,'Teli lapfelület-érintkezés nem kötési élfurat');
+ assert.equal(out.files.filter(x=>x.noMachining).length,2);
+ for(const item of out.files){
+   assert.match(item.content,/^H DX=600 DY=400 DZ=18 /);
+   assert.match(item.content,/;\r\nVEGE\r\n$/);
+   assert.ok(!/\bLAPA\b|\bELF[2345]\b|\bLAPF\b/.test(item.content),
+     'A nem fúrandó teli lapkapcsolatból tilos hamis furatot készíteni');
+ }
+});
+test('A szerkesztő 3MF miatt nem dobhat fel teljes CNC-t tiltó ablakot',()=>{
+ const app=fs.readFileSync(path.join(__dirname,'../app/index.htm'),'utf8');
+ assert.doesNotMatch(app,/A TELJES CNC-programkészlet nem menthető/);
+ assert.doesNotMatch(app,/A TELJES CNC-mentés tiltott/);
+ assert.match(app,/FURAT NÉLKÜLI XXL PROGRAMOK/);
+ assert.match(app,/GATTERKA – CNC PROGRAMADATOK/);
+});
+
 test('íves 3MF vagy régi, alakellenőrzés nélküli test nem kap tesztprogramot sem',()=>{
  const f=furniture();f.threeMfImport.parts[0].isRectangular=false;
  const out=produce(f);
@@ -163,7 +192,7 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  const open=app.lastIndexOf('<script>',start),end=app.indexOf('</script>',start);
  assert.equal(app.slice(open+8,end).trim(),program,'az inline és külön modul legyen azonos');
  assert.match(app,/data-action="save-cnc-xxl-as"/);
- assert.match(app,/3MF TESZTTERV/);
+ assert.match(app,/FURAT NÉLKÜLI XXL PROGRAMOK/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
  assert.match(app,/data\.warnings\?\.length/);
  assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);

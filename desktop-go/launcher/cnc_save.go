@@ -1,6 +1,6 @@
 // Gatterka: CNC/Xilog XXL programok közvetlen Windows Mentés másként mentése.
 // A szabászati xMix/xPrg fájlmentésétől független: egyetlen valódi .xxl
-// nevet választ a felhasználó, a további hiteles programok mellé kerülnek.
+// nevet választ a felhasználó, a többi elkészült program mellé kerülnek.
 package main
 
 import (
@@ -24,7 +24,7 @@ type savedCncFiles struct {
 }
 
 func validateCncSave(req nativeCncSave) error {
- if len(req.Programs)==0{return errors.New("Nincs hitelesített CNC .xxl program a mentéshez.")}
+ if len(req.Programs)==0{return errors.New("Nincs CNC .xxl program a mentéshez.")}
  seen:=make(map[string]bool,len(req.Programs))
  for _,p:=range req.Programs {
   if !machineXxlName.MatchString(p.Name)||strings.Contains(p.Name,"..")||strings.HasPrefix(p.Name,".") {
@@ -45,7 +45,7 @@ func validateCncSave(req nativeCncSave) error {
   }
  }
  if req.Report!=""&&!strings.HasPrefix(req.Report,"GATTERKA"){
-  return errors.New("A CNC kihagyási jelentés hibás.")
+  return errors.New("A CNC jelentés fejléce hibás.")
  }
  return nil
 }
@@ -89,8 +89,8 @@ func saveCncAndPrograms(firstPath string,req nativeCncSave)(savedCncFiles,error)
   result.Programs=append(result.Programs,path)
  }
  if req.Report!=""{
-  path,err:=createExclusive(folder,"ELLENORIZENDO_KIMARADT.txt",req.Report)
-  if err!=nil{return savedCncFiles{},fmt.Errorf("Kihagyási jelentés mentési hiba: %w",err)}
+  path,err:=createExclusive(folder,"GATTERKA_CNC_JELENTES.txt",req.Report)
+  if err!=nil{return savedCncFiles{},fmt.Errorf("CNC-jelentés mentési hiba: %w",err)}
   created=append(created,path)
   result.ReportPath=path
   result.Partial=true

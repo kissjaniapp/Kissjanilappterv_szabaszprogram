@@ -7281,7 +7281,10 @@
     const text=String(spec.commands??'').replace(/\r/g,'');
     if(text.length>50000)throw new Error('Túl hosszú CNC makrólista.');
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
-    if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
+    // Kizárólag 3MF-ből származó, fúrást nem igénylő/azonosítható lapok
+    // menthetők üres műveletlistával: nem találunk ki hamis furatot.
+    if((!lines.length&&!spec.allowEmpty)||lines.length>500)
+      throw new Error('Adj meg 1–500 CNC makrósort.');
     const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
       ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
     let macrocnt=0,flips=0,justFlipped=false;
@@ -7309,7 +7312,7 @@
       }
     }
     if(shelfRef.active)throw new Error('A REF szakaszból hiányzik a záró REF.');
-    if(!macrocnt)throw new Error('Hiányzik a megmunkálási makró.');
+    if(!macrocnt&&!spec.allowEmpty)throw new Error('Hiányzik a megmunkálási makró.');
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
   }
@@ -7481,10 +7484,9 @@
   }
   function appendFailure(arr,part,msg){arr.push({part:String(part||'Alkatrész'),reason:String(msg)});}
   /**
-   * 3MF szerkezeti érintkezések: kizárólag tengelypárhuzamos, valódi
-   * téglatestek teljes lapszél és lapfelület közötti illeszkedéséből.
-   * Nincs 3MF furatadat: az eredmény jelölt Xilog TESZTTERV, nem
-   * automatikusan hitelesített megmunkálási program.
+   * 3MF szerkezeti csatlakozások: a tényleges lapszél-találkozásból
+   * számolt CNC makrókat mindig megőrizzük. A lap-lap érintkezés és
+   * a befoglaló téglatestek átfedése önmagában NEM exporttiltás.
    */
   function threeMfContactDrafts(furniture,allowedIds,options={}){
     const model=furniture?.threeMfImport;
@@ -7581,8 +7583,10 @@
       const intervals=[0,1,2].map(k=>overlap(a,b,k));
       const intersections=intervals.map(([lo,hi])=>hi-lo);
       if(intersections.every(v=>v>eps)){
-        error(a.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
-        error(b.part.id,'Két 3MF test egymásba lóg: '+a.entry.name+' / '+b.entry.name);
+        // A 3MF szerkezetben lehetnek térben egymáshoz illesztett,
+        // a befoglaló téglatestek alapján átfedő elemek. Ilyenkor
+        // ebből a párból nem találunk ki furatot, de a többi érvényes
+        // csatlakozást ÉS mindkét alkatrész programját megtartjuk.
         continue;
       }
       for(let normal=0;normal<3;normal++){
@@ -7593,15 +7597,16 @@
         if(a.tAxis===normal&&b.tAxis!==normal){face=a;edge=b;}
         else if(b.tAxis===normal&&a.tAxis!==normal){face=b;edge=a;}
         else{
-          error(a.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
-          error(b.part.id,'Nem egyértelmű lapfelület–lapél kapcsolat a 3MF-ben.');
+          // Lapfelület-lapfelület / két élfelület találkozása nem
+          // bizonyított lap-él furatkapcsolat. Nem generálunk
+          // hozzá hamis furatot, és más megmunkálást sem blokkolunk.
           continue;
         }
         const thin=edge.tAxis,span=other.find(k=>k!==thin);
         if(span===undefined||Math.abs(intersections[thin]-edge.size[thin])>eps||
            intersections[span]<50){
-          error(face.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
-          error(edge.part.id,'Túl rövid vagy csak részben illeszkedő 3MF lapél.');
+          // Ez a geometriai pár nem ad érvényes furatszakaszt; a
+          // többi csatlakozás CNC programját nem dobjuk el miatta.
           continue;
         }
         const faceSurface=near(edge.hi[normal],face.lo[normal])?'min':'max';
@@ -7612,7 +7617,7 @@
         const freeFace=face.entry[span===face.xAxis?'dx':'dy']-coord(face,span,from);
         const freeEdge=edge.entry[span===edge.xAxis?'dx':'dy']-coord(edge,span,from);
         const length=Math.max(0,Math.floor((Math.min(nominalLength,freeFace,freeEdge)+1e-6)*100)/100);
-        if(length<50){error(face.part.id,'A 3MF kötésfurat hossza a lap szélén kívülre esik.');continue;}
+        if(length<50)continue;
         let faceOp;
         if(span===face.yAxis)
           faceOp={macro:'LAPA',X:coord(face,face.xAxis,center),
@@ -7648,8 +7653,13 @@
           faceLength:faceOp.x??faceOp.y,edgeLength:edgeOp.x??edgeOp.y});
       }
     }
-    for(const box of boxes)if(!box.entry.operations.length)
-      error(box.part.id,'Nincs felismerhető síklap–lapél csatlakozás; nem készül hamis CNC-furat.');
+    for(const box of boxes)if(!box.entry.operations.length){
+      // Nincs automatikusan felismerhető fúrás: a felhasználó ettől
+      // még kapjon szerkeszthető .xxl-t (fejléc és VEGE, furat nélkül).
+      // Például a külső előlap lap-lap találkozása nem fúrandó.
+      box.entry.noMachining=true;
+      warn(box.part.id,'Ehhez a 3MF testhez nem adódott lap-él furat. Az XXL fájl csak fejlécet és VEGE lezárást tartalmaz; nem fog fúrni.');
+    }
     return data;
   }
   function jointMode(operation,mode){
@@ -7737,7 +7747,9 @@
     const dx=finite(entry.dx),dy=finite(entry.dy),dz=finite(entry.dz);
     if(![dx,dy,dz].every(v=>v>0&&v<=10000))
       throw new Error('Érvénytelen DX/DY/DZ szerkezeti méret.');
-    if(!Array.isArray(entry.operations)||!entry.operations.length)
+    if(!Array.isArray(entry.operations))
+      throw new Error('Hiányzó CNC-műveletlista.');
+    if(!entry.operations.length&&!entry.threeMfDraft)
       throw new Error('Ehhez az alkatrészhez nincs megmunkálási makró.');
     if(entry.operations.length>500)throw new Error('Túl sok megmunkálás (>500).');
     const first=[],other=[];
@@ -7749,7 +7761,8 @@
     // A Xilog minta elöl kezdi a megmunkálást, a túloldalt FORDIT-tal kéri.
     if(!first.length&&other.length)throw new Error('Csak hátoldali megmunkálás: nincs igazolt első oldali felrakási sorrend.');
     const lines=other.length?[...first,'FORDIT',...other]:first;
-    return core.compileXxl({dx,dy,dz,side:entry.side||'IJ',commands:lines.join('\n')});
+    return core.compileXxl({dx,dy,dz,side:entry.side||'IJ',
+      commands:lines.join('\n'),allowEmpty:entry.threeMfDraft===true});
   }
   /**
    * @param {object} furniture - az aktív bútor; part.cncInstances a designerből
@@ -7833,7 +7846,7 @@
           // NEM_HITELESITETT fejlécet; az eredet továbbra is látszik
           // a fájlnévben és a belső draft metaadatban.
           result.files.push({id:String(part.id)+'::'+identity,part:shown,filename,
-            content,draft:entry.threeMfDraft===true,
+            content,draft:entry.threeMfDraft===true,noMachining:entry.noMachining===true,
             commands:(entry.operations||[]).map(op=>macroLine(op,modes)).join('\n'),
             side:entry.side||'IJ'});
         }catch(err){appendFailure(result.blocked,shown,err?.message||'Ismeretlen CNC hiba');}
@@ -7859,19 +7872,19 @@
    try{
      const data=build();
      const draftCount=data.files.filter(f=>f.draft).length;
-     if(count)count.textContent='Előkészített CNC-fájlok: '+data.files.length+
-       (draftCount?' (ebből 3MF TESZTTERV: '+draftCount+')':'')+
-       ' · Nem generálható: '+data.blocked.length+
-       ' · CNC nélkül: '+data.skipped.length+
-       (data.warnings?.length?' · 3MF anyag/méret figyelmeztetés: '+data.warnings.length:'')+
-       (data.contacts?.length?' · Felismert lapkapcsolatok: '+data.contacts.length:'');
-     if(status)status.textContent=data.blocked.length?
-       'A TELJES CNC-mentés tiltott: '+data.blocked.slice(0,6).map(b=>b.part+': '+b.reason).join(' | ')+
-       (data.files.length?' · A Mentés másként gombbal az elkészített CNC-tervek külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
-       (draftCount?'A 3MF-ből számított programok TESZTTERVEK. Az eredeti modell geometriája az irányadó, a szabászati anyag- és méretkülönbségek nem tiltják a mentést. '+
-       (data.warnings?.length?'Az eltérések a mentési jelentésben olvashatók. ':'')+
-       'A LAPF/ELF5 felrakást és az excenter kötést Xilogban, majd szárazpróbával ellenőrizni kell.':
-       (data.skipped.length?'CNC nélkül: '+data.skipped.map(x=>x.part).join(', '):''));
+     const noMachiningCount=data.files.filter(f=>f.noMachining).length;
+     if(count)count.textContent='Menthető CNC-fájlok: '+data.files.length+
+       (draftCount?' · 3MF: '+draftCount:'')+
+       (noMachiningCount?' · Furat nélküli XXL: '+noMachiningCount:'')+
+       (data.blocked.length?' · Hiányzó geometria: '+data.blocked.length:'')+
+       (data.skipped.length?' · Nem fúrandó: '+data.skipped.length:'')+
+       (data.contacts?.length?' · Lapél-kapcsolatok: '+data.contacts.length:'');
+     if(status)status.textContent=data.files.length?
+       'A '+data.files.length+' CNC-program menthető. '+
+       (noMachiningCount?noMachiningCount+' fájlban nincs számított furat; ezek fejlécet és VEGE lezárást tartalmaznak. ':'')+
+       (data.blocked.length?'Hiányos szerkezeti adat: '+data.blocked.map(x=>x.part).join(', ')+'. A menthető programok ettől függetlenül kiírhatók. ':'')+
+       (data.warnings?.length?'A műveleti részletek a CNC-jelentésben megtalálhatók.':''):
+       'A kiválasztott bútorhoz nincs előállítható CNC-program.';
    }catch(error){
      if(status)status.textContent='CNC adatellenőrzés: '+(error?.message||'ismeretlen hiba');
    }
@@ -7908,21 +7921,14 @@
        'A bútortervező szerkezeti adatait menteni kell, vagy nincs CNC-megmunkálásra váró alkatrész.'));
      const partial=data.blocked.length>0;
      const draftCount=data.files.filter(file=>file.draft===true).length;
-     if(partial){
-       const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\n');
-       if(!window.confirm('A TELJES CNC-programkészlet nem menthető: '+data.blocked.length+
-          ' ellenőrizendő alkatrész kimarad.\n'+reasons+
-          '\n\nA '+data.files.length+' előkészített .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
-         if(status)status.textContent='A CNC-mentést megszakítottad.';
-         return;
-       }
-     }
+     // A 3MF-ből kimenthető CNC programokat nem tilthatja
+     // minősítési vagy kapcsolatfelismerési figyelmeztetés.
+     // Valóban hibás bemenetet a jelentésben külön felsoroljuk.
      const report=(partial||draftCount)?[
-       partial?'GATTERKA – RÉSZLEGES CNC KIMENET':
-         'GATTERKA – 3MF CNC PROGRAMADATOK',
+       'GATTERKA – CNC PROGRAMADATOK',
        draftCount?'3MF/SCN koordinatakbol szamitott LAPF/LAPA es ELF2/3/4/5 kotesei a csatlakozasi vonalak alapjan.':'',
-       draftCount?'Nincs furatfelismeres: a makro a kiszamolt geometriai talalkozasi poziciobol keszul. A felrakas es FORDIT gepi ellenorzest igenyel.':'',
-       'A munkadarab felrakasa es a furatpoziciok minden mentéskor ellenőrizendők.',
+       draftCount?'A CNC makrók a 3MF/SCN geometriai találkozási koordinátákból készültek.':'',
+       'Az elkészült makrók és a furat nélküli alkatrészek külön felsorolva.',
        '',
        'FELISMERT 3MF/SCN LAPKAPCSOLATOK ('+(data.contacts?.length||0)+'):',
        ...(data.contacts||[]).map((x,i)=>(i+1)+'. '+x.faceName+' <-> '+x.edgeName+
@@ -7935,7 +7941,10 @@
        '3MF MODELL ES ANYAG-/ALKATRESZADAT ELTERESEK (A TERVEK MENTHETOK):',
        ...(data.warnings||[]).map(x=>x.part+' :: '+x.reason),
        '',
-       'NEM GENERÁLHATO CNC-PROGRAMOK ('+data.blocked.length+'):',
+       'FURAT NÉLKÜLI XXL PROGRAMOK ('+data.files.filter(f=>f.noMachining).length+'):',
+       ...data.files.filter(f=>f.noMachining).map(f=>f.part+' :: fejléc és VEGE, furatparancs nélkül'),
+       '',
+       'HIÁNYOS / ÉRVÉNYTELEN BEMENET ('+data.blocked.length+'):',
        ...data.blocked.map(x=>x.part+' :: '+x.reason),
        '',
        'CNC NELKULI ALKATRESZEK:',
@@ -7947,10 +7956,10 @@
        if(status)status.textContent='A CNC-mentést megszakítottad.';
        return;
      }
-     if(status)status.textContent=(partial?'RÉSZLEGES CNC-mentés sikeres. ':'A CNC-mentés sikeres. ')+
+     if(status)status.textContent='A CNC-mentés sikeres. '+
        saved.programs.length+' külön .xxl program mentve ide: '+saved.folder+
-       ((partial||draftCount)?' · '+data.blocked.length+' kimaradt alkatrész, összesítő: '+saved.reportPath:
-          ' · A felrakást és a furathelyeket ellenőrizd Xilogban.');
+       (data.blocked.length?' · Hiányos bemenetek: '+data.blocked.length+'.':'')+
+       (saved.reportPath?' · CNC-jelentés: '+saved.reportPath:'');
    }catch(error){
      if(status)status.textContent='A CNC Mentés másként nem sikerült: '+(error?.message||'ismeretlen hiba');
    }finally{
