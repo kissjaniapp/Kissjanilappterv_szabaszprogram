@@ -7169,6 +7169,14 @@
     return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
   }
 
+  // A bútorlábak saját, külön CNC-makrója: 4 × LAB X/Y, G=2.
+  function parseLab(line,dx,dy){
+    const m=/^LAB X=((?:\d+\.?\d*|\.\d+)) Y=((?:\d+\.?\d*|\.\d+)) G=2$/.exec(String(line).trim());
+    if(!m)throw new Error('LAB: X/Y és G=2 paraméterek szükségesek.');
+    const X=number(m[1],'LAB X',true),Y=number(m[2],'LAB Y',true);
+    if(X>dx||Y>dy)throw new Error('LAB: a lábfúrás a munkadarabon kívülre kerül.');
+    return 'LAB X='+fmt(X)+' Y='+fmt(Y)+' G=2';
+  }
   // A Xilog3 Progr1.pgm XFALC Q=1# G=2# mintájából; a Q értékeket
   // a felhasználó határozta meg: 1 végig; 2 egyik vég sem; 3 bal nem;
   // 4 jobb nem. G mindig 2.
@@ -7294,7 +7302,8 @@
       }else{
         if(shelfRef.active)throw new Error('A REF szakaszba csak POLC-makró írható.');
         out.push(lines[i].startsWith('XBO ')?parseXbo(lines[i],dx,dy,dz):
-          lines[i].startsWith('XFALC ')?parseXfalc(lines[i]):parseMacro(lines[i],dx,dy));
+          lines[i].startsWith('XFALC ')?parseXfalc(lines[i]):
+          lines[i].startsWith('LAB ')?parseLab(lines[i],dx,dy):parseMacro(lines[i],dx,dy));
         macrocnt++;
         justFlipped=false;
       }
@@ -7463,7 +7472,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','XFALC']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','XFALC','LAB']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -7670,6 +7679,12 @@
       // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
       // a két felhasználói PGM minta kifejezetten G=1# F=1.
       return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    if(operation.macro==='LAB'){
+      const X=finite(operation.X),Y=finite(operation.Y);
+      if(!Number.isFinite(X)||!Number.isFinite(Y)||X<0||Y<0||
+          Number(operation.G)!==2)throw new Error('Hibás LAB X/Y/G bútorláb-paraméter.');
+      return 'LAB X='+round(X)+' Y='+round(Y)+' G=2';
     }
     if(operation.macro==='XFALC'){
       const q=Number(operation.Q);
