@@ -47,6 +47,7 @@ func TestSaveCncPartialKeepsMissingReportAndAvoidsOverwrites(t *testing.T){
  if len(saved.Programs)!=2||saved.Programs[0]!=chosen||saved.Programs[1]==chosen{
   t.Fatalf("Fájlnévütközés: %+v",saved)
  }
+ if filepath.Base(saved.ReportPath)!="GATTERKA_CNC_JELENTES.txt"{t.Fatalf("A mentési jelentés rossz nevű: %s",saved.ReportPath)}
  report,err:=os.ReadFile(saved.ReportPath)
  if err!=nil||string(report)!=req.Report{t.Fatalf("Nem olvasható kihagyási jelentés: %v",err)}
  original,err:=os.ReadFile(filepath.Join(root,req.Programs[0].Name))
