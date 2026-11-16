@@ -760,3 +760,26 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - A tető oldallapi felső élén továbbra is ELF2, a fenék alsó élén ELF3;
   a közémenő lapok helyes LAPA X koordinátája és a gépi vágási sorrend
   érintetlen. A korábbi ellentmondó oldallapi térfélbejegyzéseket ez felülírja.
+
+2026-11-16 – 3MF CNC-PROGRAMOK MENTÉSE MINŐSÍTÉSI TILTÁS NÉLKÜL
+-----------------------------------------------------------------
+- A már előállított, geometriai lap-él kapcsolatokból számított .xxl
+  programot nem lehet eldobni azért, mert egy másik kapcsolat
+  lapfelület-lapfelület, vagy a befoglaló téglatestek átfednek.
+- Lapfelület-lapfelület érintkezésnél nincs automatikus fúrás:
+  sem az előlapra, sem a másik lapra nem generálunk hamis furatot.
+  A többi, egyértelmű csatlakozó furat megmarad és menthető.
+- Ha egy érvényes, téglatest 3MF-testhez nem találunk lap-él
+  furatkiosztást, akkor is készül külön szerkeszthető XXL program:
+  helyes DX/DY/DZ/térfél fejléc, majd záró VEGE, fúrás nélkül.
+  Ez nem helyettesít egy ténylegesen hiányzó furatot; a CNC
+  összesítő külön feltünteti a furat nélküli programokat.
+- Nem szabad „teljes CNC nem menthető”, „ellenőrizendő” vagy
+  „KIMARADT” felugró kérdéssel megakadályozni a menthető fájlokat.
+  A valós strukturális adathiány a külön CNC jelentésben szerepel.
+- A Windows program egyszerre menti az összes elkészíthető CNC
+  fájlt. A kiegészítő jelentés neve GATTERKA_CNC_JELENTES.txt.
+- A nem téglatest 3MF adat, hiányzó világkoordináta, érvénytelen
+  DX/DY/DZ vagy hibás Xilog utasítás nem válhat kitalált furattá.
+- A bevált xMix/xPrg gyártási algoritmus és a szabás sorrendje
+  változatlan.
