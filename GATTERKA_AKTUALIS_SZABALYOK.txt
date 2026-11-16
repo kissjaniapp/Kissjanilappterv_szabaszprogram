@@ -783,3 +783,49 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   DX/DY/DZ vagy hibás Xilog utasítás nem válhat kitalált furattá.
 - A bevált xMix/xPrg gyártási algoritmus és a szabás sorrendje
   változatlan.
+
+2026-11-16 – AZ OLDALLAP ÉS F-OSZTÓ CNC FURATOK NULLPONTJAI
+--------------------------------------------------------
+- OLDALLAP: jobb oldallap IJ, bal oldallap LK (mérethez igazított
+  IL/LI/AB/AD/DC/DA térfél); közémenő tető LAPA X=t/2,
+  közémenő fenék LAPA X=sideH-t/2 változatlan, mert már működik.
+- Oldallap egyedi XBO polctartó a FELSŐ gépi X nullpontból indul:
+  polc alsó z – 2,5 mm a furatcsoport közepe, a legfelső lyuk
+  magassága z1−2,5+(R−1)*raszter/2, majd
+  XBO X = oldallap felső világszintje − legfelső lyuk világszintje.
+  Így a magasabb polchoz KISEBB X, az alacsonyabbhoz NAGYOBB X
+  tartozik. XBO x raszter a felrakás megfelelő gépi irányában nő.
+- REF DX/BX külön szabály: az alsó fizikai ütközőhöz mért BX,
+  közémenő fenéknél BX=t, a DX a szabad oldallaphosszból származik.
+- F-OSZTÓ: saját X=0 pontja ALUL, Y=0 a bútor elején; az X
+  alulról felfelé nő. A fix polc LAPA X a polc középvonala
+  mínusz az F-osztó alsó világszintje. A helyi polctartó XBO X
+  a legalsó lyuk világszintje mínusz az F-osztó alsó világszintje.
+  A felső él ELF2, az alsó ELF3. A második lapoldalon a
+  jóváhagyott FORDIT és az Y/eltolt G kapcsolatok változatlanok.
+- Az oldallap és F-osztó programjában a rajzi magasságot nem lehet
+  az eltérő gépi nullpontok között képlet nélkül felcserélni.
+- A tető, fenék, pótfenék, polc és V-osztó korábbi, jóváhagyott
+  makróit, valamint a védett xPrg/xMix vágási sorrendet nem módosítjuk.
+
+2026-11-16 – A TELJES BÚTOR KÜLMAGASSÁGA ÉS A SZERKESZTŐ ELŐZMÉNYEI
+-------------------------------------------------------------------
+- A felhasználó által beírt H a TELJES kész szekrénymagasság,
+  a lábak magasságával együtt. Négy 100 mm-es láb használatakor
+  a bútortest magassága H−100 mm. A H-hoz tilos 100 mm-t hozzáadni.
+- Ha van 18 mm-es (vagy választott t vastagságú) PÓTFENÉK,
+  akkor az oldallap vágott hosszából további t mm-t vonunk le.
+  A tető/fenék végigmenő kialakításának további t levonása az
+  eredeti kapcsolatoknak megfelelően megmarad.
+- Példa H=1500 mm, t=18 mm, mindkét lap közémenő:
+  láb és pótfenék nélkül oldal 1500 mm;
+  csak 100 mm lábbal oldal 1400 mm;
+  100 mm lábbal ÉS pótfenékkel oldal 1382 mm.
+- A méretnek ugyanannak kell lennie az elő-/oldalnézetben,
+  3D modellben, alkatrészjegyzékben és CNC DX értékekben.
+- Vissza/Előre az utolsó tényleges szerkesztést vonja vissza vagy
+  ismétli meg, nem egy véletlenszerű régebbi értéket.
+  A módosított paraméterek, polcközök, F/V-darabolások,
+  vizuális eltolások és kapcsolatok korábbi állapota MÉLY MÁSOLAT.
+  A Vissza után végzett új módosítás törli az Előre ágat.
+  A külső bútor méretmezői is szinkronban maradnak a visszavonással.
