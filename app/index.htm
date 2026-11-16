@@ -7872,19 +7872,19 @@
    try{
      const data=build();
      const draftCount=data.files.filter(f=>f.draft).length;
-     if(count)count.textContent='Előkészített CNC-fájlok: '+data.files.length+
-       (draftCount?' (ebből 3MF TESZTTERV: '+draftCount+')':'')+
-       ' · Nem generálható: '+data.blocked.length+
-       ' · CNC nélkül: '+data.skipped.length+
-       (data.warnings?.length?' · 3MF anyag/méret figyelmeztetés: '+data.warnings.length:'')+
-       (data.contacts?.length?' · Felismert lapkapcsolatok: '+data.contacts.length:'');
-     if(status)status.textContent=data.blocked.length?
-       'A TELJES CNC-mentés tiltott: '+data.blocked.slice(0,6).map(b=>b.part+': '+b.reason).join(' | ')+
-       (data.files.length?' · A Mentés másként gombbal az elkészített CNC-tervek külön .xxl fájlokként menthetők.':' · Jelenleg nincs hitelesíthető CNC-program.') :
-       (draftCount?'A 3MF-ből számított programok TESZTTERVEK. Az eredeti modell geometriája az irányadó, a szabászati anyag- és méretkülönbségek nem tiltják a mentést. '+
-       (data.warnings?.length?'Az eltérések a mentési jelentésben olvashatók. ':'')+
-       'A LAPF/ELF5 felrakást és az excenter kötést Xilogban, majd szárazpróbával ellenőrizni kell.':
-       (data.skipped.length?'CNC nélkül: '+data.skipped.map(x=>x.part).join(', '):''));
+     const noMachiningCount=data.files.filter(f=>f.noMachining).length;
+     if(count)count.textContent='Menthető CNC-fájlok: '+data.files.length+
+       (draftCount?' · 3MF: '+draftCount:'')+
+       (noMachiningCount?' · Furat nélküli XXL: '+noMachiningCount:'')+
+       (data.blocked.length?' · Hiányzó geometria: '+data.blocked.length:'')+
+       (data.skipped.length?' · Nem fúrandó: '+data.skipped.length:'')+
+       (data.contacts?.length?' · Lapél-kapcsolatok: '+data.contacts.length:'');
+     if(status)status.textContent=data.files.length?
+       'A '+data.files.length+' CNC-program menthető. '+
+       (noMachiningCount?noMachiningCount+' fájlban nincs számított furat; ezek fejlécet és VEGE lezárást tartalmaznak. ':'')+
+       (data.blocked.length?'Hiányos szerkezeti adat: '+data.blocked.map(x=>x.part).join(', ')+'. A menthető programok ettől függetlenül kiírhatók. ':'')+
+       (data.warnings?.length?'A műveleti részletek a CNC-jelentésben megtalálhatók.':''):
+       'A kiválasztott bútorhoz nincs előállítható CNC-program.';
    }catch(error){
      if(status)status.textContent='CNC adatellenőrzés: '+(error?.message||'ismeretlen hiba');
    }
@@ -7921,21 +7921,14 @@
        'A bútortervező szerkezeti adatait menteni kell, vagy nincs CNC-megmunkálásra váró alkatrész.'));
      const partial=data.blocked.length>0;
      const draftCount=data.files.filter(file=>file.draft===true).length;
-     if(partial){
-       const reasons=data.blocked.slice(0,5).map(x=>x.part+' – '+x.reason).join('\n');
-       if(!window.confirm('A TELJES CNC-programkészlet nem menthető: '+data.blocked.length+
-          ' ellenőrizendő alkatrész kimarad.\n'+reasons+
-          '\n\nA '+data.files.length+' előkészített .xxl programot így is elmentsem, külön KIMARADT jelentéssel?')){
-         if(status)status.textContent='A CNC-mentést megszakítottad.';
-         return;
-       }
-     }
+     // A 3MF-ből kimenthető CNC programokat nem tilthatja
+     // minősítési vagy kapcsolatfelismerési figyelmeztetés.
+     // Valóban hibás bemenetet a jelentésben külön felsoroljuk.
      const report=(partial||draftCount)?[
-       partial?'GATTERKA – RÉSZLEGES CNC KIMENET':
-         'GATTERKA – 3MF CNC PROGRAMADATOK',
+       'GATTERKA – CNC PROGRAMADATOK',
        draftCount?'3MF/SCN koordinatakbol szamitott LAPF/LAPA es ELF2/3/4/5 kotesei a csatlakozasi vonalak alapjan.':'',
-       draftCount?'Nincs furatfelismeres: a makro a kiszamolt geometriai talalkozasi poziciobol keszul. A felrakas es FORDIT gepi ellenorzest igenyel.':'',
-       'A munkadarab felrakasa es a furatpoziciok minden mentéskor ellenőrizendők.',
+       draftCount?'A CNC makrók a 3MF/SCN geometriai találkozási koordinátákból készültek.':'',
+       'Az elkészült makrók és a furat nélküli alkatrészek külön felsorolva.',
        '',
        'FELISMERT 3MF/SCN LAPKAPCSOLATOK ('+(data.contacts?.length||0)+'):',
        ...(data.contacts||[]).map((x,i)=>(i+1)+'. '+x.faceName+' <-> '+x.edgeName+
@@ -7948,7 +7941,10 @@
        '3MF MODELL ES ANYAG-/ALKATRESZADAT ELTERESEK (A TERVEK MENTHETOK):',
        ...(data.warnings||[]).map(x=>x.part+' :: '+x.reason),
        '',
-       'NEM GENERÁLHATO CNC-PROGRAMOK ('+data.blocked.length+'):',
+       'FURAT NÉLKÜLI XXL PROGRAMOK ('+data.files.filter(f=>f.noMachining).length+'):',
+       ...data.files.filter(f=>f.noMachining).map(f=>f.part+' :: fejléc és VEGE, furatparancs nélkül'),
+       '',
+       'HIÁNYOS / ÉRVÉNYTELEN BEMENET ('+data.blocked.length+'):',
        ...data.blocked.map(x=>x.part+' :: '+x.reason),
        '',
        'CNC NELKULI ALKATRESZEK:',
@@ -7960,10 +7956,10 @@
        if(status)status.textContent='A CNC-mentést megszakítottad.';
        return;
      }
-     if(status)status.textContent=(partial?'RÉSZLEGES CNC-mentés sikeres. ':'A CNC-mentés sikeres. ')+
+     if(status)status.textContent='A CNC-mentés sikeres. '+
        saved.programs.length+' külön .xxl program mentve ide: '+saved.folder+
-       ((partial||draftCount)?' · '+data.blocked.length+' kimaradt alkatrész, összesítő: '+saved.reportPath:
-          ' · A felrakást és a furathelyeket ellenőrizd Xilogban.');
+       (data.blocked.length?' · Hiányos bemenetek: '+data.blocked.length+'.':'')+
+       (saved.reportPath?' · CNC-jelentés: '+saved.reportPath:'');
    }catch(error){
      if(status)status.textContent='A CNC Mentés másként nem sikerült: '+(error?.message||'ismeretlen hiba');
    }finally{
