@@ -66,8 +66,8 @@ test('Közémenő tető/fenék + F-osztó: minden CNC fájl kijön, top LAPA fé
  assert.ok(side.operations.some(op=>op.macro==='LAPA'&&op.X===891&&op.Y===0),
   'A fenék furata nem kerülhet a tetőhöz');
  const fCnc=rows[3].cncInstances[0];
- assert.ok(fCnc.operations.some(op=>op.macro==='ELF3'),'F felső csatlakozás');
- assert.ok(fCnc.operations.some(op=>op.macro==='ELF2'),'F alsó csatlakozás');
+ assert.ok(fCnc.operations.some(op=>op.macro==='ELF3'),'F alsó csatlakozás');
+ assert.ok(fCnc.operations.some(op=>op.macro==='ELF2'),'F felső csatlakozás');
  assert.ok(!output.blocked.length,'Az F-osztó meglévő furatai menthetők');
 });
 test('Végigmenő fenék pótfenékkel: fenék meglévő CNC-je nem tiltható',()=>{

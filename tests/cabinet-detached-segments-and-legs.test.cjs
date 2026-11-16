@@ -66,14 +66,21 @@ function readFixture(){
  '\nthis.readCabinet=read;',ctx);
  return ctx;
 }
-test('A láb 100 mm-rel növeli a teljes H-t, a test és az alkatrészek magasságát nem',()=>{
+test('A teljes H tartalmazza a 100 mm lábat, a pótfenék vastagsága az oldalból levonandó',()=>{
  const ctx=readFixture();let c=ctx.readCabinet();
  assert.equal(c.hasLegs,true);assert.equal(c.legHeight,100);
- assert.equal(c.overallH,1600);assert.equal(c.h,1500);assert.equal(c.sideH,1500);
+ assert.equal(c.overallH,1500);assert.equal(c.h,1400);assert.equal(c.sideH,1400);
+ ctx.flags.falseBottom=true;c=ctx.readCabinet();
+ assert.equal(c.overallH,1500);
+ assert.equal(c.bodyBottomOffset,18);
+ assert.equal(c.bodyH,1382);
+ assert.equal(c.sideH,1382,'Láb 100 mm és pótfenék 18 mm a teljes magasságból levonva');
  ctx.flags.hasLegs=false;c=ctx.readCabinet();
- assert.equal(c.overallH,1500);assert.equal(c.legHeight,0);assert.equal(c.sideH,1500);
+ assert.equal(c.overallH,1500);assert.equal(c.h,1500);assert.equal(c.sideH,1482);
+ ctx.flags.falseBottom=false;c=ctx.readCabinet();
+ assert.equal(c.sideH,1500);
  ctx.flags.hasLegs=true;ctx.flags.hasBottom=false;c=ctx.readCabinet();
- assert.equal(c.hasLegs,false);assert.equal(c.overallH,1500);
+ assert.equal(c.hasLegs,false);assert.equal(c.overallH,1500);assert.equal(c.sideH,1500);
 });
 test('Elöl, oldalnézeten, nagy rajzon és 3D-ben a 28×28×100 mm lábak közepe 59 mm',()=>{
  assert.match(html,/id="hasLegs"/);

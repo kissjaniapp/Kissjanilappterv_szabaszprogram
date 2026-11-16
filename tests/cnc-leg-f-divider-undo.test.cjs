@@ -38,10 +38,10 @@ test('F-osztó helyi polctartó: minden csatlakozó polc előtt/hátul mindkét 
  assert.equal(xbo.filter(op=>op.face==='primary').length,2);
  assert.equal(xbo.filter(op=>op.face==='reverse').length,2);
  assert.deepEqual(Array.from(xbo,op=>[op.X,op.Y,op.R,op.x]),[
-  [852.5,60,3,32],[852.5,340,3,32],
-  [852.5,60,3,32],[852.5,340,3,32]]);
+  [547.5,60,3,32],[547.5,340,3,32],
+  [547.5,60,3,32],[547.5,340,3,32]]);
  const program=auto.compileEntry(f,{assemblyJoint:'excenter'});
- assert.match(program,/XBO X=852\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
+ assert.match(program,/XBO X=547\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
  assert.match(program,/XMSG Q=1 N="FORDIT"/);
  assert.equal((program.match(/XBO X=/g)||[]).length,4);
 });
@@ -78,7 +78,55 @@ test('A szerkesztő Vissza/Előre gombja és kétirányú előzménytára létez
  assert.match(scripts[1],/function moveHistory\(step\)/);
  assert.match(scripts[1],/history=history\.slice\(0,historyIndex\+1\)/);
  assert.match(scripts[1],/function resetHistory\(\)/);
- assert.match(scripts[1],/notify\(true\)/);
+ assert.match(scripts[1],/notify\(true,true\)/);
  assert.match(scripts[0],/clearHistoryOverrides=/);
  for(const script of scripts)assert.doesNotThrow(()=>new vm.Script(script));
+});
+
+test('A Vissza/Előre valódi, különálló rajzállapotokat tárol; új lépés törli az Előre ágat',()=>{
+ const begin=scripts[1].indexOf(" let quiet=false,last=''"),
+       end=scripts[1].indexOf(' function publishHeight(){',begin);
+ assert.ok(begin>=0&&end>begin,'Hiányzó tényleges visszavonó motor');
+ const callbacks={},buttons={visualUndo:{disabled:true},visualRedo:{disabled:true}};
+ for(const [name,el] of Object.entries(buttons))
+   el.addEventListener=(_name,fn)=>{callbacks[name]=fn;};
+ const document={
+   getElementById:id=>buttons[id]||null,
+   addEventListener:(name,fn)=>{callbacks[name]=fn;}
+ };
+ const context={
+   document,console,clearTimeout:()=>{},setTimeout:()=>0,
+   window:{addEventListener:()=>{},parent:null,gatterkaCabinetDirectSave:()=>{}},
+   Event:class Event{},
+   snapshot:()=>({...context.state,parts:[]}),
+   apply:({design})=>{context.state=JSON.parse(JSON.stringify(design));}
+ };
+ context.window.parent=context.window;
+ context.window.GatterkaCabinetModel={clearHistoryOverrides:()=>{}};
+ context.state={inputs:{h:'1500',count:'2'},radios:{drilling:'local'},
+   custom:{'gap-0':'100'},visual:{edits:{'f-divider-1':{shift:0}}}};
+ vm.createContext(context);
+ vm.runInContext(scripts[1].slice(begin,end)+
+  '\nresetHistory();this.getHistory=()=>({index:historyIndex,length:history.length});',context);
+ assert.equal(buttons.visualUndo.disabled,true,'Kezdeti állapotnál nincs Vissza');
+ context.state.visual.edits['f-divider-1'].shift=40;
+ callbacks.change();
+ assert.equal(context.getHistory().length,2);
+ assert.equal(buttons.visualUndo.disabled,false);
+ // A korábban rögzített objektum mutációja nem írhatja át a mentett állapotot.
+ context.state.visual.edits['f-divider-1'].shift=70;
+ callbacks.change();
+ assert.equal(context.getHistory().length,3);
+ callbacks.visualUndo();
+ assert.equal(context.state.visual.edits['f-divider-1'].shift,40);
+ callbacks.visualUndo();
+ assert.equal(context.state.visual.edits['f-divider-1'].shift,0);
+ callbacks.visualRedo();
+ assert.equal(context.state.visual.edits['f-divider-1'].shift,40);
+ context.state.inputs.count='3';
+ callbacks.change();
+ assert.equal(buttons.visualRedo.disabled,true,'Új szerkesztéskor nincs régi Előre');
+ callbacks.visualUndo();
+ assert.equal(context.state.inputs.count,'2','Pontosan az utolsó módosítás vonandó vissza');
+ assert.equal(context.state.visual.edits['f-divider-1'].shift,40,'A korábbi rajzi állapot nem sérülhet');
 });

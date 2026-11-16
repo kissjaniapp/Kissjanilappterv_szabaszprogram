@@ -195,5 +195,5 @@ test('a szerkezeti 3MF CNC terv nem módosítja a szabászati vágási algoritmu
  assert.match(app,/FURAT NÉLKÜLI XXL PROGRAMOK/);
  assert.match(app,/actualDimensions:Object\.fromEntries/);
  assert.match(app,/data\.warnings\?\.length/);
- assert.match(app,/NEM GENERÁLHATO CNC-PROGRAMOK/);
+ assert.match(app,/HIÁNYOS \/ ÉRVÉNYTELEN BEMENET/);
 });

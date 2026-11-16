@@ -117,8 +117,8 @@ test('XBO polctartó: első X az ALSÓ furat, raszter felfelé; Y továbbra is e
    const drilling=ops(result,key,'XBO');
    assert.equal(drilling.length,2,key);
    assert.deepEqual(drilling.map(x=>x.Y),[70,500],'Az Y elölről indul');
-   assert.ok(drilling.every(x=>x.X===406.5&&x.x===32&&x.R===3),
-    'Alulról 406.5, 438.5, 470.5 mm a furatsor');
+   assert.ok(drilling.every(x=>x.X===429.5&&x.x===32&&x.R===3),
+    'Felülről 429.5, 461.5, 493.5 mm az XBO furatsor');
   }
  }
 });
