@@ -122,6 +122,22 @@ test('XBO polctartó: első X az ALSÓ furat, raszter felfelé; Y továbbra is e
   }
  }
 });
+test('A JOBB oldallap IJ, BAL LK; a 800 és 1350 mm küszöb felett a megfelelő kapcsolt térfélre vált',()=>{
+ for(const [sideH,d,leftCode,rightCode] of [
+   [900,600,'LK','IJ'],[1500,600,'LI','IL'],
+   [900,800,'DC','AB'],[1500,800,'DA','AD']
+ ]){
+   const p=cabinet({sideH,d,drilling:'fixed',rabbet:false});
+   const data=run(p);
+   assert.equal(side(data,'side-left').side,'LK','A bal oldallap alap térfele LK');
+   assert.equal(side(data,'side-right').side,'IJ','A jobb oldallap alap térfele IJ');
+   const leftProgram=cnc.compileEntry(side(data,'side-left'),{assemblyJoint:'excenter'});
+   const rightProgram=cnc.compileEntry(side(data,'side-right'),{assemblyJoint:'excenter'});
+   assert.match(leftProgram,new RegExp(' -'+leftCode+' C=0 '),'BAL / '+sideH+'/'+d);
+   assert.match(rightProgram,new RegExp(' -'+rightCode+' C=0 '),'JOBB / '+sideH+'/'+d);
+ }
+});
+
 test('Az oldallap FELSŐ élén ELF2, ALSÓ élén ELF3 készül minden tető/fenék-elrendezésnél',()=>{
  for(const [top,bottom] of [
   ['between','between'],['between','full'],['full','between'],['full','full']
