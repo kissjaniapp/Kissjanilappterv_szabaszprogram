@@ -183,7 +183,10 @@
     const text=String(spec.commands??'').replace(/\r/g,'');
     if(text.length>50000)throw new Error('Túl hosszú CNC makrólista.');
     const lines=text.split('\n').map(s=>s.trim()).filter(s=>s&&s!==';');
-    if(!lines.length||lines.length>500)throw new Error('Adj meg 1–500 ellenőrzött CNC makrósort.');
+    // Kizárólag 3MF-ből származó, fúrást nem igénylő/azonosítható lapok
+    // menthetők üres műveletlistával: nem találunk ki hamis furatot.
+    if((!lines.length&&!spec.allowEmpty)||lines.length>500)
+      throw new Error('Adj meg 1–500 CNC makrósort.');
     const out=['H DX='+fmt(dx)+' DY='+fmt(dy)+' DZ='+fmt(dz)+' -'+header.side+
       ' C=0 T='+header.tool+' R=100 *MM /"DEF" BX=0 BY=0 BZ=0 V=1'];
     let macrocnt=0,flips=0,justFlipped=false;
@@ -211,7 +214,7 @@
       }
     }
     if(shelfRef.active)throw new Error('A REF szakaszból hiányzik a záró REF.');
-    if(!macrocnt)throw new Error('Hiányzik a megmunkálási makró.');
+    if(!macrocnt&&!spec.allowEmpty)throw new Error('Hiányzik a megmunkálási makró.');
     out.push(';','VEGE');
     return out.join('\r\n')+'\r\n';
   }
