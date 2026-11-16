@@ -38,10 +38,10 @@ test('F-osztó helyi polctartó: minden csatlakozó polc előtt/hátul mindkét 
  assert.equal(xbo.filter(op=>op.face==='primary').length,2);
  assert.equal(xbo.filter(op=>op.face==='reverse').length,2);
  assert.deepEqual(Array.from(xbo,op=>[op.X,op.Y,op.R,op.x]),[
-  [852.5,60,3,32],[852.5,340,3,32],
-  [852.5,60,3,32],[852.5,340,3,32]]);
+  [547.5,60,3,32],[547.5,340,3,32],
+  [547.5,60,3,32],[547.5,340,3,32]]);
  const program=auto.compileEntry(f,{assemblyJoint:'excenter'});
- assert.match(program,/XBO X=852\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
+ assert.match(program,/XBO X=547\.5 Y=60 z=13 V=1 R=3 x=32 y=0 D=5 N=P F=1/);
  assert.match(program,/XMSG Q=1 N="FORDIT"/);
  assert.equal((program.match(/XBO X=/g)||[]).length,4);
 });
