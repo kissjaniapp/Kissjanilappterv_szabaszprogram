@@ -173,7 +173,7 @@ test('Beágyazott szerkesztő: kettévágás, kivétel, visszaállítás, zoom �
  for(const script of scripts)assert.doesNotThrow(()=>new vm.Script(script));
 });
 
-test('Egyetlen natív CNC Mentés másként: közvetlen XXL fájlok, részleges kimaradt jelentés',()=>{
+test('Egyetlen natív CNC Mentés másként: közvetlen XXL fájlok, blokk nélküli összesítő',()=>{
  assert.match(source,/data-action="save-cnc-xxl-as"/);
  assert.doesNotMatch(source,/data-action="save-all-cnc-xxl"/);
  assert.doesNotMatch(source,/data-action="save-verified-cnc-xxl"/);
@@ -182,6 +182,8 @@ test('Egyetlen natív CNC Mentés másként: közvetlen XXL fájlok, részleges 
  assert.match(source,/window\.gatterkaSaveAutoCncAs/);
  assert.match(source,/HIÁNYOS \/ ÉRVÉNYTELEN BEMENET/);
  assert.match(source,/3MF MODELL ES ANYAG-\/ALKATRESZADAT ELTERESEK/);
- assert.match(source,/RÉSZLEGES CNC-mentés sikeres/);
+ assert.match(source,/A CNC-mentés sikeres/);
+ assert.doesNotMatch(source,/A TELJES CNC-programkészlet nem menthető/);
+ assert.match(source,/GATTERKA – CNC PROGRAMADATOK/);
  assert.doesNotMatch(source,/window\.gatterkaDownloadAutoCnc/);
 });
