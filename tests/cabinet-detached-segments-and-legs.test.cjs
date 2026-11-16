@@ -33,7 +33,8 @@ test('A bontott F-osztó két külön darabja egymástól függetlenül húzhat�
  assert.equal(out[1].key,'f-divider-1-cut-2');
  assert.equal(out[0].x1,491);assert.equal(out[1].x1,551);
  assert.equal(out[0].z2,291);assert.equal(out[1].z1,609);
- assert.ok(out.connectionIssues.length>0);
+ assert.equal(out.connectionIssues.length,0,'A szerkesztési jelzés nem tiltja a CNC-t');
+ assert.ok(out.connectionWarnings.length>0);
 });
 test('A bontott V-osztó két külön darabja egymástól függetlenül húzható',()=>{
  const g=geometry(),layout={horizontals:[{kind:'v',index:0,z:500}],
@@ -42,7 +43,8 @@ test('A bontott V-osztó két külön darabja egymástól függetlenül húzhat�
  const out=g.apply(p,base(board('v')),layout);
  assert.equal(out.length,2);assert.equal(out[0].x2,291);assert.equal(out[1].x1,609);
  assert.equal(out[0].z1,491);assert.equal(out[1].z1,451);
- assert.ok(out.connectionIssues.length>0);
+ assert.equal(out.connectionIssues.length,0,'A szerkesztési jelzés nem tiltja a CNC-t');
+ assert.ok(out.connectionWarnings.length>0);
 });
 test('Az új fogantyú a tényleges külön elhúzott darabot követi',()=>{
  assert.match(first,/data-vis-part/);
