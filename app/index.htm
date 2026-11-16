@@ -2472,6 +2472,32 @@
           const bw=worktop?bin.b:breadth(o,localFeed),len=along(o,localFeed);
           if(bw>m.feedSize+eps||len>m.crossSize+eps)continue;
           for(const strip of m.strips){
+            // A levágott X-blokk szélességi maradékát U-sávokra,
+            // a sávot V-darabokra bontjuk (a tulajdonosi xPrg minta szerint).
+            if(state.layoutMode==='fill'&&!worktop){
+              for(const block of strip.items){
+                const lanes=block.lanes||[{width:block.breadth,usedLength:block.along,items:[block]}];
+                const occupied=lanes.reduce((sum,lane)=>sum+lane.width,0)+kerf*(lanes.length-1);
+                const options=[];
+                for(const lane of lanes){
+                  const left=block.along-lane.usedLength-kerf-len;
+                  if(Math.abs(lane.width-bw)<eps&&left>=-eps&&isValidRemainder(left))
+                    options.push({lane,left});
+                }
+                const leftWidth=strip.width-occupied-kerf-bw;
+                if(leftWidth>=-eps&&isValidRemainder(leftWidth)&&
+                    len<=block.along+eps&&isValidRemainder(block.along-len))
+                  options.push({lane:null,left:block.along-len});
+                for(const option of options){
+                  // Új sáv: U + V vagy U + F; meglévő sáv: új V.
+                  const extra=option.lane?1:2;
+                  if((m.commandCount??2)+extra>MAX_SAFE_XPRG_COMMANDS)continue;
+                  const score=m.strips.indexOf(strip)*1e12-1e9+option.left*bw;
+                  if(!best||score<best.score)best={bin,strip,block,lane:option.lane,
+                    score,orientation:o,bw,len,machine:m,extraCommands:extra};
+                }
+              }
+            }
             const gap=strip.width-bw;
             if(worktop&&Math.abs(gap)>eps)continue; // Az első menetben csak egy TELJES szélességű munkalap-sor.
             const addition=(strip.usedLength?kerf:0)+len;
@@ -2527,7 +2553,7 @@
     }
     function commitPlacement(item,choice){
       const {bin,orientation,bw,len}=choice,m=bin.machine||(bin.machine=choice.machine);
-      const addedCommands=isWorktop38(item.thickness)?
+      const addedCommands=choice.block?choice.extraCommands:isWorktop38(item.thickness)?
         4+(bin.b-item.b>eps?1:0):
         choice.strip?
           2+(choice.strip.width-bw>0.001&&choice.strip.width-bw+0.001>=kerf?1:0):4;
@@ -2538,6 +2564,20 @@
         if(m.strips.length)m.feedUsed+=kerf;
         strip={index:m.strips.length+1,width:bw,usedLength:0,items:[]};
         m.strips.push(strip);m.feedUsed+=bw;
+      }
+      if(choice.block){
+        const block=choice.block;
+        if(!block.lanes){
+          const original={...block};
+          block.lanes=[{width:block.breadth,usedLength:block.along,items:[original]}];
+        }
+        let lane=choice.lane;
+        if(!lane){lane={width:bw,usedLength:0,items:[]};block.lanes.push(lane);}
+        if(lane.usedLength)lane.usedLength+=kerf;
+        lane.items.push({item,turned:orientation.turned,realW:orientation.a,
+          realH:orientation.b,breadth:bw,along:len});
+        lane.usedLength+=len;
+        return;
       }
       if(strip.usedLength)strip.usedLength+=kerf;
       strip.items.push({item,turned:orientation.turned,realW:orientation.a,
@@ -2671,6 +2711,30 @@
       if(!choice){failed.push(item);continue;}
       commitPlacement(item,choice);
     }
+    function finalizeLanes(block,piece,strip,bin,stripAxis,crossAxis,dimension,splitAt){
+      for(const lane of block.lanes){
+        const gap=dimension(piece,stripAxis)-lane.width;
+        let section;
+        if(gap>=kerf-eps&&gap>eps){
+          const cut=splitAt(piece,stripAxis,lane.width,'rip',strip.index);
+          section=cut.start;piece=cut.end;
+        }else{section=piece;piece=null;}
+        // U leválasztás után a sáv elejétől számolt V készméretek.
+        for(const entry of lane.items){
+          const left=dimension(section,crossAxis)-entry.along;
+          let final;
+          if(left>=kerf-eps&&left>eps){
+            const cut=splitAt(section,crossAxis,entry.along,'detail-cross',strip.index);
+            final=cut.start;section=cut.end;
+          }else{final=section;section=null;}
+          bin.placements.push({x:final.x,y:final.y,w:entry.realW,h:entry.realH,
+            realW:entry.realW,realH:entry.realH,part:entry.item,turned:entry.turned,
+            section:final.id,stripIndex:strip.index,completionStep:bin.cuts.length,
+            finishCutIndex:bin.cuts.length-1});
+          bin.used+=entry.item.a*entry.item.b;
+        }
+      }
+    }
     function finalize(bin){
       const m=bin.machine;
       if(!m?.strips.length)return;
@@ -2794,6 +2858,10 @@
               {side:'end',size:entry.along});
             segment=cut.start;piece=cut.end;
           }
+          if(entry.lanes){
+            finalizeLanes(entry,piece,strip,bin,stripAxis,crossAxis,dimension,splitAt);
+            continue;
+          }
           const ripRemaining=dimension(piece,stripAxis)-entry.breadth;
           if(ripRemaining>=kerf-eps&&ripRemaining>eps){
             piece=splitAt(piece,stripAxis,entry.breadth,'rip',strip.index).start;
@@ -2824,7 +2892,7 @@
   // Kizárólag ellenőrző gyártási sorrend, nem hitelesített gépi parancs.
   function buildProductionSequence(bins){
     const events=[],boards=[],round=n=>Math.round(Number(n)*1000)/1000;
-    const stages=['cross-head-trim','cross-trim','cross','rip'];
+    const stages=['cross-head-trim','cross-trim','cross','rip','detail-cross'];
     let totalCuts=0,pairedGroups=0;
     const cutSignature=c=>JSON.stringify([c.stage,c.axis,round(c.offset),
       round(c.pieceSize),round(c.length),round(c.kerf),c.partSide,c.kind]);
@@ -2836,13 +2904,13 @@
         strip.items.map(p=>[round(p.along),round(p.breadth),p.turned,
           String(p.item.uid||p.item.name||''),String(p.item.edge||''),
           round(p.item.edgeThickness||0),Boolean(p.item.mill),round(p.item.millDepth||0)]),
-        cuts.map(cutSignature)]);
+        strip.items.map(p=>p.lanes||null),cuts.map(cutSignature)]);
     };
     // A gép először a teljes táblát sávozza fel. A visszaadott csík
     // összes vágását az eredeti, a csík végétől a nullpont felé haladó
     // geometriai sorrendben hajtjuk végre; a rajz X-koordinátája szerinti
     // újrarendezés az ellenkező irányt eredményezheti.
-    const stagePriority={'cross-head-trim':0,'cross-trim':1,cross:2,rip:3};
+    const stagePriority={'cross-head-trim':0,'cross-trim':1,cross:2,rip:3,'detail-cross':3};
     const cutsInNumberOrder=job=>job.cuts.slice().sort((a,b)=>
       (stagePriority[a.stage]??4)-(stagePriority[b.stage]??4)||
       (a.order||0)-(b.order||0));
@@ -2897,7 +2965,7 @@
             cuts[k].stackCount=group.length;
           }
           events.push({type:'cut',phase:'hosszvagas',board,order:cutOrder,
-            group:ordered[k].stage==='rip'?'alabontas':'fo_darabolas',
+            group:['rip','detail-cross'].includes(ordered[k].stage)?'alabontas':'fo_darabolas',
             stackCount:group.length,stage:ordered[k].stage,strips,
             cuts:groupCuts.map(cuts=>cuts[k])});
         }
@@ -3012,7 +3080,7 @@
         (state.layoutMode==='auto'? -earlyFill*.05:0)+
         (economyMode? -largestReusable*.06-reuseConcentration*8000:0);
       if(!best||score<best.score){best={...trial,score,missingMandatory,cutAxis:axis,
-        layoutDescription:fillMode?'Helykitöltő · minden sor feltöltése, nagy alkatrészekkel kezdve':economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
+        layoutDescription:fillMode?'Helykitöltő · nagy darabok, maradékhelyek kitöltésével':economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
           state.layoutMode==='machine'?'Gépi csíkos':
           (state.layoutMode==='rows'?'Polcos':state.layoutMode==='mosaic'?'Mozaikos':'Szabad')+
           ' keresés · gépi, kétmenetes csíkterv',
@@ -5655,7 +5723,7 @@
       // NEM a készlettábla neve és NEM a gépi anyagkód.
       // Különböző anyagokat nem szabad egyetlen gépi táblaként megjelölni.
       const materialColors=[...new Set(m.strips.flatMap(strip=>
-        (strip.items||[]).map(entry=>String(entry.item?.materialColor||'').trim())
+        (strip.items||[]).flatMap(entry=>entry.lanes?entry.lanes.flatMap(lane=>lane.items):[entry]).map(entry=>String(entry.item?.materialColor||'').trim())
       ).filter(Boolean))];
       if(materialColors.length>1)
         throw Error((i+1)+'. tábla: több eltérő anyagszín ('+
@@ -5747,6 +5815,32 @@
                part.breadth>strip.width+.001)
               throw Error((i+1)+'. tábla: a darab nem fér el a gépi csíkban.');
             add('X',part.along);
+            if(part.lanes){
+              let widthLeft=strip.width;
+              for(const lane of part.lanes){
+                const gap=widthLeft-lane.width;
+                if(!(lane.width>0)||gap<-.001||(gap>.001&&gap+.001<kerf))
+                  throw Error('Érvénytelen U-sáv a Helykitöltő tervben.');
+                // Az U akkor is kijelöli az utolsó sávot, ha a blokk
+                // szélén végződik; a gépi minta ugyanígy ad készméretet.
+                add('U',lane.width);
+                let lengthLeft=part.along;
+                const usesV=lane.items.length>1||lane.items.some(child=>Math.abs(child.along-part.along)>.001);
+                for(const child of lane.items){
+                  const rest=lengthLeft-child.along;
+                  if(!(child.along>0)||rest<-.001||(rest>.001&&rest+.001<kerf)||
+                      Math.abs(child.breadth-lane.width)>.001)
+                    throw Error('Érvénytelen V-darab a Helykitöltő tervben.');
+                  if(usesV)add('V',child.along);
+                  lengthLeft-=child.along+kerf;
+                }
+                // A referenciában a V-sor önmagában lezárja a kész
+                // darabokat; F csak a V nélküli teljes U-sáv után van.
+                if(!usesV)add('F',0);
+                widthLeft-=lane.width+kerf;
+              }
+              continue;
+            }
             const remainder=strip.width-part.breadth;
             if(remainder>0.001&&remainder+0.001>=kerf)
               add('U',part.breadth);

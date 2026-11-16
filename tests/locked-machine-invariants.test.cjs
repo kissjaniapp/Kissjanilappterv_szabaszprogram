@@ -71,13 +71,21 @@ function fingerprint(text){
  }
  return (hash>>>0).toString(16).padStart(8,'0');
 }
+// 2026-11-16: a tulajdonos feltöltött xPrg mintájára engedélyezett
+// Helykitöltő U/V-blokkbontás; az 1.3.7 archív ága és eredeti tesztje:
+// archive/before-helykitolto-uv-20261116
+// docs/archivum/2026-11-16-helykitolto-uv/locked-machine-invariants_EREDETI.txt
+// Az új regresszió az 1.3.7 régi módjainak geometriáját, sorrendjét és
+// teljes XML-kimenetét külön aranymintával is összeveti.
 const locked=[
+ ['Helykitöltő U/V geometria',
+  '    function finalizeLanes(', '    function finalize(bin){', 'e1cb1910'],
  ['Fizikai csíkvágás (első vágás és 90° visszaadás)',
-  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','1e0ac4b9'],
+  '    function finalize(bin){','\n    const used=[...bins,...standardBins]','1bc0cc31'],
  ['Kötelező kétmenetes gyártási sorrend',
-  'function buildProductionSequence(bins){','\n  function computeNesting(){','afa801b9'],
+  'function buildProductionSequence(bins){','\n  function computeNesting(){','6d322e45'],
  ['xMix/xPrg fájlformátum és parancssor',
-  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','a16c7e88'],
+  '  function buildOfflineXprgProject(','\n  // Az indító teljes Windows-útvonalat ad vissza.','52ee38a6'],
  ['Mentés másként – Windows helyi mentés',
   '  async function saveXprgToSelectedFolder(){','\n  function downloadCutList(','d6ced248'],
  ['Kötelező fő szabásztérkép: vízszintes munkalapvágás, első vágás, alapanyagméret',

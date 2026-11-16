@@ -1,0 +1,105 @@
+{
+  "rows": [
+    {
+      "part": {
+        "id": "Nagy",
+        "name": "Nagy"
+      },
+      "furniture": {
+        "name": "Minta",
+        "materialColor": "Freya"
+      },
+      "materialColor": "Freya",
+      "qty": 2,
+      "a": 1800,
+      "b": 600,
+      "originalA": 1800,
+      "originalB": 600,
+      "thickness": 18,
+      "rot": false,
+      "edge": "0-0"
+    },
+    {
+      "part": {
+        "id": "Keskeny",
+        "name": "Keskeny"
+      },
+      "furniture": {
+        "name": "Minta",
+        "materialColor": "Freya"
+      },
+      "materialColor": "Freya",
+      "qty": 3,
+      "a": 900,
+      "b": 400,
+      "originalA": 900,
+      "originalB": 400,
+      "thickness": 18,
+      "rot": false,
+      "edge": "0-0"
+    },
+    {
+      "part": {
+        "id": "Kicsi",
+        "name": "Kicsi"
+      },
+      "furniture": {
+        "name": "Minta",
+        "materialColor": "Freya"
+      },
+      "materialColor": "Freya",
+      "qty": 5,
+      "a": 350,
+      "b": 150,
+      "originalA": 350,
+      "originalB": 150,
+      "thickness": 18,
+      "rot": false,
+      "edge": "0-0"
+    }
+  ],
+  "cases": [
+    {
+      "feed": "x",
+      "mode": 0,
+      "bins": "2cd97724853b4f3ad8707b096dc6762a8e6f04e2de8f6dae60320f3da40ee596",
+      "production": "4cbb59b4925cfa58f3a610112a9411e26cf0b1ddc3be4f2650ebe7c464712915",
+      "files": "e20779bca77fcab055b6232da95b239e9440f4a57d900c20a331f39598debbe4"
+    },
+    {
+      "feed": "x",
+      "mode": 42,
+      "bins": "74c8b8cc68b799d838be56ef01cb978c8171dd098b8caa82b78d5156e6a6208e",
+      "production": "882bc54a167d13fe601f92ee2526273b52c0cf9a81b36311d11277ad80f3a372",
+      "files": "25a46bc6c6fbcd67bd06585ddd1dcfd2404eace387f6956451ff6264cd529e76"
+    },
+    {
+      "feed": "y",
+      "mode": 0,
+      "bins": "de05fe7781c0c86def0b84180d8f06767c8c56e7b6738289e8033aa2834c5185",
+      "production": "b1dbe7b1833f743be1f4df7d8272d456cb81c5936090d73ff8cca21370995862",
+      "files": "0b012b0382ddbd9c5162110a3af94bc2ada6a46594edeadc11e2e721e659e9d7"
+    },
+    {
+      "feed": "y",
+      "mode": 42,
+      "bins": "de05fe7781c0c86def0b84180d8f06767c8c56e7b6738289e8033aa2834c5185",
+      "production": "b1dbe7b1833f743be1f4df7d8272d456cb81c5936090d73ff8cca21370995862",
+      "files": "0b012b0382ddbd9c5162110a3af94bc2ada6a46594edeadc11e2e721e659e9d7"
+    },
+    {
+      "feed": "auto",
+      "mode": 0,
+      "bins": "de05fe7781c0c86def0b84180d8f06767c8c56e7b6738289e8033aa2834c5185",
+      "production": "b1dbe7b1833f743be1f4df7d8272d456cb81c5936090d73ff8cca21370995862",
+      "files": "0b012b0382ddbd9c5162110a3af94bc2ada6a46594edeadc11e2e721e659e9d7"
+    },
+    {
+      "feed": "auto",
+      "mode": 42,
+      "bins": "de05fe7781c0c86def0b84180d8f06767c8c56e7b6738289e8033aa2834c5185",
+      "production": "b1dbe7b1833f743be1f4df7d8272d456cb81c5936090d73ff8cca21370995862",
+      "files": "0b012b0382ddbd9c5162110a3af94bc2ada6a46594edeadc11e2e721e659e9d7"
+    }
+  ]
+}

@@ -721,3 +721,34 @@ archive/before-part-filing-and-workshop-png-20261104
   A rajzi furatok ugyanebből a számításból készülnek; R egész szám,
   a raszter a beállított érték. Nullpontok: bal IJ, jobb LK, alul X=0.
 - A kinézet és a védett szabászati/vágási/mentési logika változatlan.
+
+
+2026-11-16 – HELYKITÖLTŐ: X-BLOKKOK U/V ALÁBONTÁSA (1.3.8)
+- Tulajdonosi utasítás és referencia: 2026_04_10__08_41_47Bekescsaba_freya_1-Copy.xPrg.
+  Megőrzött példa: fixtures/helykitolto-uv-reference.xPrg.
+- A Helykitöltő továbbra is minden sort a legnagyobb beférő területű
+  darabbal kezd. A csík végének feltöltése mellett a már levágott X-blokk
+  keskenyebb alkatrésze melletti teret is hasznosítja: U szélességi sávok,
+  azokon belül V készméretre darabolás. Egy U-sáv több azonos szélességű
+  alkatrészt is tartalmazhat. Mélyebb, további tengelyváltás nem készül.
+- Kerf minden darab és sáv között; szálirány, forgathatóság, anyagszín és
+  vastagság változatlan. Az új alábontás csak a Helykitöltőben készül.
+- Az új blokkok gépi sorrendje: X, majd sávonként U, szükség szerint
+  egy vagy több V. F csak a V nélküli teljes U-sáv után van,
+  pontosan a referencia szerint. Rip=1, folyamatos ID; a teljes program
+  legfeljebb 99 parancs. A referencia Rip=2 ismétlései külön darabokra
+  bontva, a NumFogliPacco=2 helyett táblánként önálló programmal készülnek.
+- A fizikai geometria és a gyártási sorrend kezeli az U/V alábontást;
+  a fő térkép megjeleníti minden új vágás számát a meglévő stílusban.
+- A korábbi módok, a felület/CSS, az xMix formátuma és a Windows mentés
+  megmarad. Az 1.3.7 régi módjainak teljes geometriáját, gyártási sorrendjét
+  és XML-kimenetét külön aranymintával ellenőrizzük.
+- A tulajdonosi új vágási kérés az U/V-blokkokhoz szükséges változtatást
+  engedélyezi a finalize/gyártási sorrend/xPrg területen; a régi módok
+  korábbi tiltása továbbra is érvényes. Előző teljes verzió:
+  archive/before-helykitolto-uv-20261116 (GitHub 1.3.7).
+- Új védőujjlenyomatok: finalize 1bc0cc31; gyártás 6d322e45;
+  xPrg/xMix 52ee38a6; U/V geometria e1cb1910.
+  A natív mentés d6ced248 és a fő SVG 86d21042 változatlan.
+- A tesztek nem helyettesítik az új U/V-program WinCut előnézeti és
+  gépi próbaszabását. Az algoritmus heurisztikus, nem garantált optimum.

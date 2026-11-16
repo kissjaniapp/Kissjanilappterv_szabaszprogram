@@ -1,0 +1,44 @@
+<SchemaDoc>
+	<Header NumFogliPacco="2.00" Descrizione="B-286463" Spessore="18.00" Date="10/04/2026" Lunghezza="2070.00" Larghezza="2800.00" SpessoreLama="5.00" Swap="0" />
+	<Material Tipologia="" Codice="B-286463" />
+	<Pattern>
+		<Cut T="P" Dim="2070.00" Rip="1" ID="0" />
+		<Cut T="RY" Dim="15.00" Rip="1" ID="1" />
+		<Cut T="Y" Dim="2000.00" Rip="1" ID="2" />
+		<Cut T="RX" Dim="15.00" Rip="1" ID="3" />
+		<Cut T="X" Dim="921.00" Rip="1" ID="4" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="5" />
+		<Cut T="X" Dim="1064.00" Rip="1" ID="6" />
+		<Cut T="U" Dim="72.00" Rip="2" ID="7" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="8" />
+		<Cut T="U" Dim="72.00" Rip="2" ID="9" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="10" />
+		<Cut T="U" Dim="103.00" Rip="1" ID="11" />
+		<Cut T="V" Dim="1044.00" Rip="1" ID="12" />
+		<Cut T="U" Dim="99.00" Rip="1" ID="13" />
+		<Cut T="V" Dim="1044.00" Rip="1" ID="14" />
+		<Cut T="U" Dim="626.00" Rip="1" ID="15" />
+		<Cut T="V" Dim="882.00" Rip="1" ID="16" />
+		<Cut T="V" Dim="149.00" Rip="1" ID="17" />
+		<Cut T="U" Dim="748.00" Rip="1" ID="18" />
+		<Cut T="V" Dim="848.00" Rip="1" ID="19" />
+		<Cut T="V" Dim="149.00" Rip="1" ID="20" />
+		<Cut T="U" Dim="59.00" Rip="1" ID="21" />
+		<Cut T="V" Dim="564.00" Rip="1" ID="22" />
+		<Cut T="Y" Dim="626.00" Rip="1" ID="23" />
+		<Cut T="RX" Dim="15.00" Rip="1" ID="24" />
+		<Cut T="X" Dim="2000.00" Rip="1" ID="25" />
+		<Cut T="Y" Dim="72.00" Rip="1" ID="26" />
+		<Cut T="RX" Dim="15.00" Rip="1" ID="27" />
+		<Cut T="X" Dim="1214.00" Rip="1" ID="28" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="29" />
+		<Cut T="X" Dim="564.00" Rip="1" ID="30" />
+		<Cut T="U" Dim="59.00" Rip="1" ID="31" />
+		<Cut T="Y" Dim="59.00" Rip="1" ID="32" />
+		<Cut T="RX" Dim="15.00" Rip="1" ID="33" />
+		<Cut T="X" Dim="564.00" Rip="1" ID="34" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="35" />
+		<Cut T="X" Dim="564.00" Rip="1" ID="36" />
+		<Cut T="F" Dim="0.00" Rip="1" ID="37" />
+	</Pattern>
+</SchemaDoc>

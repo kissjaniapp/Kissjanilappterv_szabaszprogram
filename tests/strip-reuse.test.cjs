@@ -27,7 +27,7 @@ function model(){
 }
 function validateNoOverlap(plan){
   for(const bin of plan.bins){
-    assert.equal(bin.placements.length,bin.machine.strips.reduce((n,s)=>n+s.items.length,0));
+    assert.equal(bin.placements.length,bin.machine.strips.reduce((n,s)=>n+s.items.reduce((count,entry)=>count+(entry.lanes?entry.lanes.reduce((n,lane)=>n+lane.items.length,0):1),0),0));
     for(let i=0;i<bin.placements.length;i++)for(let j=i+1;j<bin.placements.length;j++){
       const p=bin.placements[i],q=bin.placements[j];
       const overlapping=p.x<q.x+q.realW-0.0001&&q.x<p.x+p.realW-0.0001&&
