@@ -43,7 +43,8 @@ test('F-osztó: kijelölt lap kettévágható 30 mm hézaggal, önálló stabil 
  assert.deepEqual(Array.from(out,b=>b.key),['f-divider-1-part-a','f-divider-1-part-b']);
  assert.equal(out[0].z2,735);assert.equal(out[1].z1,765);
  assert.equal(out[0].a,717);assert.equal(out[1].a,717);
- assert.ok(out.connectionIssues.some(x=>/CNC/.test(x)));
+ assert.equal(out.connectionIssues.length,0,'A darabolás nem tiltja a CNC-t');
+ assert.ok(out.connectionWarnings.some(x=>/CNC/.test(x)));
 });
 test('V-osztó: pontosan ugyanazzal az elvvel kettévágható',()=>{
  const g=geometry('v',{'v-divider-1':{ratio:.5,gap:30}});
