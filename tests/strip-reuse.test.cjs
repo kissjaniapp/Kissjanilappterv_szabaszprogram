@@ -100,3 +100,31 @@ test('Helykitöltő: minden darab pontosan egyszer, szálirány és vágásrés 
   }
  }finally{state.layoutMode=previous;}
 });
+
+test('Helykitöltő minden sort a legnagyobbal kezd és a legnagyobb beférővel tölt fel',()=>{
+ const previous=state.layoutMode;state.layoutMode='fill';
+ try{
+  const parts={rows:[row('Első',1800,600,1),row('Második',1600,550,1),
+   row('Harmadik',1400,500,1),row('Kitöltő A',900,400,1),
+   row('Kitöltő B',1000,300,1),row('Kitöltő C',1100,250,1)],total:6,errors:[]};
+  for(const mode of [0,1,2,3,4,5,42]){
+   const plan=pack(mode,parts,'x');
+   assert.equal(plan.failed.length,0);assert.equal(plan.bins.length,1);
+   assert.deepEqual(Array.from(plan.bins[0].machine.strips,st=>Array.from(st.items,p=>p.item.name)),
+    [['Első','Kitöltő A'],['Második','Kitöltő B'],['Harmadik','Kitöltő C']]);
+   validateNoOverlap(plan);
+  }
+ }finally{state.layoutMode=previous;}
+});
+test('Helykitöltő kezdődarabja terület szerinti legnagyobb, nem a legszélesebb',()=>{
+ const previous=state.layoutMode;state.layoutMode='fill';
+ try{
+  const parts={rows:[row('Nagy terület',1000,800,1),row('Széles kisebb',500,1200,1)],total:2,errors:[]};
+  for(const mode of [0,1,2,3,4,5]){
+   const plan=pack(mode,parts,'x');
+   assert.equal(plan.bins[0].machine.strips[0].items[0].item.name,'Nagy terület');
+   assert.equal(plan.bins.flatMap(b=>b.placements).length,2);
+   validateNoOverlap(plan);
+  }
+ }finally{state.layoutMode=previous;}
+});

@@ -2429,7 +2429,9 @@
       (a,b)=>breadth(b)-breadth(a)||along(a)-along(b),
       (a,b)=>b.a+b.b-a.a-a.b||breadth(b)-breadth(a)
     ];
-    items.sort(sorters[mode%sorters.length]);
+    items.sort(state.layoutMode==='fill'?
+      ((a,b)=>b.a*b.b-a.a*a.b||Math.max(b.a,b.b)-Math.max(a.a,a.b)):
+      sorters[mode%sorters.length]);
     const isValidRemainder=value=>value>=-eps&&(value<eps||value+eps>=kerf);
     function bestOn(item,pool,existingOnly=false){
       let best=null;
@@ -2568,7 +2570,7 @@
       let item=pending[0],choice=null,selectedIndex=0;
       if(state.layoutMode==='fill'){
         // A legkorábbi leválasztandó csíkok szabad hosszát töltjük fel
-        // a még hátralévő alkatrészek közül a legjobban illeszkedővel.
+        // a még hátralévő alkatrészek közül a legnagyobb területű beférővel.
         const open=[...bins,...standardBins].filter(bin=>bin.machine?.strips.length);
         let fitted=null;
         for(let i=0;i<pending.length;i++){
@@ -2578,14 +2580,26 @@
             const stripIndex=candidate.machine.strips.indexOf(candidate.strip);
             const tail=candidate.machine.crossSize-candidate.strip.usedLength-
               (candidate.strip.usedLength?kerf:0)-candidate.len;
+            const area=pending[i].a*pending[i].b;
             const loss=(candidate.strip.width-candidate.bw)*candidate.len+
               tail*candidate.strip.width;
             if(!fitted||j<fitted.binIndex||j===fitted.binIndex&&
-              (stripIndex<fitted.stripIndex||stripIndex===fitted.stripIndex&&loss<fitted.loss))
-              fitted={choice:candidate,index:i,binIndex:j,stripIndex,loss};
+              (stripIndex<fitted.stripIndex||stripIndex===fitted.stripIndex&&
+                (area>fitted.area||area===fitted.area&&loss<fitted.loss)))
+              fitted={choice:candidate,index:i,binIndex:j,stripIndex,area,loss};
           }
         }
         if(fitted){choice=fitted.choice;selectedIndex=fitted.index;item=pending[selectedIndex];}
+        else{
+          // Minden korábbi sort feltöltöttünk. Az új sor kezdődarabja
+          // a még szabad táblaszélességbe beférő legnagyobb alkatrész.
+          // A pending terület szerint csökkenő, a kisebb csak akkor
+          // előzhet, ha a nagyobb már nem fér a megkezdett táblákra.
+          for(let i=0;i<pending.length;i++){
+            const next=bestOn(pending[i],[...bins,...standardBins]);
+            if(next){choice=next;selectedIndex=i;item=pending[i];break;}
+          }
+        }
       }
       pending.splice(selectedIndex,1);
       // A később megnyitott táblák helyett több keresési változatban
@@ -2998,7 +3012,7 @@
         (state.layoutMode==='auto'? -earlyFill*.05:0)+
         (economyMode? -largestReusable*.06-reuseConcentration*8000:0);
       if(!best||score<best.score){best={...trial,score,missingMandatory,cutAxis:axis,
-        layoutDescription:fillMode?'Helykitöltő · első csíkok feltöltése, kevesebb alapanyag':economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
+        layoutDescription:fillMode?'Helykitöltő · minden sor feltöltése, nagy alkatrészekkel kezdve':economyMode?'Anyagtakarékos, teljes átvágásos csíkterv':
           state.layoutMode==='machine'?'Gépi csíkos':
           (state.layoutMode==='rows'?'Polcos':state.layoutMode==='mosaic'?'Mozaikos':'Szabad')+
           ' keresés · gépi, kétmenetes csíkterv',
@@ -3343,7 +3357,7 @@
     // a szabásterv automatikusan elkészül. Kézi újraszámolás nem szükséges.
     if(!result)result=computeNesting();
     const run='';
-    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. A munkalap speciális szabását a program nem támogatja; csak bútorlapok gépi csíktervét készítjük.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="fill" ${state.layoutMode==='fill'?'selected':''}>Helykitöltő · első csíkok feltöltése, kevesebb tábla</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
+    const directionControl=`<div class="panel" style="margin-bottom:18px"><div class="panel-body"><div class="toolbar"><div><div class="panel-title">A tábla ütköztetése a géphez</div><div class="panel-sub">A gép csak teljes szélességben vág. Először a tábla felénk eső oldalától végigcsíkozza az anyagot, majd a csíkokat 90°-kal elfordítva, ugyanebben a sorrendben visszakéri. A hosszú/rövid él minden táblánál annak tényleges méretét jelenti. A munkalap speciális szabását a program nem támogatja; csak bútorlapok gépi csíktervét készítjük.</div></div><div style="min-width:260px;max-width:420px;flex:1"><label for="cut-direction">Melyik él ütközzön a géphez?</label><select id="cut-direction" data-scope="settings" data-key="cutDirection"><option value="auto" ${(!state.cutDirection||state.cutDirection==='auto')?'selected':''}>Vegyes / automatikus · táblánként legjobb él</option><option value="long" ${['long','y'].includes(state.cutDirection)?'selected':''}>Hosszú él a gépnél · hosszabb oldalról beadás</option><option value="short" ${['short','x'].includes(state.cutDirection)?'selected':''}>Rövid él a gépnél · rövidebb oldalról beadás</option></select></div><div style="min-width:220px;max-width:360px;flex:1"><label for="layout-mode">Elrendezési módszer</label><select id="layout-mode" data-scope="settings" data-key="layoutMode"><option value="mosaic" ${state.layoutMode==='mosaic'?'selected':''}>Mozaikos</option><option value="auto" ${['auto','machine','rows'].includes(state.layoutMode)?'selected':''}>Szabad · legsűrűbb elrendezés keresése</option><option value="fill" ${state.layoutMode==='fill'?'selected':''}>Helykitöltő · minden sor, legnagyobb beférő darabokkal</option><option value="economy" ${state.layoutMode==='economy'?'selected':''}>Anyagtakarékos · nagyobb maradékok megőrzése</option></select></div>
 </div></div></div>`;
     let body='';
     if(!result){body=`<div class="panel empty"><div class="empty-icon">▦</div><h2>Rajzoljuk meg a szabástervet!</h2><p>Összesen <strong>${nfmt(summary.total)} kitöltött alkatrészt</strong> kell elhelyezni a megadott anyagokon. A program figyeli a szálirányt, a vágásrést és a darabszámot.</p><span class="muted small">A terv az adatok megadásakor automatikusan elkészül.</span><div class="select-detail">Több guillotine elrendezési próbát vizsgálunk; a hiányos alkatrészsorok kimaradnak.</div></div>`;}

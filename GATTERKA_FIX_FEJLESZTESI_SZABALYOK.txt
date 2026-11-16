@@ -693,3 +693,18 @@ archive/before-part-filing-and-workshop-png-20261104
   programja, FORDIT és az ELF élmakrók kiosztása megmarad.
 - Ez felülírja a korábbi felső eredetű OLDALLAPI LAPA/XBO szabályt.
   A védett fűrészgépi vágási és mentési funkció nem változik.
+
+
+2026-11-16 – HELYKITÖLTŐ: MINDEN SOR, LEGNAGYOBB BEFÉRŐ ALKATRÉSZ
+- Minden új sort a még elhelyezhető legnagyobb TERÜLETŰ alkatrésszel
+  kezdünk. Az induló sorrend minden keresési változatban terület szerint
+  csökkenő, nem a csíkszélesség vagy az egyes méretek szerint.
+- Sorban MINDEN megkezdett csíkot feltöltünk: a legkorábbi beférést
+  kereső sorba mindig a legnagyobb beférő területű hátralévő darab kerül.
+  Csak amikor egyik nyitott sorba sem fér több darab, kezdünk új sort.
+- Új tábla előtt a megkezdett táblák szabad szélességébe illeszkedő
+  legnagyobb kezdődarabot keresünk; a nagyobb, oda nem férő lap később
+  új táblára kerülhet. A kisebb kitöltők körbevágását a meglévő gépi
+  csíkmodell kezeli (X/U), kerf és kötelező szálirány megtartásával.
+- A kisebb darabok nem fedhetik egymást; vastagság/szín nem keverhető.
+  A védett finalize/vágási sorrend/xMix/xPrg/Windows mentés változatlan.
