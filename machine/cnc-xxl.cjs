@@ -71,6 +71,14 @@
     return macro+' '+order.filter(key=>key in fields).map(key=>key+'='+fmt(fields[key])).join(' ');
   }
 
+  // A bútorlábak saját, külön CNC-makrója: 4 × LAB X/Y, G=2.
+  function parseLab(line,dx,dy){
+    const m=/^LAB X=((?:\d+\.?\d*|\.\d+)) Y=((?:\d+\.?\d*|\.\d+)) G=2$/.exec(String(line).trim());
+    if(!m)throw new Error('LAB: X/Y és G=2 paraméterek szükségesek.');
+    const X=number(m[1],'LAB X',true),Y=number(m[2],'LAB Y',true);
+    if(X>dx||Y>dy)throw new Error('LAB: a lábfúrás a munkadarabon kívülre kerül.');
+    return 'LAB X='+fmt(X)+' Y='+fmt(Y)+' G=2';
+  }
   // A Xilog3 Progr1.pgm XFALC Q=1# G=2# mintájából; a Q értékeket
   // a felhasználó határozta meg: 1 végig; 2 egyik vég sem; 3 bal nem;
   // 4 jobb nem. G mindig 2.
@@ -196,7 +204,8 @@
       }else{
         if(shelfRef.active)throw new Error('A REF szakaszba csak POLC-makró írható.');
         out.push(lines[i].startsWith('XBO ')?parseXbo(lines[i],dx,dy,dz):
-          lines[i].startsWith('XFALC ')?parseXfalc(lines[i]):parseMacro(lines[i],dx,dy));
+          lines[i].startsWith('XFALC ')?parseXfalc(lines[i]):
+          lines[i].startsWith('LAB ')?parseLab(lines[i],dx,dy):parseMacro(lines[i],dx,dy));
         macrocnt++;
         justFlipped=false;
       }
