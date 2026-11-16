@@ -129,3 +129,17 @@ test('A Vissza/Előre valódi, különálló rajzállapotokat tárol; új lépé
  assert.equal(context.state.inputs.count,'2','Pontosan az utolsó módosítás vonandó vissza');
  assert.equal(context.state.visual.edits['f-divider-1'].shift,40,'A korábbi rajzi állapot nem sérülhet');
 });
+
+test('F-osztó: a V-osztó csak saját lapoldalán bontja a teljes sort, alulról számolva',()=>{
+ const boards=scene();for(const s of boards.filter(q=>q.kind==='shelf')){s.z1=400;s.z2=418;}
+ boards.push({kind:'v',key:'v-1',name:'V-osztó',x1:18,x2:491,y0:0,y1:450,
+  z1:600,z2:618,a:473,b:450,undercutDegrees:0});
+ const f=build('full',boards)[0].cncInstances[0];
+ const rows=f.operations.filter(q=>q.macro==='XBO');
+ assert.deepEqual(Array.from(rows.filter(q=>q.face==='primary'),q=>[q.X,q.R]),
+  [[150,8],[750,17],[150,8],[750,17]]);
+ assert.deepEqual(Array.from(rows.filter(q=>q.face==='reverse'),q=>[q.X,q.R]),[[150,36],[150,36]]);
+ const text=auto.compileEntry(f,{assemblyJoint:'excenter'});
+ assert.match(text,/XMSG Q=1 N="FORDIT"/);
+ assert.match(text,/XBO X=750/);
+});

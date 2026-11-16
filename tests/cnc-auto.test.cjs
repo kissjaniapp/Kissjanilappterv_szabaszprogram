@@ -286,7 +286,7 @@ test('állítható polc kizárólag polctartót kap: nincs mellette fix LAPA/ELF
  assert.equal(side.operations.some(o=>o.macro==='LAPA'&&o.X===1241),false,
    'Az állítható polc középvonalán nem lehet fix kötésfurat');
  assert.equal(side.operations.filter(o=>o.macro==='REF').length,0);
- assert.equal(side.operations.filter(o=>o.macro==='XBO').length,2);
+ assert.equal(side.operations.filter(o=>o.macro==='XBO').length,4);
  const onlyShelf=auto.makeAutoPrograms({name:'Test',parts:[
    board('s','Állítható polc',964,396,[support])
  ]},['s'],{assemblyJoint:'excenter'});

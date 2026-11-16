@@ -659,3 +659,20 @@ archive/before-part-filing-and-workshop-png-20261104
   heurisztikus keresés, nem garantált globális optimum.
 - Régi módok és védett finalize/gyártási sorrend/xMix/xPrg/natív mentés
   változatlanok. Csak az új mód alkatrészválasztása változik.
+
+
+2026-11-16 – V-OSZTÓK KÖZÖTTI TELJES POLCTARTÓ SOROK
+- V-osztó esetén a teljes furatsor rekeszenként készül: fenék felső
+  lapja–első V alsó lapja, V felső lapja–következő V alsó lapja,
+  utolsó V felső lapja–tető alsó lapja. A lapvastagság nem szabad tér.
+- Minden rekeszben 150–150 mm kihagyás; R=floor((szabad köz−300)/raszter).
+  Ha R<1, abban a közben nem készül sor; a többi program megmarad.
+- Csak az adott oldallaphoz vagy F-osztó megfelelő lapoldalához
+  ténylegesen csatlakozó V-osztó bontja a furatsort. Több, áthelyezett,
+  darabolt V is a valódi koordinátáival számít. Az első/hátsó sor
+  visszaállása az adott rekesz polcaihoz igazodik.
+- Oldallapon X a felső gépi nullpontból, F-osztón az alsóból számol;
+  FORDIT és egyéb kapcsolati makrók megmaradnak.
+- V nélkül a korábbi kiosztás változatlan. A rajzi furatok azonos
+  rekeszekből készülnek. Egyedi furatszámú és fix polc nem változik.
+- A kezelőfelület és a védett fűrészgépi vágás/export nem módosul.

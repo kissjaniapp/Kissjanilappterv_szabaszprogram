@@ -16,7 +16,7 @@ const sourceCode=
   'function fixedDividerPieces(){return fixtureBoards;}\n'+
   'function baseShelfBack(){return 0;}\n'+
   section('function cncSupportRegions(p,boards,which){','// Az egyedi polctartó-furatok')+
-  section('function cncShelfHoleGroup(p,shelf){','// A Xilog XFALC')+
+  section('function cncFullRowSpans(low,high,barriers){','// A Xilog XFALC')+
   section('function cncRabbetQ(leftClosed,rightClosed){','function getStructuredParts(p){')+
   '\nthis.support=cncSupportRegions;this.build=buildCncInstancesForParts;'+
   'this.xbo=cncShelfHoleGroup;';

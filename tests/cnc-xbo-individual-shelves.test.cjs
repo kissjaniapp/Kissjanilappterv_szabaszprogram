@@ -154,3 +154,28 @@ test('Teljes XBO sorhossz: végpont, Y, számérték és 300 mm alatti lap',()=>
  assert.equal(entry.operations.filter(q=>q.macro==='XBO').length,0);
  assert.match(auto.compileEntry(entry),/H DX=280[\s\S]*VEGE/);
 });
+
+test('Több V-osztó: külön XBO sor a valódi belső közökből, felső oldallap-nullponttal',()=>{
+ const p=cabinet({drilling:'full'});
+ const v=(z1,z2)=>({kind:'v',x1:18,x2:982,y0:0,y1:450,z1,z2});
+ const ctx=setup([v(600,618),v(1000,1018)]),r=records();
+ ctx.buildCncInstancesForParts(p,r);
+ for(const entry of r[0].cncInstances){
+  const rows=entry.operations.filter(q=>q.macro==='XBO');
+  assert.deepEqual(Array.from(rows,q=>[q.X,q.R]),[[1050,8],[1050,8],[650,2],[650,2],[168,5],[168,5]]);
+  for(const row of rows)for(let i=0;i<row.R;i++){
+   const z=1500-row.X-i*row.x;
+   assert.ok((z>=168&&z<=450)||(z>=768&&z<=850)||(z>=1168&&z<=1332));
+  }
+  assert.doesNotThrow(()=>auto.compileEntry(entry));
+ }
+});
+test('V-osztó csak a csatlakozó oldalt bontja; túl alacsony rekeszbe nem készül sor',()=>{
+ const p=cabinet({drilling:'full'});
+ const v={kind:'v',x1:18,x2:400,y0:0,y1:450,z1:200,z2:218};
+ const ctx=setup([v]),r=records();ctx.buildCncInstancesForParts(p,r);
+ const [left,right]=r[0].cncInstances;
+ const rows=left.operations.filter(q=>q.macro==='XBO');
+ assert.equal(rows.length,2);assert.ok(rows.every(q=>q.X===168&&q.R===30));
+ assert.ok(right.operations.filter(q=>q.macro==='XBO').every(q=>q.X===150&&q.R===37));
+});
