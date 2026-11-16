@@ -33,19 +33,19 @@ function generate(drilling='local'){
  return Object.fromEntries(records.flatMap(record=>record.cncInstances||[])
    .map(entry=>[entry.key,entry]));
 }
-test('Oldallapok XBO: a felső nullpont miatt a magas polc X-e kisebb, nem tükröződik',()=>{
+test('Oldallapok XBO: az alsó nullpont miatt a magas polc X-e nagyobb, nem tükröződik',()=>{
  const x=generate();
  for(const side of ['side-left','side-right']){
   const entry=x[side],holes=entry.operations.filter(op=>op.macro==='XBO');
-  assert.deepEqual(Array.from(holes,op=>op.X),[1230.5,1230.5,370.5,370.5]);
+  assert.deepEqual(Array.from(holes,op=>op.X),[205.5,205.5,1065.5,1065.5]);
   assert.deepEqual(Array.from(holes,op=>op.Y),[60,340,60,340]);
   assert.ok(holes.every(op=>op.R===3&&op.x===32));
   assert.ok(entry.operations.some(op=>op.macro==='LAPA'&&op.X===9));
   assert.ok(entry.operations.some(op=>op.macro==='LAPA'&&op.X===1491));
-  assert.match(auto.compileEntry(entry),/XBO X=370\.5 Y=60/);
+  assert.match(auto.compileEntry(entry),/XBO X=1065\.5 Y=60/);
  }
- assert.equal(x['side-left'].side,'LK');
- assert.equal(x['side-right'].side,'IJ');
+ assert.equal(x['side-left'].side,'IJ');
+ assert.equal(x['side-right'].side,'LK');
 });
 test('F-osztó XBO: az alsó X=0 origóból felfelé, elölről mért Y mindkét lapon',()=>{
  const e=generate()['f-divider-1'];

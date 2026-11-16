@@ -78,14 +78,14 @@ test('REF: a lapvastagság és a fizikai oldallaphossz számít, nem a bútor k�
  assert.equal(ref.segments[0].DX,864);
  assert.equal(ref.segments[0].BX,18,'A pótfenék nem tolhatja el a lap saját alsó nullpontját');
 });
-test('Oldallap LAPA: a korábban gépen bevált tető X=9, fenék X=891, mindkét oldalnál',()=>{
+test('Oldallap LAPA: a korábban gépen bevált tető X=891, fenék X=9, mindkét oldalnál',()=>{
  for(const [top,bottom,, ,Q] of combinations){
   const p=cabinet({top,bottom,drilling:'fixed'});
   const result=run(p);
   for(const key of ['side-left','side-right']){
    const points=ops(result,key,'LAPA').map(x=>x.X);
-   assert.equal(points.includes(9),top==='between',key+' tető X');
-   assert.equal(points.includes(891),bottom==='between',key+' fenék X');
+   assert.equal(points.includes(891),top==='between',key+' tető X');
+   assert.equal(points.includes(9),bottom==='between',key+' fenék X');
    assert.ok(ops(result,key,'LAPA').every(x=>x.Y===0&&x.y===600),
     'A front Y=0 marad');
    assert.equal(ops(result,key,'XFALC')[0].Q,Q,'Az XFALC kifutási irány az ALSÓ ütközőt követi');
@@ -100,7 +100,7 @@ test('Fix polc oldalcsatlakozása a visszaállított, működő LAPA X-iránnyal
  for(const key of ['side-left','side-right']){
   const contact=ops(result,key,'LAPA').find(x=>x.Y===20);
   assert.ok(contact,key);
-  assert.equal(contact.X,600,'A felső CNC programvég felől számított LAPA X=600');
+  assert.equal(contact.X,300,'Az alsó ütközőéltől számított LAPA X=300');
   assert.equal(contact.y,530,'Első-hátsó tényleges polcmélység');
  }
 });
@@ -117,20 +117,20 @@ test('XBO polctartó: első X az ALSÓ furat, raszter felfelé; Y továbbra is e
    const drilling=ops(result,key,'XBO');
    assert.equal(drilling.length,2,key);
    assert.deepEqual(drilling.map(x=>x.Y),[70,500],'Az Y elölről indul');
-   assert.ok(drilling.every(x=>x.X===429.5&&x.x===32&&x.R===3),
-    'Felülről 429.5, 461.5, 493.5 mm az XBO furatsor');
+   assert.ok(drilling.every(x=>x.X===406.5&&x.x===32&&x.R===3),
+    'Alulról 406.5, 438.5, 470.5 mm az XBO furatsor');
   }
  }
 });
-test('A JOBB oldallap IJ, BAL LK; a 800 és 1350 mm küszöb felett a megfelelő kapcsolt térfélre vált',()=>{
+test('A BAL oldallap IJ, JOBB LK; a 800 és 1350 mm küszöb felett a megfelelő kapcsolt térfélre vált',()=>{
  for(const [sideH,d,leftCode,rightCode] of [
-   [900,600,'LK','IJ'],[1500,600,'LI','IL'],
-   [900,800,'DC','AB'],[1500,800,'DA','AD']
+   [900,600,'IJ','LK'],[1500,600,'IL','LI'],
+   [900,800,'AB','DC'],[1500,800,'AD','DA']
  ]){
    const p=cabinet({sideH,d,drilling:'fixed',rabbet:false});
    const data=run(p);
-   assert.equal(side(data,'side-left').side,'LK','A bal oldallap alap térfele LK');
-   assert.equal(side(data,'side-right').side,'IJ','A jobb oldallap alap térfele IJ');
+   assert.equal(side(data,'side-left').side,'IJ','A bal oldallap alap térfele IJ');
+   assert.equal(side(data,'side-right').side,'LK','A jobb oldallap alap térfele LK');
    const leftProgram=cnc.compileEntry(side(data,'side-left'),{assemblyJoint:'excenter'});
    const rightProgram=cnc.compileEntry(side(data,'side-right'),{assemblyJoint:'excenter'});
    assert.match(leftProgram,new RegExp(' -'+leftCode+' C=0 '),'BAL / '+sideH+'/'+d);
@@ -154,8 +154,8 @@ test('Az oldallap FELSŐ élén ELF2, ALSÓ élén ELF3 készül minden tető/fe
    assert.ok(edges.every(op=>op.Y===0&&op.y===600),
     'Az oldallapi élmakrók az elülső ütközőtől számolnak');
    const lapX=sideEntry.operations.filter(op=>op.macro==='LAPA').map(op=>op.X);
-   assert.deepEqual(lapX,[...(top==='between'?[9]:[]),
-     ...(bottom==='between'?[891]:[])],
+   assert.deepEqual(lapX,[...(top==='between'?[891]:[]),
+     ...(bottom==='between'?[9]:[])],
     'A helyes LAPA tető/fenék kötésfuratok változatlanok');
   }
   // Nem szabad a tető/fenék saját élfuratainak sorrendjét megváltoztatni.

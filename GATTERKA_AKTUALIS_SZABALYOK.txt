@@ -888,3 +888,20 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
 - V nélkül a korábbi kiosztás változatlan. A rajzi furatok azonos
   rekeszekből készülnek. Egyedi furatszámú és fix polc nem változik.
 - A kezelőfelület és a védett fűrészgépi vágás/export nem módosul.
+
+
+2026-11-16 – VÉGLEGES TULAJDONOSI OLDAL- ÉS NULLPONTPONTOSÍTÁS
+- BAL oldallap IJ, JOBB oldallap LK. A korábbi fordított bejegyzést
+  a tulajdonos kifejezetten visszavonta. Méretfüggő kapcsolás marad:
+  bal IJ/IL/AB/AD, jobb LK/LI/DC/DA.
+- Az oldallap ALSÓ éle ütközik, X=0 az alsó lapél. X felfelé nő.
+  LAPA X=furat világ-Z−oldallap alsó világ-Z; tető közémenő:
+  X=sideH−t/2, fenék közémenő: X=t/2.
+- Helyi XBO a legalsó furatból indul: X=alsó furat világ-Z−lap alja.
+  Teljes, rekeszenkénti XBO: X=rekesz alsó felülete−lap alja+150,
+  R=floor((rekesz szabad magassága−300)/raszter). A pozitív x
+  raszter alulról felfelé halad. A rajzi furatpozíció is ezt követi.
+- F-osztó eddigi alsó nullpontja, Y elülső nullpont, tető/fenék saját
+  programja, FORDIT és az ELF élmakrók kiosztása megmarad.
+- Ez felülírja a korábbi felső eredetű OLDALLAPI LAPA/XBO szabályt.
+  A védett fűrészgépi vágási és mentési funkció nem változik.

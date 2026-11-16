@@ -42,9 +42,9 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   ctx.buildCncInstancesForParts(p,records);
   const side=records[0].cncInstances,shelf=records[3].cncInstances[0];
   assert.equal(side.length,2);
-  assert.equal(side[0].side,'LK','A bal oldallap alaptérfele LK');
-  assert.equal(side[1].side,'IJ','A jobb oldallap alaptérfele IJ');
-  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===891&&op.Y===0&&op.y===396));
+  assert.equal(side[0].side,'IJ','A bal oldallap alaptérfele IJ');
+  assert.equal(side[1].side,'LK','A jobb oldallap alaptérfele LK');
+  assert.ok(side[0].operations.some(op=>op.macro==='LAPA'&&op.X===609&&op.Y===0&&op.y===396));
   assert.deepEqual(Array.from(shelf.operations,op=>op.macro),['ELF3','ELF2']);
   const parts=[
     board('sides','Oldal',1500,400,side),
@@ -59,9 +59,9 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const left=result.files.find(f=>f.filename.includes('side-left'));
   const right=result.files.find(f=>f.filename.includes('side-right'));
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
-  assert.match(left.content,/-LI C=0 T=16973825/);
-  assert.match(right.content,/-IL C=0 T=16973825/);
-  assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
+  assert.match(left.content,/-IL C=0 T=16973825/);
+  assert.match(right.content,/-LI C=0 T=16973825/);
+  assert.match(left.content,/LAPA X=609 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
