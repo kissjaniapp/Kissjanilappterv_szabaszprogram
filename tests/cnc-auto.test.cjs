@@ -65,7 +65,7 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
 });
-test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó oldalprogramok menthetők',()=>{
+test('Bútorlábnál a fenék vagy pótfenék mind a négy LAB-furatot és a többi programot kiadja',()=>{
   const {ctx}=extractedGeometry();
   for(const falseBottom of [false,true]){
     const p={...base(),hasLegs:true,falseBottom,bottom:'between'};
@@ -78,7 +78,14 @@ test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó o
     assert.equal(sides[0].issues.length,0,'A LAB nem a bal oldallapot tiltja');
     assert.equal(sides[1].issues.length,0,'A LAB nem a jobb oldallapot tiltja');
     const target=records.find(x=>x.key===(falseBottom?'false-bottom':'bottom'));
-    assert.match(target.cncInstances[0].issues.join(' '),/LAB/);
+    assert.equal(target.cncInstances[0].issues.length,0,'A négy LAB már nem exporttiltás');
+    const labs=target.cncInstances[0].operations.filter(op=>op.macro==='LAB');
+    assert.equal(labs.length,4,'Minden láb saját LAB furatot kap');
+    assert.deepEqual(Array.from(labs,op=>[op.X,op.Y,op.G]),[
+      [59,59,2],[59,target.cncInstances[0].dy-59,2],
+      [target.cncInstances[0].dx-59,59,2],
+      [target.cncInstances[0].dx-59,target.cncInstances[0].dy-59,2]
+    ]);
     const parts=records.map(row=>{
       const entry=row.cncInstances[0];
       return board(row.key,row.key,entry.dx,entry.dy,row.cncInstances);
@@ -88,11 +95,14 @@ test('Bútorlábnál csak a fenék vagy pótfenék LAB makrója tiltott, a jó o
       'A hiteles bal oldal CNC-programjának menthetőnek kell maradnia');
     assert.ok(out.files.some(x=>x.filename.includes('side-right')),
       'A hiteles jobb oldal CNC-programjának menthetőnek kell maradnia');
-    assert.ok(out.blocked.some(x=>/LAB/.test(x.reason)),
-      'A nem hitelesített LAB az alkatrészlistában tiltott marad');
+    assert.deepEqual(out.blocked,[],'A bútorlábas programok külön minősítés miatt nem maradhatnak ki');
+    assert.ok(out.files.some(x=>x.filename.includes(falseBottom?'false-bottom':'bottom')),
+      'A lábfúrást tartalmazó fenék vagy pótfenék XXL programját is menteni kell');
+    assert.ok(out.files.some(x=>x.content.includes('LAB X=59 Y=59 G=2')),
+      'A LAB makrónak a tényleges kimentett .xxl fájlban is szerepelnie kell');
   }
 });
-test('Végigmenő fenék és pótfenék együtt külön CNC ellenőrzést igényel',()=>{
+test('Végigmenő fenék és pótfenék esetén a 4 LAB kizárólag a pótfenéken van',()=>{
  const {ctx}=extractedGeometry(),p={...base(),hasLegs:true,falseBottom:true,bottom:'full'};
  ctx.fixedDividerPieces=()=>[];
  const records=[{key:'side-left',sourceKeys:['side-left','side-right']},
@@ -100,7 +110,9 @@ test('Végigmenő fenék és pótfenék együtt külön CNC ellenőrzést igény
  ctx.buildCncInstancesForParts(p,records);
  assert.deepEqual(Array.from(records.find(r=>r.key==='bottom').cncInstances[0].issues),[],
    'A végigmenő fenék saját programját a pótfenék nem tilthatja le');
- assert.match(records.find(r=>r.key==='false-bottom').cncInstances[0].issues.join(' '),/LAB/);
+ assert.equal(records.find(r=>r.key==='false-bottom').cncInstances[0].issues.length,0);
+ assert.equal(records.find(r=>r.key==='false-bottom').cncInstances[0].operations.filter(x=>x.macro==='LAB').length,4);
+ assert.equal(records.find(r=>r.key==='bottom').cncInstances[0].operations.filter(x=>x.macro==='LAB').length,0);
 });
 
 test('F-osztó csatlakozásánál a megfelelő makró saját G kódja automatikus',()=>{
