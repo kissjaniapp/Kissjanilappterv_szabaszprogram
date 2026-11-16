@@ -68,8 +68,7 @@ test('Közémenő tető/fenék + F-osztó: minden CNC fájl kijön, top LAPA fé
  const fCnc=rows[3].cncInstances[0];
  assert.ok(fCnc.operations.some(op=>op.macro==='ELF3'),'F felső csatlakozás');
  assert.ok(fCnc.operations.some(op=>op.macro==='ELF2'),'F alsó csatlakozás');
- assert.ok(output.warnings.some(x=>/belső polctartó/.test(x.reason)),
-  'A még hiányzó F-belső polctartót valós figyelmeztetés jelzi');
+ assert.ok(!output.blocked.length,'Az F-osztó meglévő furatai menthetők');
 });
 test('Végigmenő fenék pótfenékkel: fenék meglévő CNC-je nem tiltható',()=>{
  const p=fixture({bottom:'full',falseBottom:true,bodyBottomOffset:18,
