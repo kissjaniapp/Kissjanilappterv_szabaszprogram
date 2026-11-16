@@ -724,3 +724,29 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   méretezés, a 3D és a rajzos szerkesztő változatlanul használható.
 - Hibás DX/DY/DZ, érvénytelen makró vagy ténylegesen hiányzó művelet
   esetén továbbra sem állítható elő hamis CNC-fájl.
+
+2026-11-16 – BÚTORSZERKESZTŐ VISSZA/ELŐRE, BÚTORLÁB ÉS F-OSZTÓ FURATOK
+--------------------------------------------------------------------
+- A bútorszerkesztő felső sávjában Vissza és Előre gombok vannak.
+  Az aktuális bútorbeállítások, egyedi értékek, szerkezeti áthelyezések,
+  darabolások, szakasz-visszaállítások és F/V kapcsolatok állapota
+  visszavonható és megismételhető (150 előzménylépés).
+  Új szerkesztés a visszavont állapotból törli az Előre ágat.
+  A tárolt bútor betöltésekor külön előzmény kezdődik.
+- A felhasználó saját CNC-gépén ellenőrzi és szükség esetén fejleszti a
+  generált programokat: pusztán minősítési/hitelesítési jelző miatt
+  semmilyen már előállítható XXL program nem maradhat ki.
+  Valóban hiányzó művelet, hibás méret vagy érvénytelen makró
+  továbbra sem adható ki működő CNC-programként.
+- A LAB a gépi exportban engedélyezett makró, X/Y koordinátával és G=2
+  értékkel. A négy láb furata a tartólap négy sarkától 59–59 mm-re
+  található. Pótfenékkel a LAB kizárólag a pótfenéken van;
+  pótfenék nélkül a fenéken. A tartólap más furatai megmaradnak.
+- Az F-osztón az állítható polc csatlakozási oldala és tényleges
+  első/hátsó visszaállása határozza meg a polctartó furatokat.
+  Helyi kiosztásnál 2 db XBO furatcsoport készül oldalanként és
+  polconként; teljes raszterfuratnál REF/POLC rekeszprogram.
+  Mindkét lapoldal önálló felrakási csoport, a szükséges FORDIT
+  változatlanul megmarad. Fix polcnál továbbra is az eredeti
+  LAPA/ELF csatlakozó furatok készülnek.
+- Az xMix/xPrg és a jóváhagyott fűrészgép-vágási sorrend változatlan.
