@@ -12,7 +12,7 @@
   const core=(typeof module!=='undefined'&&module.exports)
     ?require('./cnc-xxl.cjs'):(root&&root.GatterkaCnc);
   const FACES=new Set(['primary','reverse']);
-  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','XFALC']);
+  const VALID_MACROS=new Set(['LAPA','LAPF','ELF2','ELF3','ELF4','ELF5','REF','POLC','XBO','XFALC','LAB']);
   function finite(n){return Number.isFinite(Number(n))?Number(n):NaN;}
   function round(n){return Number(Number(n).toFixed(3));}
   function cleanName(s){
@@ -219,6 +219,12 @@
       // POLC G nem azonos a tiplis/összehúzós LAPA/ELF G-kóddal:
       // a két felhasználói PGM minta kifejezetten G=1# F=1.
       return 'POLC Y='+round(y)+' Q='+q+'# s='+round(sp)+' G=1# F=1';
+    }
+    if(operation.macro==='LAB'){
+      const X=finite(operation.X),Y=finite(operation.Y);
+      if(!Number.isFinite(X)||!Number.isFinite(Y)||X<0||Y<0||
+          Number(operation.G)!==2)throw new Error('Hibás LAB X/Y/G bútorláb-paraméter.');
+      return 'LAB X='+round(X)+' Y='+round(Y)+' G=2';
     }
     if(operation.macro==='XFALC'){
       const q=Number(operation.Q);
