@@ -104,7 +104,7 @@ CNC – EGYEZTETETT KIINDULÁSI SZABÁLYOK (2026-11-10)
   kijelölt kezdőpontjától kell mérni. A piros pontokat tartalmazó rajz és a
   teljes kiosztási szabály külön szükséges a pontos helyek megállapításához.
 - A felhasználó által leírt CNC-programfejlécben DX és DY az anyag X/Y
-  mérete; IJ bal oldali, LK jobb oldali, tükrözött megmunkálást jelöl.
+  mérete; IJ a JOBB oldallap, LK a BAL oldallap alaptérfele; a két oldallap tükrözött.
   C=0, T=196608, R=100, *MM, /"DEF", BX=0, BY=0, BZ=0 és V=1 rögzített
   értékek. A T mechanikai opcióinak képlete később tisztázandó; a 18 mm-es
   vastagságot ebben a korai fejlécpéldában külön nem írták be.
@@ -311,13 +311,13 @@ változik a -TÉRFÉL és a T gépi érték. A korábbi állandó
   az első kombináció (kapcsolt + DX < 620) nem keletkezhet;
   az ellenőrző segédfüggvény mind a négy T-kombinációt ismeri.
 
-Térfél a DY és a bal/jobb oldaliság szerint:
-  DY < 800 mm:     bal IJ / kapcsolt IL; jobb LK / kapcsolt LI.
-  DY >= 800 mm:    bal AB / kapcsolt AD; jobb DC / kapcsolt DA.
+Térfél a DY és a fizikai bal/jobb oldallap szerint (2026-11-16 tulajdonosi felülírás):
+  DY < 800 mm:     jobb IJ / kapcsolt IL; bal LK / kapcsolt LI.
+  DY >= 800 mm:    jobb AB / kapcsolt AD; bal DC / kapcsolt DA.
 A 620, 800 és 1350 mm küszöbök maguk már a felső
 tartományba tartoznak.
 
-A bútortervező továbbra is a fizikai bal oldalt IJ, a jobb
+A bútortervező a fizikai JOBB oldalt IJ, a BAL
 oldalt LK alaptérfélként adja át. A kész CNC-fejléc ezt
 automatikusan helyettesíti a megfelelő IJ/LK/IL/LI/AB/DC/AD/DA
 kóddal, az alkatrészenkénti DX/DY figyelembevételével.
@@ -750,3 +750,13 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   változatlanul megmarad. Fix polcnál továbbra is az eredeti
   LAPA/ELF csatlakozó furatok készülnek.
 - Az xMix/xPrg és a jóváhagyott fűrészgép-vágási sorrend változatlan.
+
+
+2026-11-16 – A FIZIKAI OLDALLAPOK TÉRFELÉNEK TULAJDONOSI PONTOSÍTÁSA
+--------------------------------------------------------------------
+- A jobb oldallap alaptérfele IJ, a bal oldallapé LK (nem fordítva).
+- Azonos Xilog gépi oldaliság mellett DX>=1350-nél IJ→IL és LK→LI;
+  DY>=800-nál az IJ-ág AB/AD, az LK-ág DC/DA gépi térfélre vált.
+- A tető oldallapi felső élén továbbra is ELF2, a fenék alsó élén ELF3;
+  a közémenő lapok helyes LAPA X koordinátája és a gépi vágási sorrend
+  érintetlen. A korábbi ellentmondó oldallapi térfélbejegyzéseket ez felülírja.

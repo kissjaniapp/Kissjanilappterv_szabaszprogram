@@ -59,8 +59,8 @@ test('a bútortervező valódi csatlakozási helyeket ad a két külön oldallap
   const left=result.files.find(f=>f.filename.includes('side-left'));
   const right=result.files.find(f=>f.filename.includes('side-right'));
   const shelfFile=result.files.find(f=>f.filename.includes('shelf-1'));
-  assert.match(left.content,/-IL C=0 T=16973825/);
-  assert.match(right.content,/-LI C=0 T=16973825/);
+  assert.match(left.content,/-LI C=0 T=16973825/);
+  assert.match(right.content,/-IL C=0 T=16973825/);
   assert.match(left.content,/LAPA X=891 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF3 Y=0 A=0 y=396 G=1/);
   assert.match(shelfFile.content,/ELF2 Y=0 A=0 y=396 G=1/);
@@ -294,7 +294,7 @@ test('állítható polc kizárólag polctartót kap: nincs mellette fix LAPA/ELF
  assert.equal(onlyShelf.blocked.length,0);
  assert.equal(onlyShelf.skipped.length,1);
 });
-test('állítható polc + F-osztó találkozásánál a belső polctartómakró hiányát jelzi',()=>{
+test('az F-osztó állítható polc nélkül nem kap hamis polctartó furatot',()=>{
  const {ctx}=extractedGeometry(),p={...base(),drilling:'full',n:1,
     fCount:1,raster:32,supportInset:50,cncGapBottom:0,
     cncGapTop:0,cncGapDivider:0};
@@ -303,13 +303,12 @@ test('állítható polc + F-osztó találkozásánál a belső polctartómakró 
  const records=[{key:'f-divider-1'}];ctx.buildCncInstancesForParts(p,records);
  const entry=records[0].cncInstances[0];
  assert.equal(entry.issues.length,0);
- assert.match((entry.warnings||[]).join(' '),/belső polctartó/);
+ assert.equal((entry.warnings||[]).length,0);
  const out=auto.makeAutoPrograms({name:'Teszt',parts:[
    board('f','F-osztó',1464,396,[entry])]},['f']);
  assert.equal(out.files.length,1,'Az F-osztó ismert csatlakozási furatai menthetők');
  assert.equal(out.blocked.length,0);
- assert.ok(out.warnings.some(x=>/belső polctartó/.test(x.reason)),
-   'A külön polctartó-furatsor hiányát továbbra is jelezzük');
+ assert.equal(out.warnings.length,0,'Nem lehet hiányként jelenteni a már megvalósított polctartót');
 });
 
 test('az automatikus CNC mentés DX=1350+ és DY=800+ esetén AD/DA összevont térfelet kap',()=>{
