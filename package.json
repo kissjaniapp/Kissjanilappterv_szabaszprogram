@@ -1,0 +1,17 @@
+{
+  "name": "gatterka",
+  "private": true,
+  "version": "1.4.0",
+  "scripts": {
+    "test": "node --test",
+    "build:skp": "node tools/build-skp.mjs"
+  },
+  "dependencies": {
+    "earcut": "3.1.0",
+    "openskp": "1.5.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "playwright": "1.62.1"
+  }
+}

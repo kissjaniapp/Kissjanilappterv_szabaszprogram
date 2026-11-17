@@ -445,7 +445,10 @@
     for(const part of furniture?.parts||[]){
       if(!allowed.has(String(part.id)))continue;
       if(part.threeMfGenerated&&threeMf.errors.has(part.id)){
-        appendFailure(result.blocked,part.name,threeMf.errors.get(part.id));continue;
+        if(furniture?.threeMfImport?.source==='skp'&&part.angledBlank===true)
+          appendFailure(result.skipped,part.name,'Alakos SKP lap: kontúr-DXF menthető; automatikus furat nem készül.');
+        else appendFailure(result.blocked,part.name,threeMf.errors.get(part.id));
+        continue;
       }
       const entries=part.threeMfGenerated?threeMf.byPart.get(String(part.id)):part.cncInstances;
       if(!Array.isArray(entries)||!entries.length){
@@ -500,7 +503,7 @@
           const content=compileEntry(entry,modes);
           const suffix=cleanName(identity);
           const prefix=(name+'_'+cleanName(part.name||entry.name)).slice(0,Math.max(1,155-suffix.length));
-          const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
+          const filename=(entry.threeMfDraft?(furniture?.threeMfImport?.source==='scn'?'SCN_TERV_':furniture?.threeMfImport?.source==='skp'?'SKP_TERV_':'3MF_TERV_'):'')+prefix+'_'+suffix+'.xxl';
           // A gépen kipróbált 3MF programokból nem írunk önkényes
           // NEM_HITELESITETT fejlécet; az eredet továbbra is látszik
           // a fájlnévben és a belső draft metaadatban.

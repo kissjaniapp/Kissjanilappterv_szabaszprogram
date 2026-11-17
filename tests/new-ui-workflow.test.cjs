@@ -113,7 +113,7 @@ test('a bal oldali munkamód 3MF, a jobb oldali a beépített bútortervező',()
  const mode=html.slice(a,b);
  assert.ok(mode.indexOf('data-mode="parts"')<mode.indexOf('data-mode="design"'));
  assert.ok(mode.indexOf('data-mode="design"')<mode.indexOf('data-mode="manual"'));
- assert.match(mode,/3MF rajzzal dolgozom/);
+ assert.match(mode,/3MF \/ SKP rajzzal dolgozom/);
  assert.match(mode,/Egyszerű bútortervező/);
  assert.match(mode,/Kézi alkatrészbevitel/);
  assert.match(html,/designWorkflowMode\(\)==='parts'\?threeMfUploadBlock\(f\):''/);

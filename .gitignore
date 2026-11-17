@@ -1,0 +1,6 @@
+node_modules/
+dist/
+desktop-go/assets/
+desktop-go/installer/assets/
+*.syso
+skp-browser-smoke.png

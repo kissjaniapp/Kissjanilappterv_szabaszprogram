@@ -1,5 +1,37 @@
 # Gatterka 1.2.0 – Windowsos szabásztervező
 
+
+## SKP import (1.4.0)
+
+A **3MF / SKP rajzzal dolgozom** munkamódban a **3MF / SKP fájl betöltése**
+gomb közvetlenül megnyitja a SketchUp fájlt. Az olvasó a telepített HTML része,
+internet, SketchUp és külön Python nélkül is működik.
+
+1. Válaszd az SKP fájlt, majd a **Bútor / csoport** listából a feldolgozandó
+   bútort. A teljes üzlet helyett önálló bútort válassz.
+2. A szélesség a bútor hosszabb vízszintes tengelye; szükség esetén SKP X/Y
+   szerint átállítható. A beágyazott komponensek elhelyezése és méretaránya megmarad.
+3. A zárt téglatest lapok az alkatrészekhez, szabáshoz és CNC-hez kerülnek;
+   az alkalmas ferdevágott síklapok befoglaló előgyártmányként szerepelnek.
+   A szerelvények és ismeretlen alakok csak a rajzon és az SKP elemlistán látszanak.
+4. A 38 mm-es munkalap látszik és CNC-programot kap, a szabásból kimarad.
+   A CNC az aktuális kötésmóddal a valódi lap–él érintkezésekből dolgozik.
+   A polc a próbához hasonlóan fix kötésű; az SKP nem tárol Gatterka-polctartó beállítást.
+5. Az **Alakos kontúrok mentése (DXF)** gomb mm-es zárt körvonalakat ment ZIP-be.
+   Ezek kontúrok, nem szerszám-/fogásadatokat is tartalmazó maróprogramok.
+
+A kiválasztott geometria a projekttel mentődik; a teljes SKP nem.
+Visszatöltés után a rajz, lista és CNC tovább használható. Másik csoporthoz
+újra meg kell nyitni az eredeti SKP fájlt. Anyag, élzárás és gyártási szálirány
+az alkatrészlistában állítható; az SKP textúra nem helyettesíti az anyagkódot.
+
+Fejlesztés: `npm ci --ignore-scripts`, majd `npm run build:skp` újraépíti az
+index.htm-be csomagolt olvasót és felületi kódot. `node --test` ellenőrzi a
+geometriát, CNC-t és a korábbi védett funkciókat. A Windows CI külön valódi
+böngészőben is lefuttatja az SKP háttérszálas betöltést és a mentés visszatöltését.
+Az OpenSKP, earcut, fflate és flatbuffers licence a HTML-ben és a docs/licenses
+mappában is megtalálható.
+
 Ez a **működő Gatterka program** hivatalos forráskódja:
 https://github.com/kissjaniapp/Kissjanilappterv_szabaszprogram
 

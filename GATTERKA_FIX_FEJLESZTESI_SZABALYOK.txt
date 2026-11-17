@@ -781,3 +781,35 @@ archive/before-part-filing-and-workshop-png-20261104
 - A bútortervező működése, a kinézet, a Helykitöltő és minden védett
   szabászati/vágási/mentési kód változatlan. A 3MF F/V koordinátákat és
   makrókat közvetlenül a bútortervező kimenetével is összevető teszt védi.
+
+
+2026-11-17 – KÖZVETLEN SKP IMPORT, ALKATRÉSZJEGYZÉK ÉS CNC (1.4.0)
+- A meglévő rajzos munkamód 3MF mellett közvetlen SketchUp SKP megnyitást
+  kap. Nem lesz negyedik munkamód; a stílus és a többi mód megmarad.
+- OpenSKP 1.5.0, helyben, háttérszálon; minden függőség az index.htm-ben
+  van. Nem kell internet, SketchUp, Python vagy külső konvertáló szolgáltatás.
+- A Bútor / csoport választó valódi, elhelyezett komponenseket választ.
+  A komponensfa transzformációi, másolatai és skálázásai megmaradnak;
+  inch -> mm pontosan 25,4. A bútor saját koordinátáira normalizálunk,
+  szélesség alapból a hosszabb vízszintes tengely, kézi SKP X/Y opcióval.
+- A téglatestet a tényleges hat teljes lapfelület igazolja. Görbe,
+  hiányos vagy összetett testből nem szabad befoglaló téglatest-furatot
+  kitalálni. A 3MF ferdevágott síklap szabályát az SKP-re is alkalmazzuk.
+  Az alakos kontúrok külön DXF-ként kimenthetők; ez nem marószerszámpálya.
+- A munkalap a 3D-ben és külméretben megmarad, saját CNC-t és a hozzá
+  csatlakozó lapokon ellenfuratot kap, szabászati listába nem kerül.
+- A CNC a már működő 3MF/F/V-kapcsolati modult használja. Fix kötés,
+  alsó oldallapi X-nullpont, IJ/LK és a méretfüggő fejlécszabályok,
+  F-oldali 15 mm eltolás/G=2 és a FORDIT változatlan. SKP_TERV_ fájlprefix.
+- Az alkalmas alakos SKP előgyártmány furat nélkül kontúr-DXF-re irányul;
+  a többi lap elkészíthető CNC-jét nem blokkolja.
+- A forrás anyagnevei/azonosítói megmaradnak. ABS-t nem következtetünk
+  textúrából. Anyag, szálirány, élzárás a meglévő listán módosítható.
+- Csak a kiválasztott bútor kompakt geometriája és a csoportjegyzék
+  mentődik a projekttel; a teljes eredeti SKP nem. Visszatöltéskor a
+  rajz/lista/CNC használható, másik csoporthoz újra kell nyitni az SKP-t.
+- A próba Átadó 1200 csoportja: 22 elem, 1200×600×910 mm, 12 valódi
+  téglatest, 25 lap-él kapcsolat, 12 CNC program / 50 makró. A munkalap
+  ezekből 5 makrót tartalmaz. Négy láb csak rajzi/szerelvény elem.
+- A szabászati makeStripPlan/finalize, gyártási sorrend, xMix/xPrg,
+  Windows natív mentés és fő szabástérkép védett ujjlenyomatai változatlanok.
