@@ -1,0 +1,7 @@
+# Keep embedded browser modules identical to their source on Windows too.
+*.htm text eol=lf
+*.html text eol=lf
+*.js text eol=lf
+*.cjs text eol=lf
+*.mjs text eol=lf
+*.skp binary
