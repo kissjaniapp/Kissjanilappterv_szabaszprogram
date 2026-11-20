@@ -1025,3 +1025,8 @@ csak a valóban elvégzett ellenőrzés tekinthető igazoltnak.
   ezekből 5 makrót tartalmaz. Négy láb csak rajzi/szerelvény elem.
 - A szabászati makeStripPlan/finalize, gyártási sorrend, xMix/xPrg,
   Windows natív mentés és fő szabástérkép védett ujjlenyomatai változatlanok.
+
+2026-11-20 – HELYKITÖLTŐ: KORAI SORVÉG-KOMBINÁCIÓ
+- Egy megkezdett tábla szabad csíkjában a kisebb darabok megelőzhetik az új tábla megnyitását. A sor kezdődarabja továbbra is a legnagyobb beférő területű darab.
+- A sorvégen a keresési változatok az azonos szélességű két darab kombinációját is vizsgálják; nagyobb összterület esetén együtt helyezik el őket. A korábbi egyenkénti keresés alternatívaként megmarad. A keresés heurisztikus, nem teljes kombinatorikus optimum.
+- A meglévő U/V alábontás, kerf, anyagazonosság, szálirány, parancskorlát, gépi geometria és a többi szabász mód változatlan.

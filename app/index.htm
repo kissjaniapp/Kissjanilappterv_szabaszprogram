@@ -2629,15 +2629,63 @@
               fitted={choice:candidate,index:i,binIndex:j,stripIndex,area,loss};
           }
         }
+        // A páros előretekintés csak a Helykitöltő keresési változataiban
+        // él. A páros mindkét tagja ugyanabba az X-darabolási sorvégbe
+        // kerülhet, a meglévő gépi modell és parancskorlát szerint.
+        if(fitted&&!fitted.choice.block&&mode%6!==5){
+          const base=fitted.choice,bin=base.bin,strip=base.strip,m=base.machine;
+          const free=m.crossSize-strip.usedLength-(strip.usedLength?kerf:0);
+          const candidates=[];
+          // A keresési mélység korlátos, az alkatrészek darabszáma nem.
+          for(let i=0;i<pending.length;i++){
+            const c=bestOn(pending[i],[bin],true);
+            if(!c||c.strip!==strip||c.block)continue;
+            candidates.push({index:i,c,area:pending[i].a*pending[i].b});
+          }
+          // Az egydarabos megoldás mellett a jobb összterületű,
+          // azonos szélességű párokat vizsgáljuk. Az eredeti greedy
+          // változatot is megtartjuk (mode%6===5).
+          let pair=null;
+          for(let i=0;i<Math.min(candidates.length,48);i++){
+            const first=candidates[i];
+            for(let j=i+1;j<candidates.length;j++){
+              const second=candidates[j];
+              if(Math.abs(first.c.bw-second.c.bw)>eps)continue;
+              if(!isValidRemainder(free-first.c.len-kerf-second.c.len))continue;
+              const extra=4+(strip.width-first.c.bw>eps?2:0);
+              if((m.commandCount??2)+extra>MAX_SAFE_XPRG_COMMANDS)continue;
+              // Csak akkor térünk el a legnagyobb darabtól, ha a
+              // kombináció több felületet tölt ki.
+              const area=first.area+second.area;
+              if(area<=fitted.area||pair&&area<=pair.area)continue;
+              pair={first,second,area};
+            }
+          }
+          if(pair){
+            // A két választás együtt kerül a csíkba; nem hagyjuk,
+            // hogy a következő iteráció más darabbal elfoglalja a helyet.
+            commitPlacement(pending[pair.first.index],pair.first.c);
+            commitPlacement(pending[pair.second.index],pair.second.c);
+            pending.splice(pair.second.index,1);
+            pending.splice(pair.first.index,1);
+            continue;
+          }
+        }
         if(fitted){choice=fitted.choice;selectedIndex=fitted.index;item=pending[selectedIndex];}
         else{
           // Minden korábbi sort feltöltöttünk. Az új sor kezdődarabja
           // a még szabad táblaszélességbe beférő legnagyobb alkatrész.
           // A pending terület szerint csökkenő, a kisebb csak akkor
           // előzhet, ha a nagyobb már nem fér a megkezdett táblákra.
-          for(let i=0;i<pending.length;i++){
-            const next=bestOn(pending[i],[...bins,...standardBins]);
-            if(next){choice=next;selectedIndex=i;item=pending[i];break;}
+          const all=[...bins,...standardBins];
+          const started=all.filter(b=>b.machine?.strips.length);
+          const unopened=all.filter(b=>!b.machine?.strips.length);
+          for(const pool of [started,unopened]){
+            for(let i=0;i<pending.length;i++){
+              const next=bestOn(pending[i],pool);
+              if(next){choice=next;selectedIndex=i;item=pending[i];break;}
+            }
+            if(choice)break;
           }
         }
       }

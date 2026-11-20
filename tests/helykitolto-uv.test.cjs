@@ -135,3 +135,11 @@ test('a régi módok teljes geometriája, gyártási sorrendje és XML-je megegy
   assert.equal(hash(save(result.bins,'Minta','Freya',5,'16/11/2026').files),expected.files);
  }
 });
+
+test('a sorvégben két kisebb az egyetlen nagyobb helyett, még új sor előtt',()=>{
+ const rows=[row('Kezdő',1960,600),row('Nagyobb',600,600),row('A',450,600),row('B',340,600)];
+ const result=plan(rows,'x','fill',0,5);
+ check(result,rows);
+ const first=result.bins[0].machine.strips[0].items.map(p=>p.item.name);
+ assert.deepEqual(Array.from(first),['Kezdő','A','B']);
+});
